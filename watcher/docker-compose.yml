@@ -1,0 +1,13 @@
+services:
+  whisper_watcher:
+    build:
+      context: ..
+      dockerfile: watcher/Dockerfile
+    container_name: whisper-watcher
+    volumes:
+      - "../Videos:/app/Videos"
+      - "../audio:/app/audio"
+      - "../CarpetaTranscripciones:/app/CarpetaTranscripciones"
+    env_file:
+      - .env
+    restart: unless-stopped

@@ -1,0 +1,125 @@
+{
+  "_comment": "Copia este archivo a projects.json y ajusta con tus proyectos reales. Para agregar un proyecto: copia cualquier bloque y ajusta los campos. custom_fillers=palabras extra a eliminar, corrections=correcciones de Whisper, summary_prompt=prompt LLM para el resumen (distinto de initial_prompt que es para Whisper).",
+  "projects": [
+    {
+      "name": "Northwind",
+      "match": {
+        "folder_contains": ["py_northwind"],
+        "prefix": ["northwind_"]
+      },
+      "videos_subfolder": "py_northwind",
+      "output_path": "C:/Dev/ClientProjects/Northwind",
+      "handler": "valeris",
+      "language": "en",
+      "initial_prompt": "Meeting of the Northwind development team. Participants: Alex, Sam, Jordan, Taylor, Morgan. Tools: Mirth Connect, Azure DevOps, Azure Portal, .NET, SQL Server, C#, sprints, QP workflow.",
+      "summary_prompt": "You are an executive assistant for a software development team. From this transcript extract and structure:\n1. **Assigned tasks** (task + responsible person)\n2. **Bugs discussed** (bug number if mentioned + description)\n3. **Technical decisions made**\n4. **Next sprint actions**\nBe concise. Use bullet points. Respond in the same language as the transcript.",
+      "custom_fillers": ["like", "right", "kind of", "you know", "i mean"],
+      "corrections": {
+        "Samm": "Sam",
+        "Jordyn": "Jordan"
+      }
+    },
+    {
+      "name": "Zo Interviews",
+      "match": {
+        "folder_contains": ["py_zo", "zo_Entrevista"],
+        "prefix": ["zo_"],
+        "filename_contains": ["interview", "entrevista"]
+      },
+      "videos_subfolder": "py_zo",
+      "output_path": "C:/Dev/Zo/zo_portfolio/interviews",
+      "handler": "zo",
+      "language": null,
+      "initial_prompt": "Technical job interview / Entrevista técnica. Software developer position. Companies: Contoso, Fabrikam, Northwind Traders, Adventure Works, Tailspin Toys, Wingtip Toys. Topics: architecture, .NET, Azure, C#, work experience, SQL Server, microservices.",
+      "summary_prompt": "Eres un asistente de preparación de entrevistas. Analiza el transcript y extrae:\n1. **Empresa y puesto** discutido\n2. **Preguntas técnicas** que hicieron (lista)\n3. **Respuestas donde mejorar** (qué estuvo débil)\n4. **Puntos fuertes** del candidato\n5. **Temas a estudiar** antes de la siguiente entrevista\nSé directo y accionable.",
+      "custom_fillers": ["perfecto", "bien bien", "you know", "excelente"],
+      "corrections": {
+        "Contozo": "Contoso",
+        "Fabricam": "Fabrikam"
+      }
+    },
+    {
+      "name": "Contoso Team",
+      "match": {
+        "folder_contains": ["py_contoso"],
+        "prefix": ["contoso_"]
+      },
+      "videos_subfolder": "py_contoso",
+      "output_path": null,
+      "handler": null,
+      "language": "en",
+      "initial_prompt": "Team meeting. Participants: Riley, Casey, Drew, Jamie, Quinn, Reese. Topics: SharePoint, CPS, Azure Active Directory, claims processing.",
+      "summary_prompt": "Summarize this daily standup / team meeting:\n1. **Blockers** raised by each person\n2. **Action items** with owner\n3. **Decisions made**\nKeep it under 200 words.",
+      "custom_fillers": ["right", "basically", "i mean", "you know"],
+      "corrections": {
+        "Rilley": "Riley",
+        "Reece": "Reese"
+      }
+    },
+    {
+      "name": "Dev Meetings",
+      "match": {
+        "filename_contains": ["meeting", "junta", "reunion", "standup", "retro", "sprint_review"],
+        "prefix": ["meeting_", "junta_", "dev_meeting_"]
+      },
+      "videos_subfolder": "py_meetings",
+      "output_path": "C:/Dev/Zo/whisper/CarpetaTranscripciones",
+      "handler": "meeting_dev",
+      "language": "es",
+      "initial_prompt": "Junta de desarrollo de software. Temas: arquitectura, código, APIs, base de datos, tareas del sprint, decisiones técnicas, bugs, deploys.",
+      "summary_prompt": null,
+      "custom_fillers": ["perfecto", "exacto", "básicamente", "este", "o sea", "entonces", "pues"],
+      "corrections": {
+        "next jay es": "Next.js",
+        "next yes": "Next.js",
+        "dot net": ".NET",
+        "sequel server": "SQL Server",
+        "type script": "TypeScript",
+        "react query": "React Query",
+        "tail wind": "Tailwind"
+      }
+    },
+    {
+      "name": "Fabrikam",
+      "match": {
+        "folder_contains": ["py_fabrikam"],
+        "prefix": ["fabrikam_"]
+      },
+      "videos_subfolder": "py_fabrikam",
+      "output_path": "C:/Dev/Zo/whisper/CarpetaTranscripciones/Fabrikam",
+      "handler": "meeting_dev",
+      "language": "es",
+      "initial_prompt": "Junta de desarrollo del proyecto Fabrikam ERP. Temas: arquitectura, código, APIs, base de datos, tareas del sprint, decisiones técnicas, bugs, deploys.",
+      "summary_prompt": null,
+      "custom_fillers": ["perfecto", "exacto", "básicamente", "este", "o sea", "entonces", "pues"],
+      "corrections": {}
+    },
+    {
+      "name": "Tutorials",
+      "match": {
+        "filename_contains": ["tutorial"]
+      },
+      "videos_subfolder": null,
+      "output_path": null,
+      "handler": null,
+      "language": null,
+      "initial_prompt": "Tutorial técnico de software. Se muestra código, Azure DevOps, Azure Portal, pipelines CI/CD, Git, GitHub, dashboards, configuraciones de infraestructura y herramientas de desarrollo.",
+      "summary_prompt": null,
+      "custom_fillers": [],
+      "corrections": {
+        "Dev ops": "DevOps",
+        "dev ops": "DevOps",
+        "CI CD": "CI/CD",
+        "cube CTL": "kubectl",
+        "cue CTL": "kubectl",
+        "cube control": "kubectl",
+        "helm": "Helm",
+        "terra form": "Terraform",
+        "terra forms": "Terraform",
+        "kube netes": "Kubernetes",
+        "cocker": "Docker",
+        "docker file": "Dockerfile"
+      }
+    }
+  ]
+}

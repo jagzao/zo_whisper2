@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whisper Dashboard</title>
+    <style>
+        :root {
+            --bg: #050711;
+            --panel: #0b1220;
+            --panel-2: #111a2e;
+            --text: #e6eef7;
+            --muted: #5d6d8a;
+            --accent: #00e5ff;
+            --accent-2: #7b2cff;
+            --danger: #ff3d6e;
+            --ok: #00e676;
+            --warn: #ffd600;
+            --border: #1d2942;
+            --radius: 0.75rem;
+            --shadow: 0 0 24px rgba(0,229,255,0.08);
+        }
+        * { box-sizing: border-box; }
+        html { height: 100%; }
+        body {
+            margin: 0;
+            min-height: 100%;
+            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background:
+                radial-gradient(circle at 20% 0%, rgba(123,44,255,0.12) 0%, transparent 35%),
+                radial-gradient(circle at 90% 10%, rgba(0,229,255,0.08) 0%, transparent 30%),
+                var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+        header {
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(11,18,32,0.85);
+            backdrop-filter: blur(12px);
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            position: sticky;
+            top: 0;
+            z-index: 500;
+        }
+        h1 { margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+        h1 span { color: var(--accent); }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            padding: 1.25rem;
+        }
+        @media (max-width: 980px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            box-shadow: var(--shadow);
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .card:hover { border-color: rgba(0,229,255,0.25); }
+        .card.wide { grid-column: 1 / -1; }
+        .card h2 {
+            margin: 0 0 1rem 0;
+            font-size: 0.95rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+        }
+        .dropzone {
+            border: 2px dashed rgba(0,229,255,0.35);
+            border-radius: var(--radius);
+            padding: 2.25rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: linear-gradient(180deg, rgba(0,229,255,0.04) 0%, transparent 100%);
+        }
+        .dropzone:hover { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,229,255,0.12) inset; }
+        .dropzone.dragover { background: rgba(0,229,255,0.08); border-color: var(--accent); }
+        select, button, input, textarea {
+            background: var(--panel-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        select:focus, input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,0.12); }
+        button {
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--accent), #00b8d4);
+            color: #050711;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 4px 14px rgba(0,229,255,0.18);
+        }
+        button:hover { filter: brightness(1.1); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; box-shadow: none; }
+        button.danger { background: linear-gradient(135deg, var(--danger), #c2185b); color: white; box-shadow: 0 4px 14px rgba(255,61,110,0.18); }
+        button.ok { background: linear-gradient(135deg, var(--ok), #00c853); color: #050711; box-shadow: 0 4px 14px rgba(0,230,118,0.18); }
+        button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+        .row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 0.5rem 0; }
+        .folders { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; }
+        .folder {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .folder::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(0,229,255,0.25), transparent 60%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .folder .count { font-size: 1.75rem; font-weight: 800; color: var(--accent); text-shadow: 0 0 16px rgba(0,229,255,0.25); }
+        .folder .label { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
+        th, td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); text-align: left; }
+        th { color: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; background: rgba(17,26,46,0.6); }
+        tr:hover td { background: rgba(0,229,255,0.04); }
+        td .row { margin: 0; }
+        .status {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            background: rgba(17,26,46,0.8);
+            border: 1px solid var(--border);
+            font-weight: 700;
+        }
+        .status.pending { color: var(--warn); border-color: rgba(255,214,0,0.3); }
+        .status.processed, .status.completed, .status.completed_routed { color: var(--ok); border-color: rgba(0,230,118,0.3); }
+        .status.error, .status.failed { color: var(--danger); border-color: rgba(255,61,110,0.3); }
+        .icon-btn {
+            background: var(--panel-2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            box-shadow: none;
+        }
+        .icon-btn:hover { background: rgba(0,229,255,0.08); border-color: var(--accent); }
+        .icon-btn svg { width: 1.25rem; height: 1.25rem; fill: currentColor; }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5,7,17,0.94);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+        .modal {
+            background: linear-gradient(180deg, var(--panel) 0%, #080d18 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 1240px;
+            max-height: 94vh;
+            overflow-y: auto;
+            padding: 1.25rem;
+            box-shadow: 0 0 60px rgba(0,229,255,0.08), 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.15rem; color: var(--accent); font-weight: 700; }
+        .close-x {
+            background: var(--panel-2);
+            color: var(--text);
+            font-size: 1.25rem;
+            line-height: 1;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-x:hover { border-color: var(--danger); color: var(--danger); }
+        .hidden { display: none !important; }
+        .toast {
+            position: fixed;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            background: var(--panel);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.85rem 1.25rem;
+            border-radius: 0.625rem;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(0,229,255,0.15);
+            font-weight: 600;
+        }
+
+        /* Editor styles */
+        .editor-main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.25rem;
+            align-items: start;
+        }
+        @media (max-width: 980px) { .editor-main { grid-template-columns: 1fr; } }
+        .video-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .video-col video, .video-col audio {
+            width: 100%;
+            border-radius: 0.625rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+            background: #000;
+        }
+        .video-col video.hide-native-controls::-webkit-media-controls,
+        .video-col audio.hide-native-controls::-webkit-media-controls {
+            display: none !important;
+        }
+        .transcript-col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .frames-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 0.75rem;
+            max-height: 55vh;
+            overflow-y: auto;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 0.75rem;
+        }
+        .frame-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color 0.15s, transform 0.15s;
+            position: relative;
+        }
+        .frame-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .frame-card .frame-actions {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            display: flex;
+            gap: 0.3rem;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .frame-card:hover .frame-actions { opacity: 1; }
+        .frame-card .frame-actions button {
+            width: 1.75rem;
+            height: 1.75rem;
+            padding: 0;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5,7,17,0.75);
+            border: 1px solid var(--border);
+            box-shadow: none;
+            color: var(--accent);
+        }
+        .frame-card .frame-actions button:hover { background: var(--accent); color: #050711; border-color: var(--accent); }
+        .frame-card .frame-actions svg { width: 0.95rem; height: 0.95rem; fill: currentColor; }
+        .frame-card .frame-time {
+            padding: 0.35rem 0.5rem;
+            font-size: 0.75rem;
+            color: var(--accent);
+            text-align: center;
+            font-weight: 700;
+        }
+        .action-btns { display: flex; gap: 0.4rem; }
+        .action-btns button {
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border-radius: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+        }
+        .action-btns button svg { width: 1rem; height: 1rem; fill: currentColor; }
+        .action-btns .btn-view { background: var(--panel-2); color: var(--accent); border: 1px solid var(--border); }
+        .action-btns .btn-view:hover { background: var(--accent); color: #050711; border-color: var(--accent); }
+        .action-btns .btn-edit { background: var(--panel-2); color: var(--ok); border: 1px solid var(--border); }
+        .action-btns .btn-edit:hover { background: var(--ok); color: #050711; border-color: var(--ok); }
+        .action-btns .btn-delete { background: var(--panel-2); color: var(--danger); border: 1px solid var(--border); }
+        .action-btns .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
+        .action-btns button:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+        .table-toolbar {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .table-toolbar input, .table-toolbar select {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+        .table-toolbar input { min-width: 180px; }
+        .table-toolbar label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s;
+        }
+        th.sortable:hover { color: var(--accent); }
+        th.sortable .sort-icon {
+            margin-left: 0.3rem;
+            color: var(--accent);
+            font-size: 0.65rem;
+        }
+        .pagination {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .pagination.top {
+            margin-top: 0;
+            justify-content: flex-end;
+            flex: 1;
+            min-width: 280px;
+        }
+        .pagination button {
+            min-width: 2rem;
+            height: 2rem;
+            padding: 0 0.5rem;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            box-shadow: none;
+            font-weight: 700;
+        }
+        .pagination button.active { background: var(--accent); color: #050711; border-color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination .page-info { color: var(--muted); font-size: 0.8rem; margin: 0 0.5rem; }
+        .player-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 0.75rem;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 0.4rem 0.7rem;
+        }
+        .play-btn {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: linear-gradient(135deg, var(--accent), #00b8d4);
+            color: #050711;
+            box-shadow: 0 0 18px rgba(0,229,255,0.25);
+        }
+        .play-btn:hover { filter: brightness(1.15); }
+        .play-btn svg { width: 1.25rem; height: 1.25rem; fill: currentColor; }
+        .progress-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        .progress-wrap input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+            background: var(--panel);
+        }
+        .rate-btn {
+            background: var(--panel);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            min-width: 2.5rem;
+            font-weight: 700;
+            box-shadow: none;
+        }
+        .search-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .search-bar input { flex: 1; }
+        .transcript-list {
+            max-height: 55vh;
+            overflow-y: auto;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 0.6rem;
+        }
+        .segment {
+            padding: 0.6rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-left: 2px solid transparent;
+        }
+        .segment:hover { background: rgba(0,229,255,0.07); }
+        .segment.active { background: rgba(0,229,255,0.14); border-left-color: var(--accent); }
+        .segment .timestamp {
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 700;
+            user-select: none;
+            margin-bottom: 0.15rem;
+        }
+        .segment .text {
+            font-size: 0.92rem;
+            color: var(--text);
+            line-height: 1.5;
+        }
+        .segment.highlight { background: rgba(255,214,0,0.12); border-left-color: var(--warn); }
+        .insights {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 0.9rem;
+        }
+        .insights h3 { margin: 0 0 0.6rem 0; font-size: 0.85rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
+        .insights .row { justify-content: space-between; margin: 0.35rem 0; font-size: 0.82rem; }
+        .insights .row span:first-child { color: var(--muted); }
+        .tabbar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+        .tabbar button {
+            background: transparent;
+            color: var(--muted);
+            border: none;
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
+            padding: 0.35rem 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.8rem;
+        }
+        .tabbar button.active { color: var(--accent); border-bottom-color: var(--accent); }
+        video, audio { width: 100%; border-radius: 0.375rem; }
+        .project-form { display: grid; gap: 0.6rem; }
+        .project-form label { font-size: 0.78rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+        .project-list { margin-top: 1rem; }
+        .project-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.65rem;
+            border-bottom: 1px solid var(--border);
+            gap: 0.5rem;
+            border-radius: 0.375rem;
+            transition: background 0.15s;
+        }
+        .project-item:hover { background: rgba(0,229,255,0.05); }
+        .project-item:last-child { border-bottom: none; }
+        .logs {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.78rem;
+            white-space: pre-wrap;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 0.9rem;
+            max-height: 360px;
+            overflow-y: auto;
+            color: var(--muted);
+        }
+        .edit-transcription textarea {
+            width: 100%;
+            min-height: 260px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.88rem;
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 0.75rem;
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            padding: 0.3rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            z-index: 1000;
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Whisper <span>Dashboard</span></h1>
+        <div class="row" style="margin:0;">
+            <span id="runStatus" class="status pending">Ready</span>
+            <button id="btnRunFull" onclick="run('full')">RUN Full</button>
+            <button id="btnRunCompress" onclick="run('compress')">Compress Only</button>
+            <button id="btnRunTranscribe" onclick="run('transcribe')">Transcribe Only</button>
+            <button class="icon-btn tooltip" data-tip="Projects" onclick="openProjectsModal()" aria-label="Projects">
+                <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+            </button>
+            <button class="icon-btn tooltip" data-tip="Logs" onclick="openLogsModal()" aria-label="Logs">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </button>
+            <button class="icon-btn tooltip" data-tip="Help" onclick="openHelpModal()" aria-label="Help">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Drop Area</h2>
+            <div class="dropzone" id="dropzone">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="var(--accent)" style="margin-bottom:0.5rem;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                <div>Drop audio/video here</div>
+                <small style="color:var(--muted)">or click to select</small>
+                <input type="file" id="fileInput" class="hidden" accept="video/*,audio/*">
+            </div>
+            <div class="row" style="margin-top:1rem;">
+                <label for="uploadProject">Project (optional):</label>
+                <select id="uploadProject"><option value="">Auto-detect</option></select>
+            </div>
+            <div id="uploadQueue" class="row" style="margin-top:0.75rem; flex-direction:column; align-items:stretch;"></div>
+        </div>
+
+        <div class="card">
+            <h2>Folders</h2>
+            <div class="folders" id="folders"></div>
+        </div>
+
+        <div class="card wide">
+            <h2>Files → Transcriptions</h2>
+            <div class="table-toolbar">
+                <input type="text" id="fileFilter" placeholder="Filter by name..." oninput="applyFileFilters()">
+                <select id="projectFilter" onchange="applyFileFilters()"><option value="">All projects</option></select>
+                <select id="statusFilter" onchange="applyFileFilters()">
+                    <option value="">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="completed_routed">Completed routed</option>
+                </select>
+                <select id="langFilter" onchange="applyFileFilters()">
+                    <option value="">All languages</option>
+                    <option value="es">es</option>
+                    <option value="en">en</option>
+                    <option value="auto">auto</option>
+                </select>
+                <div class="row" style="margin:0;">
+                    <label for="pageSize">Show</label>
+                    <select id="pageSize" onchange="changePageSize()" style="min-width:3.5rem;">
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div id="filesPaginationTop" class="pagination top"></div>
+            </div>
+            <div id="filesList"></div>
+            <div id="filesPagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="previewModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="previewTitle">Preview</h2>
+                <button class="close-x" onclick="closePreview()">&times;</button>
+            </div>
+            <div id="modalPreviewBody"></div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Edit transcription</h2>
+                <button class="close-x" onclick="closeEdit()">&times;</button>
+            </div>
+            <div class="edit-transcription">
+                <input type="hidden" id="editTxPath">
+                <textarea id="editTxText"></textarea>
+                <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
+                    <button class="danger" onclick="closeEdit()">Cancel</button>
+                    <button class="ok" onclick="saveTranscription()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="projectsModal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Projects (CRUD)</h2>
+                <button class="close-x" onclick="closeProjectsModal()">&times;</button>
+            </div>
+            <div class="row" style="margin-top:0;">
+                <button onclick="newProject()">New project</button>
+            </div>
+            <div id="projectEditor" class="project-form hidden" style="margin-top:0.75rem;">
+                <input type="hidden" id="pOriginalName">
+                <label>Name</label>
+                <input type="text" id="pName" placeholder="Dev Meetings">
+                <label>Prefixes (comma)</label>
+                <input type="text" id="pPrefixes" placeholder="meeting_, junta_">
+                <label>Keywords in filename (comma)</label>
+                <input type="text" id="pFilenameContains" placeholder="meeting, reunion">
+                <label>Source folders (comma)</label>
+                <input type="text" id="pFolderContains" placeholder="py_meetings">
+                <label>Videos subfolder</label>
+                <input type="text" id="pVideosSubfolder" placeholder="py_meetings">
+                <label>Output path</label>
+                <input type="text" id="pOutputPath" placeholder="C:/Dev/Zo/whisper/FolderTranscripciones">
+                <label>Handler</label>
+                <select id="pHandler"><option value="">None</option><option value="valeris">valeris</option><option value="zo">zo</option><option value="meeting_dev">meeting_dev</option></select>
+                <label>Language</label>
+                <select id="pLanguage"><option value="">Auto</option><option value="es">es</option><option value="en">en</option></select>
+                <label>Initial Whisper prompt</label>
+                <textarea id="pInitialPrompt" rows="3" placeholder="Context for Whisper..."></textarea>
+                <div class="row" style="justify-content:flex-end;">
+                    <button class="danger" onclick="cancelProject()">Cancel</button>
+                    <button class="ok" onclick="saveProject()">Save</button>
+                </div>
+            </div>
+            <div class="project-list" id="projectList"></div>
+        </div>
+    </div>
+
+    <div id="logsModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Logs</h2>
+                <button class="close-x" onclick="closeLogsModal()">&times;</button>
+            </div>
+            <div class="logs" id="logs"></div>
+        </div>
+    </div>
+
+    <div id="helpModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>User guide</h2>
+                <button class="close-x" onclick="closeHelpModal()">&times;</button>
+            </div>
+            <div class="transcription-text" style="max-height:70vh; overflow-y:auto;">
+                <h3>Basic flow</h3>
+                <ol>
+                    <li><strong>Upload files</strong> with the Drop Area. They go to <code>Video_compress/</code>. Optionally choose a project to auto-rename with prefix.</li>
+                    <li>Press <strong>RUN Full</strong> to compress, organize by project and transcribe.</li>
+                    <li>In <strong>Files → Transcriptions</strong> you will see the status, detected language and whether it already has a transcription.</li>
+                    <li>Use <strong>View</strong> to play the audio/video alongside its transcription, or <strong>Edit</strong> to correct the text.</li>
+                </ol>
+
+                <h3>Language prefixes</h3>
+                <ul>
+                    <li><code>es_</code> forces Spanish.</li>
+                    <li><code>en_</code> forces English.</li>
+                    <li>No prefix: uses project language or auto-detection.</li>
+                </ul>
+
+                <h3>Project prefixes</h3>
+                <ul>
+                    <li><code>zo_</code> → Zo Interviews</li>
+                    <li><code>valeris_</code> → Valeris</li>
+                    <li><code>jm_</code> → JM</li>
+                    <li><code>databiz_</code> → Databiz</li>
+                    <li><code>meeting_</code>, <code>junta_</code> → Dev Meetings</li>
+                    <li><code>tutorial</code> in the name → Tutorials</li>
+                </ul>
+
+                <h3>Projects</h3>
+                <p>The grid icon opens the project CRUD. There you can create/edit/delete projects, prefixes, language and Whisper initial prompt.</p>
+
+                <h3>Logs</h3>
+                <p>The document icon opens real-time logs to debug errors.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const api = path => fetch(path, { headers: { 'Accept': 'application/json' }}).then(r => r.json());
+        const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+        const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); };
+
+        async function loadFolders() {
+            const data = await api('/api/folders');
+            const el = document.getElementById('folders');
+            el.innerHTML = data.folders.map(f => `
+                <div class="folder">
+                    <div class="count">${f.count}</div>
+                    <div class="label">${f.name}</div>
+                </div>
+            `).join('');
+        }
+
+        async function loadFiles() {
+            const data = await api('/api/files');
+            window._allFiles = data.files || [];
+            populateProjectFilter(window._allFiles);
+            applyFileFilters();
+        }
+
+        function populateProjectFilter(files) {
+            const select = document.getElementById('projectFilter');
+            if (!select || select.dataset.populated) return;
+            const projects = Array.from(new Set(files.map(f => f.project).filter(Boolean))).sort();
+            select.innerHTML = '<option value="">All projects</option>' + projects.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join('');
+            select.dataset.populated = '1';
+        }
+
+        function applyFileFilters() {
+            const files = window._allFiles || [];
+            const nameQ = document.getElementById('fileFilter').value.toLowerCase().trim();
+            const projectQ = document.getElementById('projectFilter').value;
+            const statusQ = document.getElementById('statusFilter').value;
+            const langQ = document.getElementById('langFilter').value;
+            const filtered = files.filter(f => {
+                if (nameQ && !f.name.toLowerCase().includes(nameQ)) return false;
+                if (projectQ && f.project !== projectQ) return false;
+                if (statusQ && f.status !== statusQ) return false;
+                if (langQ && (f.language || 'auto') !== langQ) return false;
+                return true;
+            });
+            window._filteredFiles = filtered;
+            window._fileSort = window._fileSort || { col: 'name', dir: 'asc' };
+            sortFiles(window._fileSort.col, window._fileSort.dir, false);
+            renderFilePage(1);
+        }
+
+        function sortFiles(col, dir, toggle = true) {
+            if (toggle && window._fileSort && window._fileSort.col === col) {
+                dir = window._fileSort.dir === 'asc' ? 'desc' : 'asc';
+            }
+            window._fileSort = { col, dir };
+            const files = window._filteredFiles || [];
+            files.sort((a, b) => {
+                let va, vb;
+                if (col === 'name') { va = a.name.toLowerCase(); vb = b.name.toLowerCase(); }
+                else if (col === 'type') { va = a.name.split('.').pop().toLowerCase(); vb = b.name.split('.').pop().toLowerCase(); }
+                else if (col === 'folder') { va = (a.relative || '').toLowerCase(); vb = (b.relative || '').toLowerCase(); }
+                else if (col === 'project') { va = (a.project || '').toLowerCase(); vb = (b.project || '').toLowerCase(); }
+                else if (col === 'language') { va = (a.language || 'auto').toLowerCase(); vb = (b.language || 'auto').toLowerCase(); }
+                else if (col === 'status') { va = a.status.toLowerCase(); vb = b.status.toLowerCase(); }
+                else if (col === 'size') { va = (a.transcription ? a.transcription.size : 0); vb = (b.transcription ? b.transcription.size : 0); }
+                else { va = a.name.toLowerCase(); vb = b.name.toLowerCase(); }
+                if (va < vb) return dir === 'asc' ? -1 : 1;
+                if (va > vb) return dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+            updateSortIcons();
+            renderFilePage(window._currentPage || 1);
+        }
+
+        function updateSortIcons() {
+            document.querySelectorAll('th.sortable').forEach(th => {
+                const col = th.dataset.sort;
+                const icon = th.querySelector('.sort-icon');
+                if (!icon) return;
+                const s = window._fileSort || { col: 'name', dir: 'asc' };
+                icon.textContent = s.col === col ? (s.dir === 'asc' ? '▲' : '▼') : '⇅';
+            });
+        }
+
+        function changePageSize() {
+            renderFilePage(1);
+        }
+
+        function renderFilePage(page) {
+            const files = window._filteredFiles || [];
+            const size = parseInt(document.getElementById('pageSize').value, 10) || 5;
+            const total = files.length;
+            const totalPages = Math.max(1, Math.ceil(total / size));
+            page = Math.max(1, Math.min(page, totalPages));
+            window._currentPage = page;
+            const start = (page - 1) * size;
+            const pageFiles = files.slice(start, start + size);
+            renderFileRows(pageFiles, start, total);
+            renderPagination(page, totalPages, total);
+        }
+
+        function renderFileRows(files, start, total) {
+            const el = document.getElementById('filesList');
+            if (!files.length) {
+                el.innerHTML = '<p style="color:var(--muted); text-align:center; padding:1rem;">No matching files.</p>';
+                return;
+            }
+            el.innerHTML = `<table>
+                <thead><tr>
+                    <th class="sortable" data-sort="name" onclick="sortFiles('name')">Name <span class="sort-icon">▲</span></th>
+                    <th class="sortable" data-sort="type" onclick="sortFiles('type')">Type <span class="sort-icon">⇅</span></th>
+                    <th class="sortable" data-sort="folder" onclick="sortFiles('folder')">Folder <span class="sort-icon">⇅</span></th>
+                    <th class="sortable" data-sort="project" onclick="sortFiles('project')">Project <span class="sort-icon">⇅</span></th>
+                    <th class="sortable" data-sort="language" onclick="sortFiles('language')">Language <span class="sort-icon">⇅</span></th>
+                    <th class="sortable" data-sort="status" onclick="sortFiles('status')">Status <span class="sort-icon">⇅</span></th>
+                    <th class="sortable" data-sort="size" onclick="sortFiles('size')">Transcription <span class="sort-icon">⇅</span></th>
+                    <th>Actions</th>
+                </tr></thead>
+                <tbody>
+                ${files.map((f, i) => {
+                    const relParts = f.relative.split('/');
+                    const folder = relParts.length > 1 ? relParts.slice(0, -1).join('/') : 'root';
+                    const statusClass = f.status === 'pending' ? 'pending' : 'processed';
+                    const tx = f.transcription;
+                    const lang = f.language || 'auto';
+                    const ext = f.name.split('.').pop().toLowerCase();
+                    const fileType = ['mp4','avi','mkv','mov','wmv','flv','webm','m4v'].includes(ext) ? 'Video' : 'Audio';
+                    return `<tr>
+                        <td>${f.name}</td>
+                        <td><span class="status ${fileType === 'Video' ? 'processed' : 'pending'}">${fileType}</span></td>
+                        <td>${folder}</td>
+                        <td>${f.project || '-'}</td>
+                        <td><span class="status ${lang === 'auto' ? 'pending' : 'processed'}">${lang}</span></td>
+                        <td><span class="status ${statusClass}">${f.status}</span></td>
+                        <td>${tx ? `<span class="status processed">Yes</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-view tooltip" ${!tx || !tx.path ? 'disabled' : ''} onclick="preview('${encodeURIComponent(f.path)}', '${tx && tx.path ? encodeURIComponent(tx.path) : ''}')" aria-label="View" title="View">
+                                    <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                </button>
+                                <button class="btn-edit tooltip" ${!tx || !tx.path ? 'disabled' : ''} onclick="editTranscription('${tx && tx.path ? encodeURIComponent(tx.path) : ''}')" aria-label="Edit" title="Edit">
+                                    <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                </button>
+                                <button class="btn-delete tooltip" onclick="deleteFile('${encodeURIComponent(f.path)}')" aria-label="Delete" title="Delete">
+                                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('')}
+                </tbody>
+            </table>
+            <div class="page-info" style="text-align:center; margin-top:0.5rem; color:var(--muted); font-size:0.8rem;">${start + 1}–${start + files.length} of ${total} files</div>`;
+            updateSortIcons();
+        }
+
+        function renderPagination(page, totalPages, total) {
+            const bottom = document.getElementById('filesPagination');
+            const top = document.getElementById('filesPaginationTop');
+            const html = buildPaginationHtml(page, totalPages, total);
+            bottom.innerHTML = html;
+            top.innerHTML = html;
+            if (totalPages <= 1) { bottom.innerHTML = ''; top.innerHTML = ''; }
+        }
+
+        function buildPaginationHtml(page, totalPages, total) {
+            if (totalPages <= 1) return '';
+            let html = `<button onclick="renderFilePage(${page - 1})" ${page === 1 ? 'disabled' : ''}>◀</button>`;
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="${i === page ? 'active' : ''}" onclick="renderFilePage(${i})">${i}</button>`;
+            }
+            html += `<button onclick="renderFilePage(${page + 1})" ${page === totalPages ? 'disabled' : ''}>▶</button>`;
+            html += `<span class="page-info">Page ${page}/${totalPages}</span>`;
+            return html;
+        }
+
+        async function loadProjects() {
+            const data = await api('/api/projects');
+            const select = document.getElementById('uploadProject');
+            select.innerHTML = '<option value="">Auto-detect</option>' + data.projects.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+
+            const list = document.getElementById('projectList');
+            list.innerHTML = data.projects.map(p => {
+                const prefixes = (p.match && p.match.prefix || []).join(', ');
+                return `<div class="project-item">
+                    <div><strong>${p.name}</strong> <span style="color:var(--muted); font-size:0.8rem;">${prefixes}</span></div>
+                    <div class="row">
+                        <button onclick="editProject('${p.name}')">Edit</button>
+                        <button class="danger" onclick="deleteProject('${p.name}')">Delete</button>
+                    </div>
+                </div>`;
+            }).join('');
+            return data.projects;
+        }
+
+        async function run(mode) {
+            const res = await fetch(`/api/run/${mode}`, { method: 'POST' }).then(r => r.json());
+            if (res.ok) showToast('Pipeline started');
+            else showToast(res.error || 'Error');
+            updateRunStatus();
+        }
+
+        async function updateRunStatus() {
+            const status = await api('/api/status');
+            const el = document.getElementById('runStatus');
+            const buttons = ['btnRunFull','btnRunCompress','btnRunTranscribe'];
+            buttons.forEach(id => document.getElementById(id).disabled = status.running);
+            if (status.running) {
+                el.textContent = `Running: ${status.mode}`;
+                el.className = 'status pending';
+            } else if (status.error) {
+                el.textContent = 'Error';
+                el.className = 'status error';
+            } else {
+                el.textContent = 'Ready';
+                el.className = 'status processed';
+            }
+            if (!status.running && status.finished_at) {
+                loadFolders(); loadFiles();
+            }
+        }
+
+        async function loadLogs() {
+            const data = await api('/api/logs');
+            const el = document.getElementById('logs');
+            el.textContent = data.logs.join('\n');
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function preview(mediaPathEncoded, txPathEncoded) {
+            const mediaPath = decodeURIComponent(mediaPathEncoded);
+            const txPath = txPathEncoded ? decodeURIComponent(txPathEncoded) : '';
+            document.getElementById('previewTitle').textContent = mediaPath.split(/[\\/]/).pop();
+            document.getElementById('modalPreviewBody').innerHTML = '<p style="color:var(--muted)">Loading...</p>';
+            const txRes = txPath ? await api('/api/transcription?path=' + encodeURIComponent(txPath)) : { ok: false };
+            if (!txRes.ok) {
+                document.getElementById('modalPreviewBody').innerHTML = '<p style="color:var(--danger)">Error loading transcription</p>';
+                document.getElementById('previewModal').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('previewModal').classList.remove('hidden');
+            const ext = mediaPath.split('.').pop().toLowerCase();
+            const streamPath = '/stream/' + encodeURIComponent(mediaPath.replace(/\\/g, '/'));
+            const isVideo = ['mp4','mkv','mov','avi','webm','m4v','flv','wmv'].includes(ext);
+            const mediaTag = isVideo ? 'video' : 'audio';
+            const insights = txRes.insights || {};
+            const segments = txRes.segments || [];
+            const duration = insights.duration || 0;
+            const durationFormatted = insights.duration_formatted || '00:00';
+            const language = insights.language || '-';
+            const wordCount = insights.word_count != null ? insights.word_count.toLocaleString() : '-';
+            const modelName = insights.model || '-';
+            const processingTime = insights.processing_time_formatted || '-';
+
+            const html = `
+                <div class="player-bar">
+                    <button class="play-btn" id="editorPlayBtn" onclick="togglePlay()" aria-label="Play/Pause">
+                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <div class="progress-wrap">
+                        <span id="currentTime">00:00:00</span>
+                        <input type="range" id="editorSeek" min="0" max="${duration}" value="0" step="0.1" aria-label="Seek">
+                        <span id="totalTime">${durationFormatted}</span>
+                    </div>
+                    <button class="rate-btn" id="rateBtn" onclick="toggleRate()">1x</button>
+                    <button class="icon-btn tooltip" data-tip="Mute" onclick="toggleMute()" aria-label="Mute">
+                        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
+                <div class="editor-main">
+                    <div class="video-col">
+                        <${mediaTag} id="editorMedia" src="${streamPath}" controls class="hide-native-controls" style="width:100%; border-radius:0.625rem;"></${mediaTag}>
+                        <div class="insights">
+                            <h3>Insights</h3>
+                            <div class="row"><span>Language</span><span>${language}</span></div>
+                            <div class="row"><span>Duration</span><span>${durationFormatted}</span></div>
+                            <div class="row"><span>Words</span><span>${wordCount}</span></div>
+                            <div class="row"><span>Model</span><span>${modelName}</span></div>
+                            <div class="row"><span>Processing</span><span>${processingTime}</span></div>
+                        </div>
+                    </div>
+                    <div class="transcript-col">
+                        <div class="tabbar">
+                            <button class="active" id="tabTranscript" onclick="switchEditorTab('transcript')">TRANSCRIPT</button>
+                            <button id="tabFrames" onclick="switchEditorTab('frames')">FRAMES</button>
+                        </div>
+                        <div id="transcriptTabPanel">
+                            <div class="search-bar">
+                                <input type="text" id="txSearch" placeholder="Search transcription..." oninput="filterSegments(this.value)" aria-label="Search">
+                                <span id="searchCount" style="color:var(--muted); font-size:0.8rem; align-self:center;"></span>
+                                <button class="icon-btn tooltip" data-tip="Copy transcription" onclick="copyTranscript()" aria-label="Copy transcription">
+                                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                                </button>
+                            </div>
+                            <div class="transcript-list" id="transcriptList"></div>
+                        </div>
+                        <div id="framesTabPanel" class="hidden">
+                            <div class="frames-grid" id="framesGrid"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modalPreviewBody').innerHTML = html;
+            renderSegments(segments);
+            window._mediaPath = mediaPath;
+            bindMediaEvents();
+        }
+        function closePreview() {
+            const media = document.getElementById('editorMedia');
+            if (media) media.pause();
+            document.getElementById('previewModal').classList.add('hidden');
+            document.getElementById('modalPreviewBody').innerHTML = '';
+        }
+
+        function renderSegments(segments) {
+            const list = document.getElementById('transcriptList');
+            if (!list) return;
+            if (!segments.length) {
+                list.innerHTML = '<p style="color:var(--muted)">No segments available.</p>';
+                return;
+            }
+            list.innerHTML = segments.map((seg, idx) => {
+                const time = formatTime(seg.start);
+                return `<div class="segment" data-idx="${idx}" data-start="${seg.start}" onclick="seekTo(${seg.start})">
+                    <div class="timestamp">${time}</div>
+                    <div class="text">${escapeHtml(seg.text)}</div>
+                </div>`;
+            }).join('');
+            window._segments = segments;
+        }
+
+        function formatTime(seconds) {
+            const total = Math.floor(seconds);
+            const hrs = Math.floor(total / 3600);
+            const mins = Math.floor((total % 3600) / 60);
+            const secs = total % 60;
+            return `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function seekTo(seconds) {
+            const media = document.getElementById('editorMedia');
+            if (media) { media.currentTime = seconds; media.play(); }
+        }
+
+        function togglePlay() {
+            const media = document.getElementById('editorMedia');
+            const btn = document.getElementById('editorPlayBtn');
+            if (!media || !btn) return;
+            if (media.paused) { media.play(); }
+            else { media.pause(); }
+        }
+
+        function bindMediaEvents() {
+            const media = document.getElementById('editorMedia');
+            const seek = document.getElementById('editorSeek');
+            const current = document.getElementById('currentTime');
+            const playBtn = document.getElementById('editorPlayBtn');
+            if (!media || !seek || !current || !playBtn) return;
+
+            media.addEventListener('timeupdate', () => {
+                seek.value = media.currentTime;
+                current.textContent = formatTime(media.currentTime);
+                highlightSegment(media.currentTime);
+            });
+            media.addEventListener('loadedmetadata', () => {
+                seek.max = media.duration;
+            });
+            media.addEventListener('play', () => {
+                playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+            });
+            media.addEventListener('pause', () => {
+                playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            });
+            seek.addEventListener('input', () => {
+                media.currentTime = seek.value;
+            });
+        }
+
+        function highlightSegment(currentTime) {
+            const segments = window._segments || [];
+            const list = document.getElementById('transcriptList');
+            if (!list || !segments.length) return;
+            let activeIdx = -1;
+            for (let i = 0; i < segments.length; i++) {
+                if (segments[i].start <= currentTime && segments[i].end > currentTime) {
+                    activeIdx = i;
+                    break;
+                }
+            }
+            list.querySelectorAll('.segment').forEach(el => el.classList.remove('active'));
+            if (activeIdx >= 0) {
+                const active = list.querySelector(`.segment[data-idx="${activeIdx}"]`);
+                if (active) {
+                    active.classList.add('active');
+                    active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        function filterSegments(query) {
+            const list = document.getElementById('transcriptList');
+            const countEl = document.getElementById('searchCount');
+            if (!list) return;
+            const lower = query.toLowerCase().trim();
+            let matches = 0;
+            let firstMatch = null;
+            const segments = window._segments || [];
+            list.querySelectorAll('.segment').forEach((el, idx) => {
+                const textEl = el.querySelector('.text');
+                const text = segments[idx] ? segments[idx].text : textEl.textContent;
+                const textLower = text.toLowerCase();
+                const matchIndex = textLower.indexOf(lower);
+                const hasMatch = lower && matchIndex >= 0;
+                if (hasMatch) {
+                    matches++;
+                    if (!firstMatch) firstMatch = el;
+                    const before = escapeHtml(text.slice(0, matchIndex));
+                    const highlighted = escapeHtml(text.slice(matchIndex, matchIndex + lower.length));
+                    const after = escapeHtml(text.slice(matchIndex + lower.length));
+                    textEl.innerHTML = `${before}<mark>${highlighted}</mark>${after}`;
+                    el.classList.toggle('highlight', true);
+                } else {
+                    textEl.textContent = text;
+                    el.classList.toggle('highlight', false);
+                }
+                el.style.display = lower && !hasMatch ? 'none' : 'block';
+            });
+            countEl.textContent = lower ? `${matches} matches` : '';
+            if (firstMatch) {
+                firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function switchEditorTab(tab) {
+            document.getElementById('transcriptTabPanel').classList.toggle('hidden', tab !== 'transcript');
+            document.getElementById('framesTabPanel').classList.toggle('hidden', tab !== 'frames');
+            document.getElementById('tabTranscript').classList.toggle('active', tab === 'transcript');
+            document.getElementById('tabFrames').classList.toggle('active', tab === 'frames');
+            if (tab === 'frames') loadFrames();
+        }
+
+        async function loadFrames() {
+            const grid = document.getElementById('framesGrid');
+            const mediaPath = window._mediaPath;
+            if (!grid || !mediaPath) return;
+            grid.innerHTML = '<p style="color:var(--muted)">Loading frames...</p>';
+            const res = await api('/api/frames?path=' + encodeURIComponent(mediaPath));
+            if (!res.ok) {
+                grid.innerHTML = `<p style="color:var(--muted)">${res.error || 'No frames'}</p>`;
+                return;
+            }
+            const frames = res.frames || [];
+            if (!frames.length) {
+                grid.innerHTML = '<p style="color:var(--muted)">No frames available.</p>';
+                return;
+            }
+            grid.innerHTML = frames.map(f => `
+                <div class="frame-card" title="Go to ${f.timestamp_formatted}">
+                    <img src="${f.url}" alt="Frame ${f.timestamp_formatted}" loading="lazy" onclick="seekTo(${f.timestamp})">
+                    <div class="frame-actions">
+                        <button onclick="downloadFrame('${f.url}', '${f.timestamp_formatted.replace(/'/g, "\\'")}')" title="Download frame" aria-label="Download frame">
+                            <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        </button>
+                    </div>
+                    <div class="frame-time" onclick="seekTo(${f.timestamp})">${f.timestamp_formatted}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleRate() {
+            const media = document.getElementById('editorMedia');
+            const btn = document.getElementById('rateBtn');
+            if (!media || !btn) return;
+            const rates = [0.5, 1, 1.25, 1.5, 2];
+            const current = rates.indexOf(media.playbackRate);
+            const next = rates[(current + 1) % rates.length];
+            media.playbackRate = next;
+            btn.textContent = next + 'x';
+        }
+
+        function toggleMute() {
+            const media = document.getElementById('editorMedia');
+            if (media) media.muted = !media.muted;
+        }
+
+        async function downloadFrame(url, timestamp) {
+            try {
+                const res = await fetch(url);
+                const blob = await res.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = objectUrl;
+                a.download = `frame_${timestamp.replace(/:/g, '-')}.jpg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(objectUrl);
+            } catch (e) {
+                showToast('Error downloading frame');
+            }
+        }
+
+        async function copyTranscript() {
+            const segments = window._segments || [];
+            if (!segments.length) {
+                showToast('No transcription to copy');
+                return;
+            }
+            const text = segments.map(s => `[${formatTime(s.start)}] ${s.text}`).join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast('Transcription copied');
+            } catch (e) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Transcription copied');
+                } catch (err) {
+                    showToast('Could not copy transcription');
+                }
+                document.body.removeChild(textarea);
+            }
+        }
+
+        async function editTranscription(txPathEncoded) {
+            const txPath = decodeURIComponent(txPathEncoded);
+            if (!txPath) return;
+            document.getElementById('editTxPath').value = txPath;
+            document.getElementById('editTxText').value = 'Loading...';
+            document.getElementById('editModal').classList.remove('hidden');
+            const txRes = await api('/api/transcription?path=' + encodeURIComponent(txPath));
+            if (txRes.ok) {
+                document.getElementById('editTxText').value = txRes.text;
+            } else {
+                showToast(txRes.error || 'Error loading transcription');
+                closeEdit();
+            }
+        }
+        function closeEdit() { document.getElementById('editModal').classList.add('hidden'); }
+        async function saveTranscription() {
+            const path = document.getElementById('editTxPath').value;
+            const text = document.getElementById('editTxText').value;
+            const res = await post('/api/transcription', { path, text });
+            if (res.ok) { showToast('Transcription saved'); closeEdit(); loadFiles(); }
+            else showToast(res.error || 'Error saving');
+        }
+
+        async function deleteFile(pathEncoded) {
+            const path = decodeURIComponent(pathEncoded);
+            if (!confirm('Delete file and its transcription?')) return;
+            const res = await fetch('/api/file?path=' + encodeURIComponent(path), { method: 'DELETE' }).then(r => r.json());
+            if (res.ok) { showToast('File deleted'); loadFolders(); loadFiles(); }
+            else showToast(res.error || 'Error deleting');
+        }
+
+        // Drop area
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+        async function handleFiles(files) {
+            const queue = document.getElementById('uploadQueue');
+            queue.innerHTML = '';
+            for (const file of files) {
+                const form = new FormData();
+                form.append('file', file);
+                form.append('project', document.getElementById('uploadProject').value);
+                const res = await fetch('/api/upload', { method: 'POST', body: form }).then(r => r.json());
+                const msg = res.ok ? `OK ${res.name}` : `Error ${file.name}: ${res.error}`;
+                queue.innerHTML += `<div>${msg}</div>`;
+            }
+            loadFolders();
+            showToast('Files queued');
+        }
+
+        // Projects CRUD
+        function newProject() {
+            document.getElementById('projectEditor').classList.remove('hidden');
+            ['pOriginalName','pName','pPrefixes','pFilenameContains','pFolderContains','pVideosSubfolder','pOutputPath','pInitialPrompt'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('pHandler').value = '';
+            document.getElementById('pLanguage').value = '';
+        }
+        function cancelProject() { document.getElementById('projectEditor').classList.add('hidden'); }
+        function comma(val) { return val.split(',').map(s => s.trim()).filter(Boolean); }
+
+        async function editProject(name) {
+            const data = await api('/api/projects');
+            const p = data.projects.find(x => x.name === name);
+            if (!p) return;
+            document.getElementById('pOriginalName').value = p.name;
+            document.getElementById('pName').value = p.name;
+            document.getElementById('pPrefixes').value = (p.match && p.match.prefix || []).join(', ');
+            document.getElementById('pFilenameContains').value = (p.match && p.match.filename_contains || []).join(', ');
+            document.getElementById('pFolderContains').value = (p.match && p.match.folder_contains || []).join(', ');
+            document.getElementById('pVideosSubfolder').value = p.videos_subfolder || '';
+            document.getElementById('pOutputPath').value = p.output_path || '';
+            document.getElementById('pHandler').value = p.handler || '';
+            document.getElementById('pLanguage').value = p.language || '';
+            document.getElementById('pInitialPrompt').value = p.initial_prompt || '';
+            document.getElementById('projectEditor').classList.remove('hidden');
+        }
+
+        async function saveProject() {
+            const original = document.getElementById('pOriginalName').value;
+            const project = {
+                name: document.getElementById('pName').value.trim(),
+                match: {
+                    prefix: comma(document.getElementById('pPrefixes').value),
+                    filename_contains: comma(document.getElementById('pFilenameContains').value),
+                    folder_contains: comma(document.getElementById('pFolderContains').value),
+                },
+                videos_subfolder: document.getElementById('pVideosSubfolder').value.trim() || null,
+                output_path: document.getElementById('pOutputPath').value.trim() || null,
+                handler: document.getElementById('pHandler').value || null,
+                language: document.getElementById('pLanguage').value || null,
+                initial_prompt: document.getElementById('pInitialPrompt').value.trim() || null,
+                summary_prompt: null,
+                custom_fillers: [],
+                corrections: {},
+            };
+            const action = original ? 'update' : 'create';
+            const body = action === 'update' ? { action, name: original, project } : { action, project };
+            const res = await post('/api/projects', body);
+            if (res.ok) {
+                showToast('Project saved');
+                cancelProject();
+                loadProjects();
+            } else {
+                showToast(res.error || 'Error saving project');
+            }
+        }
+
+        async function deleteProject(name) {
+            if (!confirm(`Delete project ${name}?`)) return;
+            const res = await post('/api/projects', { action: 'delete', name });
+            if (res.ok) { showToast('Project deleted'); loadProjects(); }
+            else showToast(res.error || 'Error');
+        }
+
+        function openProjectsModal() {
+            loadProjects();
+            document.getElementById('projectsModal').classList.remove('hidden');
+        }
+        function closeProjectsModal() {
+            document.getElementById('projectsModal').classList.add('hidden');
+            cancelProject();
+        }
+        function openLogsModal() {
+            loadLogs();
+            document.getElementById('logsModal').classList.remove('hidden');
+        }
+        function closeLogsModal() {
+            document.getElementById('logsModal').classList.add('hidden');
+        }
+        function openHelpModal() {
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+        function closeHelpModal() {
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closePreview(); closeEdit(); closeProjectsModal(); closeLogsModal(); closeHelpModal(); }
+        });
+
+        setInterval(() => { updateRunStatus(); loadLogs(); }, 3000);
+        loadFolders(); loadFiles(); loadProjects(); loadLogs(); updateRunStatus();
+    </script>
+</body>
+</html>

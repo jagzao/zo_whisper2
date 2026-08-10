@@ -1,0 +1,20 @@
+{
+  "project_XR": {
+    "\\b(eks ar|xr technologies|ex ar technologies)\\b": "XR Technologies",
+    "\\b(designated person|designated persons)\\b": "Designated Person",
+    "\\binsider trading\\b": "Insider Trading",
+    "\\b(compliance piesd|compliance pieced)\\b": "CompliancePIESD"
+  },
+  "project_finance": {
+    "\\bebitda\\b": "EBITDA",
+    "\\bgaap\\b": "GAAP",
+    "\\broe\\b": "ROE",
+    "\\bcapex\\b": "CAPEX"
+  },
+  "project_devops": {
+    "\\bkubernetes\\b": "Kubernetes",
+    "\\bdocker\\b": "Docker",
+    "\\bci cd\\b": "CI/CD",
+    "\\bgit lab\\b": "GitLab"
+  }
+}

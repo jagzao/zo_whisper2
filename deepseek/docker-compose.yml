@@ -1,0 +1,16 @@
+# C:\Jagzao\whisper\deepseek\docker-compose.yml
+services:
+  deepseek-coder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: deepseek-coder
+    ports:
+      - "7860:7860"
+    environment:
+      - SUMMARY_PROVIDER=gpt  # Cambia a 'deepseek' u 'ollama' si deseas por defecto
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    env_file:
+      - .env
+    restart: unless-stopped
