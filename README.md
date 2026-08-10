@@ -175,15 +175,19 @@ python dashboard.py
 # → http://localhost:5000
 ```
 
-| Home | Editor de transcripción | Insights |
+| Home | Preview + Insights | Búsqueda en transcripción |
 |---|---|---|
-| ![home](docs/screenshots/dashboard_home.png) | ![edit](docs/screenshots/dashboard_edit.png) | ![insights](docs/screenshots/dashboard_insights.png) |
+| ![home](docs/screenshots/dashboard_home.png) | ![preview](docs/screenshots/dashboard_preview.png) | ![editor](docs/screenshots/dashboard_editor.png) |
 
-| Proyectos (CRUD) | Logs | Guía de uso |
+| Frames extraídos | Editar transcripción | Proyectos (CRUD) |
 |---|---|---|
-| ![projects](docs/screenshots/dashboard_projects.png) | ![logs](docs/screenshots/dashboard_logs.png) | ![help](docs/screenshots/dashboard_help.png) |
+| ![frames](docs/screenshots/dashboard_frames.png) | ![edit](docs/screenshots/dashboard_edit.png) | ![projects](docs/screenshots/dashboard_projects.png) |
 
-*Nombres de archivos y participantes redactados — son datos reales de proyectos de clientes.*
+| Logs | Guía de uso |
+|---|---|
+| ![logs](docs/screenshots/dashboard_logs.png) | ![help](docs/screenshots/dashboard_help.png) |
+
+*Capturas con datos 100% ficticios (`docs/assets/generate_mock_data.py`) — ningún archivo, nombre o transcripción de cliente real aparece aquí.*
 
 ## Testing
 
