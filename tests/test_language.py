@@ -34,5 +34,5 @@ def test_lang_txt_cached_per_folder(tmp_path):
     detector = LanguageDetector()
     assert detector.detect("a.mp3", tmp_path) == "es"
 
-    lang_file.write_text("en", encoding="utf-8")  # cambia en disco...
-    assert detector.detect("b.mp3", tmp_path) == "es"  # ...pero ya está en cache
+    lang_file.write_text("en", encoding="utf-8")  # changes on disk...
+    assert detector.detect("b.mp3", tmp_path) == "es"  # ...but it's already cached

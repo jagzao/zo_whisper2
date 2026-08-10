@@ -1,8 +1,8 @@
-"""FileTracker — idempotencia vía hash de contenido.
+"""FileTracker — content-hash idempotency.
 
-Evita reprocesar un archivo ya transcrito. La clave es un hash de
-tamaño + mtime + primeros 8KB (barato, no requiere leer el archivo
-completo) con fallback a detección por transcripción ya existente en
+Avoids reprocessing an already-transcribed file. The key is a hash of
+size + mtime + first 8KB (cheap, doesn't require reading the whole file)
+with a fallback to detecting an existing transcription in
 CarpetaTranscripciones/.
 """
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class FileTracker:
-    """Rastreador de archivos procesados, persistido en un JSON local."""
+    """Tracker of processed files, persisted to a local JSON file."""
 
     def __init__(self, db_path: Path = PROCESSED_FILES_DB):
         self.db_path = Path(db_path)
@@ -33,7 +33,7 @@ class FileTracker:
                 with open(self.db_path, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
-                logger.warning("Error cargando DB: %s", e)
+                logger.warning("Error loading DB: %s", e)
                 return {}
         return {}
 
@@ -42,10 +42,10 @@ class FileTracker:
             with open(self.db_path, "w", encoding="utf-8") as f:
                 json.dump(self.processed_files, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            logger.error("Error guardando DB: %s", e)
+            logger.error("Error saving DB: %s", e)
 
     def get_file_hash(self, file_path: Path) -> str:
-        """Hash barato: tamaño + mtime + MD5 de los primeros 8KB."""
+        """Cheap hash: size + mtime + MD5 of the first 8KB."""
         try:
             stat = file_path.stat()
             size = stat.st_size
@@ -58,7 +58,7 @@ class FileTracker:
             return hashlib.sha256(content.encode()).hexdigest()[:16]
 
         except Exception as e:
-            logger.warning("Error calculando hash para %s: %s", file_path, e)
+            logger.warning("Error computing hash for %s: %s", file_path, e)
             return hashlib.md5(f"{file_path}_{file_path.stat().st_size}".encode()).hexdigest()[:16]
 
     def is_file_processed(self, file_path: Path) -> bool:
@@ -68,11 +68,11 @@ class FileTracker:
 
             if file_hash in self.processed_files:
                 info = self.processed_files[file_hash]
-                logger.debug("[HASH] Ya procesado: %s (%s)", file_path.name, info.get("date", "unknown"))
+                logger.debug("[HASH] Already processed: %s (%s)", file_path.name, info.get("date", "unknown"))
                 return True
 
             if file_key in self.processed_files:
-                logger.debug("[PATH] Ya procesado: %s", file_path.name)
+                logger.debug("[PATH] Already processed: %s", file_path.name)
                 return True
 
             if self.transcription_exists(file_path):
@@ -82,7 +82,7 @@ class FileTracker:
             return False
 
         except Exception as e:
-            logger.error("Error verificando archivo %s: %s", file_path, e)
+            logger.error("Error checking file %s: %s", file_path, e)
             return False
 
     def transcription_exists(self, file_path: Path) -> bool:
@@ -112,7 +112,7 @@ class FileTracker:
             return False
 
         except Exception as e:
-            logger.error("Error verificando transcripción para %s: %s", file_path, e)
+            logger.error("Error checking transcription for %s: %s", file_path, e)
             return False
 
     def mark_as_processed(self, file_path: Path, status: str = "success") -> None:
@@ -136,7 +136,7 @@ class FileTracker:
             logger.info("[TRACKED] %s", file_path.name)
 
         except Exception as e:
-            logger.error("Error marcando archivo como procesado %s: %s", file_path, e)
+            logger.error("Error marking file as processed %s: %s", file_path, e)
 
     def get_statistics(self) -> Dict:
         try:
@@ -166,7 +166,7 @@ class FileTracker:
             }
 
         except Exception as e:
-            logger.error("Error calculando estadísticas: %s", e)
+            logger.error("Error computing statistics: %s", e)
             return {"total_files": 0, "error": str(e)}
 
     def cleanup_old_entries(self, days: int = 30) -> None:
@@ -190,10 +190,10 @@ class FileTracker:
 
             if entries_to_remove:
                 self.save_database()
-                logger.info("[CLEANUP] Eliminadas %d entradas antiguas", len(entries_to_remove))
+                logger.info("[CLEANUP] Removed %d old entries", len(entries_to_remove))
 
         except Exception as e:
-            logger.error("Error en cleanup: %s", e)
+            logger.error("Error during cleanup: %s", e)
 
     def scan_and_mark_existing(self, directories: List[str]) -> int:
         marked_count = 0
@@ -204,7 +204,7 @@ class FileTracker:
             if not dir_path.exists():
                 continue
 
-            logger.info("[SCAN] Escaneando: %s", dir_path)
+            logger.info("[SCAN] Scanning: %s", dir_path)
 
             for file_path in dir_path.rglob("*"):
                 if file_path.is_file() and file_path.suffix.lower() in supported_extensions:
@@ -212,5 +212,5 @@ class FileTracker:
                         self.mark_as_processed(file_path, "existing_transcription")
                         marked_count += 1
 
-        logger.info("[SCAN] Marcados %d archivos con transcripciones existentes", marked_count)
+        logger.info("[SCAN] Marked %d files with existing transcriptions", marked_count)
         return marked_count

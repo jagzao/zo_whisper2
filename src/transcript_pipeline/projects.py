@@ -1,9 +1,9 @@
-"""Routing declarativo de proyectos: config, no if/else hardcodeado.
+"""Declarative project routing: config, not hardcoded if/else.
 
-`projects.json` define, por proyecto, las reglas de match (carpeta, prefijo
-de filename, palabra clave) y a dónde/cómo enrutar el resultado. Este
-módulo es puro (no toca el filesystem salvo para leer el JSON) y por eso
-es fácil de testear sin necesidad de audio real ni del modelo Whisper.
+`projects.json` defines, per project, the match rules (folder, filename
+prefix, keyword) and where/how to route the result. This module is pure
+(it doesn't touch the filesystem except to read the JSON), which makes it
+easy to test without real audio or the Whisper model.
 """
 
 from __future__ import annotations
@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 def load_projects(config_path: Path) -> list[dict]:
-    """Carga la lista de proyectos desde projects.json. [] si no existe."""
+    """Loads the project list from projects.json. [] if it doesn't exist."""
     if not config_path.exists():
-        logger.warning("[CONFIG] %s no encontrado — routing estático desactivado", config_path.name)
+        logger.warning("[CONFIG] %s not found — static routing disabled", config_path.name)
         return []
     with open(config_path, encoding="utf-8") as f:
         data = json.load(f)
@@ -26,7 +26,7 @@ def load_projects(config_path: Path) -> list[dict]:
 
 
 def match_project(audio_path: Path, projects: list[dict]) -> dict | None:
-    """Devuelve el primer proyecto cuyas reglas de match aplican a audio_path."""
+    """Returns the first project whose match rules apply to audio_path."""
     name_lower = audio_path.name.lower()
     parent_str = str(audio_path.parent)
 

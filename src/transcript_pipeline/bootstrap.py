@@ -1,15 +1,15 @@
-"""Puente explícito hacia el "shared kernel" en watcher/core.
+"""Explicit bridge to the "shared kernel" in watcher/core.
 
-watcher/ trae funcionalidad real que el pipeline diario reutiliza
-(extracción de keyframes, formateo de timestamps, cliente LLM agnóstico
-de proveedor, utilidades de idioma/limpieza). No es un microservicio
-aparte para ese código: es una librería compartida, así que en vez de
-esparcir `sys.path.insert(...)` en cada módulo que la necesita (como
-hacía el script original), este es el único punto que expone el boundary.
+watcher/ ships real functionality the daily pipeline reuses (keyframe
+extraction, timestamp formatting, provider-agnostic LLM client, language
+utilities). It isn't a separate microservice for that code: it's a shared
+library, so instead of scattering `sys.path.insert(...)` across every
+module that needs it (as the original script did), this is the single
+point that exposes the boundary.
 
-watcher/ no tiene `__init__.py` en ningún nivel — son namespace packages
-implícitos de Python 3, así que basta con tener PROJECT_ROOT en sys.path
-para poder hacer `import watcher.core...`.
+watcher/ has no `__init__.py` at any level — they're implicit Python 3
+namespace packages, so having PROJECT_ROOT on sys.path is enough to
+`import watcher.core...`.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ _bootstrapped = False
 
 
 def ensure_watcher_importable() -> bool:
-    """Agrega PROJECT_ROOT a sys.path si hace falta. Devuelve True si watcher/ existe."""
+    """Adds PROJECT_ROOT to sys.path if needed. Returns True if watcher/ exists."""
     global _bootstrapped
     watcher_dir = PROJECT_ROOT / "watcher"
     if not watcher_dir.is_dir():

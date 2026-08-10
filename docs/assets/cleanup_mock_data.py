@@ -1,4 +1,4 @@
-"""Revierte exactamente lo que genera generate_mock_data.py."""
+"""Reverts exactly what generate_mock_data.py creates."""
 from __future__ import annotations
 
 import json
@@ -28,7 +28,7 @@ def main() -> None:
         key = str(media_path.absolute())
         db.pop(key, None)
 
-        # limpiar carpetas vacias que haya creado el mock
+        # clean up any empty folders the mock data created
         try:
             media_path.parent.rmdir()
         except OSError:
@@ -39,7 +39,7 @@ def main() -> None:
             pass
 
     PROCESSED_DB.write_text(json.dumps(db, indent=2, ensure_ascii=False), encoding="utf-8")
-    print("[OK] Datos mock eliminados, processed_files.json restaurado.")
+    print("[OK] Mock data removed, processed_files.json restored.")
 
 
 if __name__ == "__main__":

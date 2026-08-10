@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 """
-SIMPLE SCAN - Procesador OPTIMIZADO PARA MÁXIMA CALIDAD
+SIMPLE SCAN - Processor OPTIMIZED FOR MAXIMUM QUALITY
 
-MEJORAS DE CALIDAD:
-   - Detección automática de idioma por prefijo (es_, en_)
-   - beam_size=10 (vs default 5) - Mayor exploración del espacio de búsqueda
-   - best_of=5 - Genera 5 candidatos y elige el mejor
-   - temperature=[0.0-1.0] - Múltiples temperaturas para mejor precisión
-   - patience=2.0 - Más paciencia en beam search
-   - VAD (Voice Activity Detection) con fallback
-   - condition_on_previous_text=True - Coherencia contextual
+QUALITY IMPROVEMENTS:
+   - Automatic language detection via filename prefix (es_, en_)
+   - beam_size=10 (vs default 5) - Wider search-space exploration
+   - best_of=5 - Generates 5 candidates and picks the best
+   - temperature=[0.0-1.0] - Multiple temperatures for better accuracy
+   - patience=2.0 - More patience in beam search
+   - VAD (Voice Activity Detection) with fallback
+   - condition_on_previous_text=True - Contextual coherence
 
-PRIORIDAD: CALIDAD > VELOCIDAD — procesa todo lo pendiente en audio/ y subcarpetas.
+PRIORITY: QUALITY > SPEED — processes everything pending in audio/ and subfolders.
 """
 
 import os
 
-# Fix OpenMP conflict BEFORE importing any libraries que enlacen con OpenMP/MKL
+# Fix OpenMP conflict BEFORE importing any libraries that link against OpenMP/MKL
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 import json
@@ -48,7 +48,7 @@ load_env()
 
 
 def configure_cpu_threads() -> int:
-    """Optimiza el threading de CPU para CTranslate2/MKL/OpenBLAS."""
+    """Tunes CPU threading for CTranslate2/MKL/OpenBLAS."""
     try:
         cpu_count = psutil.cpu_count(logical=False)
         optimal_threads = min(cpu_count, 8)
@@ -62,7 +62,7 @@ def configure_cpu_threads() -> int:
         for var, value in threading_vars.items():
             os.environ[var] = value
 
-        print(f"[CPU] {optimal_threads} threads configurados")
+        print(f"[CPU] {optimal_threads} threads configured")
         return optimal_threads
     except Exception as e:
         print(f"[CPU] Warning: {e}")
@@ -75,7 +75,7 @@ try:
     from faster_whisper import WhisperModel
     WHISPER_AVAILABLE = True
 except ImportError:
-    print("[ERROR] faster-whisper no instalado")
+    print("[ERROR] faster-whisper not installed")
     sys.exit(1)
 
 logging.basicConfig(
@@ -95,13 +95,13 @@ if ensure_watcher_importable():
         from watcher.core.video.keyframe_extractor import KeyframeExtractor
         from watcher.core.postprocessing.timestamp_formatter import TimestampFormatter
         TUTORIAL_FEATURES_AVAILABLE = True
-        logger.info("[INIT] Funcionalidades de tutorial disponibles")
+        logger.info("[INIT] Tutorial features available")
     except ImportError as e:
-        logger.warning(f"[WARN] Funcionalidades de tutorial no disponibles: {e}")
+        logger.warning(f"[WARN] Tutorial features not available: {e}")
 
 
 class SimpleScanProcessor:
-    """Procesador con faster-whisper, orientado a máxima calidad sobre GPU/CPU int8."""
+    """Processor built on faster-whisper, tuned for maximum quality on CPU int8."""
 
     SUPPORTED_EXTENSIONS = ['.wav', '.mp3', '.m4a', '.flac', '.ogg', '.opus', '.mp4', '.mkv', '.mov', '.avi', '.webm']
     VIDEO_EXTENSIONS = {'.mp4', '.mkv', '.mov', '.avi', '.webm'}
@@ -122,11 +122,11 @@ class SimpleScanProcessor:
 
         self.vad_available = self._check_vad_available()
         if self.vad_available:
-            logger.info("[INIT] VAD disponible")
+            logger.info("[INIT] VAD available")
         else:
-            logger.warning("[INIT] VAD NO disponible (onnxruntime error) - continuando sin VAD")
+            logger.warning("[INIT] VAD NOT available (onnxruntime error) - continuing without VAD")
 
-        # Model — carga diferida; configurable via WHISPER_MODEL (default large-v3)
+        # Model — lazy-loaded; configurable via WHISPER_MODEL (default large-v3)
         self.model = None
         self._model_name = os.getenv("WHISPER_MODEL", "large-v3")
 
@@ -134,12 +134,12 @@ class SimpleScanProcessor:
         if TUTORIAL_FEATURES_AVAILABLE:
             try:
                 self.keyframe_extractor = KeyframeExtractor()
-                logger.info("[INIT] Keyframe extractor inicializado")
+                logger.info("[INIT] Keyframe extractor initialized")
             except Exception as e:
-                logger.warning(f"[WARN] Error inicializando keyframe extractor: {e}")
+                logger.warning(f"[WARN] Error initializing keyframe extractor: {e}")
 
         self.require_keyframes_for_videos = os.getenv("KEYFRAMES_REQUIRED", "1").strip().lower() not in {"0", "false", "no"}
-        logger.info(f"[INIT] Keyframes requeridos para videos: {self.require_keyframes_for_videos}")
+        logger.info(f"[INIT] Keyframes required for videos: {self.require_keyframes_for_videos}")
 
         self.stats = {
             "total_found": 0,
@@ -151,66 +151,66 @@ class SimpleScanProcessor:
             "frames_extracted": 0
         }
 
-        # Auto-detectar carpetas (incluir raíz de audio/ y Videos/)
+        # Auto-detect folders (include audio/ and Videos/ roots)
         self.target_folders = []
 
         if self.audio_base.exists():
             self.target_folders.append(self.audio_base)
-            logger.info(f"[SCAN] Carpeta raíz: audio/")
+            logger.info(f"[SCAN] Root folder: audio/")
             for subfolder in self.audio_base.iterdir():
                 if subfolder.is_dir() and not subfolder.name.startswith('.'):
                     self.target_folders.append(subfolder)
-                    logger.info(f"[SCAN] Carpeta detectada: audio/{subfolder.name}")
+                    logger.info(f"[SCAN] Folder detected: audio/{subfolder.name}")
 
         if self.videos_base.exists():
             self.target_folders.append(self.videos_base)
-            logger.info(f"[SCAN] Carpeta raíz: Videos/")
+            logger.info(f"[SCAN] Root folder: Videos/")
             for subfolder in self.videos_base.iterdir():
                 if subfolder.is_dir() and not subfolder.name.startswith('.'):
                     self.target_folders.append(subfolder)
-                    logger.info(f"[SCAN] Carpeta detectada: Videos/{subfolder.name}")
+                    logger.info(f"[SCAN] Folder detected: Videos/{subfolder.name}")
 
     def _ensure_model(self):
         if self.model is None:
-            logger.info("[INIT] Cargando modelo Whisper %s...", self._model_name)
+            logger.info("[INIT] Loading Whisper model %s...", self._model_name)
             self.model = WhisperModel(
                 self._model_name,
                 device="cpu",
                 compute_type="int8",
                 cpu_threads=CPU_THREADS
             )
-            logger.info("[INIT] Modelo cargado")
+            logger.info("[INIT] Model loaded")
 
     def _find_project(self, audio_path: Path) -> dict | None:
         return match_project(audio_path, self._projects_config)
 
     def find_audio_files(self) -> List[Path]:
-        """Encuentra todos los archivos de audio en las carpetas target"""
+        """Finds all audio files in the target folders"""
         audio_files = []
 
         for folder in self.target_folders:
             if not folder.exists():
-                logger.warning(f"[SCAN] Carpeta no existe: {folder}")
+                logger.warning(f"[SCAN] Folder does not exist: {folder}")
                 continue
 
             if folder == self.audio_base or folder == self.videos_base:
                 folder_name = "audio/" if folder == self.audio_base else "Videos/"
                 for ext in self.SUPPORTED_EXTENSIONS:
-                    pattern = f"*{ext}"  # No recursivo
+                    pattern = f"*{ext}"  # Non-recursive
                     files = list(folder.glob(pattern))
                     audio_files.extend(files)
                     if files:
-                        logger.info(f"[SCAN] {folder_name} (raíz): {len(files)} archivos {ext}")
+                        logger.info(f"[SCAN] {folder_name} (root): {len(files)} {ext} files")
             else:
                 for ext in self.SUPPORTED_EXTENSIONS:
                     pattern = f"**/*{ext}"
                     files = list(folder.glob(pattern))
                     audio_files.extend(files)
                     if files:
-                        logger.info(f"[SCAN] {folder.name}: {len(files)} archivos {ext}")
+                        logger.info(f"[SCAN] {folder.name}: {len(files)} {ext} files")
 
         self.stats["total_found"] = len(audio_files)
-        logger.info(f"[SCAN] Total encontrado: {len(audio_files)} archivos")
+        logger.info(f"[SCAN] Total found: {len(audio_files)} files")
 
         return audio_files
 
@@ -243,12 +243,12 @@ class SimpleScanProcessor:
         return True
 
     def _ensure_keyframes(self, video_path: Path):
-        """Extrae y valida keyframes para un video con fallback de métodos."""
+        """Extracts and validates keyframes for a video, with method fallback."""
         if not self._is_video_file(video_path):
             return None
 
         if not self.keyframe_extractor:
-            msg = f"[KEYFRAMES] Extractor no disponible para video: {video_path.name}"
+            msg = f"[KEYFRAMES] Extractor not available for video: {video_path.name}"
             if self.require_keyframes_for_videos:
                 raise RuntimeError(msg)
             logger.warning(msg)
@@ -261,7 +261,7 @@ class SimpleScanProcessor:
                 methods.append(method)
 
         for method in methods:
-            logger.info(f"[KEYFRAMES] Extrayendo frames con método: {method}")
+            logger.info(f"[KEYFRAMES] Extracting frames with method: {method}")
             result_frames = self.keyframe_extractor.extract_keyframes(
                 video_path,
                 method=method,
@@ -269,7 +269,7 @@ class SimpleScanProcessor:
             )
 
             if not result_frames.get("success"):
-                logger.warning(f"[KEYFRAMES] Método {method} falló: {result_frames.get('error', 'Unknown')}")
+                logger.warning(f"[KEYFRAMES] Method {method} failed: {result_frames.get('error', 'Unknown')}")
                 continue
 
             frame_count = int(result_frames.get("frame_count", 0) or 0)
@@ -282,8 +282,8 @@ class SimpleScanProcessor:
                 files_ok = len(extracted_files) > 0
 
             if frame_count > 0 and mapping_ok and files_ok:
-                logger.info(f"[KEYFRAMES] OK ({method}) -> {frame_count} frames en {result_frames['processing_time']:.1f}s")
-                logger.info(f"[KEYFRAMES] Guardados en: {result_frames['frames_dir']}")
+                logger.info(f"[KEYFRAMES] OK ({method}) -> {frame_count} frames in {result_frames['processing_time']:.1f}s")
+                logger.info(f"[KEYFRAMES] Saved to: {result_frames['frames_dir']}")
                 self.stats["frames_extracted"] += frame_count
                 return {
                     "frames_dir": result_frames["frames_dir"],
@@ -293,32 +293,32 @@ class SimpleScanProcessor:
                 }
 
             logger.warning(
-                f"[KEYFRAMES] Resultado incompleto ({method}) | "
+                f"[KEYFRAMES] Incomplete result ({method}) | "
                 f"frames={frame_count}, mapping_ok={mapping_ok}, files_ok={files_ok}"
             )
 
-        msg = f"[KEYFRAMES] No se pudieron obtener keyframes válidos para {video_path.name}"
+        msg = f"[KEYFRAMES] Could not obtain valid keyframes for {video_path.name}"
         if self.require_keyframes_for_videos:
             raise RuntimeError(msg)
         logger.warning(msg)
         return None
 
     def transcribe_file(self, audio_path: Path) -> Dict:
-        """Transcribe un archivo de audio con MÁXIMA CALIDAD"""
+        """Transcribes an audio file at MAXIMUM QUALITY"""
         try:
             self._ensure_model()
             frame_info = self._ensure_keyframes(audio_path)
 
-            # Detectar idioma: prefijo > lang.txt > projects.json > auto-detect
+            # Detect language: prefix > lang.txt > projects.json > auto-detect
             detected_lang = self._language_detector.detect(audio_path.name, audio_path.parent)
             project = self._find_project(audio_path)
             project_lang = project.get("language") if project else None
             effective_lang = detected_lang or project_lang  # filename/folder takes priority
             lang_source = "prefix" if detected_lang else ("project" if project_lang else "auto")
-            logger.info(f"[TRANSCRIBE] {audio_path.name} | Idioma: {(effective_lang or 'AUTO').upper()} ({lang_source})")
+            logger.info(f"[TRANSCRIBE] {audio_path.name} | Language: {(effective_lang or 'AUTO').upper()} ({lang_source})")
             start_time = time.time()
 
-            # CONFIGURACIÓN PARA MÁXIMA CALIDAD
+            # MAXIMUM QUALITY CONFIGURATION
             transcribe_params = {
                 'beam_size': 10,
                 'best_of': 5,
@@ -335,13 +335,13 @@ class SimpleScanProcessor:
             if effective_lang:
                 transcribe_params['language'] = effective_lang
 
-            # initial_prompt por proyecto — reduce alucinaciones y mejora vocabulario
+            # Per-project initial_prompt — reduces hallucinations and improves vocabulary
             project_prompt = project.get("initial_prompt") if project else None
             if project_prompt:
                 transcribe_params['initial_prompt'] = project_prompt
                 logger.info(f"  prompt: {project_prompt[:70]}...")
 
-            # Usar VAD solo si está disponible
+            # Use VAD only if available
             if self.vad_available:
                 try:
                     segments, info = self.model.transcribe(
@@ -350,9 +350,9 @@ class SimpleScanProcessor:
                         vad_parameters=dict(min_silence_duration_ms=500),
                         **transcribe_params
                     )
-                    logger.info(f"  ✓ VAD activado")
+                    logger.info(f"  ✓ VAD enabled")
                 except Exception as vad_error:
-                    logger.warning(f"  ⚠ VAD falló: {str(vad_error)[:50]}, continuando sin VAD")
+                    logger.warning(f"  ⚠ VAD failed: {str(vad_error)[:50]}, continuing without VAD")
                     segments, info = self.model.transcribe(
                         str(audio_path),
                         **transcribe_params
@@ -379,15 +379,15 @@ class SimpleScanProcessor:
 
             full_text, segments_list = _collect_segments(segments)
 
-            # Si VAD filtró todo el audio, reintentar sin VAD
+            # If VAD filtered out all the audio, retry without VAD
             if not full_text and self.vad_available:
-                logger.warning(f"  ⚠ VAD produjo 0 segmentos, reintentando sin VAD...")
+                logger.warning(f"  ⚠ VAD produced 0 segments, retrying without VAD...")
                 segments_no_vad, info = self.model.transcribe(str(audio_path), **transcribe_params)
                 full_text, segments_list = _collect_segments(segments_no_vad)
 
             transcription_text = " ".join(full_text)
 
-            # Limpieza de muletillas — opt-in via CLEAN_TRANSCRIPTION=true
+            # Filler-word cleanup — opt-in via CLEAN_TRANSCRIPTION=true
             if os.getenv("CLEAN_TRANSCRIPTION", "false").lower() == "true" and TUTORIAL_FEATURES_AVAILABLE:
                 clean_lang = info.language or effective_lang
                 transcription_text = clean_transcription(
@@ -410,7 +410,7 @@ class SimpleScanProcessor:
             if frame_info:
                 result["frame_info"] = frame_info
 
-            logger.info(f"[OK] {audio_path.name} - {elapsed:.1f}s | {len(segments_list)} segmentos")
+            logger.info(f"[OK] {audio_path.name} - {elapsed:.1f}s | {len(segments_list)} segments")
 
             return result
 
@@ -419,7 +419,7 @@ class SimpleScanProcessor:
             raise
 
     def _integrate_transcription_with_frames(self, transcription_result: dict, frame_info: dict):
-        """Integra la transcripción con el mapa de frames."""
+        """Merges the transcription into the frame map."""
         try:
             mapping_file = Path(frame_info["frames_dir"]) / "frame_mapping.json"
 
@@ -466,17 +466,18 @@ class SimpleScanProcessor:
                 with open(mapping_file, 'w', encoding='utf-8') as f:
                     json.dump(mapping_data, f, indent=2, ensure_ascii=False)
 
-                logger.info(f"[FRAMES+TRANS] Transcripción integrada con frames: {mapping_file}")
+                logger.info(f"[FRAMES+TRANS] Transcription merged with frames: {mapping_file}")
 
                 self._create_readable_mapping(mapping_file.parent, mapping_data)
 
         except Exception as e:
-            logger.error(f"[FRAMES+TRANS] Error integrando transcripción: {e}")
+            logger.error(f"[FRAMES+TRANS] Error merging transcription: {e}")
 
     def _create_readable_mapping(self, frames_dir: Path, mapping_data: dict):
         """
-        Crea un archivo markdown legible con frames, transcripción y descripciones visuales LLM.
-        Las descripciones visuales se activan con FRAME_DESCRIPTIONS=true en scan_config.env.
+        Creates a human-readable markdown file with frames, transcription, and
+        LLM visual descriptions. Visual descriptions are enabled via
+        FRAME_DESCRIPTIONS=true in scan_config.env.
         """
         try:
             md_file = frames_dir / "frames_with_transcription.md"
@@ -492,46 +493,46 @@ class SimpleScanProcessor:
                         frames_dir, transcription_mapping
                     )
                     if frame_descriptions:
-                        logger.info(f"[FRAMES+TRANS] {len(frame_descriptions)} frames descritos por LLM")
+                        logger.info(f"[FRAMES+TRANS] {len(frame_descriptions)} frames described by LLM")
                 except Exception as e:
-                    logger.warning(f"[FRAMES+TRANS] Descripción LLM omitida: {e}")
+                    logger.warning(f"[FRAMES+TRANS] LLM description skipped: {e}")
 
             with open(md_file, 'w', encoding='utf-8') as f:
-                f.write(f"# Frames y Transcripción: {video_info.get('name', 'Video')}\n\n")
-                f.write(f"**Duración:** {video_info.get('duration_formatted', 'N/A')}\n")
-                f.write(f"**Método de extracción:** {video_info.get('extraction_method', 'N/A')}\n")
+                f.write(f"# Frames and Transcription: {video_info.get('name', 'Video')}\n\n")
+                f.write(f"**Duration:** {video_info.get('duration_formatted', 'N/A')}\n")
+                f.write(f"**Extraction method:** {video_info.get('extraction_method', 'N/A')}\n")
                 f.write(f"**Total frames:** {video_info.get('total_frames', 0)}\n")
-                f.write(f"**Idioma:** {transcription_summary.get('language', 'N/A')}\n")
-                f.write(f"**Fecha:** {video_info.get('extraction_date', 'N/A')}\n\n")
+                f.write(f"**Language:** {transcription_summary.get('language', 'N/A')}\n")
+                f.write(f"**Date:** {video_info.get('extraction_date', 'N/A')}\n\n")
 
-                f.write("## Transcripción Completa\n\n")
-                f.write(f"{transcription_summary.get('full_transcription', 'Sin transcripción')}\n\n")
+                f.write("## Full Transcription\n\n")
+                f.write(f"{transcription_summary.get('full_transcription', 'No transcription')}\n\n")
 
                 f.write("---\n\n")
-                f.write("## Frames con Transcripción\n\n")
+                f.write("## Frames with Transcription\n\n")
 
                 for frame_file, frame_data in transcription_mapping.items():
                     f.write(f"### {frame_file}\n")
                     f.write(f"**Timestamp:** {frame_data.get('formatted_timestamp', 'N/A')}\n\n")
 
                     if frame_file in frame_descriptions:
-                        f.write(f"**Descripción visual:** {frame_descriptions[frame_file]}\n\n")
+                        f.write(f"**Visual description:** {frame_descriptions[frame_file]}\n\n")
 
                     full_text = frame_data.get('full_text', '').strip()
                     if full_text:
-                        f.write(f"**Transcripción:**\n{full_text}\n\n")
+                        f.write(f"**Transcription:**\n{full_text}\n\n")
                     else:
-                        f.write("*Sin transcripción cercana*\n\n")
+                        f.write("*No nearby transcription*\n\n")
 
                     f.write("---\n\n")
 
-            logger.info(f"[FRAMES+TRANS] Archivo legible creado: {md_file}")
+            logger.info(f"[FRAMES+TRANS] Readable file created: {md_file}")
 
         except Exception as e:
-            logger.error(f"[FRAMES+TRANS] Error creando archivo legible: {e}")
+            logger.error(f"[FRAMES+TRANS] Error creating readable file: {e}")
 
     def save_transcription(self, audio_path: Path, result: Dict):
-        """Guarda la transcripción"""
+        """Saves the transcription"""
         try:
             relative_path = audio_path.relative_to(self.audio_base)
             output_folder = self.transcriptions_base / relative_path.parent
@@ -561,7 +562,7 @@ class SimpleScanProcessor:
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, indent=2, ensure_ascii=False)
 
-        # Segmentos con timestamps, consumidos por el editor del dashboard
+        # Segments with timestamps, consumed by the dashboard editor
         segments_path = output_folder / f"{audio_path.stem}_segments.json"
         segments_data = {
             "audio_file": str(audio_path),
@@ -596,22 +597,22 @@ class SimpleScanProcessor:
                 logger.info(f"[TIMESTAMPS] {srt_path.name}")
 
             except Exception as e:
-                logger.warning(f"[WARN] Error guardando timestamps: {e}")
+                logger.warning(f"[WARN] Error saving timestamps: {e}")
 
         logger.info(f"[SAVE] {txt_path.name}")
 
     def process_file(self, audio_path: Path) -> bool:
-        """Procesa un archivo completo"""
+        """Processes a single file end to end"""
         try:
             if self.tracker.is_file_processed(audio_path):
-                logger.info(f"[SKIP] Ya procesado: {audio_path.name}")
+                logger.info(f"[SKIP] Already processed: {audio_path.name}")
                 self.stats["already_processed"] += 1
                 return True
 
             is_tutorial = TUTORIAL_FEATURES_AVAILABLE and is_tutorial_video(audio_path)
 
             if is_tutorial:
-                logger.info(f"[TUTORIAL] Detectado video tutorial: {audio_path.name}")
+                logger.info(f"[TUTORIAL] Tutorial video detected: {audio_path.name}")
                 self.stats["tutorials_processed"] += 1
 
             result = self.transcribe_file(audio_path)
@@ -628,28 +629,28 @@ class SimpleScanProcessor:
             return True
 
         except Exception as e:
-            logger.error(f"[ERROR] Fallo procesando {audio_path.name}: {str(e)}")
+            logger.error(f"[ERROR] Failed processing {audio_path.name}: {str(e)}")
             self.stats["errors"] += 1
             return False
 
     def run(self):
-        """Ejecutar procesamiento completo"""
+        """Runs the full processing pass"""
         print("=" * 72)
-        print("SIMPLE SCAN - Procesador con faster-whisper")
+        print("SIMPLE SCAN - faster-whisper processor")
         print("=" * 72)
         print()
 
         self.tracker.cleanup_old_entries(days=90)
 
-        logger.info("[INIT] Buscando archivos de audio...")
+        logger.info("[INIT] Looking for audio files...")
         audio_files = self.find_audio_files()
 
         if not audio_files:
-            logger.warning("[WARN] No se encontraron archivos de audio")
+            logger.warning("[WARN] No audio files found")
             return
 
         print()
-        print(f"[INFO] Archivos a procesar: {len(audio_files)}")
+        print(f"[INFO] Files to process: {len(audio_files)}")
         print()
 
         start_time = time.time()
@@ -671,30 +672,30 @@ class SimpleScanProcessor:
 
         print()
         print("=" * 72)
-        print("RESUMEN FINAL")
+        print("FINAL SUMMARY")
         print("=" * 72)
         print()
-        print(f"Archivos encontrados:      {self.stats['total_found']}")
-        print(f"Ya procesados (skip):      {self.stats['already_processed']}")
-        print(f"Procesados exitosamente:   {self.stats['processed']}")
-        print(f"Errores:                   {self.stats['errors']}")
+        print(f"Files found:               {self.stats['total_found']}")
+        print(f"Already processed (skip):  {self.stats['already_processed']}")
+        print(f"Successfully processed:    {self.stats['processed']}")
+        print(f"Errors:                    {self.stats['errors']}")
         if TUTORIAL_FEATURES_AVAILABLE:
-            print(f"Tutoriales procesados:      {self.stats['tutorials_processed']}")
-            print(f"Frames extraídos:           {self.stats['frames_extracted']}")
+            print(f"Tutorials processed:       {self.stats['tutorials_processed']}")
+            print(f"Frames extracted:          {self.stats['frames_extracted']}")
         print()
-        print(f"Tiempo total:              {total_time:.1f}s")
+        print(f"Total time:                {total_time:.1f}s")
         if self.stats['processed'] > 0:
             avg_time = total_time / self.stats['processed']
-            print(f"Tiempo promedio:           {avg_time:.1f}s/archivo")
+            print(f"Average time:              {avg_time:.1f}s/file")
         print()
-        print(f"Resultados en: {self.transcriptions_base}")
+        print(f"Results in: {self.transcriptions_base}")
         if TUTORIAL_FEATURES_AVAILABLE:
-            print(f"Frames guardados en: {self.frames_base}")
+            print(f"Frames saved to: {self.frames_base}")
         print()
         print("=" * 72)
 
         if self.stats['errors'] > 0:
-            print(f"\n[WARN] Hubo {self.stats['errors']} errores. Revisar log.")
+            print(f"\n[WARN] There were {self.stats['errors']} errors. Check the log.")
 
 
 def main():
@@ -702,10 +703,10 @@ def main():
         processor = SimpleScanProcessor()
         processor.run()
     except KeyboardInterrupt:
-        print("\n\n[CANCEL] Proceso cancelado por usuario")
+        print("\n\n[CANCEL] Process cancelled by user")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"[FATAL] Error fatal: {str(e)}", exc_info=True)
+        logger.error(f"[FATAL] Fatal error: {str(e)}", exc_info=True)
         sys.exit(1)
 
 

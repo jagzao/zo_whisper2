@@ -32,6 +32,13 @@ logs/
 /dashboard_*.png
 /dashboard_report.json
 
+# ── Harness reports ───────────────────────────────────────────────────────────
+quality_report.json
+security_report.json
+ut_report.json
+e2e_report.json
+harness_report.json
+
 # ── Entornos Python ──────────────────────────────────────────────────────────
 watcher/venv/
 deepseek/venv/
