@@ -47,6 +47,17 @@
             top: 0;
             z-index: 500;
         }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .brand img {
+            height: 2.25rem;
+            width: auto;
+            border-radius: 0.375rem;
+            box-shadow: 0 0 12px rgba(0,229,255,0.15);
+        }
         h1 { margin: 0; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
         h1 span { color: var(--accent); }
         .grid {
@@ -564,7 +575,10 @@
 </head>
 <body>
     <header>
-        <h1>Whisper <span>Dashboard</span></h1>
+        <div class="brand">
+            <img src="/static/logo.png" alt="ZO Systems">
+            <h1>Whisper <span>Dashboard</span></h1>
+        </div>
         <div class="row" style="margin:0;">
             <span id="runStatus" class="status pending">Ready</span>
             <button id="btnRunFull" onclick="run('full')">RUN Full</button>
@@ -688,7 +702,7 @@
                 <label>Output path</label>
                 <input type="text" id="pOutputPath" placeholder="C:/Dev/Zo/whisper/FolderTranscripciones">
                 <label>Handler</label>
-                <select id="pHandler"><option value="">None</option><option value="valeris">valeris</option><option value="zo">zo</option><option value="meeting_dev">meeting_dev</option></select>
+                <select id="pHandler"><option value="">None</option><option value="client_meeting">client_meeting</option><option value="zo">zo</option><option value="meeting_dev">meeting_dev</option></select>
                 <label>Language</label>
                 <select id="pLanguage"><option value="">Auto</option><option value="es">es</option><option value="en">en</option></select>
                 <label>Initial Whisper prompt</label>
@@ -1077,9 +1091,10 @@
             }
             list.innerHTML = segments.map((seg, idx) => {
                 const time = formatTime(seg.start);
+                const safe = escapeHtml(seg.text);
                 return `<div class="segment" data-idx="${idx}" data-start="${seg.start}" onclick="seekTo(${seg.start})">
                     <div class="timestamp">${time}</div>
-                    <div class="text">${escapeHtml(seg.text)}</div>
+                    <div class="text" data-text="${safe.replace(/"/g, '&quot;')}">${safe}</div>
                 </div>`;
             }).join('');
             window._segments = segments;
@@ -1164,28 +1179,27 @@
             const lower = query.toLowerCase().trim();
             let matches = 0;
             let firstMatch = null;
-            const segments = window._segments || [];
-            list.querySelectorAll('.segment').forEach((el, idx) => {
+            list.querySelectorAll('.segment').forEach(el => {
                 const textEl = el.querySelector('.text');
-                const text = segments[idx] ? segments[idx].text : textEl.textContent;
+                const text = textEl.dataset.text || textEl.textContent;
                 const textLower = text.toLowerCase();
                 const matchIndex = textLower.indexOf(lower);
                 const hasMatch = lower && matchIndex >= 0;
                 if (hasMatch) {
                     matches++;
                     if (!firstMatch) firstMatch = el;
-                    const before = escapeHtml(text.slice(0, matchIndex));
-                    const highlighted = escapeHtml(text.slice(matchIndex, matchIndex + lower.length));
-                    const after = escapeHtml(text.slice(matchIndex + lower.length));
-                    textEl.innerHTML = `${before}<mark>${highlighted}</mark>${after}`;
-                    el.classList.toggle('highlight', true);
+                    const before = text.slice(0, matchIndex);
+                    const highlighted = text.slice(matchIndex, matchIndex + lower.length);
+                    const after = text.slice(matchIndex + lower.length);
+                    textEl.innerHTML = `${escapeHtml(before)}<mark>${escapeHtml(highlighted)}</mark>${escapeHtml(after)}`;
+                    el.classList.add('highlight');
                 } else {
                     textEl.textContent = text;
-                    el.classList.toggle('highlight', false);
+                    el.classList.remove('highlight');
                 }
                 el.style.display = lower && !hasMatch ? 'none' : 'block';
             });
-            countEl.textContent = lower ? `${matches} matches` : '';
+            if (countEl) countEl.textContent = lower ? `${matches} matches` : '';
             if (firstMatch) {
                 firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }

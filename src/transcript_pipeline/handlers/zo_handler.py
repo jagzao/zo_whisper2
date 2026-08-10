@@ -15,12 +15,12 @@ if ensure_watcher_importable():
         pass
 
 _INTERVIEW_PROMPT = (
-    "Eres un asistente de preparación de entrevistas. Analiza esta transcripción y responde en el mismo idioma:\n\n"
-    "## Resumen ejecutivo (3-5 bullets)\n"
-    "## Preguntas técnicas que hicieron (lista)\n"
-    "## Temas donde el candidato puede mejorar\n"
-    "## Próximos pasos recomendados\n\n"
-    "Sé conciso y accionable."
+    "You are an interview-prep assistant. Analyze this transcript and respond in the same language:\n\n"
+    "## Executive summary (3-5 bullets)\n"
+    "## Technical questions asked (list)\n"
+    "## Areas the candidate could improve\n"
+    "## Recommended next steps\n\n"
+    "Be concise and actionable."
 )
 
 class ZoHandler:
@@ -29,8 +29,8 @@ class ZoHandler:
 
     def process(self, transcription_data, original_file_path, project_config: dict = None):
         """
-        Procesa una entrevista para Zo Portfolio.
-        Crea subcarpeta y genera templates: Offer, Interview_Log, Summary, Study_Guide.
+        Processes an interview for Zo Portfolio.
+        Creates a subfolder and generates templates: Offer, Interview_Log, Summary, Study_Guide.
         """
         try:
             filename = original_file_path.stem
@@ -45,23 +45,23 @@ class ZoHandler:
 
             log_path = target_folder / "Interview_Log.md"
             with open(log_path, 'w', encoding='utf-8') as f:
-                f.write(f"# Registro de Entrevista: {clean_name}\n\n")
-                f.write(f"**Fecha:** {date_str}\n")
-                f.write(f"**Archivo:** {original_file_path.name}\n\n")
-                f.write("## Transcripción Completa\n\n")
+                f.write(f"# Interview Log: {clean_name}\n\n")
+                f.write(f"**Date:** {date_str}\n")
+                f.write(f"**File:** {original_file_path.name}\n\n")
+                f.write("## Full Transcript\n\n")
                 f.write(transcription_data['text'])
-            logger.info(f"[ZO] Log guardado en: {log_path}")
+            logger.info(f"[ZO] Log saved to: {log_path}")
 
             offer_path = target_folder / "Offer.md"
             if not offer_path.exists():
                 with open(offer_path, 'w', encoding='utf-8') as f:
-                    f.write(f"# Oferta Laboral: {clean_name}\n\n")
-                    f.write("## Detalles del Puesto\n\n")
-                    f.write("- **Rol:** \n")
-                    f.write("- **Empresa:** \n")
-                    f.write("- **Salario:** \n\n")
-                    f.write("## Requisitos\n\n")
-                logger.info(f"[ZO] Template Offer creado")
+                    f.write(f"# Job Offer: {clean_name}\n\n")
+                    f.write("## Position Details\n\n")
+                    f.write("- **Role:** \n")
+                    f.write("- **Company:** \n")
+                    f.write("- **Salary:** \n\n")
+                    f.write("## Requirements\n\n")
+                logger.info(f"[ZO] Offer template created")
 
             summary_path = target_folder / "Summary.md"
             if not summary_path.exists():
@@ -73,12 +73,12 @@ class ZoHandler:
                             system_prompt=custom_prompt
                         )
                         summary_path.write_text(
-                            f"# Análisis de Entrevista: {clean_name}\n\n{analysis}\n",
+                            f"# Interview Analysis: {clean_name}\n\n{analysis}\n",
                             encoding='utf-8'
                         )
-                        logger.info(f"[ZO] Análisis LLM generado: {summary_path}")
+                        logger.info(f"[ZO] LLM analysis generated: {summary_path}")
                     except Exception as e:
-                        logger.warning(f"[ZO] LLM falló ({e}), usando plantilla")
+                        logger.warning(f"[ZO] LLM failed ({e}), using template")
                         _write_empty_summary(summary_path, clean_name)
                 else:
                     _write_empty_summary(summary_path, clean_name)
@@ -86,21 +86,21 @@ class ZoHandler:
             guide_path = target_folder / "Study_Guide.md"
             if not guide_path.exists():
                 with open(guide_path, 'w', encoding='utf-8') as f:
-                    f.write(f"# Guía de Estudio Post-Entrevista\n\n")
-                    f.write("## Preguntas Técnicas Falladas\n\n")
-                    f.write("## Temas a Reforzar\n\n")
-                logger.info(f"[ZO] Template Study Guide creado")
+                    f.write(f"# Post-Interview Study Guide\n\n")
+                    f.write("## Technical Questions Missed\n\n")
+                    f.write("## Topics to Reinforce\n\n")
+                logger.info(f"[ZO] Study Guide template created")
 
             return True
 
         except Exception as e:
-            logger.error(f"[ZO] Error procesando {original_file_path.name}: {e}")
+            logger.error(f"[ZO] Error processing {original_file_path.name}: {e}")
             return False
 
 
 def _write_empty_summary(path: Path, name: str):
     path.write_text(
-        f"# Resumen y Observaciones: {name}\n\n"
-        "## Impresiones Generales\n\n## Feedback Recibido\n",
+        f"# Summary and Observations: {name}\n\n"
+        "## General Impressions\n\n## Feedback Received\n",
         encoding="utf-8"
     )

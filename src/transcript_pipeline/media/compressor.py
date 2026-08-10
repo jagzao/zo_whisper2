@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Video Compressor & Mover - Comprime videos con alta eficiencia (H.265)
-y los mueve a su carpeta destino.
+Video Compressor & Mover - Compresses videos with high efficiency (H.265)
+and moves them to their destination folder.
 """
 
 import json
@@ -17,7 +17,7 @@ from transcript_pipeline.config import PROJECT_ROOT
 
 
 def get_video_info(video_path):
-    """Obtiene información del video usando ffprobe"""
+    """Gets video information using ffprobe"""
     cmd = [
         'ffprobe', '-v', 'quiet', '-print_format', 'json',
         '-show_format', '-show_streams', str(video_path)
@@ -27,13 +27,13 @@ def get_video_info(video_path):
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
         return json.loads(result.stdout)
     except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
-        print(f"[ERROR] No se pudo obtener info del video: {e}")
+        print(f"[ERROR] Could not get video info: {e}")
         return None
 
 
 def compress_video_high_efficiency(input_path, output_path):
-    """Comprime video con H.265 usando CRF configurable (24-26 recomendado)."""
-    print(f"[INFO] Analizando: {input_path.name}")
+    """Compresses video with H.265 using a configurable CRF (24-26 recommended)."""
+    print(f"[INFO] Analyzing: {input_path.name}")
 
     info = get_video_info(input_path)
     if not info:
@@ -44,7 +44,7 @@ def compress_video_high_efficiency(input_path, output_path):
 
     video_stream = next((s for s in info['streams'] if s['codec_type'] == 'video'), None)
     if not video_stream:
-        print("[ERROR] No se encontró stream de video")
+        print("[ERROR] No video stream found")
         return False
 
     width = int(video_stream.get('width', 0))
@@ -55,11 +55,11 @@ def compress_video_high_efficiency(input_path, output_path):
     except Exception:
         fps = 30.0
 
-    print(f"[INFO] Duración: {duration:.1f}s | Tamaño actual: {current_size_mb:.1f}MB")
-    print(f"[INFO] Resolución: {width}x{height} | FPS: {fps:.1f}")
+    print(f"[INFO] Duration: {duration:.1f}s | Current size: {current_size_mb:.1f}MB")
+    print(f"[INFO] Resolution: {width}x{height} | FPS: {fps:.1f}")
 
-    # H.265 ofrece mejor ratio calidad/tamano que H.264.
-    # Recomendado por usuario: CRF entre 24 y 26.
+    # H.265 offers a better quality/size ratio than H.264.
+    # Recommended CRF range: 24 to 26.
     try:
         crf = int(os.getenv("VIDEO_COMPRESS_CRF", "25"))
     except ValueError:
@@ -69,17 +69,17 @@ def compress_video_high_efficiency(input_path, output_path):
 
     cmd = [
         'ffmpeg', '-i', str(input_path),
-        '-c:v', 'libx265',            # Codec H.265/HEVC
-        '-preset', 'slow',            # Equilibrio compresion/tiempo en HEVC
-        '-crf', str(crf),             # Rango recomendado: 24-26
-        '-tag:v', 'hvc1',             # Mejor compatibilidad en reproductores
-        '-c:a', 'copy',               # Copiar audio sin recodificar
-        '-movflags', '+faststart',   # Optimización para streaming
-        '-pix_fmt', 'yuv420p',      # Formato compatible
-        '-y', str(output_path)       # Sobrescribir si existe
+        '-c:v', 'libx265',            # H.265/HEVC codec
+        '-preset', 'slow',            # Compression/time tradeoff for HEVC
+        '-crf', str(crf),             # Recommended range: 24-26
+        '-tag:v', 'hvc1',             # Better player compatibility
+        '-c:a', 'copy',               # Copy audio without re-encoding
+        '-movflags', '+faststart',   # Streaming optimization
+        '-pix_fmt', 'yuv420p',      # Compatible pixel format
+        '-y', str(output_path)       # Overwrite if it exists
     ]
 
-    print(f"[INFO] Comprimiendo con H.265 + CRF {crf} + preset slow...")
+    print(f"[INFO] Compressing with H.265 + CRF {crf} + preset slow...")
 
     try:
         process = subprocess.Popen(
@@ -92,31 +92,30 @@ def compress_video_high_efficiency(input_path, output_path):
         stdout, stderr = process.communicate()
 
         if process.returncode != 0:
-            print(f"[ERROR] FFmpeg falló: {stderr}")
+            print(f"[ERROR] FFmpeg failed: {stderr}")
             return False
 
         if output_path.exists():
             final_size_mb = output_path.stat().st_size / (1024 * 1024)
             reduction = ((current_size_mb - final_size_mb) / current_size_mb * 100) if current_size_mb > 0 else 0
-            print(f"[OK] Comprimido: {current_size_mb:.1f}MB → {final_size_mb:.1f}MB ({reduction:.1f}% reducción)")
+            print(f"[OK] Compressed: {current_size_mb:.1f}MB → {final_size_mb:.1f}MB ({reduction:.1f}% reduction)")
             return True
         else:
-            print("[ERROR] No se generó el archivo de salida")
+            print("[ERROR] Output file was not generated")
             return False
 
     except Exception as e:
-        print(f"[ERROR] Excepción durante compresión: {e}")
+        print(f"[ERROR] Exception during compression: {e}")
         return False
 
 
 def get_target_folder(filename, base_path):
-    """Determina la carpeta destino según el prefijo del archivo"""
+    """Determines the destination folder based on the filename prefix"""
     filename_lower = filename.lower()
 
-    # Mapa de prefijos a carpetas (igual que en pipeline/master.py)
+    # Prefix-to-folder map (same convention as pipeline/master.py)
     target_map = {
         "zo_": base_path / "Videos" / "py_zo",
-        "valeris_": base_path / "Videos" / "py_valeris",
         "jm_": base_path / "Videos" / "py_jm",
     }
 
@@ -131,18 +130,18 @@ def get_target_folder(filename, base_path):
 
 
 def process_video_compress_folder(base_path: Path = PROJECT_ROOT) -> int:
-    """Procesa la carpeta Video_compress: comprime y mueve archivos"""
+    """Processes the Video_compress folder: compresses and moves files"""
     compress_folder = base_path / "Video_compress"
 
     print("=" * 60)
-    print("COMPRESION DE VIDEOS - H.265 (CRF 24-26)")
+    print("VIDEO COMPRESSION - H.265 (CRF 24-26)")
     print("=" * 60)
     print()
 
     if not compress_folder.exists():
-        print("[INFO] Carpeta Video_compress no existe, creándola...")
+        print("[INFO] Video_compress folder doesn't exist, creating it...")
         compress_folder.mkdir(exist_ok=True)
-        print(f"[OK] Carpeta creada: {compress_folder}")
+        print(f"[OK] Folder created: {compress_folder}")
         return 0
 
     video_extensions = {'.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v'}
@@ -150,16 +149,16 @@ def process_video_compress_folder(base_path: Path = PROJECT_ROOT) -> int:
                    if f.is_file() and f.suffix.lower() in video_extensions]
 
     if not video_files:
-        print("[INFO] No hay videos pendientes de compresión en Video_compress/")
+        print("[INFO] No videos pending compression in Video_compress/")
         return 0
 
-    print(f"[INFO] Encontrados {len(video_files)} video(s) para comprimir")
+    print(f"[INFO] Found {len(video_files)} video(s) to compress")
     print()
 
     processed_count = 0
 
     for video_file in video_files:
-        print(f"\n[PROCESANDO] {video_file.name}")
+        print(f"\n[PROCESSING] {video_file.name}")
         print("-" * 50)
 
         target_folder = get_target_folder(video_file.name, base_path)
@@ -180,21 +179,21 @@ def process_video_compress_folder(base_path: Path = PROJECT_ROOT) -> int:
                 shutil.move(str(temp_compressed), str(final_path))
                 video_file.unlink()
 
-                print(f"[OK] Movido a: {final_path}")
+                print(f"[OK] Moved to: {final_path}")
                 processed_count += 1
             else:
                 if temp_compressed.exists():
                     temp_compressed.unlink()
-                print(f"[ERROR] No se pudo comprimir {video_file.name}")
+                print(f"[ERROR] Could not compress {video_file.name}")
 
         except Exception as e:
-            print(f"[ERROR] Procesando {video_file.name}: {e}")
+            print(f"[ERROR] Processing {video_file.name}: {e}")
             if temp_compressed.exists():
                 temp_compressed.unlink()
 
     print()
     print("=" * 60)
-    print(f"[RESUMEN] Videos procesados: {processed_count}/{len(video_files)}")
+    print(f"[SUMMARY] Videos processed: {processed_count}/{len(video_files)}")
     print("=" * 60)
 
     return processed_count
@@ -210,10 +209,10 @@ def main() -> None:
         count = process_video_compress_folder()
         sys.exit(0 if count >= 0 else 1)
     except KeyboardInterrupt:
-        print("\n[INTERRUMPIDO] Proceso cancelado por el usuario")
+        print("\n[INTERRUPTED] Process cancelled by user")
         sys.exit(1)
     except Exception as e:
-        print(f"\n[ERROR CRÍTICO] {e}")
+        print(f"\n[CRITICAL ERROR] {e}")
         sys.exit(1)
 
 

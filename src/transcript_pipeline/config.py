@@ -1,10 +1,10 @@
-"""Resolución del root del proyecto y configuración compartida.
+"""Project root resolution and shared configuration.
 
-Todo el pipeline asume que `audio/`, `Videos/`, `CarpetaTranscripciones/`,
-`projects.json` y `scan_config.env` viven en la raíz del repo. En vez de
-repetir `Path(__file__).parent` (frágil una vez que el código vive dentro
-de `src/transcript_pipeline/...`) o depender del cwd desde el que se lanza
-el script, se busca hacia arriba el marcador `pyproject.toml` una sola vez.
+The whole pipeline assumes `audio/`, `Videos/`, `CarpetaTranscripciones/`,
+`projects.json`, and `scan_config.env` live at the repo root. Instead of
+repeating `Path(__file__).parent` (fragile once the code lives inside
+`src/transcript_pipeline/...`) or depending on the cwd the script was
+launched from, it searches upward for the `pyproject.toml` marker once.
 """
 
 from __future__ import annotations
@@ -35,5 +35,5 @@ SCAN_CONFIG_ENV = PROJECT_ROOT / "scan_config.env"
 
 
 def load_env() -> None:
-    """Carga scan_config.env desde la raíz del proyecto, sin importar el cwd."""
+    """Loads scan_config.env from the project root, regardless of cwd."""
     load_dotenv(SCAN_CONFIG_ENV)

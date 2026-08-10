@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Dashboard UI para controlar el pipeline de transcripción.
+Dashboard UI to control the transcription pipeline.
 
-Funciones:
-- Visualiza carpetas de entrada/salida.
-- Muestra relación archivo de audio/video -> transcripción.
-- Drop area para subir archivos a Video_compress/ con prefijo de proyecto.
-- CRUD de proyectos (projects.json).
-- Botón RUN para ejecutar compress_and_move + master_processor.
+Features:
+- Displays input/output folders.
+- Shows the audio/video file -> transcription relationship.
+- Drop area to upload files to Video_compress/ with a project prefix.
+- Project CRUD (projects.json).
+- RUN button to execute compress_and_move + master_processor.
 """
 
 from __future__ import annotations
@@ -49,9 +49,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 
-# ── Estado global de ejecución ───────────────────────────────────────────
+# ── Global run state ─────────────────────────────────────────────────────
 _run_state: dict[str, Any] = {
     "running": False,
     "mode": None,
@@ -63,7 +63,7 @@ _run_state: dict[str, Any] = {
 
 
 def _python_exe() -> str:
-    """Resuelve el intérprete Python a usar, igual que RUN_MAX_QUALITY.bat."""
+    """Resolves which Python interpreter to use, same logic as RUN_MAX_QUALITY.bat."""
     candidates = [
         ROOT / "watcher" / "venv" / "Scripts" / "python.exe",
         Path(r"C:\ProgramData\miniconda3\python.exe"),
@@ -79,7 +79,7 @@ def _python_exe() -> str:
 PYTHON_EXE = _python_exe()
 
 
-# ── Helpers de archivos ──────────────────────────────────────────────────
+# ── File helpers ──────────────────────────────────────────────────────────
 def _ensure_folders() -> None:
     for folder in (VIDEO_COMPRESS, AUDIO_BASE, VIDEOS_BASE, TRANSCRIPTIONS_BASE):
         folder.mkdir(parents=True, exist_ok=True)
@@ -91,7 +91,7 @@ def _load_projects() -> list[dict]:
     try:
         return json.loads(PROJECTS_PATH.read_text(encoding="utf-8")).get("projects", [])
     except Exception as e:
-        logger.error("[PROJECTS] Error cargando projects.json: %s", e)
+        logger.error("[PROJECTS] Error loading projects.json: %s", e)
         return []
 
 
@@ -101,7 +101,7 @@ def _save_projects(projects: list[dict]) -> bool:
         PROJECTS_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         return True
     except Exception as e:
-        logger.error("[PROJECTS] Error guardando projects.json: %s", e)
+        logger.error("[PROJECTS] Error saving projects.json: %s", e)
         return False
 
 
@@ -129,7 +129,7 @@ def _count_files(folder: Path, extensions: set[str] | None = None, recursive: bo
 
 
 def _detect_language(filename: str, project: dict | None) -> str:
-    """Idioma visible: prefijo es_/en_ > project.language > auto."""
+    """Displayed language: es_/en_ prefix > project.language > auto."""
     name_lower = filename.lower()
     if name_lower.startswith("es_"):
         return "es"
@@ -161,7 +161,7 @@ def _file_status(path: Path) -> str:
 
 
 def _resolve_transcription(media_path: Path) -> dict | None:
-    """Busca la transcripción correspondiente a un archivo de audio/video."""
+    """Finds the transcription matching an audio/video file."""
     try:
         rel = media_path.relative_to(VIDEOS_BASE)
         output_folder = TRANSCRIPTIONS_BASE / rel.parent
@@ -217,14 +217,14 @@ def _parse_segments(segments_path: Path, text: str = "", duration: float = 0) ->
             return data.get("segments", [])
         except Exception:
             pass
-    # Fallback: un solo segmento con todo el texto
+    # Fallback: a single segment with the whole text
     if text:
         return [{"start": 0.0, "end": duration, "text": text}]
     return []
 
 
 def _resolve_frames(media_path: Path) -> dict | None:
-    """Busca la carpeta de frames y mapping JSON correspondiente a un video."""
+    """Finds the frames folder and mapping JSON matching a video."""
     try:
         rel = media_path.relative_to(VIDEOS_BASE)
         output_folder = TRANSCRIPTIONS_BASE / rel.parent
@@ -235,7 +235,7 @@ def _resolve_frames(media_path: Path) -> dict | None:
         except ValueError:
             output_folder = TRANSCRIPTIONS_BASE
 
-    # KeyframeExtractor guarda en: CarpetaTranscripciones/<project>/<stem>_Frames/<stem>/
+    # KeyframeExtractor saves to: CarpetaTranscripciones/<project>/<stem>_Frames/<stem>/
     frames_parent = output_folder / f"{media_path.stem}_Frames" / media_path.stem
     mapping_file = frames_parent / "frame_mapping.json"
     if not mapping_file.exists():
@@ -252,7 +252,7 @@ def _resolve_frames(media_path: Path) -> dict | None:
             "count": len(frames),
         }
     except Exception as e:
-        logger.warning("[FRAMES] Error leyendo mapping: %s", e)
+        logger.warning("[FRAMES] Error reading mapping: %s", e)
         return None
 
 
@@ -343,16 +343,16 @@ def api_projects_update() -> dict:
     if action == "create":
         new_project = payload.get("project")
         if not new_project or not new_project.get("name"):
-            return jsonify({"ok": False, "error": "Nombre de proyecto requerido"}), 400
+            return jsonify({"ok": False, "error": "Project name required"}), 400
         if any(p["name"] == new_project["name"] for p in projects):
-            return jsonify({"ok": False, "error": "Proyecto ya existe"}), 400
+            return jsonify({"ok": False, "error": "Project already exists"}), 400
         projects.append(new_project)
 
     elif action == "update":
         name = payload.get("name")
         updated = payload.get("project")
         if not name or not updated:
-            return jsonify({"ok": False, "error": "Datos incompletos"}), 400
+            return jsonify({"ok": False, "error": "Incomplete data"}), 400
         projects = [updated if p["name"] == name else p for p in projects]
 
     elif action == "delete":
@@ -360,27 +360,27 @@ def api_projects_update() -> dict:
         projects = [p for p in projects if p["name"] != name]
 
     else:
-        return jsonify({"ok": False, "error": "Acción desconocida"}), 400
+        return jsonify({"ok": False, "error": "Unknown action"}), 400
 
     if _save_projects(projects):
         return jsonify({"ok": True, "projects": projects})
-    return jsonify({"ok": False, "error": "No se pudo guardar projects.json"}), 500
+    return jsonify({"ok": False, "error": "Could not save projects.json"}), 500
 
 
 @app.route("/api/upload", methods=["POST"])
 def api_upload() -> dict:
     if "file" not in request.files:
-        return jsonify({"ok": False, "error": "No se envió archivo"}), 400
+        return jsonify({"ok": False, "error": "No file sent"}), 400
 
     file = request.files["file"]
     if not file.filename:
-        return jsonify({"ok": False, "error": "Nombre vacío"}), 400
+        return jsonify({"ok": False, "error": "Empty filename"}), 400
 
     project_id = request.form.get("project", "").strip()
     filename = Path(file.filename).name
     ext = Path(filename).suffix.lower()
     if ext not in SUPPORTED_MEDIA:
-        return jsonify({"ok": False, "error": f"Formato no soportado: {ext}"}), 400
+        return jsonify({"ok": False, "error": f"Unsupported format: {ext}"}), 400
 
     chosen_project = None
     if project_id:
@@ -389,7 +389,7 @@ def api_upload() -> dict:
                 chosen_project = project
                 break
 
-    # Si el archivo no tiene prefijo reconocible y se eligió proyecto, aplicar primer prefijo
+    # If the file has no recognizable prefix and a project was chosen, apply its first prefix
     if chosen_project:
         rules = chosen_project.get("match", {})
         prefixes = rules.get("prefix", [])
@@ -419,10 +419,10 @@ def api_upload() -> dict:
 def api_run(mode: str) -> dict:
     global _run_state
     if _run_state["running"]:
-        return jsonify({"ok": False, "error": "Ya hay una ejecución en curso"}), 409
+        return jsonify({"ok": False, "error": "A run is already in progress"}), 409
 
     if mode not in ("full", "compress", "transcribe"):
-        return jsonify({"ok": False, "error": "Modo inválido"}), 400
+        return jsonify({"ok": False, "error": "Invalid mode"}), 400
 
     _run_state.update(
         {
@@ -457,7 +457,7 @@ def api_logs() -> dict:
 def api_transcription() -> dict:
     path = request.args.get("path", "")
     if not path or not Path(path).exists():
-        return jsonify({"ok": False, "error": "Transcripción no encontrada"}), 404
+        return jsonify({"ok": False, "error": "Transcription not found"}), 404
     try:
         text = Path(path).read_text(encoding="utf-8", errors="ignore")
         folder = Path(path).parent
@@ -492,13 +492,13 @@ def api_transcription() -> dict:
 
 @app.route("/stream/<path:filename>")
 def stream_media(filename: str) -> Any:
-    """Sirve archivos de audio/video bajo Videos/ o audio/ para el reproductor."""
+    """Serves audio/video files under Videos/ or audio/ for the player."""
     safe_path = filename.replace("/", os.sep).replace("\\", os.sep)
     target = ROOT / safe_path
     target_resolved = target.resolve()
     root_resolved = ROOT.resolve()
     if not str(target_resolved).startswith(str(root_resolved)) or not target.exists():
-        return jsonify({"ok": False, "error": "No encontrado"}), 404
+        return jsonify({"ok": False, "error": "Not found"}), 404
     return send_from_directory(str(target.parent), target.name)
 
 
@@ -508,10 +508,10 @@ def api_transcription_save() -> dict:
     path = payload.get("path", "")
     text = payload.get("text", "")
     if not path or not Path(path).exists():
-        return jsonify({"ok": False, "error": "Transcripción no encontrada"}), 404
+        return jsonify({"ok": False, "error": "Transcription not found"}), 404
     try:
         Path(path).write_text(text, encoding="utf-8")
-        # Actualizar texto dentro de segments.json si existe
+        # Update text inside segments.json if it exists
         segments_path = Path(path).parent / f"{Path(path).stem}_segments.json"
         if segments_path.exists():
             try:
@@ -529,10 +529,10 @@ def api_transcription_save() -> dict:
 def api_delete_file() -> dict:
     path = request.args.get("path", "")
     if not path:
-        return jsonify({"ok": False, "error": "Ruta requerida"}), 400
+        return jsonify({"ok": False, "error": "Path required"}), 400
     target = Path(path)
     if not target.exists() or not str(target.resolve()).startswith(str(ROOT.resolve())):
-        return jsonify({"ok": False, "error": "Archivo no encontrado o no permitido"}), 404
+        return jsonify({"ok": False, "error": "File not found or not allowed"}), 404
     try:
         transcription = _resolve_transcription(target)
         target.unlink()
@@ -544,8 +544,8 @@ def api_delete_file() -> dict:
                     try:
                         child.unlink()
                     except Exception as e:
-                        logger.warning("[DELETE] No se pudo borrar %s: %s", child, e)
-        # Limpiar de processed_files.json
+                        logger.warning("[DELETE] Could not delete %s: %s", child, e)
+        # Clean up processed_files.json
         try:
             if PROCESSED_DB.exists():
                 db = json.loads(PROCESSED_DB.read_text(encoding="utf-8"))
@@ -554,7 +554,7 @@ def api_delete_file() -> dict:
                     del db[k]
                 PROCESSED_DB.write_text(json.dumps(db, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception as e:
-            logger.warning("[DELETE] No se pudo limpiar DB: %s", e)
+            logger.warning("[DELETE] Could not clean up DB: %s", e)
         return jsonify({"ok": True})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -564,39 +564,39 @@ def api_delete_file() -> dict:
 def api_frames() -> dict:
     path = request.args.get("path", "")
     if not path:
-        return jsonify({"ok": False, "error": "Ruta requerida"}), 400
+        return jsonify({"ok": False, "error": "Path required"}), 400
     target = Path(path)
     if not target.exists() or not str(target.resolve()).startswith(str(ROOT.resolve())):
-        return jsonify({"ok": False, "error": "Archivo no encontrado"}), 404
+        return jsonify({"ok": False, "error": "File not found"}), 404
     info = _resolve_frames(target)
     if not info:
-        return jsonify({"ok": False, "error": "No hay frames disponibles"}), 404
+        return jsonify({"ok": False, "error": "No frames available"}), 404
     return jsonify({"ok": True, **info})
 
 
 @app.route("/frame/<path:filename>")
 def serve_frame(filename: str) -> Any:
-    """Sirve imágenes de frames bajo CarpetaTranscripciones/."""
+    """Serves frame images under CarpetaTranscripciones/."""
     safe_path = filename.replace("/", os.sep).replace("\\", os.sep)
     target = TRANSCRIPTIONS_BASE / safe_path
     target_resolved = target.resolve()
     root_resolved = ROOT.resolve()
     if not str(target_resolved).startswith(str(root_resolved)) or not target.exists():
-        return jsonify({"ok": False, "error": "Frame no encontrado"}), 404
+        return jsonify({"ok": False, "error": "Frame not found"}), 404
     return send_from_directory(str(target.parent), target.name)
 
 
 # ── Pipeline runner ─────────────────────────────────────────────────────
 def _run_pipeline(mode: str) -> None:
     global _run_state
-    logger.info("[RUN] Iniciando pipeline mode=%s", mode)
+    logger.info("[RUN] Starting pipeline mode=%s", mode)
 
     def append_log(msg: str) -> None:
         _run_state["log_tail"] += f"{msg}\n"
 
     try:
         if mode in ("full", "compress"):
-            append_log("PASO 1: Compresión de videos...")
+            append_log("STEP 1: Compressing videos...")
             result = subprocess.run(
                 [PYTHON_EXE, "compress_and_move.py"],
                 cwd=str(ROOT),
@@ -610,7 +610,7 @@ def _run_pipeline(mode: str) -> None:
                 append_log(result.stderr)
 
         if mode in ("full", "transcribe"):
-            append_log("PASO 2: Organización + transcripción...")
+            append_log("STEP 2: Organization + transcription...")
             result = subprocess.run(
                 [PYTHON_EXE, "master_processor.py"],
                 cwd=str(ROOT),
@@ -622,9 +622,9 @@ def _run_pipeline(mode: str) -> None:
             append_log(result.stdout)
             if result.returncode != 0:
                 append_log(result.stderr)
-                raise RuntimeError("master_processor.py falló")
+                raise RuntimeError("master_processor.py failed")
 
-        append_log("PROCESO FINALIZADO")
+        append_log("PROCESS FINISHED")
     except Exception as e:
         logger.error("[RUN] Error: %s", e)
         _run_state["error"] = str(e)

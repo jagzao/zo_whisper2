@@ -1,11 +1,10 @@
-"""Contrato que deben cumplir los handlers por proyecto.
+"""Contract that per-project handlers must satisfy.
 
-`MasterProcessor` no conoce Valeris, Zo ni ningún proyecto específico:
-solo sabe que, dado un `ProjectHandler`, puede llamar `.process(...)`.
-Qué handler usar para qué archivo lo decide `projects.json` (ver
-`transcript_pipeline.projects.match_project`). Agregar un proyecto nuevo
-es agregar una entrada en el JSON + opcionalmente un handler nuevo, no
-tocar el pipeline.
+`MasterProcessor` doesn't know about any specific project: it only knows
+that, given a `ProjectHandler`, it can call `.process(...)`. Which handler
+to use for which file is decided by `projects.json` (see
+`transcript_pipeline.projects.match_project`). Adding a new project means
+adding a JSON entry + optionally a new handler, not touching the pipeline.
 """
 
 from __future__ import annotations

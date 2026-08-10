@@ -1,5 +1,5 @@
 {
-  "_comment": "Copia este archivo a projects.json y ajusta con tus proyectos reales. Para agregar un proyecto: copia cualquier bloque y ajusta los campos. custom_fillers=palabras extra a eliminar, corrections=correcciones de Whisper, summary_prompt=prompt LLM para el resumen (distinto de initial_prompt que es para Whisper).",
+  "_comment": "Copy this file to projects.json and adjust it with your real projects. To add a project: copy any block and adjust the fields. custom_fillers=extra words to strip, corrections=Whisper vocabulary corrections, summary_prompt=LLM prompt for the summary (different from initial_prompt, which is for Whisper).",
   "projects": [
     {
       "name": "Northwind",
@@ -9,7 +9,7 @@
       },
       "videos_subfolder": "py_northwind",
       "output_path": "C:/Dev/ClientProjects/Northwind",
-      "handler": "valeris",
+      "handler": "client_meeting",
       "language": "en",
       "initial_prompt": "Meeting of the Northwind development team. Participants: Alex, Sam, Jordan, Taylor, Morgan. Tools: Mirth Connect, Azure DevOps, Azure Portal, .NET, SQL Server, C#, sprints, QP workflow.",
       "summary_prompt": "You are an executive assistant for a software development team. From this transcript extract and structure:\n1. **Assigned tasks** (task + responsible person)\n2. **Bugs discussed** (bug number if mentioned + description)\n3. **Technical decisions made**\n4. **Next sprint actions**\nBe concise. Use bullet points. Respond in the same language as the transcript.",

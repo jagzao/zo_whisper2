@@ -1,9 +1,8 @@
-"""MasterProcessor — orquesta organización de archivos + transcripción + routing.
+"""MasterProcessor — orchestrates file organization + transcription + routing.
 
-No conoce Valeris, Zo ni ningún proyecto en particular: `projects.json`
-declara las reglas de match y qué `ProjectHandler` (ver
-`transcript_pipeline.handlers`) usar para cada uno. Agregar un proyecto
-nuevo es una entrada en el JSON, no una rama de código aquí.
+Doesn't know about any specific project: `projects.json` declares the match
+rules and which `ProjectHandler` (see `transcript_pipeline.handlers`) to use
+for each one. Adding a new project is a JSON entry, not a code branch here.
 """
 
 from __future__ import annotations
@@ -15,8 +14,8 @@ import sys
 from pathlib import Path
 
 from transcript_pipeline.config import PROJECT_ROOT, PROJECTS_CONFIG_PATH, load_env
+from transcript_pipeline.handlers.client_meeting_handler import ClientMeetingHandler
 from transcript_pipeline.handlers.meeting_dev_handler import MeetingDevHandler
-from transcript_pipeline.handlers.valeris_handler import ValerisHandler
 from transcript_pipeline.handlers.zo_handler import ZoHandler
 from transcript_pipeline.projects import load_projects, match_project
 from transcript_pipeline.transcription.processor import SimpleScanProcessor
@@ -33,7 +32,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-HANDLER_MAP = {"valeris": ValerisHandler, "zo": ZoHandler, "meeting_dev": MeetingDevHandler}
+HANDLER_MAP = {"client_meeting": ClientMeetingHandler, "zo": ZoHandler, "meeting_dev": MeetingDevHandler}
 
 
 class MasterProcessor:
@@ -54,7 +53,7 @@ class MasterProcessor:
             resolved = Path(output_path)
             if not resolved.exists():
                 logger.warning(
-                    "[CONFIG] output_path no existe para '%s': %s — handler desactivado",
+                    "[CONFIG] output_path does not exist for '%s': %s — handler disabled",
                     proj["name"], output_path
                 )
                 continue
@@ -81,7 +80,7 @@ class MasterProcessor:
     # ── Step 1: organize ────────────────────────────────────────────────────
 
     def organize_files(self):
-        logger.info("--- ORGANIZACIÓN DE ARCHIVOS ---")
+        logger.info("--- FILE ORGANIZATION ---")
         source_dirs = [d for d in [self.icecream_music, self.icecream_videos] if d.exists()]
         moved = 0
 
@@ -105,12 +104,12 @@ class MasterProcessor:
                         except Exception as e:
                             logger.error("[MOVE] Error: %s", e)
 
-        logger.info("Archivos organizados: %d", moved)
+        logger.info("Files organized: %d", moved)
 
     # ── Step 2: transcribe + route ──────────────────────────────────────────
 
     def run_transcription_and_routing(self) -> bool:
-        logger.info("--- TRANSCRIPCIÓN Y ROUTING ---")
+        logger.info("--- TRANSCRIPTION AND ROUTING ---")
         had_errors = False
         processor = SimpleScanProcessor()
         audio_files = processor.find_audio_files()
@@ -119,7 +118,7 @@ class MasterProcessor:
             if processor.tracker.is_file_processed(audio_path):
                 continue
 
-            logger.info("Procesando: %s", audio_path.name)
+            logger.info("Processing: %s", audio_path.name)
             try:
                 result = processor.transcribe_file(audio_path)
 
@@ -139,14 +138,14 @@ class MasterProcessor:
                         handler.process(result, audio_path, project_config=matched)
                         routed = True
                     else:
-                        logger.info("[ROUTE] %s → %s (sin handler externo)", audio_path.name, matched["name"])
+                        logger.info("[ROUTE] %s → %s (no external handler)", audio_path.name, matched["name"])
 
                 processor.tracker.mark_as_processed(
                     audio_path, "completed_routed" if routed else "completed"
                 )
 
             except Exception as e:
-                logger.error("Error procesando %s: %s", audio_path.name, e)
+                logger.error("Error processing %s: %s", audio_path.name, e)
                 had_errors = True
 
         return not had_errors
@@ -157,7 +156,7 @@ class MasterProcessor:
         print("=" * 60)
         self.organize_files()
         success = self.run_transcription_and_routing()
-        print("\nProceso Maestro Finalizado.")
+        print("\nMaster process finished.")
         return success
 
 

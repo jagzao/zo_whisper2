@@ -4,8 +4,8 @@ from transcript_pipeline.projects import load_projects, match_project
 
 PROJECTS = [
     {
-        "name": "Valeris",
-        "match": {"folder_contains": ["py_valeris"], "prefix": ["valeris_"]},
+        "name": "Northwind",
+        "match": {"folder_contains": ["py_northwind"], "prefix": ["northwind_"]},
     },
     {
         "name": "Zo Interviews",
@@ -23,10 +23,10 @@ PROJECTS = [
 
 
 def test_match_by_prefix():
-    audio = Path("audio/valeris_20260101_standup.mp3")
+    audio = Path("audio/northwind_20260101_standup.mp3")
     project = match_project(audio, PROJECTS)
     assert project is not None
-    assert project["name"] == "Valeris"
+    assert project["name"] == "Northwind"
 
 
 def test_match_by_folder_contains():
