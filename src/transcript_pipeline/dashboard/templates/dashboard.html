@@ -366,8 +366,19 @@
         .pagination.top {
             margin-top: 0;
             justify-content: flex-end;
-            flex: 1;
-            min-width: 280px;
+            flex: 1 1 auto;
+            min-width: 300px;
+            min-height: 2rem;
+        }
+        .pagination.top button {
+            min-width: 1.8rem;
+            height: 1.8rem;
+            padding: 0 0.4rem;
+        }
+        .pagination.top button {
+            min-width: 1.8rem;
+            height: 1.8rem;
+            padding: 0 0.4rem;
         }
         .pagination button {
             min-width: 2rem;
@@ -621,7 +632,6 @@
                 <div id="filesPaginationTop" class="pagination top"></div>
             </div>
             <div id="filesList"></div>
-            <div id="filesPagination" class="pagination"></div>
         </div>
     </div>
 
@@ -725,11 +735,12 @@
                 </ul>
 
                 <h3>Project prefixes</h3>
+                <p>Defined per project in <code>projects.json</code> (see <code>projects.json.example</code>). Example:</p>
                 <ul>
                     <li><code>zo_</code> → Zo Interviews</li>
-                    <li><code>valeris_</code> → Valeris</li>
-                    <li><code>jm_</code> → JM</li>
-                    <li><code>databiz_</code> → Databiz</li>
+                    <li><code>northwind_</code> → Northwind</li>
+                    <li><code>contoso_</code> → Contoso Team</li>
+                    <li><code>fabrikam_</code> → Fabrikam</li>
                     <li><code>meeting_</code>, <code>junta_</code> → Dev Meetings</li>
                     <li><code>tutorial</code> in the name → Tutorials</li>
                 </ul>
@@ -903,9 +914,9 @@
             const bottom = document.getElementById('filesPagination');
             const top = document.getElementById('filesPaginationTop');
             const html = buildPaginationHtml(page, totalPages, total);
-            bottom.innerHTML = html;
-            top.innerHTML = html;
-            if (totalPages <= 1) { bottom.innerHTML = ''; top.innerHTML = ''; }
+            if (top) top.innerHTML = html;
+            if (bottom) bottom.innerHTML = html;
+            if (totalPages <= 1) { if (top) top.innerHTML = ''; if (bottom) bottom.innerHTML = ''; }
         }
 
         function buildPaginationHtml(page, totalPages, total) {

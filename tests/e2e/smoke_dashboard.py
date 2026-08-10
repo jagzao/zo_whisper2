@@ -73,7 +73,7 @@ def main() -> int:
         all_ok &= check("pagination_visible", page.locator("#filesPagination button").count() > 0)
 
         # Filter by project
-        page.locator("#projectFilter").select_option("Databiz")
+        page.locator("#projectFilter").select_option("Fabrikam")
         page.wait_for_timeout(400)
         filtered_rows = page.locator("#filesList table tbody tr").count()
         all_ok &= check("filtro_proyecto", filtered_rows > 0 and filtered_rows <= 5, f"{filtered_rows} filas")
@@ -118,7 +118,7 @@ def main() -> int:
         screenshot(page, "preview")
 
         # Search + highlight
-        page.locator("#txSearch").fill("Databiz")
+        page.locator("#txSearch").fill("Fabrikam")
         page.wait_for_timeout(600)
         marks = page.locator("#transcriptList .segment mark").count()
         count_text = page.locator("#searchCount").text_content() or ""
