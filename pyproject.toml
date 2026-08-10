@@ -1,0 +1,41 @@
+[project]
+name = "transcript-pipeline"
+version = "1.0.0"
+description = "Pipeline local de transcripción audio/video (faster-whisper, CPU int8) con routing declarativo por proyecto y extracción de keyframes para tutoriales/juntas."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "faster-whisper>=1.0.0",
+    "psutil>=5.9.0",
+    "python-dotenv>=1.0.0",
+    "flask>=3.0.0",
+    "pillow>=10.0.0",
+    "imagehash>=4.3.1",
+    "requests>=2.31.0",
+    "certifi>=2024.1.0",
+    "pytesseract>=0.3.10",
+    "openai>=1.0.0",
+    "markitdown[all]>=0.0.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+transcript-run = "transcript_pipeline.cli:run"
+transcript-scan = "transcript_pipeline.cli:scan"
+transcript-compress = "transcript_pipeline.cli:compress"
+transcript-dashboard = "transcript_pipeline.cli:dashboard"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
