@@ -1,6 +1,6 @@
 {
-  "project_XR": {
-    "\\b(eks ar|xr technologies|ex ar technologies)\\b": "XR Technologies",
+  "project_meridian": {
+    "\\b(eks ar|xr technologies|ex ar technologies)\\b": "Meridian Technologies",
     "\\b(designated person|designated persons)\\b": "Designated Person",
     "\\binsider trading\\b": "Insider Trading",
     "\\b(compliance piesd|compliance pieced)\\b": "CompliancePIESD"

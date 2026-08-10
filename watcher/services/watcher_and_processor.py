@@ -341,7 +341,7 @@ def process_video(video_path):
             else:
                 logging.warning("⚠️ Fallo en integración RAG")
         
-        # Integración especial para Authorization y Pmx
+        # Integración especial para Authorization y ProjectX
         special_rag_success = handle_special_rag_integration(
             project_name, prefixed_name, cleaned_text, txt_file
         )
@@ -512,7 +512,7 @@ def handle_py_folder_special_save(project_name: str, prefixed_name: str, cleaned
             # Remove py_ prefix for folder name
             folder_name = project_name[3:]  # Remove "py_" prefix
             
-            target_dir = Path(f"C:/Dev/Triger/SyncFileNotion/sync/{folder_name}/transcripcion")
+            target_dir = Path(f"C:/Dev/LocalProjects/SyncFileNotion/sync/{folder_name}/transcripcion")
             target_dir.mkdir(parents=True, exist_ok=True)
             
             # Save transcription
@@ -810,28 +810,28 @@ def save_call_transcription(session_id: str, result: Dict):
 
 
 def handle_special_rag_integration(project_name: str, prefixed_name: str, cleaned_text: str, txt_file: Path) -> bool:
-    """Maneja la integración especial RAG para Authorization y Pmx"""
+    """Maneja la integración especial RAG para Authorization y ProjectX"""
     try:
         if project_name == "Authorization":
-            target_dir = Path("C:/Dev/Triger/Automation/Rag/_transcripciones/Hexaware/Authorization/appContext")
+            target_dir = Path("C:/Dev/LocalProjects/Automation/Rag/_transcripciones/Woodgrove/Authorization/appContext")
             target_dir.mkdir(parents=True, exist_ok=True)
             target_file = target_dir / f"{prefixed_name}.txt"
-            
+
             with open(target_file, "w", encoding="utf-8") as f:
                 f.write(cleaned_text)
-            
+
             logging.info(f"📄 Transcripción Authorization copiada a: {target_file}")
             return True
-            
-        elif project_name == "Pmx":
-            target_dir = Path("C:/Dev/Triger/Automation/Rag/_transcripciones/Pmx")
+
+        elif project_name == "ProjectX":
+            target_dir = Path("C:/Dev/LocalProjects/Automation/Rag/_transcripciones/ProjectX")
             target_dir.mkdir(parents=True, exist_ok=True)
             target_file = target_dir / f"{prefixed_name}.txt"
-            
+
             with open(target_file, "w", encoding="utf-8") as f:
                 f.write(cleaned_text)
-            
-            logging.info(f"📄 Transcripción Pmx copiada a: {target_file}")
+
+            logging.info(f"📄 Transcripción ProjectX copiada a: {target_file}")
             return True
             
         return False

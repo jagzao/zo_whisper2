@@ -18,8 +18,8 @@ class GlossaryManager:
     Manages custom vocabularies for improved transcription accuracy
 
     Handles:
-    - Technical terms (UPSI, EBITDA, XR Technologies)
-    - Proper names (Vikas, Nuresh, Hexaware)
+    - Technical terms (UPSI, EBITDA, Meridian Technologies)
+    - Proper names (Rohan, Devesh, Woodgrove)
     - Company-specific jargon
     - Acronyms and abbreviations
     """
@@ -61,24 +61,24 @@ class GlossaryManager:
             Dict mapping phonetic/incorrect patterns to correct terms
         """
         return {
-            # XR Technologies project
+            # Meridian Technologies project
             r'\b(eks ar|xr|ex ar|ecks ar)\b': 'XR',
             r'\b(you pee es eye|you pi es i|upset|up si)\b': 'UPSI',
             r'\b(pit tool|pitt tool)\b': 'PIT tool',
             r'\b(en es di el|ns dl)\b': 'NSDL',
 
             # Names
-            r'\bvikas\b': 'Vikas',
-            r'\bnuresh\b': 'Nuresh',
-            r'\blydia\b': 'Lydia',
-            r'\barnaud\b': 'Arnaud',
-            r'\bamit\b': 'Amit',
-            r'\bpriyanka\b': 'Priyanka',
+            r'\brohan\b': 'Rohan',
+            r'\bdevesh\b': 'Devesh',
+            r'\belena\b': 'Elena',
+            r'\bmarc\b': 'Marc',
+            r'\bkaran\b': 'Karan',
+            r'\bmeera\b': 'Meera',
 
             # Companies
-            r'\bhexaware\b': 'Hexaware',
-            r'\bvolaris\b': 'Volaris',
-            r'\btrue logic\b': 'TrueLogic',
+            r'\bwoodgrove\b': 'Woodgrove',
+            r'\binitech\b': 'Initech',
+            r'\bblue sky\b': 'BlueSky',
 
             # Technical terms
             r'\binfo sec\b': 'InfoSec',
@@ -264,9 +264,9 @@ if __name__ == "__main__":
     manager = GlossaryManager()
 
     test_text = """
-    Today we had a meeting with vikas from eks ar technologies.
+    Today we had a meeting with rohan from eks ar technologies.
     We discussed the you pee es eye compliance and the pit tool.
-    Also talked with nuresh about hexaware and the auth prod path.
+    Also talked with devesh about woodgrove and the auth prod path.
     """
 
     print("Original text:")

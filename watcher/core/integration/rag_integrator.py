@@ -8,7 +8,7 @@ class RAGIntegrator:
     """Integra transcripciones de reuniones con el sistema RAG"""
     
     def __init__(self):
-        self.rag_base_path = Path("C:/Dev/Triger/Automation/Rag/ragia_app/_transcripciones")
+        self.rag_base_path = Path(os.getenv("RAG_BASE_PATH", "C:/Dev/LocalProjects/Rag/ragia_app/_transcripciones"))
         
     def should_integrate_with_rag(self, content_type: str, project_name: str) -> bool:
         """Determina si el contenido debe integrarse con RAG"""
