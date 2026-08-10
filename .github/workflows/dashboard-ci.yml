@@ -3,51 +3,107 @@ name: Whisper Dashboard CI
 on:
   push:
     paths:
-      - 'src/transcript_pipeline/dashboard/**'
+      - 'src/transcript_pipeline/**'
       - 'dashboard.py'
-      - 'tests/e2e/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
   pull_request:
     paths:
-      - 'src/transcript_pipeline/dashboard/**'
+      - 'src/transcript_pipeline/**'
       - 'dashboard.py'
-      - 'tests/e2e/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
   workflow_dispatch:
 
 jobs:
-  e2e:
+  quality:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
-      - name: Install dependencies
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
-          pip install playwright
-          playwright install chromium
-        env:
-          PIP_NO_CACHE_DIR: 1
-
-      - name: Ensure folders exist
-        run: |
-          python -c "from pathlib import Path; [Path(d).mkdir(parents=True, exist_ok=True) for d in ['Video_compress','Videos','audio','CarpetaTranscripciones']]"
-
-      - name: Start dashboard and run E2E tests
-        run: |
-          $env:PYTHONPATH = "$pwd\src"
-          $job = Start-Job { python dashboard.py }
-          Start-Sleep -Seconds 5
-          python tests/e2e/smoke_dashboard.py
-          Remove-Job $job -Force
-
-      - name: Upload screenshots
+          pip install -e ".[dev]"
+      - name: Quality harness
+        run: python scripts/quality.py
+      - name: Upload quality report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screenshots
-          path: dashboard_*.png
+          name: quality-report
+          path: quality_report.json
+
+  security:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Security harness
+        run: python scripts/security.py
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-report
+          path: security_report.json
+
+  unit-tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Unit test harness
+        run: python scripts/ut.py
+      - name: Upload UT report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ut-report
+          path: ut_report.json
+
+  e2e:
+    runs-on: windows-latest
+    needs: [quality, security, unit-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          playwright install chromium
+        env:
+          PIP_NO_CACHE_DIR: 1
+      - name: Ensure folders exist
+        run: |
+          python -c "from pathlib import Path; [Path(d).mkdir(parents=True, exist_ok=True) for d in ['Video_compress','Videos','audio','CarpetaTranscripciones']]"
+      - name: E2E harness
+        run: python scripts/e2e.py
+      - name: Upload E2E report and screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-artifacts
+          path: |
+            e2e_report.json
+            dashboard_*.png
+            dashboard_report.json
