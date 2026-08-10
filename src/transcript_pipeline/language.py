@@ -1,7 +1,7 @@
-"""Detección de idioma: prefijo de filename > lang.txt de la carpeta > None (auto).
+"""Language detection: filename prefix > folder's lang.txt > None (auto).
 
-Extraído de SimpleScanProcessor para que sea una función pura, testeable
-sin instanciar el procesador completo (que carga el modelo Whisper).
+Extracted from SimpleScanProcessor so it's a pure, testable function
+without instantiating the full processor (which loads the Whisper model).
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ _SUPPORTED = {"es", "en"}
 
 
 class LanguageDetector:
-    """Cachea las lecturas de lang.txt por carpeta (I/O barata pero repetida)."""
+    """Caches lang.txt reads per folder (cheap I/O, but repeated)."""
 
     def __init__(self) -> None:
         self._lang_txt_cache: dict[Path, str | None] = {}

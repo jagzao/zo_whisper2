@@ -1,7 +1,7 @@
-"""Smoke test del dashboard con Playwright.
+"""Dashboard smoke test using Playwright.
 
-Verifica funcionalidades y captura screenshots de cada sección clave.
-Genera un reporte JSON con checks pasados/fallados.
+Verifies functionality and captures screenshots of each key section.
+Generates a JSON report with passed/failed checks.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ def main() -> int:
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        print("playwright no instalado")
+        print("playwright not installed")
         return 1
 
     files = fetch_files()
@@ -52,10 +52,10 @@ def main() -> int:
         None,
     )
     if not target:
-        print("No hay archivos con transcripción para probar el modal")
+        print("No files with a transcription available to test the modal")
         return 1
 
-    print(f"Archivo de prueba: {target['name']}")
+    print(f"Test file: {target['name']}")
     all_ok = True
 
     with sync_playwright() as p:
@@ -67,16 +67,22 @@ def main() -> int:
         # Home
         screenshot(page, "home")
         rows = page.locator("#filesList table tbody tr").count()
-        all_ok &= check("tabla_archivos", rows > 0 and rows <= 5, f"{rows} filas (página 1)")
+        all_ok &= check("files_table", rows > 0 and rows <= 5, f"{rows} rows (page 1)")
         all_ok &= check("dropzone_visible", page.locator("#dropzone").is_visible())
         all_ok &= check("folders_visible", page.locator("#folders .folder").count() == 4)
-        all_ok &= check("pagination_visible", page.locator("#filesPagination button").count() > 0)
+        all_ok &= check(
+            "pagination_visible",
+            page.locator("#filesPaginationTop button").count() > 0
+            or page.locator("#filesPagination button").count() > 0,
+        )
 
-        # Filter by project
-        page.locator("#projectFilter").select_option("Fabrikam")
-        page.wait_for_timeout(400)
-        filtered_rows = page.locator("#filesList table tbody tr").count()
-        all_ok &= check("filtro_proyecto", filtered_rows > 0 and filtered_rows <= 5, f"{filtered_rows} filas")
+        # Filter by the test file's own project (avoids hardcoding a project name)
+        project_name = target.get("project")
+        if project_name:
+            page.locator("#projectFilter").select_option(project_name)
+            page.wait_for_timeout(400)
+            filtered_rows = page.locator("#filesList table tbody tr").count()
+            all_ok &= check("project_filter", filtered_rows > 0 and filtered_rows <= 5, f"{filtered_rows} rows")
 
         # Sort by name desc
         page.locator('th[data-sort="name"]').click()
@@ -86,13 +92,13 @@ def main() -> int:
         icon_text = page.locator('th[data-sort="name"] .sort-icon').text_content() or ""
         is_desc = icon_text not in ("", "?", "?")
         detail = "desc icon" if is_desc else f"icon={icon_text.encode('ascii','replace').decode()}"
-        all_ok &= check("sort_nombre_desc", is_desc, detail)
+        all_ok &= check("sort_name_desc", is_desc, detail)
 
         # Clear filters
         page.locator("#projectFilter").select_option("")
         page.wait_for_timeout(400)
         rows_after = page.locator("#filesList table tbody tr").count()
-        all_ok &= check("limpiar_filtro", rows_after > 0, f"{rows_after} filas")
+        all_ok &= check("clear_filter", rows_after > 0, f"{rows_after} rows")
 
         # Header buttons
         for label in ("Projects", "Logs", "Help"):
@@ -104,26 +110,28 @@ def main() -> int:
         row = page.locator(f"#filesList table tbody tr:has-text('{target['name']}')")
         ver_button = row.locator("button[aria-label='View']")
         edit_button = row.locator("button[aria-label='Edit']")
-        all_ok &= check("btn_ver_habilitado", ver_button.is_enabled())
-        all_ok &= check("btn_editar_habilitado", edit_button.is_enabled())
+        all_ok &= check("view_btn_enabled", ver_button.is_enabled())
+        all_ok &= check("edit_btn_enabled", edit_button.is_enabled())
 
         ver_button.click()
         page.wait_for_selector("#previewModal:not(.hidden)", timeout=TIMEOUT_MS)
         page.wait_for_timeout(1000)
-        all_ok &= check("player_presente", page.locator("#editorMedia").count() > 0)
+        all_ok &= check("player_present", page.locator("#editorMedia").count() > 0)
         tx_text = page.locator("#transcriptList").inner_text(timeout=5000)
         all_ok &= check(
-            "transcripcion_cargada", len(tx_text) > 100, f"{len(tx_text)} chars"
+            "transcription_loaded", len(tx_text) > 100, f"{len(tx_text)} chars"
         )
         screenshot(page, "preview")
 
-        # Search + highlight
-        page.locator("#txSearch").fill("Fabrikam")
+        # Search + highlight (use a real word from the transcription)
+        tx_text = page.locator("#transcriptList").inner_text(timeout=5000)
+        search_word = next((w for w in tx_text.split() if len(w) >= 5 and w.isalpha()), "the")
+        page.locator("#txSearch").fill(search_word)
         page.wait_for_timeout(600)
         marks = page.locator("#transcriptList .segment mark").count()
         count_text = page.locator("#searchCount").text_content() or ""
         all_ok &= check(
-            "busqueda_highlight", marks > 0, f"{marks} marks, {count_text}"
+            "search_highlight", marks > 0, f"'{search_word}' -> {marks} marks, {count_text}"
         )
         screenshot(page, "editor")
 
@@ -147,7 +155,7 @@ def main() -> int:
         textarea = page.locator("#editTxText")
         tx_value = textarea.input_value()
         all_ok &= check(
-            "editar_cargado", len(tx_value.strip()) > 10, f"{len(tx_value)} chars"
+            "edit_loaded", len(tx_value.strip()) > 10, f"{len(tx_value)} chars"
         )
         screenshot(page, "edit")
         page.locator("#editModal .close-x").click()
@@ -170,12 +178,12 @@ def main() -> int:
 
         browser.close()
 
-    # Reporte
+    # Report
     Path("dashboard_report.json").write_text(
         json.dumps({"checks": REPORT, "screenshots": SCREENSHOTS}, indent=2),
         encoding="utf-8",
     )
-    print("\nReporte guardado: dashboard_report.json")
+    print("\nReport saved: dashboard_report.json")
 
     return 0 if all_ok else 1
 

@@ -1,7 +1,7 @@
 [project]
 name = "transcript-pipeline"
 version = "1.0.0"
-description = "Pipeline local de transcripción audio/video (faster-whisper, CPU int8) con routing declarativo por proyecto y extracción de keyframes para tutoriales/juntas."
+description = "Local audio/video transcription pipeline (faster-whisper, CPU int8) with declarative per-project routing and keyframe extraction for tutorials/meetings."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -20,7 +20,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0.0"]
+dev = [
+    "pytest>=8.0.0",
+    "playwright>=1.40.0",
+    "ruff>=0.4.0",
+    "pip-audit>=2.7.0",
+]
 
 [project.scripts]
 transcript-run = "transcript_pipeline.cli:run"

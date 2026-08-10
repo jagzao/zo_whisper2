@@ -1,6 +1,10 @@
-"""Script de un solo uso: genera archivos mock (video/audio + transcripciones
-falsas) para tomar screenshots del dashboard sin usar datos reales de clientes.
-Reversible: ver cleanup_mock_data.py.
+"""One-off script: generates mock files (video/audio + fake transcriptions)
+to take dashboard screenshots without using real client data.
+Reversible: see cleanup_mock_data.py.
+
+FAKE_TRANSCRIPT_ES is intentionally in Spanish — it's illustrative sample
+data showing the bilingual (es/en) transcription feature, not a piece of
+untranslated documentation.
 """
 from __future__ import annotations
 
@@ -53,7 +57,7 @@ MOCK_FILES: list[tuple[str, str, str, float]] = [
 
 def make_media(path: Path, duration: float) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    clip_len = 6  # segundos reales del clip de prueba (loop no hace falta, solo necesitamos que cargue)
+    clip_len = 6  # actual seconds of the test clip (no need to loop, just needs to load)
     if path.suffix.lower() == ".mp3":
         cmd = [
             "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
@@ -125,7 +129,7 @@ def main() -> None:
         make_media(path, duration)
         make_transcription(rel_path, language, text, duration)
         mark_processed(rel_path)
-    print("[OK] Datos mock generados.")
+    print("[OK] Mock data generated.")
 
 
 if __name__ == "__main__":

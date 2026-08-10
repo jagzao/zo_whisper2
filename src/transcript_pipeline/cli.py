@@ -1,9 +1,9 @@
-"""Entry points expuestos como `[project.scripts]` en pyproject.toml.
+"""Entry points exposed as `[project.scripts]` in pyproject.toml.
 
-Los scripts raíz (`master_processor.py`, `simple_scan.py`, etc.) siguen
-siendo la forma principal de invocar el pipeline desde `RUN_MAX_QUALITY.bat`.
-Estos comandos son el equivalente "instalado" — mismo código, sin depender
-de que el cwd sea la raíz del repo.
+The root scripts (`master_processor.py`, `simple_scan.py`, etc.) remain
+the primary way to invoke the pipeline from `RUN_MAX_QUALITY.bat`. These
+commands are the "installed" equivalent — same code, without depending
+on the cwd being the repo root.
 """
 
 from __future__ import annotations

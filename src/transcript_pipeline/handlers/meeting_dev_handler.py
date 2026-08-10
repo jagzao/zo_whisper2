@@ -1,12 +1,12 @@
 """
-MeetingDevHandler — Procesa juntas/reuniones de desarrollo.
+MeetingDevHandler — Processes development team meetings.
 
-Diferencias vs tutorial handler:
-- Extracción de frames por INTERVALO fijo (no smart_scene) → captura cada N seg sin importar movimiento
-- OCR diff: compara texto extraído entre frames → solo analiza con Vision LLM si el contenido cambió
-- Vision LLM prompt orientado a desarrollador: app, archivo, valores, código, errores
-- MarkItDownScanner: escanea la carpeta de salida buscando PDF/Word/Excel/imágenes compatibles
-- Reporte final integrado: transcript + contexto de pantallas + documentos encontrados
+Differences vs. the tutorial handler:
+- Frame extraction at a fixed INTERVAL (not smart_scene) → captures every N sec regardless of motion
+- OCR diff: compares extracted text between frames → only runs the Vision LLM if content changed
+- Developer-oriented Vision LLM prompt: app, file, values, code, errors
+- MarkItDownScanner: scans the output folder for compatible PDF/Word/Excel/image files
+- Integrated final report: transcript + screen context + documents found
 """
 import logging
 import os
@@ -30,7 +30,7 @@ if ensure_watcher_importable():
     except ImportError:
         pass
 
-# OCR — opcional, mejora la detección de cambios de contenido
+# OCR — optional, improves content-change detection
 try:
     import pytesseract
     from PIL import Image as PILImage
@@ -41,14 +41,14 @@ try:
 except ImportError:
     _OCR_AVAILABLE = False
 
-# MarkItDown — opcional, convierte documentos a Markdown
+# MarkItDown — optional, converts documents to Markdown
 try:
     from markitdown import MarkItDown
     _MARKITDOWN_AVAILABLE = True
 except ImportError:
     _MARKITDOWN_AVAILABLE = False
 
-# imagehash — fallback cuando no hay OCR
+# imagehash — fallback when OCR isn't available
 try:
     import imagehash
     from PIL import Image as PILImage
@@ -57,7 +57,7 @@ except ImportError:
     _HASH_AVAILABLE = False
 
 
-# Formatos que MarkItDown puede procesar
+# Formats MarkItDown can process
 MARKITDOWN_EXTS = {
     ".pdf", ".docx", ".doc", ".pptx", ".ppt",
     ".xlsx", ".xls", ".csv",
@@ -66,24 +66,24 @@ MARKITDOWN_EXTS = {
     ".epub", ".zip",
 }
 
-# Prompt para Vision LLM orientado a desarrollador
+# Developer-oriented Vision LLM prompt
 _DEV_SCREEN_PROMPT = (
-    "Analiza este screenshot de una junta de desarrollo. "
-    "Responde SOLO con un JSON válido (sin markdown, sin comentarios) con esta estructura exacta:\n"
-    '{"app": "nombre de la aplicación o ventana principal visible", '
-    '"file": "ruta o nombre del archivo abierto si se ve, o null", '
-    '"content_type": "código|terminal|browser|figma|excel|slide|chat|otro", '
-    '"key_values": ["valor o dato relevante visible 1", "valor 2"], '
-    '"code_snippet": "fragmento de código visible si existe, o null", '
-    '"error": "mensaje de error visible si existe, o null", '
-    '"summary": "1-2 oraciones describiendo qué se está haciendo en pantalla"}'
+    "Analyze this screenshot from a development meeting. "
+    "Respond ONLY with valid JSON (no markdown, no comments) with this exact structure:\n"
+    '{"app": "name of the visible application or main window", '
+    '"file": "path or name of the open file if visible, or null", '
+    '"content_type": "code|terminal|browser|figma|excel|slide|chat|other", '
+    '"key_values": ["visible relevant value or data 1", "value 2"], '
+    '"code_snippet": "visible code snippet if any, or null", '
+    '"error": "visible error message if any, or null", '
+    '"summary": "1-2 sentences describing what is happening on screen"}'
 )
 
 
 class MeetingDevHandler:
-    """Handler para juntas de desarrollo con análisis de pantalla contextual."""
+    """Handler for development meetings with contextual screen analysis."""
 
-    # Keywords en nombre de archivo que activan este handler
+    # Filename keywords that trigger this handler
     TRIGGER_KEYWORDS = ["meeting", "junta", "reunion", "reunión", "dev_", "_dev", "standup", "retro", "sprint"]
 
     def __init__(self, base_path: str):
@@ -96,7 +96,7 @@ class MeetingDevHandler:
         self.llm_model = os.getenv("LLM_MODEL", "kimi-k2.6")
         self.llm_base_url = os.getenv("LLM_BASE_URL", "")
         self.max_screen_analyses = int(os.getenv("MEETING_MAX_SCREEN_ANALYSES", "30"))
-        # Por defecto elimina frames después de analizarlos — solo queda el MD
+        # By default, frames are deleted after analysis — only the MD file remains
         self.keep_frames = os.getenv("MEETING_KEEP_FRAMES", "false").lower() == "true"
 
     @classmethod
@@ -112,13 +112,13 @@ class MeetingDevHandler:
             target_folder = self.meetings_path / folder_name
             target_folder.mkdir(parents=True, exist_ok=True)
 
-            logger.info("[MEETING_DEV] Procesando: %s → %s", original_file_path.name, folder_name)
+            logger.info("[MEETING_DEV] Processing: %s → %s", original_file_path.name, folder_name)
 
-            # 1. Extraer datos de transcripción
+            # 1. Extract transcription data
             transcript_text = transcription_data.get("text", "")
             segments = transcription_data.get("segments", [])
 
-            # 2. Extraer y analizar frames si es video (en carpeta temporal)
+            # 2. Extract and analyze frames if it's a video (in a temp folder)
             screen_contexts: list[dict] = []
             ext = original_file_path.suffix.lower()
             if ext in {".mp4", ".mkv", ".mov", ".avi", ".webm"}:
@@ -127,38 +127,38 @@ class MeetingDevHandler:
                     screen_contexts = self._extract_and_analyze_frames(
                         original_file_path, tmp_path, segments
                     )
-                    # tmp_dir se elimina automáticamente al salir del with
-                logger.info("[MEETING_DEV] %d contextos de pantalla analizados (frames eliminados)", len(screen_contexts))
+                    # tmp_dir is removed automatically on exiting the with block
+                logger.info("[MEETING_DEV] %d screen contexts analyzed (frames deleted)", len(screen_contexts))
 
-            # 3. Escanear documentos en la misma carpeta que el video
+            # 3. Scan documents in the same folder as the video
             doc_summaries = self._scan_documents(original_file_path.parent, target_folder)
-            logger.info("[MEETING_DEV] %d documentos procesados con MarkItDown", len(doc_summaries))
+            logger.info("[MEETING_DEV] %d documents processed with MarkItDown", len(doc_summaries))
 
-            # 4. Único archivo de contexto para LLM
+            # 4. Single context file for the LLM
             context_path = target_folder / "context.md"
             self._generate_context(
                 context_path, clean_name, date_str, original_file_path,
                 transcript_text, segments, screen_contexts, doc_summaries
             )
 
-            # 5. Resumen ejecutivo (más corto, solo decisiones/tareas)
+            # 5. Executive summary (shorter, decisions/tasks only)
             summary_path = target_folder / "summary.md"
             self._generate_summary(summary_path, clean_name, transcript_text, screen_contexts)
 
-            logger.info("[MEETING_DEV] ✅ Completado: %s", target_folder)
+            logger.info("[MEETING_DEV] Done: %s", target_folder)
             return True
 
         except Exception as e:
-            logger.error("[MEETING_DEV] Error procesando %s: %s", original_file_path.name, e, exc_info=True)
+            logger.error("[MEETING_DEV] Error processing %s: %s", original_file_path.name, e, exc_info=True)
             return False
 
     # ─── Frame extraction & analysis ────────────────────────────────────────
 
     def _extract_and_analyze_frames(self, video_path: Path, frames_folder: Path, segments: list) -> list[dict]:
-        """Extrae frames cada N segundos y analiza con Vision LLM solo los que cambiaron."""
+        """Extracts frames every N seconds and runs the Vision LLM only on the ones that changed."""
         frame_paths = self._ffmpeg_interval_extract(video_path, frames_folder)
         if not frame_paths:
-            logger.warning("[MEETING_DEV] No se extrajeron frames de %s", video_path.name)
+            logger.warning("[MEETING_DEV] No frames extracted from %s", video_path.name)
             return []
 
         contexts = []
@@ -167,20 +167,20 @@ class MeetingDevHandler:
 
         for frame_path, timestamp_sec in frame_paths:
             if analyses_done >= self.max_screen_analyses:
-                logger.info("[MEETING_DEV] Límite de %d análisis alcanzado", self.max_screen_analyses)
+                logger.info("[MEETING_DEV] Limit of %d analyses reached", self.max_screen_analyses)
                 break
 
-            # Detectar si el contenido cambió (OCR diff o hash diff)
+            # Detect whether the content changed (OCR diff or hash diff)
             changed, current_text = self._content_changed(frame_path, prev_ocr_text)
             if not changed:
                 continue
 
             prev_ocr_text = current_text
 
-            # Buscar texto de transcript cercano a este timestamp
+            # Look up transcript text near this timestamp
             transcript_context = self._find_transcript_at(segments, timestamp_sec, window_sec=8)
 
-            # Analizar con Vision LLM
+            # Analyze with the Vision LLM
             analysis = self._analyze_frame_vision(frame_path, transcript_context)
             if analysis:
                 contexts.append({
@@ -191,12 +191,12 @@ class MeetingDevHandler:
                     **analysis,
                 })
                 analyses_done += 1
-                logger.debug("[MEETING_DEV] Frame %s analizado @ %s", frame_path.name, self._fmt_time(timestamp_sec))
+                logger.debug("[MEETING_DEV] Frame %s analyzed @ %s", frame_path.name, self._fmt_time(timestamp_sec))
 
         return contexts
 
     def _ffmpeg_interval_extract(self, video_path: Path, out_folder: Path) -> list[tuple[Path, int]]:
-        """Extrae frames cada self.interval_seconds segundos vía FFmpeg."""
+        """Extracts frames every self.interval_seconds seconds via FFmpeg."""
         pattern = str(out_folder / "frame_%04d.jpg")
         cmd = [
             "ffmpeg", "-y", "-i", str(video_path),
@@ -212,16 +212,16 @@ class MeetingDevHandler:
             return []
 
         frames = sorted(out_folder.glob("frame_*.jpg"))
-        # El frame N → timestamp N*interval segundos
+        # Frame N → timestamp N*interval seconds
         return [(f, (i + 1) * self.interval_seconds) for i, f in enumerate(frames)]
 
     def _content_changed(self, frame_path: Path, prev_text: str) -> tuple[bool, str]:
-        """Retorna (cambió, texto_actual). Usa OCR si disponible, si no hash."""
+        """Returns (changed, current_text). Uses OCR if available, hash otherwise."""
         if _OCR_AVAILABLE:
             try:
                 img = PILImage.open(frame_path)
                 text = pytesseract.image_to_string(img, lang="spa+eng").strip()
-                # Considerar "cambio" si al menos 15% del texto es diferente
+                # Consider it "changed" if at least 15% of the text differs
                 if not prev_text:
                     return True, text
                 common = len(set(text.split()) & set(prev_text.split()))
@@ -240,13 +240,13 @@ class MeetingDevHandler:
             except Exception:
                 pass
 
-        # Sin OCR ni hash: analizar siempre
+        # No OCR or hash available: always analyze
         return True, ""
 
     def _analyze_frame_vision(self, frame_path: Path, transcript_hint: str) -> dict | None:
-        """Envía el frame al Vision LLM y parsea el JSON de respuesta."""
+        """Sends the frame to the Vision LLM and parses the JSON response."""
         if not self.llm_api_key:
-            return {"summary": "(Sin API key para análisis visual)", "app": None, "file": None,
+            return {"summary": "(No API key for visual analysis)", "app": None, "file": None,
                     "content_type": None, "key_values": [], "code_snippet": None, "error": None}
         try:
             with open(frame_path, "rb") as f:
@@ -255,7 +255,7 @@ class MeetingDevHandler:
             import requests
             prompt = _DEV_SCREEN_PROMPT
             if transcript_hint:
-                prompt += f'\n\nContexto de lo que se habló en este momento: "{transcript_hint}"'
+                prompt += f'\n\nContext of what was being said at this moment: "{transcript_hint}"'
 
             payload = {
                 "model": self.llm_model,
@@ -280,31 +280,31 @@ class MeetingDevHandler:
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"].strip()
 
-            # Limpiar markdown fences si el LLM las añade
+            # Strip markdown fences if the LLM adds them
             content = re.sub(r"^```[a-z]*\n?", "", content).rstrip("`").strip()
             return json.loads(content)
 
         except json.JSONDecodeError:
-            logger.warning("[MEETING_DEV] LLM no devolvió JSON válido para %s", frame_path.name)
+            logger.warning("[MEETING_DEV] LLM did not return valid JSON for %s", frame_path.name)
             return {"summary": content if "content" in dir() else "Error parsing", "app": None,
                     "file": None, "content_type": None, "key_values": [], "code_snippet": None, "error": None}
         except Exception as e:
-            logger.warning("[MEETING_DEV] Vision LLM error en %s: %s", frame_path.name, e)
+            logger.warning("[MEETING_DEV] Vision LLM error on %s: %s", frame_path.name, e)
             return None
 
     # ─── MarkItDown document scanner ────────────────────────────────────────
 
     def _scan_documents(self, source_folder: Path, target_folder: Path) -> list[dict]:
-        """Escanea source_folder buscando documentos compatibles con MarkItDown."""
+        """Scans source_folder for documents compatible with MarkItDown."""
         if not _MARKITDOWN_AVAILABLE:
-            logger.warning("[MEETING_DEV] markitdown no instalado — omitiendo escaneo de documentos")
+            logger.warning("[MEETING_DEV] markitdown not installed — skipping document scan")
             return []
 
         summaries = []
         docs_folder = target_folder / "documents"
 
         try:
-            # Configurar MarkItDown con Vision LLM si hay API key (para imágenes)
+            # Configure MarkItDown with a Vision LLM if an API key is set (for images)
             if self.llm_api_key and self.llm_base_url:
                 try:
                     from openai import OpenAI
@@ -332,11 +332,11 @@ class MeetingDevHandler:
                     if not md_text:
                         continue
 
-                    # Guardar versión MD del documento
+                    # Save the Markdown version of the document
                     out_name = doc_path.stem + "_converted.md"
                     out_path = docs_folder / out_name
                     out_path.write_text(
-                        f"# {doc_path.name}\n\n*Convertido por MarkItDown*\n\n{md_text}\n",
+                        f"# {doc_path.name}\n\n*Converted by MarkItDown*\n\n{md_text}\n",
                         encoding="utf-8"
                     )
 
@@ -346,13 +346,13 @@ class MeetingDevHandler:
                         "preview": md_text[:500] + ("..." if len(md_text) > 500 else ""),
                         "full_length": len(md_text),
                     })
-                    logger.info("[MARKITDOWN] Convertido: %s (%d chars)", doc_path.name, len(md_text))
+                    logger.info("[MARKITDOWN] Converted: %s (%d chars)", doc_path.name, len(md_text))
 
                 except Exception as e:
-                    logger.warning("[MARKITDOWN] No se pudo convertir %s: %s", doc_path.name, e)
+                    logger.warning("[MARKITDOWN] Could not convert %s: %s", doc_path.name, e)
 
         except Exception as e:
-            logger.error("[MARKITDOWN] Error escaneando documentos: %s", e)
+            logger.error("[MARKITDOWN] Error scanning documents: %s", e)
 
         return summaries
 
@@ -360,8 +360,8 @@ class MeetingDevHandler:
 
     def _save_transcript(self, path: Path, name: str, date: str, original: Path,
                          text: str, segments: list):
-        lines = [f"# Transcript: {name}\n", f"**Fecha:** {date}  \n",
-                 f"**Archivo:** {original.name}\n\n", "## Transcripción\n\n"]
+        lines = [f"# Transcript: {name}\n", f"**Date:** {date}  \n",
+                 f"**File:** {original.name}\n\n", "## Transcript\n\n"]
         if segments:
             for seg in segments:
                 t = self._fmt_time(int(getattr(seg, "start", 0)))
@@ -374,43 +374,43 @@ class MeetingDevHandler:
                           transcript: str, segments: list,
                           screen_contexts: list, doc_summaries: list):
         """
-        Genera context.md — archivo único optimizado para consumo por LLM.
-        Sin imágenes. Solo texto estructurado con toda la información relevante.
+        Generates context.md — a single file optimized for LLM consumption.
+        No images. Just structured text with all the relevant information.
         """
         lines = [
-            f"# Contexto de Junta: {name}\n\n",
-            f"> **Fecha:** {date} | **Fuente:** {original.name} | "
-            f"**Momentos de pantalla capturados:** {len(screen_contexts)} | "
-            f"**Documentos adjuntos:** {len(doc_summaries)}\n\n",
+            f"# Meeting Context: {name}\n\n",
+            f"> **Date:** {date} | **Source:** {original.name} | "
+            f"**Screen moments captured:** {len(screen_contexts)} | "
+            f"**Attached documents:** {len(doc_summaries)}\n\n",
             "---\n\n",
-            "## Instrucciones para el LLM\n\n",
-            "Este archivo contiene el contexto completo de una junta de desarrollo. "
-            "Úsalo para entender qué se discutió, qué pantallas se compartieron, "
-            "qué código/valores estaban en pantalla, y qué documentos se revisaron. "
-            "El transcript está con timestamps para correlacionar con los contextos de pantalla.\n\n",
+            "## Instructions for the LLM\n\n",
+            "This file contains the full context of a development meeting. "
+            "Use it to understand what was discussed, what screens were shared, "
+            "what code/values were on screen, and what documents were reviewed. "
+            "The transcript includes timestamps to correlate with the screen contexts.\n\n",
             "---\n\n",
         ]
 
-        # Contextos de pantalla — sección más densa para el LLM
+        # Screen contexts — the densest section for the LLM
         if screen_contexts:
-            lines.append("## Lo que se vio en pantalla\n\n")
+            lines.append("## What was seen on screen\n\n")
             lines.append(
-                "*Capturado automáticamente cada vez que el contenido de pantalla cambió "
-                "significativamente durante la junta.*\n\n"
+                "*Captured automatically whenever screen content changed "
+                "significantly during the meeting.*\n\n"
             )
             for ctx in screen_contexts:
-                app = ctx.get("app") or "Pantalla"
+                app = ctx.get("app") or "Screen"
                 lines.append(f"### [{ctx['timestamp_fmt']}] {app}\n\n")
 
                 parts = []
                 if ctx.get("file"):
-                    parts.append(f"- **Archivo abierto:** `{ctx['file']}`")
+                    parts.append(f"- **Open file:** `{ctx['file']}`")
                 if ctx.get("content_type"):
-                    parts.append(f"- **Tipo de contenido:** {ctx['content_type']}")
+                    parts.append(f"- **Content type:** {ctx['content_type']}")
                 if ctx.get("key_values"):
-                    parts.append(f"- **Valores/datos visibles:** {', '.join(str(v) for v in ctx['key_values'])}")
+                    parts.append(f"- **Visible values/data:** {', '.join(str(v) for v in ctx['key_values'])}")
                 if ctx.get("error"):
-                    parts.append(f"- **⚠ Error en pantalla:** `{ctx['error']}`")
+                    parts.append(f"- **⚠ On-screen error:** `{ctx['error']}`")
                 if parts:
                     lines.append("\n".join(parts) + "\n\n")
 
@@ -421,24 +421,24 @@ class MeetingDevHandler:
                     lines.append(f"```\n{ctx['code_snippet']}\n```\n\n")
 
                 if ctx.get("transcript_context"):
-                    lines.append(f"> **Audio en este momento:** {ctx['transcript_context']}\n\n")
+                    lines.append(f"> **Audio at this moment:** {ctx['transcript_context']}\n\n")
 
             lines.append("---\n\n")
 
-        # Documentos adjuntos — contenido completo en texto
+        # Attached documents — full text content
         if doc_summaries:
-            lines.append("## Documentos revisados en la junta\n\n")
+            lines.append("## Documents reviewed in the meeting\n\n")
             lines.append(
-                "*Archivos encontrados en la misma carpeta del video, "
-                "convertidos a texto por MarkItDown.*\n\n"
+                "*Files found in the same folder as the video, "
+                "converted to text by MarkItDown.*\n\n"
             )
             for doc in doc_summaries:
                 lines.append(f"### {doc['filename']}\n\n")
                 lines.append(f"{doc['preview']}\n\n")
             lines.append("---\n\n")
 
-        # Transcript con timestamps
-        lines.append("## Transcript de la junta\n\n")
+        # Transcript with timestamps
+        lines.append("## Meeting transcript\n\n")
         if segments:
             for seg in segments:
                 start = getattr(seg, "start", None)
@@ -450,7 +450,7 @@ class MeetingDevHandler:
             lines.append(transcript + "\n")
 
         path.write_text("".join(lines), encoding="utf-8")
-        logger.info("[MEETING_DEV] context.md generado: %d chars", path.stat().st_size)
+        logger.info("[MEETING_DEV] context.md generated: %d chars", path.stat().st_size)
 
     def _generate_summary(self, path: Path, name: str, transcript: str, screen_contexts: list):
         if not _LLM_AVAILABLE or not transcript.strip():
@@ -460,22 +460,23 @@ class MeetingDevHandler:
             screen_summary = ""
             if screen_contexts:
                 items = [f"- `{c['timestamp_fmt']}`: {c.get('summary', '')}" for c in screen_contexts[:15]]
-                screen_summary = "\n\nContexto de pantallas durante la junta:\n" + "\n".join(items)
+                screen_summary = "\n\nScreen context during the meeting:\n" + "\n".join(items)
 
             prompt = (
-                "Eres un asistente de reuniones de desarrollo de software. "
-                "Analiza la transcripción y el contexto de pantallas y responde en español:\n\n"
-                "## Resumen ejecutivo (3-5 bullets)\n"
-                "## Decisiones técnicas tomadas\n"
-                "## Tareas acordadas (con responsable si se menciona)\n"
-                "## Problemas o blockers identificados\n"
-                "## Próximos pasos\n\n"
-                "Sé conciso y enfocado en acciones concretas."
+                "You are a software development meeting assistant. "
+                "Analyze the transcript and screen context and respond in the same "
+                "language as the transcript:\n\n"
+                "## Executive summary (3-5 bullets)\n"
+                "## Technical decisions made\n"
+                "## Agreed-upon tasks (with owner if mentioned)\n"
+                "## Problems or blockers identified\n"
+                "## Next steps\n\n"
+                "Be concise and focused on concrete actions."
             )
             analysis = _llm_summary(transcript + screen_summary, system_prompt=prompt)
-            path.write_text(f"# Resumen: {name}\n\n{analysis}\n", encoding="utf-8")
+            path.write_text(f"# Summary: {name}\n\n{analysis}\n", encoding="utf-8")
         except Exception as e:
-            logger.warning("[MEETING_DEV] LLM summary falló: %s", e)
+            logger.warning("[MEETING_DEV] LLM summary failed: %s", e)
             _write_empty_summary(path, name)
 
     # ─── Helpers ─────────────────────────────────────────────────────────────
@@ -503,8 +504,8 @@ class MeetingDevHandler:
 
 def _write_empty_summary(path: Path, name: str):
     path.write_text(
-        f"# Resumen: {name}\n\n"
-        "## Puntos Clave\n\n*(Pendiente de revisión)*\n\n"
-        "## Tareas\n\n- [ ] Revisar transcript\n- [ ] Completar este resumen\n",
+        f"# Summary: {name}\n\n"
+        "## Key Points\n\n*(Pending review)*\n\n"
+        "## Tasks\n\n- [ ] Review transcript\n- [ ] Complete this summary\n",
         encoding="utf-8",
     )
