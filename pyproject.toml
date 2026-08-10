@@ -3,6 +3,7 @@ name = "transcript-pipeline"
 version = "1.0.0"
 description = "Pipeline local de transcripción audio/video (faster-whisper, CPU int8) con routing declarativo por proyecto y extracción de keyframes para tutoriales/juntas."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "faster-whisper>=1.0.0",

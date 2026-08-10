@@ -207,3 +207,7 @@ Agregar un proyecto nuevo no requiere tocar `MasterProcessor` ni `SimpleScanProc
 - **`watcher/` trae un stack más ambicioso** (PostgreSQL, Redis, dashboard Flask propio, diarización, forced alignment, cola de revisión) que **no** está integrado al flujo diario — solo se reutilizan 4 módulos puntuales (`core/utils.py`, `core/video/keyframe_extractor.py`, `core/postprocessing/timestamp_formatter.py`, `core/integration/llm_client.py`) como shared kernel.
 - **Single-machine**: sin cola distribuida ni workers — pensado para procesamiento local, no para escala multi-usuario.
 - El modelo `large-v3` de Whisper se descarga (~3GB) en el primer uso.
+
+## Licencia
+
+[MIT](LICENSE)
