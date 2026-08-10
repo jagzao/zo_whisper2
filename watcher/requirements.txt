@@ -1,0 +1,40 @@
+watchdog
+python-dotenv
+requests
+openai
+git+https://github.com/openai/whisper.git#egg=openai-whisper
+torch==2.0.1
+triton==2.0.0
+python-magic
+redis
+pytest
+pytest-asyncio
+structlog
+colorlog
+psycopg2-binary
+schedule
+flask
+flask-cors  # For Review UI API
+psutil
+# Nuevas dependencias para transcripción en tiempo real
+opencv-python>=4.8.0
+sounddevice>=0.4.0
+numpy>=1.21.0
+pyaudio>=0.2.11
+faster-whisper>=0.9.0
+asyncio
+aiofiles
+# Enhanced preprocessing dependencies
+librosa>=0.10.0
+soundfile>=0.11.0
+scipy>=1.10.0
+pyloudnorm>=0.1.0
+# Optional noise reduction
+rnnoise-python>=1.0.0
+deepfilternet>=0.5.6
+demucs>=4.0.0  # Source separation (vocals extraction)
+# VAD for silence detection
+silero-vad>=0.4.0
+torch>=2.0.0  # For Silero VAD
+# Forced alignment for precise timestamps
+whisperx>=3.1.0

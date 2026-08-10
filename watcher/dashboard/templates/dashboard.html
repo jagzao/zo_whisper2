@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcription Monitor Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: white;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--card-bg);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .status-card {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .status-card.healthy { border-left: 4px solid var(--success-color); }
+        .status-card.warning { border-left: 4px solid var(--warning-color); }
+        .status-card.error { border-left: 4px solid var(--error-color); }
+
+        .status-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            background: #f8fafc;
+        }
+
+        .card-content {
+            padding: 1rem;
+        }
+
+        .jobs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .jobs-table th,
+        .jobs-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .jobs-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-queued { background: #fef3c7; color: #92400e; }
+        .status-processing { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-failed { background: #fee2e2; color: #991b1b; }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .metric-item:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+        }
+
+        .metric-value {
+            font-weight: 600;
+        }
+
+        .refresh-button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+        }
+
+        .refresh-button:hover {
+            background: #1d4ed8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: var(--error-color);
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .timestamp {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: right;
+            margin-top: 1rem;
+        }
+
+        .health-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .health-healthy { background-color: var(--success-color); }
+        .health-warning { background-color: var(--warning-color); }
+        .health-error { background-color: var(--error-color); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎙️ Transcription Monitor Dashboard</h1>
+    </div>
+
+    <div class="container">
+        <div class="status-bar" id="statusBar">
+            <div class="loading">Cargando estado del sistema...</div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-header">
+                    📊 Estadísticas de Procesamiento
+                    <button class="refresh-button" onclick="refreshData()" style="float: right;">Refresh</button>
+                </div>
+                <div class="card-content">
+                    <div id="processingStats">
+                        <div class="loading">Cargando estadísticas...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🏥 Estado del Sistema</div>
+                <div class="card-content">
+                    <div id="healthStatus">
+                        <div class="loading">Verificando salud del sistema...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📋 Trabajos Recientes</div>
+            <div class="card-content">
+                <div id="recentJobs">
+                    <div class="loading">Cargando trabajos recientes...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="timestamp" id="lastUpdate"></div>
+    </div>
+
+    <script>
+        let refreshInterval;
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`/api/${endpoint}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                return { error: error.message };
+            }
+        }
+
+        function formatTime(isoString) {
+            if (!isoString) return 'N/A';
+            return new Date(isoString).toLocaleString('es-ES');
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return 'N/A';
+            if (seconds < 60) return `${Math.round(seconds)}s`;
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.round(seconds % 60);
+            return `${minutes}m ${remainingSeconds}s`;
+        }
+
+        function renderStatusBar(data) {
+            const statusBar = document.getElementById('statusBar');
+            
+            if (data.error) {
+                statusBar.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
+                return;
+            }
+
+            const stats = data.processing_stats;
+            const health = data.health_status;
+            const metrics = data.app_metrics;
+
+            statusBar.innerHTML = `
+                <div class="status-card ${health.status}">
+                    <div class="status-value">
+                        <span class="health-indicator health-${health.status}"></span>
+                        ${health.status.toUpperCase()}
+                    </div>
+                    <div class="status-label">Estado del Sistema</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value">${stats.total_jobs || 0}</div>
+                    <div class="status-label">Total Archivos (7 días)</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value">${Math.round(stats.success_rate || 0)}%</div>
+                    <div class="status-label">Tasa de Éxito</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value">${stats.average_processing_time || 0}s</div>
+                    <div class="status-label">Tiempo Promedio</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-value">${metrics.files_processed || 0}</div>
+                    <div class="status-label">Procesados (Sesión)</div>
+                </div>
+            `;
+        }
+
+        function renderProcessingStats(data) {
+            const container = document.getElementById('processingStats');
+            
+            if (data.error) {
+                container.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
+                return;
+            }
+
+            const stats = data.processing_stats;
+            const metrics = data.app_metrics;
+
+            container.innerHTML = `
+                <div class="metric-item">
+                    <span class="metric-label">Archivos Completados</span>
+                    <span class="metric-value">${stats.completed_jobs || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Archivos Fallidos</span>
+                    <span class="metric-value">${stats.failed_jobs || 0}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Tamaño Total Procesado</span>
+                    <span class="metric-value">${stats.total_size_mb || 0} MB</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Tiempo de Actividad</span>
+                    <span class="metric-value">${metrics.uptime_formatted || 'N/A'}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Archivos por Hora</span>
+                    <span class="metric-value">${Math.round(metrics.processing_rate_per_hour || 0)}</span>  
+                </div>
+            `;
+        }
+
+        function renderHealthStatus(data) {
+            const container = document.getElementById('healthStatus');
+            
+            if (data.error) {
+                container.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
+                return;
+            }
+
+            const health = data.health_status;
+            const metrics = data.app_metrics;
+
+            container.innerHTML = `
+                <div class="metric-item">
+                    <span class="metric-label">Estado General</span>
+                    <span class="metric-value">
+                        <span class="health-indicator health-${health.status}"></span>
+                        ${health.status.toUpperCase()}
+                    </span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Última Actividad</span>
+                    <span class="metric-value">${formatTime(metrics.last_activity)}</span>
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Errores Recientes</span>
+                    <span class="metric-value">${metrics.recent_errors || 0}</span>  
+                </div>
+                <div class="metric-item">
+                    <span class="metric-label">Motivo</span>
+                    <span class="metric-value">${health.reason}</span>
+                </div>
+            `;
+        }
+
+        function renderRecentJobs(data) {
+            const container = document.getElementById('recentJobs');
+            
+            if (data.error) {
+                container.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
+                return;
+            }
+
+            const jobs = data.recent_jobs || [];
+
+            if (jobs.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No hay trabajos recientes</p>';
+                return;
+            }
+
+            const tableRows = jobs.map(job => `
+                <tr>
+                    <td>${job.file_name}</td>
+                    <td>${job.project_name}</td>
+                    <td><span class="status-badge status-${job.status}">${job.status}</span></td>
+                    <td>${formatTime(job.created_at)}</td>
+                    <td>${formatDuration(job.processing_time)}</td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <table class="jobs-table">
+                    <thead>
+                        <tr>
+                            <th>Archivo</th>
+                            <th>Proyecto</th>
+                            <th>Estado</th>
+                            <th>Creado</th>
+                            <th>Duración</th>  
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function refreshData() {
+            const data = await fetchData('overview');
+            
+            renderStatusBar(data);
+            renderProcessingStats(data);
+            renderHealthStatus(data);
+            renderRecentJobs(data);
+            
+            document.getElementById('lastUpdate').textContent = 
+                `Última actualización: ${new Date().toLocaleString('es-ES')}`;
+        }
+
+        function startAutoRefresh() {
+            refreshInterval = setInterval(refreshData, 30000); // Refresh every 30 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+            startAutoRefresh();
+        });
+
+        // Handle page visibility change to pause/resume auto-refresh
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>

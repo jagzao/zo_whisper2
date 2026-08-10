@@ -1,0 +1,87 @@
+# ── Secretos y configuración con credenciales ──────────────────────────────
+scan_config.env
+.env
+watcher/.env
+deepseek/.env
+agent/.env
+summary_service/.env
+*.env
+!*.env.example
+archive/backup/
+
+# ── Config real con nombres/rutas de clientes reales — usar projects.json.example como plantilla
+projects.json
+
+# ── Datos de entrada (archivos de usuario, no código) ───────────────────────
+audio/
+Videos/
+Video_compress/
+
+# ── Salidas generadas ────────────────────────────────────────────────────────
+CarpetaTranscripciones/
+Frames/
+
+# ── Base de datos del FileTracker ───────────────────────────────────────────
+processed_files.json
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Artefactos de tests/e2e/smoke_dashboard.py (screenshots reales sin redactar) ──
+/dashboard_*.png
+/dashboard_report.json
+
+# ── Entornos Python ──────────────────────────────────────────────────────────
+watcher/venv/
+deepseek/venv/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+
+# ── Artefactos de build/packaging (pip install -e .) ─────────────────────────
+*.egg-info/
+build/
+dist/
+
+# ── Node ─────────────────────────────────────────────────────────────────────
+watcher/node_modules/
+node_modules/
+
+# ── Archivos de medios grandes (por si acaso llegan a raíz) ─────────────────
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.ogg
+*.opus
+
+# ── OS y editores ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.lnk
+desktop.ini
+
+# ── Caches de herramientas ────────────────────────────────────────────────────
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# ── IDE (Kilo, etc.) — configuración local no compartible ────────────────────
+.kilo/
+
+# ── Tooling de agentes IA / asistentes — no es parte del proyecto ────────────
+.agents/
+.claude/
+.vscode/
+AGENTS.md
+CLAUDE.md

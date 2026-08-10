@@ -1,0 +1,15 @@
+services:
+  deepseek:
+    build:
+      context: .
+      dockerfile: Dockerfile.cuda
+    container_name: deepseek-coder-gpu
+    runtime: nvidia
+    ports:
+      - "7860:7860"
+    environment:
+      - TRANSFORMERS_CACHE=/models/cache
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SUMMARY_PROVIDER=deepseek
+    volumes:
+      - ../resumen:/app/resumen
