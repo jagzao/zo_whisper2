@@ -9,6 +9,10 @@ summary_service/.env
 !*.env.example
 archive/backup/
 
+# ── Scripts de debug con rutas locales / datos reales ─────────────────────────
+# Se ignoran para evitar que rutas personales lleguen al repo público.
+watcher/core/debug/
+
 # ── Config real con nombres/rutas de clientes reales — usar projects.json.example como plantilla
 projects.json
 
@@ -86,9 +90,10 @@ desktop.ini
 # ── IDE (Kilo, etc.) — configuración local no compartible ────────────────────
 .kilo/
 
-# ── Tooling de agentes IA / asistentes — no es parte del proyecto ────────────
-.agents/
-.claude/
+# ── Tooling de agentes IA / asistentes — refleja expertise, se suben con -f ─────
+# .agents/ contiene skills + agents genéricos; se fuerza add al subir.
+# .claude/ y .vscode/ son configuraciones locales del IDE, no se suben.
 .vscode/
 AGENTS.md
 CLAUDE.md
+.claude/
