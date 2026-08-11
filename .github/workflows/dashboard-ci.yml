@@ -96,6 +96,11 @@ jobs:
       - name: Ensure folders exist
         run: |
           python -c "from pathlib import Path; [Path(d).mkdir(parents=True, exist_ok=True) for d in ['Video_compress','Videos','audio','CarpetaTranscripciones']]"
+      - name: Generate mock data (synthetic files, no real client data)
+        run: |
+          echo '{}' > processed_files.json
+          copy projects.json.example projects.json
+          python docs\assets\generate_mock_data.py
       - name: E2E harness
         run: python scripts/e2e.py
       - name: Upload E2E report and screenshots
