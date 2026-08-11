@@ -1,5 +1,6 @@
 @echo off
-cd /d "C:\Dev\Zo\whisper"
+REM ponytail: assumes the .bat lives at the repo root; avoids hardcoding an absolute path.
+cd /d "%~dp0"
 chcp 65001 >nul
 
 echo.
