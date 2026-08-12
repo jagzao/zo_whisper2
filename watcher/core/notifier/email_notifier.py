@@ -1,4 +1,3 @@
-# C:\Jagzao\whisper\watcher\email_notifier.py
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText

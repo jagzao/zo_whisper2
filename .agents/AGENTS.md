@@ -44,7 +44,7 @@ See `CLAUDE.md` for the full architecture, file naming conventions, and output s
 1. Human drops video in `Videos/`.
 2. `RUN_MAX_QUALITY.bat` runs Whisper + scene extraction.
 3. `.agents/agents/transcription-analyst` reads the transcript and generates a structured Markdown summary using `.agents/templates/summary.md`.
-4. The agent routes output to the correct project folder based on filename prefixes (`zo_`, `valeris_`, `jm_`).
+4. The agent routes output to the correct project folder based on filename prefixes (`zo_`, `northwind_`, `jm_`).
 
 ### Language Detection
 

@@ -6,7 +6,7 @@ This is a Windows-first Python pipeline that:
 1. Compresses videos (H.265/HEVC, CRF 24-26) via `compress_and_move.py`.
 2. Extracts audio and transcribes with `faster-whisper` (`large-v2`, beam_size=10, best_of=5, VAD).
 3. Detects tutorial videos (filename contains `tutorial`) and extracts **smart scene-change frames** (not mouse-movement frames).
-4. Routes results to project folders (`zo_`, `valeris_`, `jm_`, `interview/entrevista`).
+4. Routes results to project folders (`zo_`, `northwind_`, `jm_`, `interview/entrevista`).
 
 ## Key Files & Commands
 
@@ -16,8 +16,8 @@ This is a Windows-first Python pipeline that:
 | Python entry | `master_processor.py` |
 | High-quality transcription | `simple_scan.py` |
 | Video compression | `compress_and_move.py` |
-| Scene frame extraction | `watcher/core/video/keyframe_extractor.py` |
-| Config (paths, tokens) | `scan_config.env`, `watcher/.env`, `deepseek/.env` |
+| Scene frame extraction | `src/transcript_pipeline/media/keyframe_extractor.py` |
+| Config (paths, tokens) | `scan_config.env` |
 | Output transcriptions | `CarpetaTranscripciones/` |
 | Output frames | `Frames/` |
 
@@ -27,7 +27,7 @@ This is a Windows-first Python pipeline that:
 # scan_config.env
 ICECREAM_MUSIC=C:\Users\<user>\Music
 ICECREAM_VIDEOS=C:\Users\<user>\Videos
-VALERIS_PATH=C:\...\valeris
+NORTHWIND_PATH=C:\...\northwind
 ZO_INTERVIEWS_PATH=C:\...\zo
 
 # Optional pipeline tuning
@@ -59,7 +59,7 @@ KEYFRAME_METHOD=smart_scene
 
 ### Implementation Notes
 
-- The `smart_scene` method is implemented in `watcher/core/video/keyframe_extractor.py`.
+- The `smart_scene` method is implemented in `src/transcript_pipeline/media/keyframe_extractor.py`.
 - It calls FFmpeg twice: once for blurred scene detection, once for deduplication analysis.
 - Requires `ffmpeg` and `ffprobe` on PATH.
 - Requires `imagehash` Python package for deduplication (raises `RuntimeError` if missing — install with `pip install imagehash pillow`).
@@ -71,14 +71,14 @@ KEYFRAME_METHOD=smart_scene
 | Prefix / Keyword | Target Folder | Handler |
 |------------------|---------------|---------|
 | `zo_` | `Videos/py_zo/` | - |
-| `valeris_` | `Videos/py_valeris/` | `ValerisHandler` |
+| `northwind_` | `Videos/py_northwind/` | `ClientMeetingHandler` |
 | `jm_` | `Videos/py_jm/` | - |
 | `interview` / `entrevista` | `Videos/zo_Entrevista/` | `ZoHandler` |
 
 ## Quality Settings
 
 `simple_scan.py` enforces maximum transcription quality:
-- `model = "large-v2"`
+- `model = "large-v3"`
 - `beam_size = 10`
 - `best_of = 5`
 - `temperature = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]`
@@ -96,7 +96,7 @@ KEYFRAME_METHOD=smart_scene
 This skill can be extended with LLM calls (provider-agnostic) for:
 - **Summary generation** from transcripts (`CarpetaTranscripciones/`).
 - **Timestamped QA**: attach relevant frame timestamps to summary paragraphs.
-- **Auto-routing confirmation**: ask LLM whether a file should be routed to `valeris` vs `zo`.
+- **Auto-routing confirmation**: ask LLM whether a file should be routed to `northwind` vs `zo`.
 
 Use `.agents/templates/summary.md` as the prompt template.
 Use `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` env vars — never hardcode provider.

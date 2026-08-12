@@ -1,4 +1,3 @@
-# C:\Jagzao\whisper\deepseek\docker-compose.yml
 services:
   deepseek-coder:
     build:

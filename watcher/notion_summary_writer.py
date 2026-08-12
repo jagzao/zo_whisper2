@@ -1,5 +1,3 @@
-#  C:\Jagzao\whisper\watcher\notion_summary_writer.py
-
 import requests
 import datetime
 import logging

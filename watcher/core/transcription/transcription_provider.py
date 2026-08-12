@@ -1,4 +1,3 @@
-# C:\Jagzao\whisper\transcription_provider.py
 import whisper
 import os
 

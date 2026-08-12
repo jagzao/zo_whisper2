@@ -54,7 +54,7 @@ Use this template when generating a Markdown summary from a Whisper transcript.
 ## Routing Hints (for the LLM agent)
 
 Based on `video_filename` prefix:
-- `valeris_` → save to `VALERIS_PATH/docs/transcripts/`
+- `northwind_` → save to `NORTHWIND_PATH/docs/transcripts/`
 - `zo_` / `interview` / `entrevista` → save to `ZO_INTERVIEWS_PATH/summaries/`
 - `jm_` → save to `Videos/py_jm/summaries/`
 - `tutorial` → include **Frames clave** table and add `## Pasos del tutorial` section

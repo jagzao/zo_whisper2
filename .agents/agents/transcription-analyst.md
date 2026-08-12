@@ -13,7 +13,7 @@ Read completed transcripts from `CarpetaTranscripciones/`, generate structured M
 - The pipeline runs on Windows via `RUN_MAX_QUALITY.bat`.
 - Transcripts are `.txt` files inside `CarpetaTranscripciones/<project>/`.
 - Tutorial videos may have accompanying `frame_mapping.json` in `Frames/`.
-- Routing destinations: Valeris, Zo/Interview, JM, or general archive.
+- Routing destinations: Northwind, Zo/Interview, JM, or general archive.
 
 ## Instructions
 
@@ -21,7 +21,7 @@ Read completed transcripts from `CarpetaTranscripciones/`, generate structured M
 2. **Read** the transcript file and any associated `frame_mapping.json`.
 3. **Generate** a summary using `.agents/templates/summary.md` as the output format.
 4. **Route** the summary:
-   - `valeris_` → save to `VALERIS_PATH/docs/transcripts/`.
+   - `northwind_` → save to `NORTHWIND_PATH/docs/transcripts/`.
    - `zo_` / `interview` / `entrevista` → save to `ZO_INTERVIEWS_PATH/summaries/`.
    - `jm_` → save to `Videos/py_jm/summaries/`.
 5. **Mark** as processed in `processed_files.json`.
