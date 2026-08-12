@@ -2,17 +2,16 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from transcript_pipeline.bootstrap import ensure_watcher_importable
+from transcript_pipeline.handlers.base import HandlerResult
+from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
+from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
+from transcript_pipeline.llm.redaction import redact_secrets
+from transcript_pipeline.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
 
-_LLM_AVAILABLE = False
-if ensure_watcher_importable():
-    try:
-        from watcher.core.integration.llm_client import generate_summary as _llm_summary
-        _LLM_AVAILABLE = True
-    except ImportError:
-        pass
+_llm_provider = OpenAICompatibleProvider(SETTINGS)
+_privacy_guard = PrivacyGuard(SETTINGS)
 
 
 class ClientMeetingHandler:
@@ -22,7 +21,7 @@ class ClientMeetingHandler:
         self.base_path = Path(base_path)
         self.meetings_path = self.base_path / "meetings"
 
-    def process(self, transcription_data, original_file_path, project_config: dict = None):
+    def process(self, transcription_data, original_file_path, project_config: dict | None = None):
         """
         Processes a transcription for a client project.
         Creates the structure: meetings/{Date}_{Name}/[transcript.md, summary.md]
@@ -50,23 +49,29 @@ class ClientMeetingHandler:
 
             summary_path = target_folder / "summary.md"
             if not summary_path.exists():
-                if _LLM_AVAILABLE:
-                    try:
-                        custom_prompt = (project_config or {}).get("summary_prompt") or None
-                        summary_text = _llm_summary(transcription_data['text'], system_prompt=custom_prompt)
-                        summary_path.write_text(f"# Summary: {clean_name}\n\n{summary_text}\n", encoding='utf-8')
-                        logger.info(f"[CLIENT_MEETING] LLM summary generated: {summary_path}")
-                    except Exception as e:
-                        logger.warning(f"[CLIENT_MEETING] LLM failed ({e}), using empty template")
-                        _write_empty_summary(summary_path, clean_name)
-                else:
+                try:
+                    _privacy_guard.check(_llm_provider, project_config)
+                    custom_prompt = (project_config or {}).get("summary_prompt") or None
+                    summary_text = _llm_provider.generate_summary(
+                        redact_secrets(transcription_data['text']), system_prompt=custom_prompt
+                    )
+                    summary_path.write_text(f"# Summary: {clean_name}\n\n{summary_text}\n", encoding='utf-8')
+                    logger.info(f"[CLIENT_MEETING] LLM summary generated: {summary_path}")
+                except ExternalLLMBlockedError as e:
+                    logger.info(f"[CLIENT_MEETING] LLM call blocked by privacy guard: {e}")
+                    _write_empty_summary(summary_path, clean_name)
+                except Exception as e:
+                    logger.warning(f"[CLIENT_MEETING] LLM failed ({e}), using empty template")
                     _write_empty_summary(summary_path, clean_name)
 
-            return True
+            return HandlerResult.completed(target_folder)
 
+        except OSError as e:
+            logger.error(f"[CLIENT_MEETING] Filesystem error processing {original_file_path.name}: {e}")
+            return HandlerResult.failed(str(e), retryable=True)
         except Exception as e:
             logger.error(f"[CLIENT_MEETING] Error processing {original_file_path.name}: {e}")
-            return False
+            return HandlerResult.failed(str(e))
 
     @staticmethod
     def _strip_prefixes(filename: str, project_config: dict | None) -> str:

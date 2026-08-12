@@ -8,33 +8,30 @@ Differences vs. the tutorial handler:
 - MarkItDownScanner: scans the output folder for compatible PDF/Word/Excel/image files
 - Integrated final report: transcript + screen context + documents found
 """
-import logging
-import os
-import subprocess
 import json
-import base64
+import logging
 import re
+import subprocess
 import tempfile
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from transcript_pipeline.bootstrap import ensure_watcher_importable
+from transcript_pipeline.handlers.base import HandlerResult
+from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
+from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
+from transcript_pipeline.llm.redaction import redact_secrets
+from transcript_pipeline.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
 
-_LLM_AVAILABLE = False
-if ensure_watcher_importable():
-    try:
-        from watcher.core.integration.llm_client import generate_summary as _llm_summary
-        _LLM_AVAILABLE = True
-    except ImportError:
-        pass
+_llm_provider = OpenAICompatibleProvider(SETTINGS)
+_privacy_guard = PrivacyGuard(SETTINGS)
 
 # OCR — optional, improves content-change detection
 try:
     import pytesseract
     from PIL import Image as PILImage
-    _tesseract_cmd = os.getenv("TESSERACT_CMD")
+    _tesseract_cmd = SETTINGS.tesseract_cmd
     if _tesseract_cmd:
         pytesseract.pytesseract.tesseract_cmd = _tesseract_cmd
     _OCR_AVAILABLE = True
@@ -91,20 +88,22 @@ class MeetingDevHandler:
         self.meetings_path = self.base_path / "meetings"
         self.meetings_path.mkdir(parents=True, exist_ok=True)
 
-        self.interval_seconds = int(os.getenv("MEETING_FRAME_INTERVAL", "15"))
-        self.llm_api_key = os.getenv("LLM_API_KEY", "")
-        self.llm_model = os.getenv("LLM_MODEL", "kimi-k2.6")
-        self.llm_base_url = os.getenv("LLM_BASE_URL", "")
-        self.max_screen_analyses = int(os.getenv("MEETING_MAX_SCREEN_ANALYSES", "30"))
+        self.interval_seconds = SETTINGS.meeting_frame_interval
+        self.llm_api_key = SETTINGS.llm_api_key or ""
+        self.llm_model = SETTINGS.llm_model
+        self.llm_base_url = SETTINGS.llm_base_url
+        self.max_screen_analyses = SETTINGS.meeting_max_screen_analyses
         # By default, frames are deleted after analysis — only the MD file remains
-        self.keep_frames = os.getenv("MEETING_KEEP_FRAMES", "false").lower() == "true"
+        self.keep_frames = SETTINGS.meeting_keep_frames
 
     @classmethod
     def should_handle(cls, filename: str) -> bool:
         name_lower = filename.lower()
         return any(kw in name_lower for kw in cls.TRIGGER_KEYWORDS)
 
-    def process(self, transcription_data: dict, original_file_path: Path, project_config: dict = None) -> bool:
+    def process(
+        self, transcription_data: dict, original_file_path: Path, project_config: dict | None = None
+    ) -> HandlerResult:
         try:
             date_str = datetime.now().strftime("%Y-%m-%d")
             clean_name = self._clean_name(original_file_path.stem)
@@ -125,13 +124,13 @@ class MeetingDevHandler:
                 with tempfile.TemporaryDirectory(prefix="meeting_frames_") as tmp_dir:
                     tmp_path = Path(tmp_dir)
                     screen_contexts = self._extract_and_analyze_frames(
-                        original_file_path, tmp_path, segments
+                        original_file_path, tmp_path, segments, project_config
                     )
                     # tmp_dir is removed automatically on exiting the with block
                 logger.info("[MEETING_DEV] %d screen contexts analyzed (frames deleted)", len(screen_contexts))
 
             # 3. Scan documents in the same folder as the video
-            doc_summaries = self._scan_documents(original_file_path.parent, target_folder)
+            doc_summaries = self._scan_documents(original_file_path.parent, target_folder, project_config)
             logger.info("[MEETING_DEV] %d documents processed with MarkItDown", len(doc_summaries))
 
             # 4. Single context file for the LLM
@@ -143,18 +142,23 @@ class MeetingDevHandler:
 
             # 5. Executive summary (shorter, decisions/tasks only)
             summary_path = target_folder / "summary.md"
-            self._generate_summary(summary_path, clean_name, transcript_text, screen_contexts)
+            self._generate_summary(summary_path, clean_name, transcript_text, screen_contexts, project_config)
 
             logger.info("[MEETING_DEV] Done: %s", target_folder)
-            return True
+            return HandlerResult.completed(target_folder)
 
+        except OSError as e:
+            logger.error("[MEETING_DEV] Filesystem error processing %s: %s", original_file_path.name, e, exc_info=True)
+            return HandlerResult.failed(str(e), retryable=True)
         except Exception as e:
             logger.error("[MEETING_DEV] Error processing %s: %s", original_file_path.name, e, exc_info=True)
-            return False
+            return HandlerResult.failed(str(e))
 
     # ─── Frame extraction & analysis ────────────────────────────────────────
 
-    def _extract_and_analyze_frames(self, video_path: Path, frames_folder: Path, segments: list) -> list[dict]:
+    def _extract_and_analyze_frames(
+        self, video_path: Path, frames_folder: Path, segments: list, project_config: dict | None = None
+    ) -> list[dict]:
         """Extracts frames every N seconds and runs the Vision LLM only on the ones that changed."""
         frame_paths = self._ffmpeg_interval_extract(video_path, frames_folder)
         if not frame_paths:
@@ -181,7 +185,7 @@ class MeetingDevHandler:
             transcript_context = self._find_transcript_at(segments, timestamp_sec, window_sec=8)
 
             # Analyze with the Vision LLM
-            analysis = self._analyze_frame_vision(frame_path, transcript_context)
+            analysis = self._analyze_frame_vision(frame_path, transcript_context, project_config)
             if analysis:
                 contexts.append({
                     "timestamp_sec": timestamp_sec,
@@ -243,50 +247,32 @@ class MeetingDevHandler:
         # No OCR or hash available: always analyze
         return True, ""
 
-    def _analyze_frame_vision(self, frame_path: Path, transcript_hint: str) -> dict | None:
+    def _analyze_frame_vision(
+        self, frame_path: Path, transcript_hint: str, project_config: dict | None = None
+    ) -> dict | None:
         """Sends the frame to the Vision LLM and parses the JSON response."""
         if not self.llm_api_key:
             return {"summary": "(No API key for visual analysis)", "app": None, "file": None,
                     "content_type": None, "key_values": [], "code_snippet": None, "error": None}
+        content = None
         try:
-            with open(frame_path, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode()
+            _privacy_guard.check(_llm_provider, project_config)
 
-            import requests
             prompt = _DEV_SCREEN_PROMPT
             if transcript_hint:
-                prompt += f'\n\nContext of what was being said at this moment: "{transcript_hint}"'
+                prompt += f'\n\nContext of what was being said at this moment: "{redact_secrets(transcript_hint)}"'
 
-            payload = {
-                "model": self.llm_model,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
-                        ],
-                    }
-                ],
-                "max_tokens": 500,
-                "temperature": 0,
-            }
-            headers = {
-                "Authorization": f"Bearer {self.llm_api_key}",
-                "Content-Type": "application/json",
-            }
-            base_url = self.llm_base_url.rstrip("/")
-            resp = requests.post(f"{base_url}/chat/completions", json=payload, headers=headers, timeout=30)
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"].strip()
-
+            content = _llm_provider.describe_frame_with_prompt(frame_path, prompt, max_tokens=500, temperature=0)
             # Strip markdown fences if the LLM adds them
             content = re.sub(r"^```[a-z]*\n?", "", content).rstrip("`").strip()
             return json.loads(content)
 
+        except ExternalLLMBlockedError as e:
+            logger.info("[MEETING_DEV] Vision LLM call blocked by privacy guard for %s: %s", frame_path.name, e)
+            return None
         except json.JSONDecodeError:
             logger.warning("[MEETING_DEV] LLM did not return valid JSON for %s", frame_path.name)
-            return {"summary": content if "content" in dir() else "Error parsing", "app": None,
+            return {"summary": content or "Error parsing", "app": None,
                     "file": None, "content_type": None, "key_values": [], "code_snippet": None, "error": None}
         except Exception as e:
             logger.warning("[MEETING_DEV] Vision LLM error on %s: %s", frame_path.name, e)
@@ -294,7 +280,9 @@ class MeetingDevHandler:
 
     # ─── MarkItDown document scanner ────────────────────────────────────────
 
-    def _scan_documents(self, source_folder: Path, target_folder: Path) -> list[dict]:
+    def _scan_documents(
+        self, source_folder: Path, target_folder: Path, project_config: dict | None = None
+    ) -> list[dict]:
         """Scans source_folder for documents compatible with MarkItDown."""
         if not _MARKITDOWN_AVAILABLE:
             logger.warning("[MEETING_DEV] markitdown not installed — skipping document scan")
@@ -304,8 +292,18 @@ class MeetingDevHandler:
         docs_folder = target_folder / "documents"
 
         try:
-            # Configure MarkItDown with a Vision LLM if an API key is set (for images)
+            # Configure MarkItDown with a Vision LLM (for images) only if the
+            # privacy guard allows it — this sends document/image content to
+            # whatever provider is configured, same boundary as the other LLM calls.
+            use_vision_llm = False
             if self.llm_api_key and self.llm_base_url:
+                try:
+                    _privacy_guard.check(_llm_provider, project_config)
+                    use_vision_llm = True
+                except ExternalLLMBlockedError as e:
+                    logger.info("[MEETING_DEV] MarkItDown vision LLM blocked by privacy guard: %s", e)
+
+            if use_vision_llm:
                 try:
                     from openai import OpenAI
                     client = OpenAI(api_key=self.llm_api_key, base_url=self.llm_base_url)
@@ -452,11 +450,15 @@ class MeetingDevHandler:
         path.write_text("".join(lines), encoding="utf-8")
         logger.info("[MEETING_DEV] context.md generated: %d chars", path.stat().st_size)
 
-    def _generate_summary(self, path: Path, name: str, transcript: str, screen_contexts: list):
-        if not _LLM_AVAILABLE or not transcript.strip():
+    def _generate_summary(
+        self, path: Path, name: str, transcript: str, screen_contexts: list, project_config: dict | None = None
+    ):
+        if not transcript.strip():
             _write_empty_summary(path, name)
             return
         try:
+            _privacy_guard.check(_llm_provider, project_config)
+
             screen_summary = ""
             if screen_contexts:
                 items = [f"- `{c['timestamp_fmt']}`: {c.get('summary', '')}" for c in screen_contexts[:15]]
@@ -473,8 +475,13 @@ class MeetingDevHandler:
                 "## Next steps\n\n"
                 "Be concise and focused on concrete actions."
             )
-            analysis = _llm_summary(transcript + screen_summary, system_prompt=prompt)
+            analysis = _llm_provider.generate_summary(
+                redact_secrets(transcript + screen_summary), system_prompt=prompt
+            )
             path.write_text(f"# Summary: {name}\n\n{analysis}\n", encoding="utf-8")
+        except ExternalLLMBlockedError as e:
+            logger.info("[MEETING_DEV] Summary LLM call blocked by privacy guard: %s", e)
+            _write_empty_summary(path, name)
         except Exception as e:
             logger.warning("[MEETING_DEV] LLM summary failed: %s", e)
             _write_empty_summary(path, name)

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Video Compressor & Mover - Compresses videos with high efficiency (H.265)
 and moves them to their destination folder.
 """
 
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -14,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from transcript_pipeline.config import PROJECT_ROOT
+from transcript_pipeline.settings import SETTINGS
 
 
 def get_video_info(video_path):
@@ -51,7 +50,11 @@ def compress_video_high_efficiency(input_path, output_path):
     height = int(video_stream.get('height', 0))
     fps_str = video_stream.get('r_frame_rate', '30/1')
     try:
-        fps = eval(fps_str) if '/' in fps_str else float(fps_str)
+        if '/' in fps_str:
+            num, _, den = fps_str.partition('/')
+            fps = float(num) / float(den) if float(den) else 30.0
+        else:
+            fps = float(fps_str)
     except Exception:
         fps = 30.0
 
@@ -60,12 +63,7 @@ def compress_video_high_efficiency(input_path, output_path):
 
     # H.265 offers a better quality/size ratio than H.264.
     # Recommended CRF range: 24 to 26.
-    try:
-        crf = int(os.getenv("VIDEO_COMPRESS_CRF", "25"))
-    except ValueError:
-        crf = 25
-
-    crf = max(24, min(26, crf))
+    crf = max(24, min(26, SETTINGS.video_compress_crf))
 
     cmd = [
         'ffmpeg', '-i', str(input_path),
@@ -202,8 +200,11 @@ def process_video_compress_folder(base_path: Path = PROJECT_ROOT) -> int:
 def main() -> None:
     if sys.platform == "win32":
         import codecs
-        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
-        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+        # sys.stdout/stderr are typed as TextIO, which typeshed doesn't
+        # declare .detach() on — it's real on the TextIOWrapper Python
+        # actually hands you here, just not part of the abstract interface.
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())  # type: ignore[attr-defined]
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())  # type: ignore[attr-defined]
 
     try:
         count = process_video_compress_folder()

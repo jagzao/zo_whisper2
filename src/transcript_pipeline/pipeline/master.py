@@ -8,16 +8,17 @@ for each one. Adding a new project is a JSON entry, not a code branch here.
 from __future__ import annotations
 
 import logging
-import os
 import shutil
 import sys
 from pathlib import Path
 
 from transcript_pipeline.config import PROJECT_ROOT, PROJECTS_CONFIG_PATH, load_env
+from transcript_pipeline.handlers.base import HandlerStatus, ProjectHandler
 from transcript_pipeline.handlers.client_meeting_handler import ClientMeetingHandler
 from transcript_pipeline.handlers.meeting_dev_handler import MeetingDevHandler
 from transcript_pipeline.handlers.zo_handler import ZoHandler
 from transcript_pipeline.projects import load_projects, match_project
+from transcript_pipeline.settings import SETTINGS
 from transcript_pipeline.transcription.processor import SimpleScanProcessor
 
 load_env()
@@ -41,7 +42,7 @@ class MasterProcessor:
         self.projects = load_projects(PROJECTS_CONFIG_PATH)
 
         # Build handler instances from projects.json output_path + handler key
-        self._handlers: dict[str, object] = {}
+        self._handlers: dict[str, ProjectHandler] = {}
         for proj in self.projects:
             handler_key = proj.get("handler")
             output_path = proj.get("output_path")
@@ -74,14 +75,16 @@ class MasterProcessor:
                 self._organize_map.append((kw.lower(), target))
 
         # Icecream source folders
-        self.icecream_music = Path(os.getenv("ICECREAM_MUSIC", ""))
-        self.icecream_videos = Path(os.getenv("ICECREAM_VIDEOS", ""))
+        self.icecream_music = SETTINGS.icecream_music
+        self.icecream_videos = SETTINGS.icecream_videos
 
     # ── Step 1: organize ────────────────────────────────────────────────────
 
     def organize_files(self):
         logger.info("--- FILE ORGANIZATION ---")
-        source_dirs = [d for d in [self.icecream_music, self.icecream_videos] if d.exists()]
+        source_dirs = [
+            d for d in [self.icecream_music, self.icecream_videos] if d is not None and d.exists()
+        ]
         moved = 0
 
         for source_dir in source_dirs:
@@ -130,19 +133,31 @@ class MasterProcessor:
 
                 # Dynamic routing via projects.json
                 matched = match_project(audio_path, self.projects)
-                routed = False
                 if matched:
                     handler = self._handlers.get(matched["name"])
                     if handler:
                         logger.info("[ROUTE] %s → %s", audio_path.name, matched["name"])
-                        handler.process(result, audio_path, project_config=matched)
-                        routed = True
+                        handler_result = handler.process(result, audio_path, project_config=matched)
+                        if handler_result.status is HandlerStatus.COMPLETED:
+                            processor.tracker.mark_as_processed(audio_path, "completed_routed")
+                        elif handler_result.status is HandlerStatus.FAILED:
+                            had_errors = True
+                            logger.error(
+                                "[ROUTE] %s handler failed permanently for %s: %s",
+                                matched["name"], audio_path.name, handler_result.detail,
+                            )
+                            processor.tracker.mark_as_processed(audio_path, "failed_routed")
+                        else:  # RETRYABLE_FAILED — leave unmarked so the next scan retries it
+                            had_errors = True
+                            logger.warning(
+                                "[ROUTE] %s handler failed for %s (retryable): %s — will retry next scan",
+                                matched["name"], audio_path.name, handler_result.detail,
+                            )
                     else:
                         logger.info("[ROUTE] %s → %s (no external handler)", audio_path.name, matched["name"])
-
-                processor.tracker.mark_as_processed(
-                    audio_path, "completed_routed" if routed else "completed"
-                )
+                        processor.tracker.mark_as_processed(audio_path, "completed")
+                else:
+                    processor.tracker.mark_as_processed(audio_path, "completed")
 
             except Exception as e:
                 logger.error("Error processing %s: %s", audio_path.name, e)
