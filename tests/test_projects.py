@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from transcript_pipeline.projects import load_projects, match_project
+from transcript_pipeline.projects import load_projects, match_project, validate_project
 
 PROJECTS = [
     {
@@ -63,3 +63,61 @@ def test_load_projects_reads_json(tmp_path):
     config.write_text('{"projects": [{"name": "X", "match": {}}]}', encoding="utf-8")
     projects = load_projects(config)
     assert projects == [{"name": "X", "match": {}}]
+
+
+def test_validate_project_accepts_minimal_valid_entry():
+    assert validate_project({"name": "X"}) == []
+
+
+def test_validate_project_accepts_full_example():
+    project = {
+        "name": "Northwind",
+        "match": {"prefix": ["northwind_"], "folder_contains": ["py_northwind"]},
+        "handler": "client_meeting",
+        "language": "en",
+        "output_path": "C:/Dev/ClientProjects/Northwind",
+        "data_classification": "confidential",
+        "custom_fillers": ["like", "right"],
+        "corrections": {"Samm": "Sam"},
+    }
+    assert validate_project(project) == []
+
+
+def test_validate_project_rejects_missing_name():
+    errors = validate_project({"match": {}})
+    assert any("name" in e for e in errors)
+
+
+def test_validate_project_rejects_non_dict():
+    assert validate_project("not a project") != []
+    assert validate_project(None) != []
+
+
+def test_validate_project_rejects_unknown_handler():
+    errors = validate_project({"name": "X", "handler": "arbitrary_code_exec"})
+    assert any("handler" in e for e in errors)
+
+
+def test_validate_project_rejects_bad_match_shape():
+    errors = validate_project({"name": "X", "match": {"prefix": "not_a_list"}})
+    assert any("match.prefix" in e for e in errors)
+
+
+def test_validate_project_rejects_invalid_data_classification():
+    errors = validate_project({"name": "X", "data_classification": "top-secret"})
+    assert any("data_classification" in e for e in errors)
+
+
+def test_validate_project_rejects_bad_corrections_shape():
+    errors = validate_project({"name": "X", "corrections": {"a": 123}})
+    assert any("corrections" in e for e in errors)
+
+
+def test_load_projects_skips_invalid_entries(tmp_path):
+    config = tmp_path / "projects.json"
+    config.write_text(
+        '{"projects": [{"name": "Good"}, {"handler": "no_name"}, {"name": "Bad", "handler": "evil"}]}',
+        encoding="utf-8",
+    )
+    projects = load_projects(config)
+    assert [p["name"] for p in projects] == ["Good"]
