@@ -26,11 +26,9 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
 
 import psutil
 
-from transcript_pipeline.bootstrap import ensure_watcher_importable
 from transcript_pipeline.config import (
     AUDIO_DIR,
     FRAMES_DIR,
@@ -40,9 +38,16 @@ from transcript_pipeline.config import (
     VIDEOS_DIR,
     load_env,
 )
+from transcript_pipeline.errors import TranscriptionDependencyUnavailable
 from transcript_pipeline.file_tracker import FileTracker
 from transcript_pipeline.language import LanguageDetector
+from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
+from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
 from transcript_pipeline.projects import load_projects, match_project
+from transcript_pipeline.settings import SETTINGS
+
+_llm_provider = OpenAICompatibleProvider(SETTINGS)
+_privacy_guard = PrivacyGuard(SETTINGS)
 
 load_env()
 
@@ -50,7 +55,7 @@ load_env()
 def configure_cpu_threads() -> int:
     """Tunes CPU threading for CTranslate2/MKL/OpenBLAS."""
     try:
-        cpu_count = psutil.cpu_count(logical=False)
+        cpu_count = psutil.cpu_count(logical=False) or 4
         optimal_threads = min(cpu_count, 8)
 
         threading_vars = {
@@ -75,8 +80,8 @@ try:
     from faster_whisper import WhisperModel
     WHISPER_AVAILABLE = True
 except ImportError:
-    print("[ERROR] faster-whisper not installed")
-    sys.exit(1)
+    WhisperModel = None  # type: ignore[assignment,misc]
+    WHISPER_AVAILABLE = False
 
 logging.basicConfig(
     level=logging.INFO,
@@ -89,15 +94,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 TUTORIAL_FEATURES_AVAILABLE = False
-if ensure_watcher_importable():
-    try:
-        from watcher.core.utils import is_tutorial_video, clean_transcription
-        from watcher.core.video.keyframe_extractor import KeyframeExtractor
-        from watcher.core.postprocessing.timestamp_formatter import TimestampFormatter
-        TUTORIAL_FEATURES_AVAILABLE = True
-        logger.info("[INIT] Tutorial features available")
-    except ImportError as e:
-        logger.warning(f"[WARN] Tutorial features not available: {e}")
+try:
+    from transcript_pipeline.media.keyframe_extractor import KeyframeExtractor
+    from transcript_pipeline.media.utils import clean_transcription, is_tutorial_video
+    from transcript_pipeline.postprocessing.timestamp_formatter import TimestampFormatter
+    TUTORIAL_FEATURES_AVAILABLE = True
+    logger.info("[INIT] Tutorial features available")
+except ImportError as e:
+    logger.warning(f"[WARN] Tutorial features not available: {e}")
 
 
 class SimpleScanProcessor:
@@ -128,7 +132,7 @@ class SimpleScanProcessor:
 
         # Model — lazy-loaded; configurable via WHISPER_MODEL (default large-v3)
         self.model = None
-        self._model_name = os.getenv("WHISPER_MODEL", "large-v3")
+        self._model_name = SETTINGS.whisper_model
 
         self.keyframe_extractor = None
         if TUTORIAL_FEATURES_AVAILABLE:
@@ -138,7 +142,7 @@ class SimpleScanProcessor:
             except Exception as e:
                 logger.warning(f"[WARN] Error initializing keyframe extractor: {e}")
 
-        self.require_keyframes_for_videos = os.getenv("KEYFRAMES_REQUIRED", "1").strip().lower() not in {"0", "false", "no"}
+        self.require_keyframes_for_videos = SETTINGS.keyframes_required
         logger.info(f"[INIT] Keyframes required for videos: {self.require_keyframes_for_videos}")
 
         self.stats = {
@@ -156,7 +160,7 @@ class SimpleScanProcessor:
 
         if self.audio_base.exists():
             self.target_folders.append(self.audio_base)
-            logger.info(f"[SCAN] Root folder: audio/")
+            logger.info("[SCAN] Root folder: audio/")
             for subfolder in self.audio_base.iterdir():
                 if subfolder.is_dir() and not subfolder.name.startswith('.'):
                     self.target_folders.append(subfolder)
@@ -164,7 +168,7 @@ class SimpleScanProcessor:
 
         if self.videos_base.exists():
             self.target_folders.append(self.videos_base)
-            logger.info(f"[SCAN] Root folder: Videos/")
+            logger.info("[SCAN] Root folder: Videos/")
             for subfolder in self.videos_base.iterdir():
                 if subfolder.is_dir() and not subfolder.name.startswith('.'):
                     self.target_folders.append(subfolder)
@@ -172,8 +176,15 @@ class SimpleScanProcessor:
 
     def _ensure_model(self):
         if self.model is None:
+            if not WHISPER_AVAILABLE:
+                raise TranscriptionDependencyUnavailable(
+                    "faster-whisper is not installed — install it to run transcription "
+                    "(pip install -e '.[dev]' or `pip install faster-whisper`)."
+                )
             logger.info("[INIT] Loading Whisper model %s...", self._model_name)
-            self.model = WhisperModel(
+            # WhisperModel is only None when WHISPER_AVAILABLE is False, already
+            # ruled out above — pyright can't trace that across the two names.
+            self.model = WhisperModel(  # type: ignore[misc]
                 self._model_name,
                 device="cpu",
                 compute_type="int8",
@@ -184,7 +195,7 @@ class SimpleScanProcessor:
     def _find_project(self, audio_path: Path) -> dict | None:
         return match_project(audio_path, self._projects_config)
 
-    def find_audio_files(self) -> List[Path]:
+    def find_audio_files(self) -> list[Path]:
         """Finds all audio files in the target folders"""
         audio_files = []
 
@@ -254,7 +265,7 @@ class SimpleScanProcessor:
             logger.warning(msg)
             return None
 
-        primary_method = os.getenv("KEYFRAME_METHOD", "smart_scene").strip().lower() or "smart_scene"
+        primary_method = SETTINGS.keyframe_method
         methods = []
         for method in [primary_method, "scene", "interval"]:
             if method not in methods:
@@ -303,10 +314,11 @@ class SimpleScanProcessor:
         logger.warning(msg)
         return None
 
-    def transcribe_file(self, audio_path: Path) -> Dict:
+    def transcribe_file(self, audio_path: Path) -> dict:
         """Transcribes an audio file at MAXIMUM QUALITY"""
         try:
             self._ensure_model()
+            assert self.model is not None  # guaranteed by _ensure_model() above
             frame_info = self._ensure_keyframes(audio_path)
 
             # Detect language: prefix > lang.txt > projects.json > auto-detect
@@ -329,7 +341,7 @@ class SimpleScanProcessor:
                 'log_prob_threshold': -1.0,
                 'no_speech_threshold': 0.6,
                 'condition_on_previous_text': True,
-                'word_timestamps': os.getenv("WORD_TIMESTAMPS", "false").lower() == "true",
+                'word_timestamps': SETTINGS.word_timestamps,
             }
 
             if effective_lang:
@@ -350,7 +362,7 @@ class SimpleScanProcessor:
                         vad_parameters=dict(min_silence_duration_ms=500),
                         **transcribe_params
                     )
-                    logger.info(f"  ✓ VAD enabled")
+                    logger.info("  ✓ VAD enabled")
                 except Exception as vad_error:
                     logger.warning(f"  ⚠ VAD failed: {str(vad_error)[:50]}, continuing without VAD")
                     segments, info = self.model.transcribe(
@@ -381,14 +393,14 @@ class SimpleScanProcessor:
 
             # If VAD filtered out all the audio, retry without VAD
             if not full_text and self.vad_available:
-                logger.warning(f"  ⚠ VAD produced 0 segments, retrying without VAD...")
+                logger.warning("  ⚠ VAD produced 0 segments, retrying without VAD...")
                 segments_no_vad, info = self.model.transcribe(str(audio_path), **transcribe_params)
                 full_text, segments_list = _collect_segments(segments_no_vad)
 
             transcription_text = " ".join(full_text)
 
             # Filler-word cleanup — opt-in via CLEAN_TRANSCRIPTION=true
-            if os.getenv("CLEAN_TRANSCRIPTION", "false").lower() == "true" and TUTORIAL_FEATURES_AVAILABLE:
+            if SETTINGS.clean_transcription and TUTORIAL_FEATURES_AVAILABLE:
                 clean_lang = info.language or effective_lang
                 transcription_text = clean_transcription(
                     transcription_text,
@@ -424,7 +436,7 @@ class SimpleScanProcessor:
             mapping_file = Path(frame_info["frames_dir"]) / "frame_mapping.json"
 
             if mapping_file.exists():
-                with open(mapping_file, 'r', encoding='utf-8') as f:
+                with open(mapping_file, encoding='utf-8') as f:
                     mapping_data = json.load(f)
 
                 segments = transcription_result.get('segments', [])
@@ -488,12 +500,14 @@ class SimpleScanProcessor:
             frame_descriptions = {}
             if TUTORIAL_FEATURES_AVAILABLE:
                 try:
-                    from watcher.core.integration.llm_client import describe_frames_for_tutorial
-                    frame_descriptions = describe_frames_for_tutorial(
+                    _privacy_guard.check(_llm_provider, project_config=None)
+                    frame_descriptions = _llm_provider.describe_frames_for_tutorial(
                         frames_dir, transcription_mapping
                     )
                     if frame_descriptions:
                         logger.info(f"[FRAMES+TRANS] {len(frame_descriptions)} frames described by LLM")
+                except ExternalLLMBlockedError as e:
+                    logger.info(f"[FRAMES+TRANS] Frame descriptions blocked by privacy guard: {e}")
                 except Exception as e:
                     logger.warning(f"[FRAMES+TRANS] LLM description skipped: {e}")
 
@@ -531,7 +545,7 @@ class SimpleScanProcessor:
         except Exception as e:
             logger.error(f"[FRAMES+TRANS] Error creating readable file: {e}")
 
-    def save_transcription(self, audio_path: Path, result: Dict):
+    def save_transcription(self, audio_path: Path, result: dict):
         """Saves the transcription"""
         try:
             relative_path = audio_path.relative_to(self.audio_base)
