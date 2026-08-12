@@ -124,6 +124,8 @@ jobs:
           playwright install chromium
         env:
           PIP_NO_CACHE_DIR: 1
+      - name: Install FFmpeg
+        run: choco install ffmpeg -y --no-progress
       - name: Ensure folders exist
         run: |
           python -c "from pathlib import Path; [Path(d).mkdir(parents=True, exist_ok=True) for d in ['Video_compress','Videos','audio','CarpetaTranscripciones']]"
