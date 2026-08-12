@@ -41,6 +41,10 @@ EXCLUDE_GLOBS = {
     "harness_report.json",
     "ut_report.json",
     "e2e_report.json",
+    # Deliberately contains synthetic secret-shaped fixtures (fake OpenAI/GitHub/AWS
+    # key formats, including AWS's own public example key) to test redact_secrets()
+    # — not real secrets. Same exemption is expressed for gitleaks in .gitleaks.toml.
+    "test_llm_guard_and_redaction.py",
 }
 
 
