@@ -1,0 +1,15 @@
+# gitleaks config — supplements (does not replace) the pattern checks in
+# scripts/security.py::check_committed_secrets. gitleaks uses its own
+# maintained ruleset by default (`extend`); this file only adds
+# project-specific allowlisting so synthetic fixtures don't trip the scan.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Synthetic fixtures and documentation examples, not real secrets"
+paths = [
+    '''projects\.json\.example''',
+    '''docs/assets/.*''',
+    '''tests/.*''',
+]

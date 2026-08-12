@@ -13,7 +13,6 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List
 
 from transcript_pipeline.config import PROCESSED_FILES_DB, TRANSCRIPTIONS_DIR
 
@@ -27,10 +26,10 @@ class FileTracker:
         self.db_path = Path(db_path)
         self.processed_files = self.load_database()
 
-    def load_database(self) -> Dict:
+    def load_database(self) -> dict:
         if self.db_path.exists():
             try:
-                with open(self.db_path, "r", encoding="utf-8") as f:
+                with open(self.db_path, encoding="utf-8") as f:
                     return json.load(f)
             except Exception as e:
                 logger.warning("Error loading DB: %s", e)
@@ -138,7 +137,7 @@ class FileTracker:
         except Exception as e:
             logger.error("Error marking file as processed %s: %s", file_path, e)
 
-    def get_statistics(self) -> Dict:
+    def get_statistics(self) -> dict:
         try:
             hash_entries = {k: v for k, v in self.processed_files.items() if len(k) == 16 and k.isalnum()}
 
@@ -195,7 +194,7 @@ class FileTracker:
         except Exception as e:
             logger.error("Error during cleanup: %s", e)
 
-    def scan_and_mark_existing(self, directories: List[str]) -> int:
+    def scan_and_mark_existing(self, directories: list[str]) -> int:
         marked_count = 0
         supported_extensions = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".mp3", ".wav", ".m4a", ".flac"}
 

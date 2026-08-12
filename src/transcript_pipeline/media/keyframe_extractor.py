@@ -4,12 +4,12 @@ Keyframe Extractor Module
 Extracts keyframes from tutorial videos using FFmpeg
 """
 
+import logging
 import os
 import subprocess
-import logging
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class KeyframeExtractor:
         self,
         output_base_dir: str = "Frames",
         frame_format: str = "png",
-        ffmpeg_path: Optional[str] = None
+        ffmpeg_path: str | None = None
     ):
         """
         Inicializa el extractor de frames clave.
@@ -47,9 +47,9 @@ class KeyframeExtractor:
         self,
         video_path: Path,
         method: str = "iframe",
-        max_frames: Optional[int] = None,
+        max_frames: int | None = None,
         quality: int = 2
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Extrae frames clave de un video usando FFmpeg.
 
@@ -276,7 +276,7 @@ class KeyframeExtractor:
         except Exception as e:
             logger.error(f"[KEYFRAMES] Error creando mapa de frames: {e}")
 
-    def _extract_frame_timestamps(self, video_path: Path, frame_files: List) -> List[dict]:
+    def _extract_frame_timestamps(self, video_path: Path, frame_files: list) -> list[dict]:
         """
         Extrae timestamps reales de los I-frames usando FFprobe.
         """
@@ -343,7 +343,7 @@ class KeyframeExtractor:
         video_path: Path,
         output_dir: Path,
         method: str,
-        max_frames: Optional[int],
+        max_frames: int | None,
         quality: int
     ) -> int:
         """
@@ -375,7 +375,7 @@ class KeyframeExtractor:
         self,
         video_path: Path,
         output_dir: Path,
-        max_frames: Optional[int],
+        max_frames: int | None,
         quality: int
     ) -> int:
         """
@@ -393,7 +393,7 @@ class KeyframeExtractor:
         output_pattern = str(output_dir / f"frame_%04d.{self.frame_format}")
 
         # Filtro para seleccionar I-frames
-        filter_complex = f"select='eq(pict_type,I)'"
+        filter_complex = "select='eq(pict_type,I)'"
 
         # Comando FFmpeg
         cmd = [
@@ -427,7 +427,7 @@ class KeyframeExtractor:
         self,
         video_path: Path,
         output_dir: Path,
-        max_frames: Optional[int],
+        max_frames: int | None,
         quality: int
     ) -> int:
         """
@@ -475,7 +475,7 @@ class KeyframeExtractor:
         self,
         video_path: Path,
         output_dir: Path,
-        max_frames: Optional[int],
+        max_frames: int | None,
         quality: int
     ) -> int:
         """
@@ -572,9 +572,9 @@ class KeyframeExtractor:
 
     def _deduplicate_by_hash(
         self,
-        frame_paths: List[Path],
+        frame_paths: list[Path],
         similarity: float = 0.90
-    ) -> List[Path]:
+    ) -> list[Path]:
         """
         Elimina frames consecutivos cuya similitud de hash perceptual
         supere el umbral. Conserva el primero de cada serie duplicada.
@@ -582,8 +582,8 @@ class KeyframeExtractor:
         Requiere Pillow + imagehash; lanza RuntimeError si no están.
         """
         try:
-            from PIL import Image
             import imagehash
+            from PIL import Image
         except Exception as exc:
             raise RuntimeError("imagehash not available") from exc
 
@@ -614,7 +614,7 @@ class KeyframeExtractor:
         self,
         video_path: Path,
         output_dir: Path,
-        max_frames: Optional[int],
+        max_frames: int | None,
         quality: int
     ) -> int:
         """
@@ -683,7 +683,7 @@ class KeyframeExtractor:
             except Exception as e:
                 logger.warning(f"[KEYFRAMES] Error eliminando frame: {e}")
 
-    def get_frame_list(self, video_path: Path) -> List[str]:
+    def get_frame_list(self, video_path: Path) -> list[str]:
         """
         Obtiene la lista de frames extraídos para un video.
 
