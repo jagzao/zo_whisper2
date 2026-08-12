@@ -24,6 +24,7 @@ dev = [
     "pytest>=8.0.0",
     "playwright>=1.40.0",
     "ruff>=0.4.0",
+    "pyright>=1.1.350",
     "pip-audit>=2.7.0",
 ]
 
@@ -45,3 +46,25 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = ["watcher", "deepseek"]
+
+[tool.ruff.lint]
+# Kept intentionally small: unused imports/vars and import order catch real
+# bugs; a stricter ruleset on an existing codebase mostly produces cosmetic
+# churn without proportional value.
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]  # line-length handled by `line-length`, not worth hard-failing on strings/URLs
+
+[tool.pyright]
+include = ["src/transcript_pipeline"]
+exclude = ["**/__pycache__"]
+typeCheckingMode = "basic"
+pythonVersion = "3.10"
+reportMissingImports = true
+# Third-party ML/media deps often ship no or partial type stubs;
+# don't fail the gate over that specifically.
+reportMissingTypeStubs = false

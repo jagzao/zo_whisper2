@@ -1,11 +1,10 @@
-import os 
-import re 
-import subprocess 
-from pathlib import Path 
-from typing import Optional, Tuple, Union 
- 
+import os
+import re
+import subprocess
+from pathlib import Path
 
-def convert_video_to_wav(video_path: str, wav_path: str) -> Optional[str]:
+
+def convert_video_to_wav(video_path: str, wav_path: str) -> str | None:
     """
     Convierte un video a audio WAV usando ffmpeg.
     """
@@ -20,7 +19,7 @@ def convert_video_to_wav(video_path: str, wav_path: str) -> Optional[str]:
     ]
 
     try:
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        subprocess.run(command, capture_output=True, text=True, check=True)
         return wav_path
     except subprocess.CalledProcessError as e:
         print(f"❌ Error en ffmpeg: {e.stderr}")
@@ -28,9 +27,9 @@ def convert_video_to_wav(video_path: str, wav_path: str) -> Optional[str]:
 
 def clean_transcription(
     text: str,
-    language: str = None,
-    custom_fillers: list = None,
-    corrections: dict = None,
+    language: str | None = None,
+    custom_fillers: list | None = None,
+    corrections: dict | None = None,
 ) -> str:
     """
     Remove filler words calibrated from 206 real transcriptions (464k ES words, 20k EN words).
@@ -108,13 +107,13 @@ def clean_transcription(
 
     return text.strip()
 
-def extract_project_and_company(video_path: Path) -> Tuple[str, str]:
+def extract_project_and_company(video_path: Path) -> tuple[str, str]:
     parts = video_path.parts
     project_name = parts[-2] if len(parts) >= 2 else "desconocido"
     company_name = parts[-3] if len(parts) >= 3 else "default"
     return project_name, company_name
 
-def detect_language_from_filename(file_path: Union[str, Path]) -> str:
+def detect_language_from_filename(file_path: str | Path) -> str | None:
     """
     Detect language from filename prefix.
 
@@ -149,7 +148,7 @@ def detect_language_from_filename(file_path: Union[str, Path]) -> str:
     return None  # None → Whisper auto-detects
 
 
-def is_tutorial_video(file_path: Union[str, Path]) -> bool:
+def is_tutorial_video(file_path: str | Path) -> bool:
     """
     Detecta si un video es un tutorial basado en el nombre del archivo.
 

@@ -5,7 +5,6 @@ Provides formatting utilities for transcription timestamps
 """
 
 import logging
-from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +13,7 @@ class TimestampFormatter:
     """Formateador de timestamps para transcripciones"""
 
     @staticmethod
-    def format_simple(segments: List[Dict]) -> str:
+    def format_simple(segments: list[dict]) -> str:
         """
         Formato simple: [HH:MM:SS] Texto...
         
@@ -31,7 +30,7 @@ class TimestampFormatter:
         return "\n".join(lines)
 
     @staticmethod
-    def format_detailed(segments: List[Dict]) -> str:
+    def format_detailed(segments: list[dict]) -> str:
         """
         Formato detallado: [HH:MM:SS -> HH:MM:SS] Texto...
         
@@ -49,7 +48,7 @@ class TimestampFormatter:
         return "\n".join(lines)
 
     @staticmethod
-    def format_srt(segments: List[Dict]) -> str:
+    def format_srt(segments: list[dict]) -> str:
         """
         Formato SRT estándar para reproductores de video.
         
@@ -72,7 +71,7 @@ class TimestampFormatter:
         return "\n".join(lines)
 
     @staticmethod
-    def format_vtt(segments: List[Dict]) -> str:
+    def format_vtt(segments: list[dict]) -> str:
         """
         Formato WebVTT para web.
         
@@ -95,7 +94,7 @@ class TimestampFormatter:
         return "\n".join(lines)
 
     @staticmethod
-    def format_with_confidence(segments: List[Dict]) -> str:
+    def format_with_confidence(segments: list[dict]) -> str:
         """
         Formato con información de confianza: [HH:MM:SS] (confianza: 0.95) Texto...
         
@@ -164,7 +163,7 @@ class TimestampFormatter:
 
     @staticmethod
     def format_transcription(
-        segments: List[Dict],
+        segments: list[dict],
         format_type: str = "simple"
     ) -> str:
         """

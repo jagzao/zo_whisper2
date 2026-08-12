@@ -42,6 +42,7 @@ security_report.json
 ut_report.json
 e2e_report.json
 harness_report.json
+sbom.json
 
 # ── Entornos Python ──────────────────────────────────────────────────────────
 watcher/venv/
