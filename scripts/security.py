@@ -108,21 +108,32 @@ def check_env_gitignored(report: list[dict]) -> None:
 
 
 def check_path_traversal(report: list[dict]) -> None:
-    app = ROOT / "src" / "transcript_pipeline" / "dashboard" / "app.py"
-    if not app.exists():
-        _log(report, "path_traversal", False, "app.py not found")
-        return
-    text = app.read_text(encoding="utf-8")
-    # We want resolve() + startswith(root) before serving files.
-    has_resolve = "target.resolve()" in text and "ROOT.resolve()" in text
-    has_guard = "startswith(str(root_resolved))" in text
-    _log(report, "path_traversal", has_resolve and has_guard, "resolve()+startswith guard present" if (has_resolve and has_guard) else "missing guard")
+    """Runs the real security regression suite instead of grepping app.py for
+    magic strings — a previous version of this check only verified that the
+    literal text "target.resolve()" / "startswith(str(root_resolved))"
+    appeared somewhere in app.py, which passed even though two endpoints
+    (`/api/transcription` GET and POST) had no path guard at all. The actual
+    boundary is `SafePathResolver`, exercised by `tests/security/`."""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", str(ROOT / "tests" / "security"), "-q"],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        ok = result.returncode == 0
+        detail = (result.stdout + result.stderr).strip()[-2000:]
+    except Exception as e:
+        ok = False
+        detail = str(e)
+    _log(report, "path_traversal", ok, detail)
 
 
 def check_dependency_audit(report: list[dict]) -> None:
     try:
         result = subprocess.run(
-            ["pip-audit"],
+            [sys.executable, "-m", "pip_audit"],
             cwd=str(ROOT),
             capture_output=True,
             text=True,
@@ -131,8 +142,10 @@ def check_dependency_audit(report: list[dict]) -> None:
         ok = result.returncode == 0
         detail = (result.stdout + result.stderr).strip() or "pip audit clean"
     except FileNotFoundError:
-        ok = True
-        detail = "pip-audit not installed; skipped"
+        # pip-audit is a required dev dependency — its absence is a broken
+        # environment, not a reason to report the gate as passing.
+        ok = False
+        detail = "pip-audit not installed — run `pip install -e '.[dev]'`"
     except Exception as e:
         ok = False
         detail = str(e)

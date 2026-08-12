@@ -23,6 +23,11 @@ SANITY_MODULES = [
     "transcript_pipeline.projects",
     "transcript_pipeline.language",
     "transcript_pipeline.file_tracker",
+    "transcript_pipeline.settings",
+    "transcript_pipeline.errors",
+    "transcript_pipeline.security",
+    "transcript_pipeline.handlers.base",
+    "transcript_pipeline.llm",
 ]
 
 
@@ -60,7 +65,7 @@ def check_import_sanity(report: list[dict]) -> None:
 def check_ruff(report: list[dict]) -> None:
     try:
         result = subprocess.run(
-            ["ruff", "check", str(SRC), str(TESTS)],
+            [sys.executable, "-m", "ruff", "check", str(SRC), str(TESTS)],
             cwd=str(ROOT),
             capture_output=True,
             text=True,
@@ -69,12 +74,34 @@ def check_ruff(report: list[dict]) -> None:
         ok = result.returncode == 0
         detail = result.stdout.strip() or "ruff clean"
     except FileNotFoundError:
-        ok = True
-        detail = "ruff not installed; skipped"
+        # Ruff is a required dev dependency (see pyproject.toml [dev] extras) —
+        # its absence is a broken environment, not something to silently pass.
+        ok = False
+        detail = "ruff not installed — run `pip install -e '.[dev]'`"
     except Exception as e:
         ok = False
         detail = str(e)
     _log(report, "ruff_lint", ok, detail)
+
+
+def check_pyright(report: list[dict]) -> None:
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pyright", f"--pythonpath={sys.executable}", str(SRC)],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+        ok = result.returncode == 0
+        detail = result.stdout.strip()[-2000:] or "pyright clean"
+    except FileNotFoundError:
+        ok = False
+        detail = "pyright not installed — run `pip install -e '.[dev]'`"
+    except Exception as e:
+        ok = False
+        detail = str(e)
+    _log(report, "pyright_types", ok, detail)
 
 
 def main() -> int:
@@ -82,6 +109,7 @@ def main() -> int:
     check_syntax(report)
     check_import_sanity(report)
     check_ruff(report)
+    check_pyright(report)
     ok = all(r["status"] == "PASS" for r in report)
     REPORT_PATH.write_text(json.dumps({"checks": report, "ok": ok}, indent=2), encoding="utf-8")
     print(f"Report saved: {REPORT_PATH}")
