@@ -1,5 +1,5 @@
 {
-  "_comment": "Copy this file to projects.json and adjust it with your real projects. To add a project: copy any block and adjust the fields. custom_fillers=extra words to strip, corrections=Whisper vocabulary corrections, summary_prompt=LLM prompt for the summary (different from initial_prompt, which is for Whisper).",
+  "_comment": "Copy this file to projects.json and adjust it with your real projects. To add a project: copy any block and adjust the fields. custom_fillers=extra words to strip, corrections=Whisper vocabulary corrections, summary_prompt=LLM prompt for the summary (different from initial_prompt, which is for Whisper). data_classification (optional, default 'internal'): 'public' | 'internal' | 'confidential' — 'confidential' blocks any remote LLM call for this project regardless of ALLOW_EXTERNAL_LLM (see PRIVACY.md).",
   "projects": [
     {
       "name": "Northwind",
@@ -10,6 +10,7 @@
       "videos_subfolder": "py_northwind",
       "output_path": "C:/Dev/ClientProjects/Northwind",
       "handler": "client_meeting",
+      "data_classification": "confidential",
       "language": "en",
       "initial_prompt": "Meeting of the Northwind development team. Participants: Alex, Sam, Jordan, Taylor, Morgan. Tools: Mirth Connect, Azure DevOps, Azure Portal, .NET, SQL Server, C#, sprints, QP workflow.",
       "summary_prompt": "You are an executive assistant for a software development team. From this transcript extract and structure:\n1. **Assigned tasks** (task + responsible person)\n2. **Bugs discussed** (bug number if mentioned + description)\n3. **Technical decisions made**\n4. **Next sprint actions**\nBe concise. Use bullet points. Respond in the same language as the transcript.",
@@ -102,6 +103,7 @@
       "videos_subfolder": null,
       "output_path": null,
       "handler": null,
+      "data_classification": "public",
       "language": null,
       "initial_prompt": "Tutorial técnico de software. Se muestra código, Azure DevOps, Azure Portal, pipelines CI/CD, Git, GitHub, dashboards, configuraciones de infraestructura y herramientas de desarrollo.",
       "summary_prompt": null,
