@@ -1,4 +1,3 @@
-# C:\LocalUser\whisper\watcher\services\watcher_and_processor.py
 import logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s | %(message)s")
 
