@@ -17,14 +17,25 @@ import logging
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from flask import Flask, jsonify, render_template, request, send_from_directory
+from werkzeug.utils import secure_filename
 
 from transcript_pipeline.config import PROJECT_ROOT, load_env
+from transcript_pipeline.projects import validate_project
+from transcript_pipeline.security import (
+    MediaRoot,
+    PathNotFoundError,
+    PathTraversalError,
+    SafePathResolver,
+    SecurityError,
+)
+from transcript_pipeline.settings import SETTINGS
 
 load_env()
 
@@ -35,6 +46,15 @@ VIDEOS_BASE = ROOT / "Videos"
 TRANSCRIPTIONS_BASE = ROOT / "CarpetaTranscripciones"
 PROJECTS_PATH = ROOT / "projects.json"
 PROCESSED_DB = ROOT / "processed_files.json"
+
+RESOLVER = SafePathResolver(
+    {
+        MediaRoot.AUDIO: AUDIO_BASE,
+        MediaRoot.VIDEOS: VIDEOS_BASE,
+        MediaRoot.VIDEO_COMPRESS: VIDEO_COMPRESS,
+        MediaRoot.TRANSCRIPTIONS: TRANSCRIPTIONS_BASE,
+    }
+)
 
 SUPPORTED_MEDIA = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".opus"}
 VIDEO_EXTS = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
@@ -50,8 +70,24 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
+app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
+
+
+@app.errorhandler(SecurityError)
+def _handle_security_error(e: SecurityError) -> Any:
+    # Never echo the resolved/candidate path back to the client.
+    logger.warning("[SECURITY] %s: %s", type(e).__name__, e)
+    status = 404 if isinstance(e, PathNotFoundError) else 400
+    return jsonify({"ok": False, "error": "Invalid or forbidden path"}), status
+
+
+@app.errorhandler(413)
+def _handle_too_large(e: Any) -> Any:
+    return jsonify({"ok": False, "error": "File too large"}), 413
+
 
 # ── Global run state ─────────────────────────────────────────────────────
+_run_lock = threading.Lock()
 _run_state: dict[str, Any] = {
     "running": False,
     "mode": None,
@@ -60,6 +96,19 @@ _run_state: dict[str, Any] = {
     "error": None,
     "log_tail": "",
 }
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Writes `content` to `path` without leaving a corrupt/truncated file
+    if the process is interrupted mid-write."""
+    fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+        os.replace(tmp_name, path)
+    except BaseException:
+        Path(tmp_name).unlink(missing_ok=True)
+        raise
 
 
 def _python_exe() -> str:
@@ -80,6 +129,26 @@ PYTHON_EXE = _python_exe()
 
 
 # ── File helpers ──────────────────────────────────────────────────────────
+def _safe_media_path(raw: str, roots: list[MediaRoot], *, must_exist: bool = True) -> Path:
+    """Validates a client-supplied path (absolute, today's contract, or a
+    future relative id) against the given allowed roots via `RESOLVER`.
+    Raises `PathTraversalError`/`PathNotFoundError` — callers should let
+    these propagate to the `SecurityError` errorhandler rather than catch
+    them, so the resolved path never leaks into a per-endpoint error message.
+    """
+    if not raw:
+        raise PathTraversalError("Path required")
+    if Path(raw).is_absolute():
+        return RESOLVER.resolve_within_any(roots, raw, must_exist=must_exist)
+    last_error: PathTraversalError | PathNotFoundError | None = None
+    for root in roots:
+        try:
+            return RESOLVER.resolve(root, raw, must_exist=must_exist)
+        except (PathTraversalError, PathNotFoundError) as e:
+            last_error = e
+    raise last_error or PathTraversalError(f"{raw!r} is outside allowed roots")
+
+
 def _ensure_folders() -> None:
     for folder in (VIDEO_COMPRESS, AUDIO_BASE, VIDEOS_BASE, TRANSCRIPTIONS_BASE):
         folder.mkdir(parents=True, exist_ok=True)
@@ -98,7 +167,7 @@ def _load_projects() -> list[dict]:
 def _save_projects(projects: list[dict]) -> bool:
     try:
         data = {"projects": projects}
-        PROJECTS_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        _atomic_write_text(PROJECTS_PATH, json.dumps(data, indent=2, ensure_ascii=False))
         return True
     except Exception as e:
         logger.error("[PROJECTS] Error saving projects.json: %s", e)
@@ -244,7 +313,7 @@ def _resolve_frames(media_path: Path) -> dict | None:
         data = json.loads(mapping_file.read_text(encoding="utf-8"))
         frames = data.get("frames", [])
         for frame in frames:
-            frame["url"] = f"/frame/{output_folder.relative_to(ROOT).as_posix()}/{media_path.stem}_Frames/{media_path.stem}/{frame['frame_file']}"
+            frame["url"] = f"/frame/{output_folder.relative_to(TRANSCRIPTIONS_BASE).as_posix()}/{media_path.stem}_Frames/{media_path.stem}/{frame['frame_file']}"
         return {
             "folder": str(frames_parent),
             "mapping": data,
@@ -263,12 +332,12 @@ def index() -> str:
 
 
 @app.route("/api/status")
-def api_status() -> dict:
+def api_status() -> Any:
     return jsonify(_run_state)
 
 
 @app.route("/api/folders")
-def api_folders() -> dict:
+def api_folders() -> Any:
     _ensure_folders()
     return jsonify(
         {
@@ -299,7 +368,7 @@ def api_folders() -> dict:
 
 
 @app.route("/api/files")
-def api_files() -> dict:
+def api_files() -> Any:
     _ensure_folders()
     media_files: list[dict] = []
 
@@ -330,20 +399,21 @@ def api_files() -> dict:
 
 
 @app.route("/api/projects")
-def api_projects() -> dict:
+def api_projects() -> Any:
     return jsonify({"projects": _load_projects()})
 
 
 @app.route("/api/projects", methods=["POST"])
-def api_projects_update() -> dict:
+def api_projects_update() -> Any:
     payload = request.get_json(force=True) or {}
     action = payload.get("action")
     projects = _load_projects()
 
     if action == "create":
         new_project = payload.get("project")
-        if not new_project or not new_project.get("name"):
-            return jsonify({"ok": False, "error": "Project name required"}), 400
+        errors = validate_project(new_project)
+        if errors or not isinstance(new_project, dict):
+            return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
         if any(p["name"] == new_project["name"] for p in projects):
             return jsonify({"ok": False, "error": "Project already exists"}), 400
         projects.append(new_project)
@@ -351,8 +421,11 @@ def api_projects_update() -> dict:
     elif action == "update":
         name = payload.get("name")
         updated = payload.get("project")
-        if not name or not updated:
+        if not name:
             return jsonify({"ok": False, "error": "Incomplete data"}), 400
+        errors = validate_project(updated)
+        if errors or not isinstance(updated, dict):
+            return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
         projects = [updated if p["name"] == name else p for p in projects]
 
     elif action == "delete":
@@ -368,7 +441,7 @@ def api_projects_update() -> dict:
 
 
 @app.route("/api/upload", methods=["POST"])
-def api_upload() -> dict:
+def api_upload() -> Any:
     if "file" not in request.files:
         return jsonify({"ok": False, "error": "No file sent"}), 400
 
@@ -377,7 +450,9 @@ def api_upload() -> dict:
         return jsonify({"ok": False, "error": "Empty filename"}), 400
 
     project_id = request.form.get("project", "").strip()
-    filename = Path(file.filename).name
+    filename = secure_filename(Path(file.filename).name)
+    if not filename:
+        return jsonify({"ok": False, "error": "Invalid filename"}), 400
     ext = Path(filename).suffix.lower()
     if ext not in SUPPORTED_MEDIA:
         return jsonify({"ok": False, "error": f"Unsupported format: {ext}"}), 400
@@ -416,30 +491,29 @@ def api_upload() -> dict:
 
 
 @app.route("/api/run/<mode>", methods=["POST"])
-def api_run(mode: str) -> dict:
-    global _run_state
-    if _run_state["running"]:
-        return jsonify({"ok": False, "error": "A run is already in progress"}), 409
-
+def api_run(mode: str) -> Any:
     if mode not in ("full", "compress", "transcribe"):
         return jsonify({"ok": False, "error": "Invalid mode"}), 400
 
-    _run_state.update(
-        {
-            "running": True,
-            "mode": mode,
-            "started_at": datetime.now().isoformat(),
-            "finished_at": None,
-            "error": None,
-            "log_tail": "",
-        }
-    )
+    with _run_lock:
+        if _run_state["running"]:
+            return jsonify({"ok": False, "error": "A run is already in progress"}), 409
+        _run_state.update(
+            {
+                "running": True,
+                "mode": mode,
+                "started_at": datetime.now().isoformat(),
+                "finished_at": None,
+                "error": None,
+                "log_tail": "",
+            }
+        )
     threading.Thread(target=_run_pipeline, args=(mode,), daemon=True).start()
     return jsonify({"ok": True, "mode": mode})
 
 
 @app.route("/api/logs")
-def api_logs() -> dict:
+def api_logs() -> Any:
     lines: list[str] = []
     for log_file in ("dashboard.log", "master_process.log", "simple_scan.log"):
         path = ROOT / log_file
@@ -454,14 +528,12 @@ def api_logs() -> dict:
 
 
 @app.route("/api/transcription")
-def api_transcription() -> dict:
-    path = request.args.get("path", "")
-    if not path or not Path(path).exists():
-        return jsonify({"ok": False, "error": "Transcription not found"}), 404
+def api_transcription() -> Any:
+    resolved = _safe_media_path(request.args.get("path", ""), [MediaRoot.TRANSCRIPTIONS])
     try:
-        text = Path(path).read_text(encoding="utf-8", errors="ignore")
-        folder = Path(path).parent
-        stem = Path(path).stem
+        text = resolved.read_text(encoding="utf-8", errors="ignore")
+        folder = resolved.parent
+        stem = resolved.stem
         segments_path = folder / f"{stem}_segments.json"
         metadata_path = folder / f"{stem}_metadata.json"
         metadata = {}
@@ -492,32 +564,27 @@ def api_transcription() -> dict:
 
 @app.route("/stream/<path:filename>")
 def stream_media(filename: str) -> Any:
-    """Serves audio/video files under Videos/ or audio/ for the player."""
-    safe_path = filename.replace("/", os.sep).replace("\\", os.sep)
-    target = ROOT / safe_path
-    target_resolved = target.resolve()
-    root_resolved = ROOT.resolve()
-    if not str(target_resolved).startswith(str(root_resolved)) or not target.exists():
-        return jsonify({"ok": False, "error": "Not found"}), 404
+    """Serves audio/video files under Videos/, audio/, or Video_compress/ for the player."""
+    target = _safe_media_path(
+        filename, [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS]
+    )
     return send_from_directory(str(target.parent), target.name)
 
 
 @app.route("/api/transcription", methods=["POST"])
-def api_transcription_save() -> dict:
+def api_transcription_save() -> Any:
     payload = request.get_json(force=True) or {}
-    path = payload.get("path", "")
     text = payload.get("text", "")
-    if not path or not Path(path).exists():
-        return jsonify({"ok": False, "error": "Transcription not found"}), 404
+    resolved = _safe_media_path(payload.get("path", ""), [MediaRoot.TRANSCRIPTIONS])
     try:
-        Path(path).write_text(text, encoding="utf-8")
+        _atomic_write_text(resolved, text)
         # Update text inside segments.json if it exists
-        segments_path = Path(path).parent / f"{Path(path).stem}_segments.json"
+        segments_path = resolved.parent / f"{resolved.stem}_segments.json"
         if segments_path.exists():
             try:
                 data = json.loads(segments_path.read_text(encoding="utf-8"))
                 data["text"] = text
-                segments_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+                _atomic_write_text(segments_path, json.dumps(data, indent=2, ensure_ascii=False))
             except Exception:
                 pass
         return jsonify({"ok": True})
@@ -526,13 +593,11 @@ def api_transcription_save() -> dict:
 
 
 @app.route("/api/file", methods=["DELETE"])
-def api_delete_file() -> dict:
-    path = request.args.get("path", "")
-    if not path:
-        return jsonify({"ok": False, "error": "Path required"}), 400
-    target = Path(path)
-    if not target.exists() or not str(target.resolve()).startswith(str(ROOT.resolve())):
-        return jsonify({"ok": False, "error": "File not found or not allowed"}), 404
+def api_delete_file() -> Any:
+    target = _safe_media_path(
+        request.args.get("path", ""),
+        [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS, MediaRoot.TRANSCRIPTIONS],
+    )
     try:
         transcription = _resolve_transcription(target)
         target.unlink()
@@ -561,13 +626,10 @@ def api_delete_file() -> dict:
 
 
 @app.route("/api/frames")
-def api_frames() -> dict:
-    path = request.args.get("path", "")
-    if not path:
-        return jsonify({"ok": False, "error": "Path required"}), 400
-    target = Path(path)
-    if not target.exists() or not str(target.resolve()).startswith(str(ROOT.resolve())):
-        return jsonify({"ok": False, "error": "File not found"}), 404
+def api_frames() -> Any:
+    target = _safe_media_path(
+        request.args.get("path", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO]
+    )
     info = _resolve_frames(target)
     if not info:
         return jsonify({"ok": False, "error": "No frames available"}), 404
@@ -577,12 +639,7 @@ def api_frames() -> dict:
 @app.route("/frame/<path:filename>")
 def serve_frame(filename: str) -> Any:
     """Serves frame images under CarpetaTranscripciones/."""
-    safe_path = filename.replace("/", os.sep).replace("\\", os.sep)
-    target = TRANSCRIPTIONS_BASE / safe_path
-    target_resolved = target.resolve()
-    root_resolved = ROOT.resolve()
-    if not str(target_resolved).startswith(str(root_resolved)) or not target.exists():
-        return jsonify({"ok": False, "error": "Frame not found"}), 404
+    target = _safe_media_path(filename, [MediaRoot.TRANSCRIPTIONS])
     return send_from_directory(str(target.parent), target.name)
 
 
@@ -636,7 +693,15 @@ def _run_pipeline(mode: str) -> None:
 
 def main() -> None:
     _ensure_folders()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    if SETTINGS.dashboard_host not in ("127.0.0.1", "localhost", "::1"):
+        logger.warning(
+            "[DASHBOARD] Binding to %s:%s — this exposes the dashboard beyond "
+            "localhost with NO authentication. Only do this on a trusted "
+            "network and understand the risk before proceeding.",
+            SETTINGS.dashboard_host,
+            SETTINGS.dashboard_port,
+        )
+    app.run(host=SETTINGS.dashboard_host, port=SETTINGS.dashboard_port, debug=False)
 
 
 if __name__ == "__main__":
