@@ -13,7 +13,7 @@ Key signals of an AI-native workflow, all of which are in this repo:
 - All screenshots in `docs/screenshots/` are generated from 100% synthetic data (`docs/assets/generate_mock_data.py`).
 - No real secrets, client names, or local paths are committed — `scripts/security.py` checks for this before every push.
 
-Local development also uses project-specific context files and an agent/skill orchestration layer to brief AI assistants consistently — those aren't published here since they reference local paths and internal conventions, but the harnesses and CI below are the actual guardrails, and they're fully public and runnable by anyone who clones this repo.
+Local development also uses project-specific context files and an agent/skill orchestration layer (`.agents/`) to brief AI assistants consistently — that layer is intentionally kept in this repo, published alongside the code, so the orchestration approach itself is inspectable. Any paths or examples in it are illustrative (Windows-style local paths, synthetic project names), not real credentials or client data — the harnesses and CI below are the actual guardrails, and they're fully public and runnable by anyone who clones this repo.
 
 ## Why this makes us program faster with AI
 
@@ -28,11 +28,10 @@ Without shared context, every AI assistant starts from zero: it has to guess the
 ### 1. Prompt-driven code changes
 
 - Changes are described in plain language ("add dashboard pagination", "harden search highlight", "create an E2E harness") and implemented by reusing existing code before adding new code.
-- Deliberate shortcuts are marked with a `ponytail:` comment naming the shortcut and the upgrade path, e.g.:
+- Deliberate shortcuts are marked with a `ponytail:` comment naming the shortcut and the upgrade path, e.g. (`RUN_MAX_QUALITY.bat`):
 
-```python
-# ponytail: local-only paths; not pushed (env file gitignored).
-RAG_BASE_PATH = os.getenv("RAG_BASE_PATH", "C:/Dev/LocalProject/Rag/_transcripciones")
+```bat
+REM ponytail: assumes the .bat lives at the repo root; avoids hardcoding an absolute path.
 ```
 
 ### 2. Composition roots stay thin
@@ -47,11 +46,13 @@ All harnesses live under `scripts/` and produce JSON reports at the repo root.
 
 | Harness | Script | What it checks | Report |
 |---|---|---|---|
-| Quality | `scripts/quality.py` | Python syntax (`py_compile`), import sanity for core modules, optional `ruff` lint | `quality_report.json` |
-| Security | `scripts/security.py` | Committed secrets, `.env` ignored, path-traversal guards, optional `pip-audit` | `security_report.json` |
-| Unit tests | `scripts/ut.py` | `pytest tests/` (projects, language, file_tracker) | `ut_report.json` |
+| Quality | `scripts/quality.py` | Python syntax (`py_compile`), import sanity for core modules, `ruff` lint, `pyright` types | `quality_report.json` |
+| Security | `scripts/security.py` | Committed secrets, `.env` ignored, the real `tests/security/` regression suite, `pip-audit` | `security_report.json` |
+| Unit/security/integration tests | `scripts/ut.py` | `pytest tests/` (routing, language, file_tracker, settings, privacy guard/redaction, security regressions, handler contract) | `ut_report.json` |
 | E2E | `scripts/e2e.py` | Generates synthetic data, starts the dashboard, runs `tests/e2e/smoke_dashboard.py` (Playwright) | `e2e_report.json` |
 | Combined | `scripts/run_harness.py` | Runs all four stages sequentially | `harness_report.json` |
+
+Every check above is **fail-closed**: if `ruff`, `pyright`, or `pip-audit` isn't installed, the corresponding check reports FAIL, not a silent PASS — an earlier version of these harnesses treated a missing tool as passing, which is exactly the kind of gap that lets real issues through unnoticed. CI (`.github/workflows/dashboard-ci.yml`) also runs `gitleaks` as an independent secret-scanning job, separate from the harnesses above.
 
 Run everything locally:
 
@@ -70,15 +71,16 @@ python scripts/e2e.py
 
 ### CI integration
 
-The GitHub Actions workflow `.github/workflows/dashboard-ci.yml` uses the same harness pattern: quality → security → unit tests → E2E. Each job uploads its report as an artifact. Because the E2E job depends on the previous three, CI fails fast on cheap checks and only runs the expensive Playwright test when everything else is green.
+The GitHub Actions workflow `.github/workflows/dashboard-ci.yml` runs `secret-scan` (gitleaks, independent of the harnesses) alongside `quality` → `security` → `unit-tests` (matrixed across Python 3.10/3.11/3.12) → `e2e`. Each job uploads its report (and, for the security job, a CycloneDX SBOM) as an artifact. Because the E2E job depends on the other three, CI fails fast on cheap checks and only runs the expensive Playwright test when everything else is green. Dependabot (`.github/dependabot.yml`) opens weekly PRs for outdated `pip` and GitHub Actions dependencies.
 
 ## Security discipline for AI-generated code
 
 1. **Secrets stay in local `.env` files only.** `.env`, `*.env`, `watcher/.env`, and `deepseek/.env` are `.gitignore`d.
 2. **Examples, not values.** Committed files end in `.env.example` and contain `PLACEHOLDER_*` or `your_*_here` values.
-3. **Pre-push scan.** `scripts/security.py` checks tracked files for OpenAI/Notion/AWS keys, private keys, and hardcoded passwords before any push.
-4. **Path traversal guard.** `dashboard/app.py` resolves requested paths and verifies they are inside `PROJECT_ROOT` before serving media or frames.
-5. **No real client data in screenshots.** `docs/screenshots/` uses mock projects (Northwind, Contoso, Fabrikam) and synthetic transcripts, generated fresh by `docs/assets/generate_mock_data.py` rather than sanitized from real recordings.
+3. **Pre-push scan.** `scripts/security.py` checks tracked files for OpenAI/Notion/AWS keys, private keys, and hardcoded passwords before any push; CI additionally runs `gitleaks`.
+4. **Filesystem boundary, not a per-endpoint guard.** Every dashboard endpoint that touches a file goes through `SafePathResolver` (`src/transcript_pipeline/security/`), which resolves against a fixed set of allowed roots — not a blanket "inside `PROJECT_ROOT`" check, which is broader than it needs to be and was in fact the shape of a real path-traversal bug this project found and fixed in itself (see `docs/adr/0002-safe-filesystem-boundary.md`).
+5. **External LLM calls are opt-in, not just documented.** `PrivacyGuard.check()` (`src/transcript_pipeline/llm/guard.py`) is called before every outbound request; `ALLOW_EXTERNAL_LLM=false` by default, and `data_classification: confidential` blocks a specific project's data regardless of the global flag. See `PRIVACY.md`.
+6. **No real client data in screenshots.** `docs/screenshots/` uses mock projects (Northwind, Contoso, Fabrikam) and synthetic transcripts, generated fresh by `docs/assets/generate_mock_data.py` rather than sanitized from real recordings.
 
 ## Caveman / ponytail development modes
 
