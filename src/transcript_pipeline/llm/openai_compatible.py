@@ -14,12 +14,14 @@ shared-kernel module lived outside the installable package and required
 from __future__ import annotations
 
 import base64
+import io
 import logging
 import time
 from pathlib import Path
 
 import certifi
 import requests
+from PIL import Image
 
 from transcript_pipeline.config import PROJECT_ROOT
 from transcript_pipeline.llm.provider import LLMProviderType
@@ -36,6 +38,29 @@ _DEFAULT_SUMMARY_PROMPT = (
 # 429 (rate limited) and 5xx (server-side) are worth retrying; 4xx otherwise
 # (bad request, auth failure, ...) won't succeed on retry — fail fast instead.
 _RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+
+# Screen recordings can produce arbitrarily large frame captures — bound what
+# actually gets base64-encoded and sent to the vision model (and, for a
+# remote provider, what leaves the machine) regardless of source resolution.
+_MAX_IMAGE_DIMENSION = 1024
+_MIME_BY_SUFFIX = {"jpg": "jpeg", "jpeg": "jpeg", "png": "png", "webp": "webp"}
+
+
+def _encode_image_b64(image_path: Path) -> tuple[str, str]:
+    """Returns (base64_data, mime_subtype). Downscales images whose longest
+    side exceeds `_MAX_IMAGE_DIMENSION`, re-encoding as JPEG in that case —
+    good enough fidelity for a vision model description, small enough to
+    keep upload size bounded. Images already within the limit are sent
+    as-is (no lossy re-encode for no reason)."""
+    mime = _MIME_BY_SUFFIX.get(image_path.suffix.lower().lstrip("."), "png")
+    with Image.open(image_path) as img:
+        if max(img.size) <= _MAX_IMAGE_DIMENSION:
+            return base64.b64encode(image_path.read_bytes()).decode(), mime
+        resized = img.convert("RGB")
+        resized.thumbnail((_MAX_IMAGE_DIMENSION, _MAX_IMAGE_DIMENSION), Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        resized.save(buf, format="JPEG", quality=85)
+        return base64.b64encode(buf.getvalue()).decode(), "jpeg"
 
 
 def _is_retryable(exc: Exception) -> bool:
@@ -101,10 +126,7 @@ class OpenAICompatibleProvider:
         with a domain-specific prompt — `describe_frame` is a thin wrapper
         around this with the default screen-description prompt.
         """
-        image_bytes = Path(image_path).read_bytes()
-        suffix = Path(image_path).suffix.lower().lstrip(".")
-        mime = {"jpg": "jpeg", "jpeg": "jpeg", "png": "png", "webp": "webp"}.get(suffix, "png")
-        b64 = base64.b64encode(image_bytes).decode()
+        b64, mime = _encode_image_b64(Path(image_path))
 
         user_content = [
             {"type": "text", "text": prompt},
