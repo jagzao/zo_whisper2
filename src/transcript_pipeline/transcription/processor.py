@@ -43,6 +43,7 @@ from transcript_pipeline.file_tracker import FileTracker
 from transcript_pipeline.language import LanguageDetector
 from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
 from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
+from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.projects import load_projects, match_project
 from transcript_pipeline.settings import SETTINGS
 
@@ -83,14 +84,7 @@ except ImportError:
     WhisperModel = None  # type: ignore[assignment,misc]
     WHISPER_AVAILABLE = False
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(PROJECT_ROOT / 'simple_scan.log', encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+RUN_ID = configure_logging("simple_scan.log")
 logger = logging.getLogger(__name__)
 
 TUTORIAL_FEATURES_AVAILABLE = False
