@@ -16,7 +16,7 @@ from transcript_pipeline.settings import Settings
 def _settings(**overrides) -> Settings:
     base = dict(
         whisper_model="large-v3", word_timestamps=False, clean_transcription=False,
-        keyframes_required=True, keyframe_method="smart_scene", video_compress_crf=25,
+        keyframes_required=True, keyframe_method="smart_scene", file_tracker_hash_mode="fast", video_compress_crf=25,
         tesseract_cmd=None, meeting_frame_interval=15, meeting_max_screen_analyses=30,
         meeting_keep_frames=False, llm_api_key="test-key", llm_model="gpt-4o-mini",
         llm_base_url="https://api.example.com/v1", llm_provider_type="remote",
