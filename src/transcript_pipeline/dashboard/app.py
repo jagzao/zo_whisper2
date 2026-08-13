@@ -22,6 +22,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
@@ -129,24 +130,36 @@ PYTHON_EXE = _python_exe()
 
 
 # ── File helpers ──────────────────────────────────────────────────────────
-def _safe_media_path(raw: str, roots: list[MediaRoot], *, must_exist: bool = True) -> Path:
-    """Validates a client-supplied path (absolute, today's contract, or a
-    future relative id) against the given allowed roots via `RESOLVER`.
-    Raises `PathTraversalError`/`PathNotFoundError` — callers should let
-    these propagate to the `SecurityError` errorhandler rather than catch
-    them, so the resolved path never leaks into a per-endpoint error message.
+def _to_media_id(root: MediaRoot, absolute_path: Path) -> str:
+    """Absolute path -> opaque `"<root>:<relative>"` id safe to hand to the browser.
+
+    Replaces exposing `str(path)` (an absolute local filesystem path) in API
+    responses — the id encodes which allowed root the file lives under plus
+    a path relative to it, with no information about where the repo itself
+    sits on disk.
     """
-    if not raw:
-        raise PathTraversalError("Path required")
-    if Path(raw).is_absolute():
-        return RESOLVER.resolve_within_any(roots, raw, must_exist=must_exist)
-    last_error: PathTraversalError | PathNotFoundError | None = None
-    for root in roots:
-        try:
-            return RESOLVER.resolve(root, raw, must_exist=must_exist)
-        except (PathTraversalError, PathNotFoundError) as e:
-            last_error = e
-    raise last_error or PathTraversalError(f"{raw!r} is outside allowed roots")
+    return f"{root.value}:{RESOLVER.to_id(root, absolute_path)}"
+
+
+def _from_media_id(media_id: str, allowed_roots: list[MediaRoot], *, must_exist: bool = True) -> Path:
+    """Resolves a `_to_media_id()` id back to a real path, validated against
+    `allowed_roots`. Raises `PathTraversalError`/`PathNotFoundError` —
+    callers should let these propagate to the `SecurityError` errorhandler
+    rather than catch them, so the resolved path never leaks into a
+    per-endpoint error message.
+    """
+    if not media_id:
+        raise PathTraversalError("id required")
+    root_key, sep, relative = media_id.partition(":")
+    if not sep:
+        raise PathTraversalError(f"Malformed id: {media_id!r}")
+    try:
+        root = MediaRoot(root_key)
+    except ValueError:
+        raise PathTraversalError(f"Unknown root in id: {root_key!r}") from None
+    if root not in allowed_roots:
+        raise PathTraversalError(f"Root {root_key!r} not allowed for this operation")
+    return RESOLVER.resolve(root, relative, must_exist=must_exist)
 
 
 def _ensure_folders() -> None:
@@ -247,12 +260,8 @@ def _resolve_transcription(media_path: Path) -> dict | None:
     ]
     for candidate in candidates:
         if candidate.exists():
-            segments_path = candidate.parent / f"{media_path.stem}_segments.json"
-            metadata_path = candidate.parent / f"{media_path.stem}_metadata.json"
             return {
-                "path": str(candidate),
-                "segments_path": str(segments_path) if segments_path.exists() else None,
-                "metadata_path": str(metadata_path) if metadata_path.exists() else None,
+                "id": _to_media_id(MediaRoot.TRANSCRIPTIONS, candidate),
                 "size": candidate.stat().st_size,
                 "modified": datetime.fromtimestamp(candidate.stat().st_mtime).isoformat(),
             }
@@ -313,10 +322,9 @@ def _resolve_frames(media_path: Path) -> dict | None:
         data = json.loads(mapping_file.read_text(encoding="utf-8"))
         frames = data.get("frames", [])
         for frame in frames:
-            frame["url"] = f"/frame/{output_folder.relative_to(TRANSCRIPTIONS_BASE).as_posix()}/{media_path.stem}_Frames/{media_path.stem}/{frame['frame_file']}"
+            frame_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, frames_parent / frame["frame_file"])
+            frame["url"] = f"/frame?id={quote(frame_id, safe='')}"
         return {
-            "folder": str(frames_parent),
-            "mapping": data,
             "frames": frames,
             "count": len(frames),
         }
@@ -344,22 +352,18 @@ def api_folders() -> Any:
             "folders": [
                 {
                     "name": "Video_compress",
-                    "path": str(VIDEO_COMPRESS),
                     "count": _count_files(VIDEO_COMPRESS, SUPPORTED_MEDIA, recursive=False),
                 },
                 {
                     "name": "Videos",
-                    "path": str(VIDEOS_BASE),
                     "count": _count_files(VIDEOS_BASE, SUPPORTED_MEDIA),
                 },
                 {
                     "name": "audio",
-                    "path": str(AUDIO_BASE),
                     "count": _count_files(AUDIO_BASE, SUPPORTED_MEDIA),
                 },
                 {
                     "name": "CarpetaTranscripciones",
-                    "path": str(TRANSCRIPTIONS_BASE),
                     "count": _count_files(TRANSCRIPTIONS_BASE, {".txt"}),
                 },
             ]
@@ -372,7 +376,7 @@ def api_files() -> Any:
     _ensure_folders()
     media_files: list[dict] = []
 
-    for base in (VIDEOS_BASE, AUDIO_BASE):
+    for base, root in ((VIDEOS_BASE, MediaRoot.VIDEOS), (AUDIO_BASE, MediaRoot.AUDIO)):
         if not base.exists():
             continue
         for path in base.rglob("*"):
@@ -382,17 +386,16 @@ def api_files() -> Any:
             project = _find_matching_project(path.name)
             media_files.append(
                 {
-                    "path": str(path),
+                    "media_id": _to_media_id(root, path),
                     "relative": str(path.relative_to(ROOT)),
                     "name": path.name,
                     "size": path.stat().st_size,
                     "status": _file_status(path),
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,
-            "transcription": transcription,
-            "frames": _resolve_frames(path),
-        }
-    )
+                    "transcription": transcription,
+                }
+            )
 
     media_files.sort(key=lambda x: x["name"].lower())
     return jsonify({"files": media_files})
@@ -484,7 +487,7 @@ def api_upload() -> Any:
     try:
         file.save(str(destination))
         logger.info("[UPLOAD] %s → %s", filename, destination)
-        return jsonify({"ok": True, "path": str(destination), "name": destination.name})
+        return jsonify({"ok": True, "name": destination.name})
     except Exception as e:
         logger.error("[UPLOAD] Error: %s", e)
         return jsonify({"ok": False, "error": str(e)}), 500
@@ -529,7 +532,7 @@ def api_logs() -> Any:
 
 @app.route("/api/transcription")
 def api_transcription() -> Any:
-    resolved = _safe_media_path(request.args.get("path", ""), [MediaRoot.TRANSCRIPTIONS])
+    resolved = _from_media_id(request.args.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
     try:
         text = resolved.read_text(encoding="utf-8", errors="ignore")
         folder = resolved.parent
@@ -547,7 +550,6 @@ def api_transcription() -> Any:
             "ok": True,
             "text": text,
             "segments": segments,
-            "metadata": metadata,
             "insights": {
                 "language": metadata.get("language") or "unknown",
                 "duration": metadata.get("duration", 0),
@@ -562,11 +564,11 @@ def api_transcription() -> Any:
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-@app.route("/stream/<path:filename>")
-def stream_media(filename: str) -> Any:
+@app.route("/stream")
+def stream_media() -> Any:
     """Serves audio/video files under Videos/, audio/, or Video_compress/ for the player."""
-    target = _safe_media_path(
-        filename, [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS]
+    target = _from_media_id(
+        request.args.get("id", ""), [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS]
     )
     return send_from_directory(str(target.parent), target.name)
 
@@ -575,7 +577,7 @@ def stream_media(filename: str) -> Any:
 def api_transcription_save() -> Any:
     payload = request.get_json(force=True) or {}
     text = payload.get("text", "")
-    resolved = _safe_media_path(payload.get("path", ""), [MediaRoot.TRANSCRIPTIONS])
+    resolved = _from_media_id(payload.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
     try:
         _atomic_write_text(resolved, text)
         # Update text inside segments.json if it exists
@@ -594,15 +596,15 @@ def api_transcription_save() -> Any:
 
 @app.route("/api/file", methods=["DELETE"])
 def api_delete_file() -> Any:
-    target = _safe_media_path(
-        request.args.get("path", ""),
+    target = _from_media_id(
+        request.args.get("id", ""),
         [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS, MediaRoot.TRANSCRIPTIONS],
     )
     try:
         transcription = _resolve_transcription(target)
         target.unlink()
         if transcription:
-            tx_folder = Path(transcription["path"]).parent
+            tx_folder = _from_media_id(transcription["id"], [MediaRoot.TRANSCRIPTIONS]).parent
             stem = target.stem
             for child in tx_folder.iterdir():
                 if child.is_file() and child.stem.startswith(stem):
@@ -627,8 +629,8 @@ def api_delete_file() -> Any:
 
 @app.route("/api/frames")
 def api_frames() -> Any:
-    target = _safe_media_path(
-        request.args.get("path", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO]
+    target = _from_media_id(
+        request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO]
     )
     info = _resolve_frames(target)
     if not info:
@@ -636,10 +638,10 @@ def api_frames() -> Any:
     return jsonify({"ok": True, **info})
 
 
-@app.route("/frame/<path:filename>")
-def serve_frame(filename: str) -> Any:
+@app.route("/frame")
+def serve_frame() -> Any:
     """Serves frame images under CarpetaTranscripciones/."""
-    target = _safe_media_path(filename, [MediaRoot.TRANSCRIPTIONS])
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
     return send_from_directory(str(target.parent), target.name)
 
 
