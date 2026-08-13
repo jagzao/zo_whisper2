@@ -12,3 +12,12 @@ from __future__ import annotations
 
 class TranscriptionDependencyUnavailable(RuntimeError):
     """`faster-whisper` (or another required transcription dependency) is not installed."""
+
+
+class ConfigurationError(ValueError):
+    """A `Settings` value is invalid — raised at startup (`Settings.from_env()`),
+    not deep inside whatever code path first happens to read the bad value.
+    Subclasses `ValueError` so existing `except ValueError` call sites (if any)
+    keep working; catch `ConfigurationError` specifically to distinguish a
+    misconfigured `.env` from an unrelated value error.
+    """
