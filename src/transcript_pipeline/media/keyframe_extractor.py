@@ -187,7 +187,8 @@ class KeyframeExtractor:
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True
+                text=True,
+                timeout=30
             )
 
             # Buscar duración en la salida
@@ -290,7 +291,7 @@ class KeyframeExtractor:
                 str(video_path)
             ]
             
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             if result.returncode == 0:
                 lines = result.stdout.strip().split('\n')
                 frame_index = 0
@@ -407,7 +408,7 @@ class KeyframeExtractor:
         ]
 
         # Ejecutar comando
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
         if result.returncode != 0:
             logger.error(f"[KEYFRAMES] FFmpeg error: {result.stderr}")
@@ -457,7 +458,7 @@ class KeyframeExtractor:
             output_pattern
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
         if result.returncode != 0:
             logger.error(f"[KEYFRAMES] FFmpeg error: {result.stderr}")
@@ -506,7 +507,7 @@ class KeyframeExtractor:
             "-"
         ]
 
-        result = subprocess.run(detect_cmd, capture_output=True, text=True)
+        result = subprocess.run(detect_cmd, capture_output=True, text=True, timeout=600)
         pts_list = []
         for line in result.stderr.splitlines():
             if "pts:" in line and "pts_time:" in line:
@@ -548,7 +549,7 @@ class KeyframeExtractor:
                 "-y",
                 str(out_file)
             ]
-            subprocess.run(cmd, capture_output=True, text=True)
+            subprocess.run(cmd, capture_output=True, text=True, timeout=60)
 
         extracted = sorted(output_dir.glob(f"frame_*.{fmt}"))
 
@@ -652,7 +653,7 @@ class KeyframeExtractor:
             output_pattern
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
         if result.returncode != 0:
             logger.error(f"[KEYFRAMES] FFmpeg error: {result.stderr}")

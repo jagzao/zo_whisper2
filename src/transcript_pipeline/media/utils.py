@@ -19,10 +19,13 @@ def convert_video_to_wav(video_path: str, wav_path: str) -> str | None:
     ]
 
     try:
-        subprocess.run(command, capture_output=True, text=True, check=True)
+        subprocess.run(command, capture_output=True, text=True, check=True, timeout=600)
         return wav_path
     except subprocess.CalledProcessError as e:
         print(f"❌ Error en ffmpeg: {e.stderr}")
+        return None
+    except subprocess.TimeoutExpired:
+        print("❌ ffmpeg timed out converting video to wav")
         return None
 
 def clean_transcription(
