@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import logging
+import time
 from pathlib import Path
 
 import certifi
@@ -32,11 +33,25 @@ _DEFAULT_SUMMARY_PROMPT = (
     "Responde en el mismo idioma que la transcripción."
 )
 
+# 429 (rate limited) and 5xx (server-side) are worth retrying; 4xx otherwise
+# (bad request, auth failure, ...) won't succeed on retry — fail fast instead.
+_RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+
+
+def _is_retryable(exc: Exception) -> bool:
+    if isinstance(exc, requests.HTTPError):
+        return exc.response is not None and exc.response.status_code in _RETRYABLE_STATUS_CODES
+    # ConnectionError/Timeout (and other non-HTTP RequestException subclasses)
+    # are transient by nature — always worth a bounded retry.
+    return isinstance(exc, requests.RequestException)
+
 
 class OpenAICompatibleProvider:
-    def __init__(self, settings: Settings = SETTINGS):
+    def __init__(self, settings: Settings = SETTINGS, *, max_retries: int = 2, backoff_seconds: float = 1.0):
         self._settings = settings
         self.provider_type = LLMProviderType(settings.llm_provider_type)
+        self._max_retries = max_retries
+        self._backoff_seconds = backoff_seconds
 
     def generate_summary(
         self, text: str, system_prompt: str | None = None, max_tokens: int = 2000
@@ -142,12 +157,26 @@ class OpenAICompatibleProvider:
         headers = {"Content-Type": "application/json"}
         if self._settings.llm_api_key:
             headers["Authorization"] = f"Bearer {self._settings.llm_api_key}"
-        r = requests.post(
-            f"{base_url}/chat/completions",
-            json=payload,
-            headers=headers,
-            timeout=120,
-            verify=certifi.where(),
-        )
-        r.raise_for_status()
-        return r.json()["choices"][0]["message"]["content"].strip()
+
+        attempt = 0
+        while True:
+            try:
+                r = requests.post(
+                    f"{base_url}/chat/completions",
+                    json=payload,
+                    headers=headers,
+                    timeout=120,
+                    verify=certifi.where(),
+                )
+                r.raise_for_status()
+                return r.json()["choices"][0]["message"]["content"].strip()
+            except requests.RequestException as e:
+                if attempt >= self._max_retries or not _is_retryable(e):
+                    raise
+                wait = self._backoff_seconds * (2**attempt)
+                logger.warning(
+                    "LLM request failed (%s), retrying in %.1fs (attempt %d/%d)",
+                    e, wait, attempt + 1, self._max_retries,
+                )
+                time.sleep(wait)
+                attempt += 1
