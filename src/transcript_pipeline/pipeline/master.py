@@ -17,21 +17,18 @@ from transcript_pipeline.handlers.base import HandlerStatus, ProjectHandler
 from transcript_pipeline.handlers.client_meeting_handler import ClientMeetingHandler
 from transcript_pipeline.handlers.meeting_dev_handler import MeetingDevHandler
 from transcript_pipeline.handlers.zo_handler import ZoHandler
+from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.projects import load_projects, match_project
 from transcript_pipeline.settings import SETTINGS
-from transcript_pipeline.transcription.processor import SimpleScanProcessor
 
 load_env()
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(PROJECT_ROOT / 'master_process.log', encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+RUN_ID = configure_logging("master_process.log")
 logger = logging.getLogger(__name__)
+
+# Imported after configure_logging() so master_process.log wins the
+# process-wide logging config instead of processor.py's own simple_scan.log
+# (configure_logging() is idempotent — first caller in the process wins).
+from transcript_pipeline.transcription.processor import SimpleScanProcessor  # noqa: E402
 
 HANDLER_MAP = {"client_meeting": ClientMeetingHandler, "zo": ZoHandler, "meeting_dev": MeetingDevHandler}
 
@@ -121,7 +118,8 @@ class MasterProcessor:
             if processor.tracker.is_file_processed(audio_path):
                 continue
 
-            logger.info("Processing: %s", audio_path.name)
+            file_log = logging.LoggerAdapter(logger, {"file_id": audio_path.stem})
+            file_log.info("Processing: %s", audio_path.name)
             try:
                 result = processor.transcribe_file(audio_path)
 
@@ -136,31 +134,31 @@ class MasterProcessor:
                 if matched:
                     handler = self._handlers.get(matched["name"])
                     if handler:
-                        logger.info("[ROUTE] %s → %s", audio_path.name, matched["name"])
+                        file_log.info("[ROUTE] %s → %s", audio_path.name, matched["name"])
                         handler_result = handler.process(result, audio_path, project_config=matched)
                         if handler_result.status is HandlerStatus.COMPLETED:
                             processor.tracker.mark_as_processed(audio_path, "completed_routed")
                         elif handler_result.status is HandlerStatus.FAILED:
                             had_errors = True
-                            logger.error(
+                            file_log.error(
                                 "[ROUTE] %s handler failed permanently for %s: %s",
                                 matched["name"], audio_path.name, handler_result.detail,
                             )
                             processor.tracker.mark_as_processed(audio_path, "failed_routed")
                         else:  # RETRYABLE_FAILED — leave unmarked so the next scan retries it
                             had_errors = True
-                            logger.warning(
+                            file_log.warning(
                                 "[ROUTE] %s handler failed for %s (retryable): %s — will retry next scan",
                                 matched["name"], audio_path.name, handler_result.detail,
                             )
                     else:
-                        logger.info("[ROUTE] %s → %s (no external handler)", audio_path.name, matched["name"])
+                        file_log.info("[ROUTE] %s → %s (no external handler)", audio_path.name, matched["name"])
                         processor.tracker.mark_as_processed(audio_path, "completed")
                 else:
                     processor.tracker.mark_as_processed(audio_path, "completed")
 
             except Exception as e:
-                logger.error("Error processing %s: %s", audio_path.name, e)
+                file_log.error("Error processing %s: %s", audio_path.name, e)
                 had_errors = True
 
         return not had_errors
