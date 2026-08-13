@@ -1,15 +1,20 @@
 # Git History Cleanup
 
-**Status: audit complete, no destructive action taken.** This document
-records what a full history scan found and the exact commands to fix it —
-running them is a deliberate, manual decision for the repo owner, not
-something this pass executed.
+**Status: audit complete, the rewrite command below has been test-run
+against an isolated local clone (not this repo, not pushed anywhere) to
+confirm it actually works — no destructive action has been taken against
+the real repository or its remote.** Running it for real is a deliberate,
+manual decision for the repo owner.
 
 ## What was audited
 
-Full history (`git log --all -p`, 7 commits total) was scanned for:
-client/project names, personal file-path fragments, real email addresses,
-and credential-shaped strings (OpenAI/GitHub/AWS key patterns).
+Full history (`git log --all -p`) was scanned for: client/project names,
+personal file-path fragments, real email addresses, and credential-shaped
+strings (OpenAI/GitHub/AWS key patterns). The repo has grown since the
+first pass of this audit (7 commits) to 18 as of the security/architecture
+hardening work — the findings below (from the original 7) still apply;
+none of the new commits introduce further leaks (they were written with
+this exact concern in mind).
 
 ## What was found
 
@@ -61,11 +66,12 @@ ever pasted into this repo outside of what this scan's patterns cover,
 rotate it regardless of whether it shows up here — this audit is
 pattern-based, not exhaustive.
 
-## Recommended cleanup command (not executed)
+## Recommended cleanup command (tested locally, not executed against the real repo)
 
-Given the repo is small (7 commits) and the leaks are text substitutions
-(not whole files to delete), `git filter-repo --replace-text` is the
-right tool — it rewrites blob content across all history in one pass.
+Given the leaks are text substitutions (not whole files to delete),
+`git filter-repo --replace-text` (blob/file content) plus `--replace-message`
+(commit messages — a **separate** flag; `--replace-text` alone does not
+touch commit messages, confirmed by testing) is the right combination.
 
 **1. Back up first — this rewrites every commit hash.**
 ```sh
@@ -79,6 +85,7 @@ pip install git-filter-repo
 
 **3. Create a replacements file** (`replacements.txt`, project root — delete after use, don't commit it):
 ```
+VALERIS==>NORTHWIND
 Valeris==>Northwind
 ValerisHandler==>ClientMeetingHandler
 valeris_handler==>client_meeting_handler
@@ -89,10 +96,13 @@ C:/Jagzao/whisper==>REDACTED_LOCAL_PATH
 Apoc==>REDACTED_PROJECT
 validacionesFaltantesRoles==>redacted_task_name
 ```
+(The all-caps `VALERIS==>NORTHWIND` line matters — a `[VALERIS]` log-tag
+string in early commits wouldn't be caught by the lowercase/mixed-case
+rules alone; found by actually running this and checking the output.)
 
-**4. Run it:**
+**4. Run it — both flags, same file:**
 ```sh
-git filter-repo --replace-text replacements.txt --force
+git filter-repo --replace-text replacements.txt --replace-message replacements.txt --force
 ```
 (`--force` is required by git-filter-repo when running against a repo
 that wasn't freshly cloned for this purpose — it's filter-repo's own
@@ -103,6 +113,17 @@ safety flag, unrelated to `git push --force`.)
 git log --all -p | grep -i "valeris\|jagzao\|apoc" || echo "clean"
 git log --oneline | head -20    # confirm history still makes sense
 ```
+
+**Known cosmetic side effect, confirmed in testing:** because the
+replacement value for `valeris_handler`/`ValerisHandler` (`client_meeting_
+handler`/`ClientMeetingHandler`) is the pipeline's *current* real name, a
+commit message that narrates the actual historical rename ("renamed
+valeris_handler.py/ValerisHandler to client_meeting_handler.py/
+ClientMeetingHandler") comes out slightly redundant-looking after
+substitution (both the "from" and "to" names collapse toward the same
+text). No information is lost or leaked by this — it just reads a bit
+oddly. Not worth hand-fixing for a handful of commit messages; mentioned
+here so it isn't mistaken for the rewrite going wrong.
 
 **6. Force-push — manual, deliberate, owner-only step:**
 ```sh
