@@ -51,8 +51,13 @@ def client(env):
         yield c
 
 
-def q(path: str) -> str:
-    return "?path=" + urllib.parse.quote(path, safe="")
+def mid(root: MediaRoot, relative: str) -> str:
+    """Builds a `_to_media_id()`-shaped id without needing a real resolved file."""
+    return f"{root.value}:{relative}"
+
+
+def q(media_id: str) -> str:
+    return "?id=" + urllib.parse.quote(media_id, safe="")
 
 
 # ── GET /api/transcription ──────────────────────────────────────────────
@@ -60,38 +65,51 @@ def q(path: str) -> str:
 def test_read_allowed_transcription(client, env):
     tx = env["transcriptions"] / "meeting.txt"
     tx.write_text("hello world", encoding="utf-8")
-    resp = client.get("/api/transcription" + q(str(tx)))
+    resp = client.get("/api/transcription" + q(mid(MediaRoot.TRANSCRIPTIONS, "meeting.txt")))
     assert resp.status_code == 200
     assert resp.get_json()["text"] == "hello world"
 
 
-def test_read_forbidden_file_outside_root(client, env):
-    secret = env["root"].parent / "outside_secret.txt"
-    secret.write_text("do not leak", encoding="utf-8")
-    try:
-        resp = client.get("/api/transcription" + q(str(secret)))
-        assert resp.status_code in (400, 404)
-        assert "do not leak" not in resp.get_data(as_text=True)
-    finally:
-        secret.unlink()
-
-
-def test_read_missing_path_param_rejected(client):
-    resp = client.get("/api/transcription")
-    assert resp.status_code in (400, 404)
+def test_read_does_not_leak_absolute_paths_in_response(client, env):
+    tx = env["transcriptions"] / "meeting.txt"
+    tx.write_text("hello world", encoding="utf-8")
+    resp = client.get("/api/transcription" + q(mid(MediaRoot.TRANSCRIPTIONS, "meeting.txt")))
+    assert str(env["root"]) not in resp.get_data(as_text=True)
 
 
 def test_read_traversal_from_transcriptions_root(client, env):
     outside = env["root"] / "outside.txt"
     outside.write_text("secret", encoding="utf-8")
-    traversal = str(env["transcriptions"] / ".." / "outside.txt")
-    resp = client.get("/api/transcription" + q(traversal))
+    resp = client.get("/api/transcription" + q(mid(MediaRoot.TRANSCRIPTIONS, "../outside.txt")))
     assert resp.status_code in (400, 404)
     assert "secret" not in resp.get_data(as_text=True)
 
 
-def test_read_windows_absolute_path_rejected(client):
-    resp = client.get("/api/transcription" + q(r"C:\Windows\win.ini"))
+def test_read_windows_absolute_path_in_relative_segment_rejected(client):
+    resp = client.get("/api/transcription" + q(mid(MediaRoot.TRANSCRIPTIONS, r"C:\Windows\win.ini")))
+    assert resp.status_code in (400, 404)
+
+
+def test_read_missing_id_param_rejected(client):
+    resp = client.get("/api/transcription")
+    assert resp.status_code in (400, 404)
+
+
+def test_read_malformed_id_rejected(client):
+    resp = client.get("/api/transcription?id=" + urllib.parse.quote("not-a-valid-id", safe=""))
+    assert resp.status_code in (400, 404)
+
+
+def test_read_unknown_root_in_id_rejected(client):
+    resp = client.get("/api/transcription" + q("nonexistent_root:meeting.txt"))
+    assert resp.status_code in (400, 404)
+
+
+def test_read_wrong_root_for_endpoint_rejected(client, env):
+    # A valid, well-formed id — but for a root /api/transcription doesn't allow.
+    media = env["videos"] / "clip.mp4"
+    media.write_bytes(b"data")
+    resp = client.get("/api/transcription" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
     assert resp.status_code in (400, 404)
 
 
@@ -102,38 +120,32 @@ def test_write_allowed_transcription(client, env):
     tx.write_text("old", encoding="utf-8")
     resp = client.post(
         "/api/transcription",
-        data=json.dumps({"path": str(tx), "text": "new text"}),
+        data=json.dumps({"id": mid(MediaRoot.TRANSCRIPTIONS, "meeting.txt"), "text": "new text"}),
         content_type="application/json",
     )
     assert resp.status_code == 200
     assert tx.read_text(encoding="utf-8") == "new text"
 
 
-def test_write_forbidden_file_outside_root(client, env, tmp_path):
-    target = tmp_path.parent / "should_not_be_writable.txt"
-    target.write_text("original", encoding="utf-8")
-    try:
-        resp = client.post(
-            "/api/transcription",
-            data=json.dumps({"path": str(target), "text": "pwned"}),
-            content_type="application/json",
-        )
-        assert resp.status_code in (400, 404)
-        assert target.read_text(encoding="utf-8") == "original"
-    finally:
-        target.unlink()
-
-
-def test_write_new_file_outside_root_not_created(client, env, tmp_path):
+def test_write_traversal_outside_root_not_created(client, env, tmp_path):
     target = tmp_path.parent / "new_arbitrary_file.txt"
     assert not target.exists()
     resp = client.post(
         "/api/transcription",
-        data=json.dumps({"path": str(target), "text": "pwned"}),
+        data=json.dumps({"id": mid(MediaRoot.TRANSCRIPTIONS, "../../new_arbitrary_file.txt"), "text": "pwned"}),
         content_type="application/json",
     )
     assert resp.status_code in (400, 404)
     assert not target.exists()
+
+
+def test_write_missing_id_rejected(client):
+    resp = client.post(
+        "/api/transcription",
+        data=json.dumps({"text": "pwned"}),
+        content_type="application/json",
+    )
+    assert resp.status_code in (400, 404)
 
 
 # ── DELETE /api/file ─────────────────────────────────────────────────────
@@ -141,33 +153,33 @@ def test_write_new_file_outside_root_not_created(client, env, tmp_path):
 def test_delete_allowed_file(client, env):
     victim = env["videos"] / "clip.mp4"
     victim.write_text("data", encoding="utf-8")
-    resp = client.delete("/api/file" + q(str(victim)))
+    resp = client.delete("/api/file" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
     assert resp.status_code == 200
     assert not victim.exists()
 
 
-def test_delete_forbidden_file_outside_root(client, env, tmp_path):
+def test_delete_traversal_outside_root_rejected(client, env, tmp_path):
     target = tmp_path.parent / "do_not_delete.txt"
     target.write_text("keep me", encoding="utf-8")
     try:
-        resp = client.delete("/api/file" + q(str(target)))
+        resp = client.delete("/api/file" + q(mid(MediaRoot.VIDEOS, "../../do_not_delete.txt")))
         assert resp.status_code in (400, 404)
         assert target.exists()
     finally:
         target.unlink()
 
 
-def test_delete_missing_path_rejected(client):
+def test_delete_missing_id_rejected(client):
     resp = client.delete("/api/file")
     assert resp.status_code in (400, 404)
 
 
-# ── /stream/<filename> and /frame/<filename> ────────────────────────────
+# ── /stream and /frame ────────────────────────────────────────────────
 
 def test_stream_allowed_media(client, env):
     media = env["videos"] / "clip.mp4"
     media.write_bytes(b"fake-video-bytes")
-    resp = client.get("/stream/clip.mp4")
+    resp = client.get("/stream" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
     assert resp.status_code == 200
 
 
@@ -175,38 +187,49 @@ def test_stream_traversal_rejected(client, env, tmp_path):
     secret = tmp_path.parent / "secret.mp4"
     secret.write_bytes(b"nope")
     try:
-        resp = client.get("/stream/" + urllib.parse.quote("../../secret.mp4", safe=""))
+        resp = client.get("/stream" + q(mid(MediaRoot.VIDEOS, "../../secret.mp4")))
         assert resp.status_code in (400, 404)
     finally:
         secret.unlink()
 
 
+def test_stream_missing_id_rejected(client):
+    resp = client.get("/stream")
+    assert resp.status_code in (400, 404)
+
+
 def test_frame_traversal_rejected(client, env):
-    resp = client.get("/frame/" + urllib.parse.quote("../../../etc/passwd", safe=""))
+    resp = client.get("/frame" + q(mid(MediaRoot.TRANSCRIPTIONS, "../../../etc/passwd")))
+    assert resp.status_code in (400, 404)
+
+
+def test_frame_wrong_root_rejected(client, env):
+    media = env["videos"] / "clip.mp4"
+    media.write_bytes(b"data")
+    resp = client.get("/frame" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
     assert resp.status_code in (400, 404)
 
 
 # ── GET /api/frames ──────────────────────────────────────────────────────
 
-def test_frames_forbidden_path_outside_root(client, env, tmp_path):
+def test_frames_traversal_rejected(client, env, tmp_path):
     target = tmp_path.parent / "not_media.mp4"
     target.write_bytes(b"x")
     try:
-        resp = client.get("/api/frames" + q(str(target)))
+        resp = client.get("/api/frames" + q(mid(MediaRoot.VIDEOS, "../../not_media.mp4")))
         assert resp.status_code in (400, 404)
     finally:
         target.unlink()
 
 
-def test_frames_missing_path_rejected(client):
+def test_frames_missing_id_rejected(client):
     resp = client.get("/api/frames")
     assert resp.status_code in (400, 404)
 
 
 def test_frame_urls_returned_by_api_frames_are_actually_servable(client, env):
     # Regression: _resolve_frames() used to build frame["url"] relative to
-    # ROOT instead of TRANSCRIPTIONS_BASE, so every generated URL 404'd on
-    # /frame/<filename> (which resolves relative to TRANSCRIPTIONS_BASE).
+    # ROOT instead of TRANSCRIPTIONS_BASE, so every generated URL 404'd.
     video = env["videos"] / "clip.mp4"
     video.write_bytes(b"fake video")
 
@@ -218,13 +241,32 @@ def test_frame_urls_returned_by_api_frames_are_actually_servable(client, env):
         encoding="utf-8",
     )
 
-    resp = client.get("/api/frames" + q(str(video)))
+    resp = client.get("/api/frames" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
     assert resp.status_code == 200
     frame_url = resp.get_json()["frames"][0]["url"]
+    assert frame_url.startswith("/frame?id=")
 
     frame_resp = client.get(frame_url)
     assert frame_resp.status_code == 200
     assert frame_resp.data == b"fake png"
+
+
+# ── /api/files and /api/folders don't leak absolute paths ───────────────
+
+def test_files_response_has_no_absolute_paths(client, env):
+    media = env["videos"] / "clip.mp4"
+    media.write_bytes(b"data")
+    resp = client.get("/api/files")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert str(env["root"]) not in body
+
+
+def test_folders_response_has_no_absolute_paths(client, env):
+    resp = client.get("/api/folders")
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert str(env["root"]) not in body
 
 
 # ── POST /api/upload ─────────────────────────────────────────────────────
@@ -240,6 +282,12 @@ def test_upload_accepts_supported_extension(client, env):
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data")
     assert resp.status_code == 200
     assert (env["video_compress"] / "clip.mp3").exists()
+
+
+def test_upload_response_has_no_absolute_path(client, env):
+    data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "clip2.mp3")}
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    assert "path" not in resp.get_json()
 
 
 # ── POST /api/projects (create/update reject malformed payloads) ────────

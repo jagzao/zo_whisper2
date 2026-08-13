@@ -48,7 +48,7 @@ def main() -> int:
 
     files = fetch_files()
     target = next(
-        (f for f in files if f.get("transcription") and f["transcription"].get("path")),
+        (f for f in files if f.get("transcription") and f["transcription"].get("id")),
         None,
     )
     if not target:
