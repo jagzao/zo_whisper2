@@ -14,6 +14,8 @@ from pathlib import Path
 from transcript_pipeline.config import PROJECT_ROOT
 from transcript_pipeline.settings import SETTINGS
 
+_COMPRESSION_TIMEOUT_SECONDS = 2 * 60 * 60  # 2h — generous, catches a hung ffmpeg, not slow encoding
+
 
 def get_video_info(video_path):
     """Gets video information using ffprobe"""
@@ -23,9 +25,9 @@ def get_video_info(video_path):
     ]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
         return json.loads(result.stdout)
-    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError) as e:
         print(f"[ERROR] Could not get video info: {e}")
         return None
 
@@ -87,7 +89,15 @@ def compress_video_high_efficiency(input_path, output_path):
             universal_newlines=True
         )
 
-        stdout, stderr = process.communicate()
+        try:
+            # H.265 encoding is genuinely slow for large/long videos — this
+            # bounds a truly hung ffmpeg process, not normal compression time.
+            stdout, stderr = process.communicate(timeout=_COMPRESSION_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate()
+            print(f"[ERROR] FFmpeg compression timed out after {_COMPRESSION_TIMEOUT_SECONDS}s")
+            return False
 
         if process.returncode != 0:
             print(f"[ERROR] FFmpeg failed: {stderr}")

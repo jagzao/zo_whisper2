@@ -210,8 +210,8 @@ class MeetingDevHandler:
             "-loglevel", "error",
         ]
         try:
-            subprocess.run(cmd, check=True, capture_output=True)
-        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            subprocess.run(cmd, check=True, capture_output=True, timeout=600)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as e:
             logger.error("[MEETING_DEV] FFmpeg error: %s", e)
             return []
 
