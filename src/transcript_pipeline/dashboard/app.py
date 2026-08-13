@@ -28,6 +28,7 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
 from transcript_pipeline.config import PROJECT_ROOT, load_env
+from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.projects import validate_project
 from transcript_pipeline.security import (
     MediaRoot,
@@ -60,14 +61,7 @@ RESOLVER = SafePathResolver(
 SUPPORTED_MEDIA = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".opus"}
 VIDEO_EXTS = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(ROOT / "dashboard.log", encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
-    ],
-)
+RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
