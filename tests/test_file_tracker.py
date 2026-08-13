@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from transcript_pipeline.file_tracker import FileTracker
 
 
@@ -50,3 +52,59 @@ def test_get_statistics_counts_hash_entries(tmp_path):
     stats = tracker.get_statistics()
     assert stats["total_files"] == 1
     assert stats["status_breakdown"] == {"completed": 1}
+
+
+def test_defaults_to_settings_hash_mode(tmp_path, monkeypatch):
+    # Settings is a frozen dataclass — patch the module-level SETTINGS name
+    # file_tracker.py imports, not an attribute on the (immutable) instance.
+    fake_settings = SimpleNamespace(file_tracker_hash_mode="full")
+    monkeypatch.setattr("transcript_pipeline.file_tracker.SETTINGS", fake_settings)
+    tracker = FileTracker(db_path=tmp_path / "db.json")
+    assert tracker.hash_mode == "full"
+
+
+def test_explicit_hash_mode_overrides_settings(tmp_path):
+    tracker = FileTracker(db_path=tmp_path / "db.json", hash_mode="full")
+    assert tracker.hash_mode == "full"
+
+
+def test_full_hash_mode_reads_entire_file(tmp_path):
+    tracker = FileTracker(db_path=tmp_path / "db.json", hash_mode="full")
+    audio = _make_file(tmp_path, content=b"x" * 100_000)
+    hash_a = tracker.get_file_hash(audio)
+
+    # Change a byte far past the "fast" mode's first-8KB window — full mode
+    # must still detect it; fast mode (by design) would not.
+    with open(audio, "r+b") as f:
+        f.seek(50_000)
+        f.write(b"Y")
+    hash_b = tracker.get_file_hash(audio)
+
+    assert hash_a != hash_b
+
+
+def test_fast_hash_mode_ignores_changes_past_first_8kb(tmp_path):
+    tracker = FileTracker(db_path=tmp_path / "db.json", hash_mode="fast")
+    audio = _make_file(tmp_path, content=b"x" * 100_000)
+    stat = audio.stat()
+    hash_a = tracker.get_file_hash(audio)
+
+    with open(audio, "r+b") as f:
+        f.seek(50_000)
+        f.write(b"Y")
+    # Preserve mtime to isolate the "content changed past 8KB, fast mode
+    # can't see it" behavior from "mtime changed, fast mode would catch it".
+    import os
+
+    os.utime(audio, (stat.st_atime, stat.st_mtime))
+    hash_b = tracker.get_file_hash(audio)
+
+    assert hash_a == hash_b
+
+
+def test_fast_and_full_modes_produce_different_hashes_for_same_file(tmp_path):
+    audio = _make_file(tmp_path, content=b"identical content")
+    fast_tracker = FileTracker(db_path=tmp_path / "db.json", hash_mode="fast")
+    full_tracker = FileTracker(db_path=tmp_path / "db2.json", hash_mode="full")
+
+    assert fast_tracker.get_file_hash(audio) != full_tracker.get_file_hash(audio)

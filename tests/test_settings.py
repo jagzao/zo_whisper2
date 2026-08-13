@@ -13,7 +13,7 @@ def _clean_env(monkeypatch):
     for key in list(__import__("os").environ):
         if key in {
             "WHISPER_MODEL", "WORD_TIMESTAMPS", "CLEAN_TRANSCRIPTION",
-            "KEYFRAMES_REQUIRED", "KEYFRAME_METHOD", "VIDEO_COMPRESS_CRF",
+            "KEYFRAMES_REQUIRED", "KEYFRAME_METHOD", "FILE_TRACKER_HASH_MODE", "VIDEO_COMPRESS_CRF",
             "TESSERACT_CMD", "MEETING_FRAME_INTERVAL", "MEETING_MAX_SCREEN_ANALYSES",
             "MEETING_KEEP_FRAMES", "LLM_API_KEY", "LLM_MODEL", "LLM_BASE_URL",
             "LLM_PROVIDER_TYPE", "ALLOW_EXTERNAL_LLM", "FRAME_DESCRIPTIONS",
@@ -68,6 +68,21 @@ def test_invalid_privacy_mode_rejected(monkeypatch):
     monkeypatch.setenv("PRIVACY_MODE", "not-a-real-mode")
     with pytest.raises(ConfigurationError):
         Settings.from_env()
+
+
+def test_file_tracker_hash_mode_defaults_to_fast():
+    assert Settings.from_env().file_tracker_hash_mode == "fast"
+
+
+def test_invalid_file_tracker_hash_mode_rejected(monkeypatch):
+    monkeypatch.setenv("FILE_TRACKER_HASH_MODE", "ultra")
+    with pytest.raises(ConfigurationError):
+        Settings.from_env()
+
+
+def test_file_tracker_hash_mode_full_accepted(monkeypatch):
+    monkeypatch.setenv("FILE_TRACKER_HASH_MODE", "full")
+    assert Settings.from_env().file_tracker_hash_mode == "full"
 
 
 def test_missing_icecream_paths_are_none():

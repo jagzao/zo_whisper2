@@ -48,6 +48,9 @@ class Settings:
     keyframes_required: bool
     keyframe_method: str
 
+    # ── File tracking ────────────────────────────────────────────────
+    file_tracker_hash_mode: str  # "fast" | "full"
+
     # ── Video ─────────────────────────────────────────────────────────
     video_compress_crf: int
     tesseract_cmd: str | None
@@ -98,6 +101,7 @@ class Settings:
             clean_transcription=_bool("CLEAN_TRANSCRIPTION", False),
             keyframes_required=_bool("KEYFRAMES_REQUIRED", True),
             keyframe_method=os.getenv("KEYFRAME_METHOD", "smart_scene").strip().lower() or "smart_scene",
+            file_tracker_hash_mode=os.getenv("FILE_TRACKER_HASH_MODE", "fast").strip().lower() or "fast",
             video_compress_crf=int(os.getenv("VIDEO_COMPRESS_CRF", "25")),
             tesseract_cmd=_str_or_none("TESSERACT_CMD"),
             meeting_frame_interval=int(os.getenv("MEETING_FRAME_INTERVAL", "15")),
@@ -123,6 +127,8 @@ class Settings:
         return settings
 
     def _validate(self) -> None:
+        if self.file_tracker_hash_mode not in ("fast", "full"):
+            raise ConfigurationError(f"FILE_TRACKER_HASH_MODE must be 'fast' or 'full': {self.file_tracker_hash_mode!r}")
         if not (0 <= self.video_compress_crf <= 51):
             raise ConfigurationError(f"VIDEO_COMPRESS_CRF out of range (0-51): {self.video_compress_crf}")
         if not (1024 <= self.dashboard_port <= 65535):
