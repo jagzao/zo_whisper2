@@ -1,9 +1,21 @@
 """FileTracker — content-hash idempotency.
 
-Avoids reprocessing an already-transcribed file. The key is a hash of
-size + mtime + first 8KB (cheap, doesn't require reading the whole file)
-with a fallback to detecting an existing transcription in
-CarpetaTranscripciones/.
+Avoids reprocessing an already-transcribed file. Two hash modes,
+controlled by `FILE_TRACKER_HASH_MODE` (default "fast"):
+
+- "fast": size + mtime + MD5 of the first 8KB. Cheap even for large
+  videos — doesn't read the whole file. This is an idempotency
+  fingerprint, not a cryptographic integrity guarantee: two different
+  files that happen to share size, mtime, and their first 8KB would
+  collide (unlikely in practice, not impossible), and a tool that
+  rewrites a file in place without bumping mtime would go undetected.
+- "full": SHA-256 of the entire file's content, streamed in chunks.
+  Correctly detects any content change regardless of mtime/size
+  quirks, at the cost of reading the whole file — meaningfully slower
+  for large videos, so it's opt-in, not the default.
+
+Falls back to detecting an existing transcription in
+CarpetaTranscripciones/ either way.
 """
 
 from __future__ import annotations
@@ -15,15 +27,19 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from transcript_pipeline.config import PROCESSED_FILES_DB, TRANSCRIPTIONS_DIR
+from transcript_pipeline.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
+
+_FULL_HASH_CHUNK_SIZE = 1024 * 1024  # 1MB
 
 
 class FileTracker:
     """Tracker of processed files, persisted to a local JSON file."""
 
-    def __init__(self, db_path: Path = PROCESSED_FILES_DB):
+    def __init__(self, db_path: Path = PROCESSED_FILES_DB, hash_mode: str | None = None):
         self.db_path = Path(db_path)
+        self.hash_mode = hash_mode or SETTINGS.file_tracker_hash_mode
         self.processed_files = self.load_database()
 
     def load_database(self) -> dict:
@@ -44,8 +60,12 @@ class FileTracker:
             logger.error("Error saving DB: %s", e)
 
     def get_file_hash(self, file_path: Path) -> str:
-        """Cheap hash: size + mtime + MD5 of the first 8KB."""
+        """Fingerprint used for idempotency — see module docstring for what
+        "fast" vs "full" (`self.hash_mode`) each actually guarantee."""
         try:
+            if self.hash_mode == "full":
+                return self._full_file_hash(file_path)
+
             stat = file_path.stat()
             size = stat.st_size
             mtime = int(stat.st_mtime)
@@ -59,6 +79,14 @@ class FileTracker:
         except Exception as e:
             logger.warning("Error computing hash for %s: %s", file_path, e)
             return hashlib.md5(f"{file_path}_{file_path.stat().st_size}".encode()).hexdigest()[:16]
+
+    @staticmethod
+    def _full_file_hash(file_path: Path) -> str:
+        hasher = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for chunk in iter(lambda: f.read(_FULL_HASH_CHUNK_SIZE), b""):
+                hasher.update(chunk)
+        return hasher.hexdigest()[:16]
 
     def is_file_processed(self, file_path: Path) -> bool:
         try:
