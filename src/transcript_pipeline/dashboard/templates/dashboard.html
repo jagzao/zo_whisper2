@@ -668,7 +668,7 @@
                 <button class="close-x" onclick="closeEdit()">&times;</button>
             </div>
             <div class="edit-transcription">
-                <input type="hidden" id="editTxPath">
+                <input type="hidden" id="editTxId">
                 <textarea id="editTxText"></textarea>
                 <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
                     <button class="danger" onclick="closeEdit()">Cancel</button>
@@ -905,13 +905,13 @@
                         <td>${tx ? `<span class="status processed">Yes</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
                         <td>
                             <div class="action-btns">
-                                <button class="btn-view tooltip" ${!tx || !tx.path ? 'disabled' : ''} onclick="preview('${encodeURIComponent(f.path)}', '${tx && tx.path ? encodeURIComponent(tx.path) : ''}')" aria-label="View" title="View">
+                                <button class="btn-view tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="View" title="View">
                                     <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                                 </button>
-                                <button class="btn-edit tooltip" ${!tx || !tx.path ? 'disabled' : ''} onclick="editTranscription('${tx && tx.path ? encodeURIComponent(tx.path) : ''}')" aria-label="Edit" title="Edit">
+                                <button class="btn-edit tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="editTranscription('${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="Edit" title="Edit">
                                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </button>
-                                <button class="btn-delete tooltip" onclick="deleteFile('${encodeURIComponent(f.path)}')" aria-label="Delete" title="Delete">
+                                <button class="btn-delete tooltip" onclick="deleteFile('${encodeURIComponent(f.media_id)}')" aria-label="Delete" title="Delete">
                                     <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
                                 </button>
                             </div>
@@ -997,20 +997,20 @@
             el.scrollTop = el.scrollHeight;
         }
 
-        async function preview(mediaPathEncoded, txPathEncoded) {
-            const mediaPath = decodeURIComponent(mediaPathEncoded);
-            const txPath = txPathEncoded ? decodeURIComponent(txPathEncoded) : '';
-            document.getElementById('previewTitle').textContent = mediaPath.split(/[\\/]/).pop();
+        async function preview(mediaIdEncoded, txIdEncoded) {
+            const mediaId = decodeURIComponent(mediaIdEncoded);
+            const txId = txIdEncoded ? decodeURIComponent(txIdEncoded) : '';
+            document.getElementById('previewTitle').textContent = mediaId.split(/[\\/]/).pop();
             document.getElementById('modalPreviewBody').innerHTML = '<p style="color:var(--muted)">Loading...</p>';
-            const txRes = txPath ? await api('/api/transcription?path=' + encodeURIComponent(txPath)) : { ok: false };
+            const txRes = txId ? await api('/api/transcription?id=' + encodeURIComponent(txId)) : { ok: false };
             if (!txRes.ok) {
                 document.getElementById('modalPreviewBody').innerHTML = '<p style="color:var(--danger)">Error loading transcription</p>';
                 document.getElementById('previewModal').classList.remove('hidden');
                 return;
             }
             document.getElementById('previewModal').classList.remove('hidden');
-            const ext = mediaPath.split('.').pop().toLowerCase();
-            const streamPath = '/stream/' + encodeURIComponent(mediaPath.replace(/\\/g, '/'));
+            const ext = mediaId.split('.').pop().toLowerCase();
+            const streamPath = '/stream?id=' + encodeURIComponent(mediaId);
             const isVideo = ['mp4','mkv','mov','avi','webm','m4v','flv','wmv'].includes(ext);
             const mediaTag = isVideo ? 'video' : 'audio';
             const insights = txRes.insights || {};
@@ -1072,7 +1072,7 @@
             `;
             document.getElementById('modalPreviewBody').innerHTML = html;
             renderSegments(segments);
-            window._mediaPath = mediaPath;
+            window._mediaId = mediaId;
             bindMediaEvents();
         }
         function closePreview() {
@@ -1215,10 +1215,10 @@
 
         async function loadFrames() {
             const grid = document.getElementById('framesGrid');
-            const mediaPath = window._mediaPath;
-            if (!grid || !mediaPath) return;
+            const mediaId = window._mediaId;
+            if (!grid || !mediaId) return;
             grid.innerHTML = '<p style="color:var(--muted)">Loading frames...</p>';
-            const res = await api('/api/frames?path=' + encodeURIComponent(mediaPath));
+            const res = await api('/api/frames?id=' + encodeURIComponent(mediaId));
             if (!res.ok) {
                 grid.innerHTML = `<p style="color:var(--muted)">${res.error || 'No frames'}</p>`;
                 return;
@@ -1301,13 +1301,13 @@
             }
         }
 
-        async function editTranscription(txPathEncoded) {
-            const txPath = decodeURIComponent(txPathEncoded);
-            if (!txPath) return;
-            document.getElementById('editTxPath').value = txPath;
+        async function editTranscription(txIdEncoded) {
+            const txId = decodeURIComponent(txIdEncoded);
+            if (!txId) return;
+            document.getElementById('editTxId').value = txId;
             document.getElementById('editTxText').value = 'Loading...';
             document.getElementById('editModal').classList.remove('hidden');
-            const txRes = await api('/api/transcription?path=' + encodeURIComponent(txPath));
+            const txRes = await api('/api/transcription?id=' + encodeURIComponent(txId));
             if (txRes.ok) {
                 document.getElementById('editTxText').value = txRes.text;
             } else {
@@ -1317,17 +1317,17 @@
         }
         function closeEdit() { document.getElementById('editModal').classList.add('hidden'); }
         async function saveTranscription() {
-            const path = document.getElementById('editTxPath').value;
+            const id = document.getElementById('editTxId').value;
             const text = document.getElementById('editTxText').value;
-            const res = await post('/api/transcription', { path, text });
+            const res = await post('/api/transcription', { id, text });
             if (res.ok) { showToast('Transcription saved'); closeEdit(); loadFiles(); }
             else showToast(res.error || 'Error saving');
         }
 
-        async function deleteFile(pathEncoded) {
-            const path = decodeURIComponent(pathEncoded);
+        async function deleteFile(idEncoded) {
+            const id = decodeURIComponent(idEncoded);
             if (!confirm('Delete file and its transcription?')) return;
-            const res = await fetch('/api/file?path=' + encodeURIComponent(path), { method: 'DELETE' }).then(r => r.json());
+            const res = await fetch('/api/file?id=' + encodeURIComponent(id), { method: 'DELETE' }).then(r => r.json());
             if (res.ok) { showToast('File deleted'); loadFolders(); loadFiles(); }
             else showToast(res.error || 'Error deleting');
         }
