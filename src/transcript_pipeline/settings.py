@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from transcript_pipeline.config import load_env
+from transcript_pipeline.errors import ConfigurationError
 
 
 def _bool(name: str, default: bool) -> bool:
@@ -123,17 +124,17 @@ class Settings:
 
     def _validate(self) -> None:
         if not (0 <= self.video_compress_crf <= 51):
-            raise ValueError(f"VIDEO_COMPRESS_CRF out of range (0-51): {self.video_compress_crf}")
+            raise ConfigurationError(f"VIDEO_COMPRESS_CRF out of range (0-51): {self.video_compress_crf}")
         if not (1024 <= self.dashboard_port <= 65535):
-            raise ValueError(f"DASHBOARD_PORT invalid: {self.dashboard_port}")
+            raise ConfigurationError(f"DASHBOARD_PORT invalid: {self.dashboard_port}")
         if self.llm_provider_type not in ("local", "remote"):
-            raise ValueError(f"LLM_PROVIDER_TYPE must be 'local' or 'remote': {self.llm_provider_type!r}")
+            raise ConfigurationError(f"LLM_PROVIDER_TYPE must be 'local' or 'remote': {self.llm_provider_type!r}")
         if self.privacy_mode not in ("local", "cloud"):
-            raise ValueError(f"PRIVACY_MODE must be 'local' or 'cloud': {self.privacy_mode!r}")
+            raise ConfigurationError(f"PRIVACY_MODE must be 'local' or 'cloud': {self.privacy_mode!r}")
         if self.retention_days < 0:
-            raise ValueError(f"RETENTION_DAYS cannot be negative: {self.retention_days}")
+            raise ConfigurationError(f"RETENTION_DAYS cannot be negative: {self.retention_days}")
         if self.upload_max_mb <= 0:
-            raise ValueError(f"UPLOAD_MAX_MB must be positive: {self.upload_max_mb}")
+            raise ConfigurationError(f"UPLOAD_MAX_MB must be positive: {self.upload_max_mb}")
 
 
 SETTINGS = Settings.from_env()

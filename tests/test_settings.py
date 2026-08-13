@@ -1,5 +1,6 @@
 import pytest
 
+from transcript_pipeline.errors import ConfigurationError
 from transcript_pipeline.settings import Settings
 
 
@@ -53,19 +54,19 @@ def test_llm_provider_type_explicit_override_wins(monkeypatch):
 
 def test_invalid_crf_rejected(monkeypatch):
     monkeypatch.setenv("VIDEO_COMPRESS_CRF", "999")
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationError):
         Settings.from_env()
 
 
 def test_invalid_dashboard_port_rejected(monkeypatch):
     monkeypatch.setenv("DASHBOARD_PORT", "80")
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationError):
         Settings.from_env()
 
 
 def test_invalid_privacy_mode_rejected(monkeypatch):
     monkeypatch.setenv("PRIVACY_MODE", "not-a-real-mode")
-    with pytest.raises(ValueError):
+    with pytest.raises(ConfigurationError):
         Settings.from_env()
 
 
