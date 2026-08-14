@@ -6,12 +6,14 @@ Before this fix, `_create_readable_mapping()` called
 `None` — the real project (with its `data_classification`) was computed
 earlier in `transcribe_file()` but silently dropped before reaching this
 check, so a confidential project's classification was never actually
-enforced on this path.
+enforced on this path. It now goes through AIEnrichmentService (`_ai_service`),
+the same centralized policy every other outbound AI call uses.
 """
 
 import json
 from unittest.mock import MagicMock
 
+from transcript_pipeline.llm.enrichment import AIEnrichmentService
 from transcript_pipeline.llm.guard import PrivacyGuard
 from transcript_pipeline.llm.provider import LLMProviderType
 from transcript_pipeline.settings import Settings
@@ -37,25 +39,33 @@ def _make_instance():
     return processor_module.SimpleScanProcessor.__new__(processor_module.SimpleScanProcessor)
 
 
-def test_confidential_project_blocks_remote_frame_description(tmp_path, monkeypatch):
-    monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", True)
-    monkeypatch.setattr(processor_module, "_privacy_guard", PrivacyGuard(_settings()))
-
+def _ai_service_with_fake_provider(settings: Settings) -> tuple[AIEnrichmentService, MagicMock]:
     fake_provider = MagicMock()
     fake_provider.provider_type = LLMProviderType.REMOTE
-    monkeypatch.setattr(processor_module, "_llm_provider", fake_provider)
+    fake_provider.describe_frames_for_tutorial.return_value = {}
+    service = AIEnrichmentService(fake_provider, PrivacyGuard(settings), settings)
+    return service, fake_provider
 
+
+def _write_frame_mapping(tmp_path) -> dict:
     frames_dir = tmp_path / "clip_Frames"
     frames_dir.mkdir()
     mapping_file = frames_dir / "frame_mapping.json"
     mapping_file.write_text(json.dumps({"frames": [], "video_info": {}}), encoding="utf-8")
+    return {"frames_dir": str(frames_dir)}
 
+
+def test_confidential_project_blocks_remote_frame_description(tmp_path, monkeypatch):
+    monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", True)
+    service, fake_provider = _ai_service_with_fake_provider(_settings())
+    monkeypatch.setattr(processor_module, "_ai_service", service)
+
+    frame_info = _write_frame_mapping(tmp_path)
     instance = _make_instance()
     transcription_result = {
         "text": "hello world", "segments": [], "language": "en",
         "project": {"data_classification": "confidential"},
     }
-    frame_info = {"frames_dir": str(frames_dir)}
 
     instance._integrate_transcription_with_frames(transcription_result, frame_info)
 
@@ -64,24 +74,15 @@ def test_confidential_project_blocks_remote_frame_description(tmp_path, monkeypa
 
 def test_internal_project_allows_remote_frame_description(tmp_path, monkeypatch):
     monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", True)
-    monkeypatch.setattr(processor_module, "_privacy_guard", PrivacyGuard(_settings()))
+    service, fake_provider = _ai_service_with_fake_provider(_settings())
+    monkeypatch.setattr(processor_module, "_ai_service", service)
 
-    fake_provider = MagicMock()
-    fake_provider.provider_type = LLMProviderType.REMOTE
-    fake_provider.describe_frames_for_tutorial.return_value = {}
-    monkeypatch.setattr(processor_module, "_llm_provider", fake_provider)
-
-    frames_dir = tmp_path / "clip_Frames"
-    frames_dir.mkdir()
-    mapping_file = frames_dir / "frame_mapping.json"
-    mapping_file.write_text(json.dumps({"frames": [], "video_info": {}}), encoding="utf-8")
-
+    frame_info = _write_frame_mapping(tmp_path)
     instance = _make_instance()
     transcription_result = {
         "text": "hello world", "segments": [], "language": "en",
         "project": {"data_classification": "internal"},
     }
-    frame_info = {"frames_dir": str(frames_dir)}
 
     instance._integrate_transcription_with_frames(transcription_result, frame_info)
 

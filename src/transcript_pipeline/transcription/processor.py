@@ -41,14 +41,14 @@ from transcript_pipeline.config import (
 from transcript_pipeline.errors import TranscriptionDependencyUnavailable
 from transcript_pipeline.file_tracker import FileTracker
 from transcript_pipeline.language import LanguageDetector
+from transcript_pipeline.llm.enrichment import AIEnrichmentService
 from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
 from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
 from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.projects import load_projects, match_project
 from transcript_pipeline.settings import SETTINGS
 
-_llm_provider = OpenAICompatibleProvider(SETTINGS)
-_privacy_guard = PrivacyGuard(SETTINGS)
+_ai_service = AIEnrichmentService(OpenAICompatibleProvider(SETTINGS), PrivacyGuard(SETTINGS), SETTINGS)
 
 load_env()
 
@@ -498,9 +498,8 @@ class SimpleScanProcessor:
             frame_descriptions = {}
             if TUTORIAL_FEATURES_AVAILABLE:
                 try:
-                    _privacy_guard.check(_llm_provider, project_config=project_config)
-                    frame_descriptions = _llm_provider.describe_frames_for_tutorial(
-                        frames_dir, transcription_mapping
+                    frame_descriptions = _ai_service.describe_frames_for_tutorial(
+                        frames_dir, transcription_mapping, project_config
                     )
                     if frame_descriptions:
                         logger.info(f"[FRAMES+TRANS] {len(frame_descriptions)} frames described by LLM")
