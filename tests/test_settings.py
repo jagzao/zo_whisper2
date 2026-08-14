@@ -40,6 +40,22 @@ def test_llm_provider_type_inferred_local_from_base_url(monkeypatch):
     assert s.llm_provider_type == "local"
 
 
+@pytest.mark.parametrize(
+    ("base_url", "expected"),
+    [
+        ("http://localhost:11434/v1", "local"),
+        ("http://127.0.0.1:1234/v1", "local"),
+        ("http://[::1]:1234/v1", "local"),
+        ("https://localhost.example.com/v1", "remote"),
+        ("https://127.0.0.1.example.com/v1", "remote"),
+        ("https://example.com/v1", "remote"),
+    ],
+)
+def test_llm_provider_type_hostname_parsing_not_substring(monkeypatch, base_url, expected):
+    monkeypatch.setenv("LLM_BASE_URL", base_url)
+    assert Settings.from_env().llm_provider_type == expected
+
+
 def test_llm_provider_type_inferred_remote_by_default():
     s = Settings.from_env()
     assert s.llm_provider_type == "remote"
