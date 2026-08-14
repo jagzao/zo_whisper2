@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import secrets
 import subprocess
 import sys
 import tempfile
@@ -22,7 +23,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
@@ -66,6 +67,48 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
+
+# This dashboard is explicitly localhost-only (SETTINGS.dashboard_host is
+# enforced loopback-only at Settings.from_env() time) — no remote mode, no
+# user accounts. The token below is the only thing standing between "any
+# process that can reach this port" and "the browser tab the owner opened".
+_LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
+_MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+# Generated fresh per process, never persisted, never logged — the frontend
+# reads it from the page it was served (see index()) and echoes it back on
+# every mutating request via X-Local-Dashboard-Token.
+_DASHBOARD_TOKEN = secrets.token_urlsafe(32)
+
+
+def _hostname_only(host_header: str) -> str:
+    """Strips the port from a Host/Origin-style host, IPv6-bracket aware."""
+    host_header = host_header.strip().lower()
+    if host_header.startswith("["):
+        return host_header.split("]")[0].lstrip("[")
+    if host_header.count(":") == 1:
+        return host_header.rsplit(":", 1)[0]
+    return host_header
+
+
+@app.before_request
+def _enforce_local_only() -> Any:
+    host = _hostname_only(request.host or "")
+    if host not in _LOCAL_HOSTNAMES:
+        logger.warning("[SECURITY] Rejected request with non-local Host: %s", request.host)
+        return jsonify({"ok": False, "error": "Forbidden"}), 403
+
+    if request.method in _MUTATING_METHODS:
+        origin = request.headers.get("Origin")
+        if origin and (urlparse(origin).hostname or "").lower() not in _LOCAL_HOSTNAMES:
+            logger.warning("[SECURITY] Rejected %s with non-local Origin: %s", request.method, origin)
+            return jsonify({"ok": False, "error": "Forbidden"}), 403
+
+        token = request.headers.get("X-Local-Dashboard-Token", "")
+        if not secrets.compare_digest(token, _DASHBOARD_TOKEN):
+            logger.warning("[SECURITY] Rejected %s with missing/invalid dashboard token", request.method)
+            return jsonify({"ok": False, "error": "Forbidden"}), 403
+
+    return None
 
 
 @app.errorhandler(SecurityError)
@@ -330,7 +373,7 @@ def _resolve_frames(media_path: Path) -> dict | None:
 # ── Endpoints ────────────────────────────────────────────────────────────
 @app.route("/")
 def index() -> str:
-    return render_template("dashboard.html")
+    return render_template("dashboard.html", dashboard_token=_DASHBOARD_TOKEN)
 
 
 @app.route("/api/status")
@@ -482,9 +525,9 @@ def api_upload() -> Any:
         file.save(str(destination))
         logger.info("[UPLOAD] %s → %s", filename, destination)
         return jsonify({"ok": True, "name": destination.name})
-    except Exception as e:
-        logger.error("[UPLOAD] Error: %s", e)
-        return jsonify({"ok": False, "error": str(e)}), 500
+    except Exception:
+        logger.exception("[UPLOAD] Error saving %s", filename)
+        return jsonify({"ok": False, "error": "Could not process upload"}), 500
 
 
 @app.route("/api/run/<mode>", methods=["POST"])
@@ -554,8 +597,9 @@ def api_transcription() -> Any:
                 "processing_time_formatted": f"{metadata.get('processing_time', 0):.1f} sec",
             }
         })
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+    except Exception:
+        logger.exception("[TRANSCRIPTION] Error reading %s", resolved)
+        return jsonify({"ok": False, "error": "Could not read transcription"}), 500
 
 
 @app.route("/stream")
@@ -584,8 +628,9 @@ def api_transcription_save() -> Any:
             except Exception:
                 pass
         return jsonify({"ok": True})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+    except Exception:
+        logger.exception("[TRANSCRIPTION] Error saving %s", resolved)
+        return jsonify({"ok": False, "error": "Could not save transcription"}), 500
 
 
 @app.route("/api/file", methods=["DELETE"])
@@ -617,8 +662,9 @@ def api_delete_file() -> Any:
         except Exception as e:
             logger.warning("[DELETE] Could not clean up DB: %s", e)
         return jsonify({"ok": True})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+    except Exception:
+        logger.exception("[DELETE] Error deleting %s", target)
+        return jsonify({"ok": False, "error": "Could not delete file"}), 500
 
 
 @app.route("/api/frames")
@@ -688,15 +734,10 @@ def _run_pipeline(mode: str) -> None:
 
 
 def main() -> None:
+    # A non-loopback DASHBOARD_HOST is rejected at Settings.from_env() time
+    # (see settings.py) — by the time main() runs, dashboard_host is
+    # guaranteed to be loopback-only.
     _ensure_folders()
-    if SETTINGS.dashboard_host not in ("127.0.0.1", "localhost", "::1"):
-        logger.warning(
-            "[DASHBOARD] Binding to %s:%s — this exposes the dashboard beyond "
-            "localhost with NO authentication. Only do this on a trusted "
-            "network and understand the risk before proceeding.",
-            SETTINGS.dashboard_host,
-            SETTINGS.dashboard_port,
-        )
     app.run(host=SETTINGS.dashboard_host, port=SETTINGS.dashboard_port, debug=False)
 
 

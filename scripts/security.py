@@ -45,6 +45,7 @@ EXCLUDE_GLOBS = {
     # key formats, including AWS's own public example key) to test redact_secrets()
     # — not real secrets. Same exemption is expressed for gitleaks in .gitleaks.toml.
     "test_llm_guard_and_redaction.py",
+    "test_llm_enrichment.py",
     # Both files necessarily contain the literal denylisted strings themselves:
     # this module defines the denylist, the test proves the checker catches them.
     "security.py",
