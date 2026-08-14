@@ -44,7 +44,7 @@ jobs:
       - name: Quality harness
         run: python scripts/quality.py
       - name: Upload quality report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: quality-report
@@ -67,7 +67,7 @@ jobs:
         if: always()
         run: python -m pip_audit --format cyclonedx-json -o sbom.json
       - name: Upload security report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: security-report
@@ -92,7 +92,7 @@ jobs:
       - name: Unit test harness
         run: python scripts/ut.py
       - name: Upload UT report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ut-report-py${{ matrix.python-version }}
@@ -126,7 +126,7 @@ jobs:
       - name: E2E harness
         run: python scripts/e2e.py
       - name: Upload E2E report and screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: e2e-artifacts
