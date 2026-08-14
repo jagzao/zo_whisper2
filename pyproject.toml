@@ -29,16 +29,20 @@ vision = [
     "imagehash>=4.3.1",
 ]
 # MarkItDown document scanning (meeting_dev_handler's PDF/Word/Excel/image
-# attachment summaries). Still `[all]` at this pin — markitdown only split
-# its dependencies into narrower extras (pdf/docx/xlsx/...) starting at
-# 0.1.0, which also changed the MarkItDown() constructor signature used by
-# meeting_dev_handler.py's llm_client/llm_model wiring. Bumping the pin to
-# get the narrower extra would be a behavior-risking upgrade, not a pure
-# dependency-scoping change — out of scope here. `[all]` still moving out
-# of core dependencies is the actual win: a plain `pip install .` no
-# longer drags in Azure SDKs at all unless this extra is requested.
+# attachment summaries). Pinned exactly, no `[all]` — verified via
+# `pip show markitdown` that this version (0.0.2) declares NO optional
+# extras at all (Provides-Extra: none): every one of its dependencies,
+# including azure-ai-documentintelligence/azure-identity, is an
+# unconditional hard requirement of the package itself, not something an
+# extra can narrow. Extras this fine-grained (`markitdown[pdf,docx,...]`)
+# only exist starting at 0.1.0+, which also changed the MarkItDown()
+# constructor signature used by meeting_dev_handler.py's
+# llm_client/llm_model wiring — a behavior-risking upgrade, tracked
+# separately, out of scope for this pin. Keeping this out of core
+# `dependencies` is still the real win: a plain `pip install .` never
+# drags in the Azure SDKs unless this extra is explicitly requested.
 documents = [
-    "markitdown[all]>=0.0.1",
+    "markitdown==0.0.2",
 ]
 all = [
     "transcript-pipeline[llm,vision,documents]",
