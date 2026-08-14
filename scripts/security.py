@@ -46,10 +46,6 @@ EXCLUDE_GLOBS = {
     # — not real secrets. Same exemption is expressed for gitleaks in .gitleaks.toml.
     "test_llm_guard_and_redaction.py",
     "test_llm_enrichment.py",
-    # Both files necessarily contain the literal denylisted strings themselves:
-    # this module defines the denylist, the test proves the checker catches them.
-    "security.py",
-    "test_no_sensitive_identifiers.py",
 }
 
 
@@ -139,33 +135,81 @@ def check_path_traversal(report: list[dict]) -> None:
     _log(report, "path_traversal", ok, detail)
 
 
-# Real values redacted from this repo's public history/docs — see
-# docs/GIT_HISTORY_CLEANUP.md, which deliberately uses placeholders instead
-# of these so the doc doesn't re-leak what it's meant to help remove.
-DENYLISTED_IDENTIFIERS = {
-    "valeris",
-    "jagzao",
-    "apoc",
-    "validacionesfaltantesroles",
-    "databiz",
-}
+# The actual list of real-world identifiers to guard against (client names,
+# personal path fragments, project codenames) lives OUTSIDE this repo —
+# never as a tracked file. A tracked denylist of real values is itself a
+# leak (that mistake is exactly what this rewrite fixes: an earlier version
+# hardcoded the real values here and in the accompanying test).
+#
+# Configure it via either:
+#   - a local, gitignored `.sensitive-identifiers` file (repo root), one
+#     identifier per line — see `.sensitive-identifiers.example`; or
+#   - a `SENSITIVE_IDENTIFIERS` env var (comma-separated), meant for a
+#     private CI secret.
+# Neither is required: public clones/forks and PR CI runs simply skip this
+# specific check (logged clearly as SKIPPED, not a failure) since they have
+# no private list to check against — the rest of the security harness
+# (committed-secret patterns, gitleaks, path-traversal suite) still runs.
 
-# file name -> set of denylisted tokens that are a known, intentional
-# exception in that specific file (not a leak). "jagzao" in LICENSE is the
-# repo owner's own name as copyright holder.
-DENYLIST_ALLOWED = {
-    "LICENSE": {"jagzao"},
-    # GitHub org/user name in badge URLs (github.com/jagzao/zo_whisper2) — the
-    # repo's own public identity, not a leak.
-    "README.md": {"jagzao"},
-}
+def _parse_denylist_entries(entries: list[str]) -> tuple[set[str], dict[str, set[str]]]:
+    """Parses raw entries into (denylist tokens, {token: {allowed filenames}}).
+
+    Plain entry `token` -> denylisted everywhere. Entry `token>>filename`
+    -> denylisted everywhere EXCEPT that exact tracked filename (a known,
+    intentional exception — e.g. the repo owner's own name as LICENSE
+    copyright holder or in a GitHub badge URL — not a leak). Kept out of
+    tracked code entirely: stating "<real name> is allowed in LICENSE" as a
+    Python dict here would itself re-embed the real value in a tracked
+    file, which is the exact mistake this rewrite removes.
+    """
+    denylist: set[str] = set()
+    allowed: dict[str, set[str]] = {}
+    for raw in entries:
+        entry = raw.strip()
+        if not entry or entry.startswith("#"):
+            continue
+        if ">>" in entry:
+            token, _, filename = entry.partition(">>")
+            token = token.strip().lower()
+            denylist.add(token)
+            allowed.setdefault(token, set()).add(filename.strip())
+        else:
+            denylist.add(entry.lower())
+    return denylist, allowed
+
+
+def _load_private_denylist() -> tuple[set[str], dict[str, set[str]]] | None:
+    """Returns (denylist, per-file allow-exceptions) from a local file or CI
+    secret, or None if neither is configured (meaning: skip the check,
+    don't fail on it — public clones/forks have no private list)."""
+    import os
+
+    env_value = os.getenv("SENSITIVE_IDENTIFIERS")
+    if env_value:
+        return _parse_denylist_entries(env_value.split(","))
+
+    local_file = ROOT / ".sensitive-identifiers"
+    if local_file.is_file():
+        denylist, allowed = _parse_denylist_entries(local_file.read_text(encoding="utf-8").splitlines())
+        if denylist:
+            return denylist, allowed
+
+    return None
 
 
 def check_no_denylisted_identifiers(report: list[dict]) -> None:
     """Guards against real client names/paths/codenames reappearing in any
     tracked file — see docs/GIT_HISTORY_CLEANUP.md, which this check exists
-    to keep honest (that doc previously re-leaked the exact strings it was
-    meant to help redact)."""
+    to keep honest. The denylist itself is never tracked (see
+    `_load_private_denylist`), and a hit is never reported with the actual
+    matched value — only the file it was found in — so this check can't
+    itself become a leak."""
+    loaded = _load_private_denylist()
+    if loaded is None:
+        _log(report, "no_denylisted_identifiers", True, "SKIPPED: no private denylist configured")
+        return
+    denylist, denylist_allowed = loaded
+
     files = _git_tracked_files()
     hits: list[str] = []
     for path in files:
@@ -175,16 +219,16 @@ def check_no_denylisted_identifiers(report: list[dict]) -> None:
             text = path.read_text(encoding="utf-8", errors="ignore").lower()
         except Exception:
             continue
-        allowed = DENYLIST_ALLOWED.get(path.name, set())
         try:
             display_path = path.relative_to(ROOT)
         except ValueError:
             display_path = path
-        for token in DENYLISTED_IDENTIFIERS:
-            if token in allowed:
+        for token in denylist:
+            if path.name in denylist_allowed.get(token, set()):
                 continue
             if token in text:
-                hits.append(f"{display_path}: contains denylisted identifier '{token}'")
+                hits.append(f"denylisted identifier found in {display_path}")
+                break
     _log(report, "no_denylisted_identifiers", not hits, f"{len(hits)} hits")
     for hit in hits[:10]:
         _log(report, "denylisted_identifier_hit", False, hit)

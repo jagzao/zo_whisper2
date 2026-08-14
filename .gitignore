@@ -16,6 +16,10 @@ watcher/core/debug/
 # ── Config real con nombres/rutas de clientes reales — usar projects.json.example como plantilla
 projects.json
 
+# ── Denylist privada de identificadores reales (owner-only) — ver scripts/security.py
+.sensitive-identifiers
+replacements.txt
+
 # ── Datos de entrada (archivos de usuario, no código) ───────────────────────
 audio/
 Videos/
