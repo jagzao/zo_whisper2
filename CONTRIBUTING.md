@@ -7,13 +7,32 @@ pip install -e ".[dev]"
 ```
 
 This installs the package in editable mode plus dev tooling (pytest,
-playwright, ruff, pyright, pip-audit). Python 3.10+ (the venv used for
-daily development is Python 3.12+, resolved by `RUN_MAX_QUALITY.bat` in
-this order: `watcher\venv\Scripts\python.exe` → miniconda → system `PATH`).
+playwright, ruff, pyright, pip-audit) — `dev` pulls in every optional
+extra (`transcript-pipeline[all]`) so the full test suite can exercise
+LLM/vision/document code paths. Python 3.10+ (the venv used for daily
+development is Python 3.12+, resolved by `RUN_MAX_QUALITY.bat` in this
+order: `watcher\venv\Scripts\python.exe` → miniconda → system `PATH`).
 
 For a reproducible install matching exactly what CI uses, see
 `requirements.lock.txt` (regenerate with `uv pip compile pyproject.toml
 --extra dev -o requirements.lock.txt`).
+
+### Optional extras (feature-scoped, for a non-dev install)
+
+A plain `pip install -e .` only pulls in core transcription (faster-whisper,
+Flask, FFmpeg-driven media processing) — no LLM client, no OCR, no document
+converter. Add the extra(s) your usage needs:
+
+| Extra | Installs | Needed for |
+|---|---|---|
+| `llm` | `openai` | MarkItDown's vision-enabled document conversion (see `documents` below) |
+| `vision` | `pytesseract`, `imagehash` | Screen-content-change detection in `meeting_dev_handler` (OCR or perceptual-hash fallback), and tutorial frame descriptions (`FRAME_DESCRIPTIONS=true`) |
+| `documents` | `markitdown[all]` | Meeting-dev document scanning (PDF/Word/Excel/image attachments → Markdown) |
+| `all` | all of the above | Everything |
+
+Meeting summaries themselves (`generate_summary` via
+`AIEnrichmentService`) use a plain `requests`-based HTTP client, already in
+core — no extra needed for that specific path.
 
 ## Running tests
 
