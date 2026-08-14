@@ -39,10 +39,15 @@ That arrow only fires when all of the following are true (`PrivacyGuard`,
 3. The matched project's `data_classification` is not `confidential`
    (default: `internal`, which is allowed if 1-2 hold).
 
-Text sent through that arrow is passed through `redact_secrets()` first
-(best-effort — see `PRIVACY.md` for limits). Frame images sent for vision
-analysis are **not** text-redacted (redaction operates on text, not pixels)
-— that's why `FRAME_DESCRIPTIONS` is a separate, also-default-off flag.
+All of this is enforced through one call point, `AIEnrichmentService`
+(`src/transcript_pipeline/llm/enrichment.py`) — every handler and the
+tutorial frame-description path route through it rather than assembling
+these checks themselves. Text sent through the arrow is passed through
+`redact_secrets()` first (best-effort — see `PRIVACY.md` for limits). Frame
+images sent for vision analysis are **not** text-redacted (redaction
+operates on text, not pixels) — that's why `FRAME_DESCRIPTIONS` (any visual
+analysis, local or remote) and `ALLOW_FRAME_UPLOAD` (image bytes reaching a
+*remote* provider specifically) are separate, both-default-off flags.
 
 ## Local-only paths (never leave the machine)
 

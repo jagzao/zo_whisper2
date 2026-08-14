@@ -23,20 +23,27 @@ keyframes in `CarpetaTranscripciones/`.
 
 ## Security & Privacy
 
-- **Local by default.** Transcription (`faster-whisper`), video/audio
-  processing (FFmpeg), OCR (Tesseract), and routing all run on your CPU —
-  no network call, ever, for the core pipeline.
-- **Dashboard binds to `127.0.0.1`** (`DASHBOARD_HOST`) — not reachable
-  from the network unless you explicitly rebind it, and there's a runtime
-  warning if you do.
+- **Local by default.** Media and transcript content stay local for the
+  core pipeline — transcription (`faster-whisper`), video/audio processing
+  (FFmpeg), OCR (Tesseract), and routing all run on your CPU. Whisper's
+  model itself may be downloaded on first use (~3GB, then cached).
+- **Dashboard is localhost-only, fail-closed.** `DASHBOARD_HOST` must be a
+  loopback address — `Settings.from_env()` raises `ConfigurationError`
+  otherwise, no remote mode. Mutating requests (upload/delete/save/run)
+  also require a matching Host/Origin and a per-process token
+  (`X-Local-Dashboard-Token`, generated fresh at startup, never persisted).
 - **No arbitrary filesystem access.** Every dashboard endpoint that touches
-  a file goes through `SafePathResolver` — a single, tested component that
-  constrains access to the pipeline's own data folders. See
-  `tests/security/` for the traversal/bypass regression suite and
-  `docs/adr/0002-safe-filesystem-boundary.md` for the design.
+  a file goes through `SafePathResolver`, and every response uses opaque
+  `media_id`s — no absolute filesystem path is ever returned to or accepted
+  from the browser. See `tests/security/` for the traversal/bypass
+  regression suite and `docs/adr/0002-safe-filesystem-boundary.md` for the
+  design.
 - **External LLM calls are off by default** (`ALLOW_EXTERNAL_LLM=false`)
   and blockable per-project (`data_classification: confidential`),
-  regardless of the global flag — see `PRIVACY.md`.
+  regardless of the global flag. Every outbound call — summaries, frame
+  descriptions, document scanning — routes through one place
+  (`AIEnrichmentService`) so that boundary can't be accidentally skipped
+  for a subset of call sites — see `PRIVACY.md`.
 - **Secret scanning + dependency audit in CI**, fail-closed: if `ruff`,
   `pyright`, `pip-audit`, or the security test suite aren't runnable, the
   gate reports failure, not a silent pass.
@@ -119,18 +126,21 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    HAND["handlers/ (client_meeting, zo, meeting_dev)"]
-    GUARD{{"PrivacyGuard.check()<br/>ALLOW_EXTERNAL_LLM + data_classification"}}
+    HAND["handlers/ (client_meeting, zo, meeting_dev)<br/>+ transcription/processor.py"]
+    SVC{{"AIEnrichmentService<br/>single call point"}}
+    GUARD["PrivacyGuard.check()<br/>ALLOW_EXTERNAL_LLM + data_classification"]
+    FRAME["frame policy<br/>FRAME_DESCRIPTIONS + ALLOW_FRAME_UPLOAD"]
     REDACT["redact_secrets()<br/>best-effort, text only"]
     LOCAL["Local provider<br/>Ollama / LM Studio (localhost)"]
     REMOTE["Remote provider<br/>OpenAI-compatible API"]
 
-    HAND --> GUARD
+    HAND --> SVC --> GUARD
+    SVC --> FRAME
     GUARD -->|provider_type=local, always allowed| LOCAL
     GUARD -->|provider_type=remote, gated + redacted| REDACT --> REMOTE
 
     style REMOTE fill:#3a1a1a,stroke:#ff6b6b,color:#fff
-    style GUARD fill:#3a2f0a,stroke:#e0a72b,color:#fff
+    style SVC fill:#3a2f0a,stroke:#e0a72b,color:#fff
 ```
 
 **Composition root** (`master_processor.py`, `simple_scan.py`, `compress_and_move.py`, `dashboard.py`): thin scripts at the repo root, invoked directly by `RUN_MAX_QUALITY.bat`. They contain no logic — they just import and run the package installed in editable mode. This lets the internals be restructured without ever touching the `.bat` that runs daily.
@@ -150,7 +160,7 @@ flowchart LR
 | FFmpeg / ffprobe | H.265 compression, keyframe extraction, video stream detection |
 | pytesseract + Pillow/imagehash | Content diff between frames (OCR or perceptual hash) for dev meetings |
 | MarkItDown | Converts attached PDF/Word/Excel/images to Markdown for meeting context |
-| `transcript_pipeline.llm` | Provider-agnostic OpenAI-compatible client + `PrivacyGuard` + secret redaction, opt-in only |
+| `transcript_pipeline.llm` | `AIEnrichmentService` (single outbound-AI call point) + provider-agnostic OpenAI-compatible client + `PrivacyGuard` + secret redaction, opt-in only |
 | python-dotenv | Configuration source for `Settings.from_env()` (`scan_config.env`) |
 | pytest, ruff, pyright, pip-audit, gitleaks | Quality/security/typing/dependency/secret gates — see [Testing](#testing) |
 | setuptools (src-layout) | Packaging, `pip install -e .`, entry points |
@@ -163,6 +173,8 @@ flowchart LR
 - **One typed `Settings` object**, not ~15 scattered `os.getenv()` calls: validated once at import, every module imports `SETTINGS` instead of reading the environment itself.
 - **Handler contract via `typing.Protocol` + typed result**: the pipeline programs against an interface (`handlers/base.py`), and a handler's success/failure/retryability is an explicit `HandlerResult`, not a bool whose return value used to be silently discarded.
 - **Filesystem access through one resolver**: `SafePathResolver` is the only code path allowed to turn user-controlled input into a trusted `Path` — see `docs/adr/0002-safe-filesystem-boundary.md`.
+- **Outbound AI policy through one service**: `AIEnrichmentService` (`llm/enrichment.py`) is the only code path allowed to call an LLM provider — it assembles `PrivacyGuard`, `redact_secrets()`, and the `FRAME_DESCRIPTIONS`/`ALLOW_FRAME_UPLOAD` frame policy in one place, so no handler can accidentally skip a check by calling the provider directly.
+- **Dashboard is fail-closed localhost-only**: a non-loopback `DASHBOARD_HOST` raises `ConfigurationError` at startup rather than logging a warning and binding anyway; mutating requests require a matching Host/Origin plus a per-process token — see `docs/adr/0005-ai-enrichment-and-local-only-dashboard.md`.
 
 ## Project structure
 
@@ -284,7 +296,9 @@ Adding a new project doesn't require touching `MasterProcessor` or `SimpleScanPr
 - **CPU-only by design** (`compute_type=int8`): a cost decision, not an architectural one — runs on any machine without a dedicated GPU, at the cost of speed compared to GPU inference.
 - **Single-machine**: no distributed queue or workers — designed for local processing, not multi-user scale. See "What this project deliberately doesn't do" below.
 - Whisper's `large-v3` model is downloaded (~3GB) on first use.
-- The dashboard's `path`/media identifiers are still absolute filesystem paths in the current frontend contract (validated server-side by `SafePathResolver` before any file operation, but still visible to the browser) — migrating to opaque `media_id`s is a documented, lower-priority follow-up (see `docs/adr/0002-safe-filesystem-boundary.md`).
+- No CSRF-token rotation or session concept — the per-process dashboard
+  token is a single static value for the process lifetime, appropriate for
+  a single-user localhost tool, not a multi-user auth system.
 
 ### What this project deliberately doesn't do
 

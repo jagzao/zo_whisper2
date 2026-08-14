@@ -13,7 +13,7 @@ def _clean_env(monkeypatch):
     monkeypatch.setattr("transcript_pipeline.settings.load_env", lambda: None)
     for key in (
         "DASHBOARD_HOST", "ALLOW_EXTERNAL_LLM", "FRAME_DESCRIPTIONS",
-        "ALLOW_FRAME_UPLOAD", "PRIVACY_MODE",
+        "ALLOW_FRAME_UPLOAD",
     ):
         monkeypatch.delenv(key, raising=False)
 
@@ -32,7 +32,3 @@ def test_frame_descriptions_disabled_by_default():
 
 def test_frame_upload_disabled_by_default():
     assert Settings.from_env().allow_frame_upload is False
-
-
-def test_privacy_mode_defaults_to_local():
-    assert Settings.from_env().privacy_mode == "local"

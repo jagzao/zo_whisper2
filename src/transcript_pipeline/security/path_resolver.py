@@ -59,10 +59,11 @@ class SafePathResolver:
     ) -> Path:
         """Validates a client-supplied absolute path against a set of allowed roots.
 
-        Kept for the dashboard's existing `?path=<absolute>` contract (see
-        `docs/adr/` for the migration plan to opaque ids) — the client still
-        sends an absolute path, but it is only ever trusted once proven to
-        resolve inside one of the explicitly allowed roots.
+        Not currently called by `dashboard/app.py` — every endpoint there
+        uses opaque `media_id`s via `resolve()` instead (see
+        `docs/adr/0002-safe-filesystem-boundary.md`). Kept as a general
+        utility (and its own test coverage) for the case of validating an
+        absolute path that genuinely originates client-side.
         """
         if not raw_path or "\x00" in raw_path:
             raise PathTraversalError(f"Invalid path: {raw_path!r}")
