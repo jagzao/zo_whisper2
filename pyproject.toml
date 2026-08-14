@@ -54,6 +54,7 @@ dev = [
     "ruff>=0.4.0",
     "pyright>=1.1.350",
     "pip-audit>=2.7.0",
+    "tomli>=2.0.0; python_version<'3.11'",  # tomllib is stdlib from 3.11+; tests read pyproject.toml on 3.10 too
 ]
 
 [project.scripts]
