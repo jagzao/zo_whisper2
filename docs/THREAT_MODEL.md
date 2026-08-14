@@ -23,7 +23,7 @@ actually mitigated today vs. still open.
 |---|---|
 | Local user (you) | Full access — this is the intended user |
 | Malicious/compromised process on the same machine | Could reach `127.0.0.1:5000` if the dashboard is running |
-| Malicious LAN user | Only reachable if `DASHBOARD_HOST` is deliberately rebound off `127.0.0.1` |
+| Malicious LAN user | Not reachable — `DASHBOARD_HOST` must be a loopback address; `Settings.from_env()` raises `ConfigurationError` for anything else, no remote-mode override exists |
 | Malicious uploaded file (crafted media) | Reaches ffmpeg/ffprobe, faster-whisper, PIL, Tesseract, MarkItDown |
 | Compromised/malicious external LLM provider | Sees whatever redacted text/frames are sent when `ALLOW_EXTERNAL_LLM=true` |
 | Accidental repo contributor | Could commit real client data/secrets to a public fork |
@@ -43,10 +43,19 @@ Git repo ──push──▶  Public GitHub
 ## Threats (STRIDE, pragmatic)
 
 ### Spoofing
-- **No authentication on the dashboard.** Anything that can reach the bound
-  address is treated as the local user. Mitigated by defaulting to
-  `127.0.0.1` (`DASHBOARD_HOST`); **not mitigated** if you rebind to
-  `0.0.0.0`/a LAN IP without adding your own auth layer. See `SECURITY.md`.
+- **No user authentication on the dashboard** (by design — single-user,
+  local tool, not a multi-tenant auth system). What *is* mitigated: (1)
+  `DASHBOARD_HOST` can only be a loopback address — a non-loopback value
+  raises `ConfigurationError` at startup, no escape hatch; (2) a
+  `before_request` hook rejects any request whose Host header isn't
+  loopback; (3) mutating requests (POST/PUT/PATCH/DELETE) additionally
+  require a matching Origin (when present) and a per-process
+  `X-Local-Dashboard-Token` (`secrets.token_urlsafe(32)`, generated at
+  startup, compared via `secrets.compare_digest()`) — so a page in another
+  browser tab, or an unrelated local process, can't drive the dashboard's
+  mutating endpoints just by knowing the port. This is a same-machine
+  boundary, not a login system — anyone with a shell on this machine can
+  read the token from the running process either way. See `SECURITY.md`.
 
 ### Tampering
 - **Path traversal → arbitrary file read/write.** Was the P0 finding this
@@ -70,49 +79,63 @@ Git repo ──push──▶  Public GitHub
 
 ### Information Disclosure
 - **Absolute filesystem paths returned to the frontend** (`/api/folders`,
-  `/api/files`). Low severity on a local-only tool, but still disclosure of
-  local machine layout. **Not yet mitigated** — tracked as a known
-  remaining item (see "Remaining risks" below); the intended fix is
-  migrating the frontend from absolute paths to opaque `media_id`s (see
-  `docs/adr/0002-safe-filesystem-boundary.md`).
+  `/api/files`). Mitigated — every endpoint returns opaque `media_id`s or
+  repo-relative strings; `/api/folders` returns only `{name, count}`. No
+  endpoint returns or accepts a raw absolute path.
 - **Transcript/frame content sent to a remote LLM.** Mitigated by
   `PrivacyGuard` (off by default, `data_classification: confidential`
-  override) and best-effort `redact_secrets()`. See `PRIVACY.md` for the
-  documented limits of redaction.
-- **Error messages leaking resolved paths.** Mitigated by the
-  `SecurityError` errorhandler in `dashboard/app.py`, which returns a
-  generic message instead of the exception string.
+  override) and best-effort `redact_secrets()`, both enforced through the
+  single `AIEnrichmentService` call point — including the frame-description
+  path (`transcription/processor.py`), which previously called the guard
+  with a hardcoded `project_config=None` instead of the real project's
+  classification (fixed; see regression test in `tests/test_processor.py`).
+  See `PRIVACY.md` for the documented limits of redaction.
+- **Frame/screenshot images reaching a remote provider.** Mitigated by
+  `ALLOW_FRAME_UPLOAD` (default `false`), enforced in
+  `AIEnrichmentService._check_frame_policy` — previously this flag was
+  declared in `Settings` but never actually read anywhere.
+- **Error messages leaking resolved paths or exception internals.**
+  Mitigated by the `SecurityError` errorhandler, plus the 4
+  previously-leaking endpoints (`api_transcription` GET/POST,
+  `api_delete_file`, `api_upload`) now log full detail server-side via
+  `logger.exception()` and return a generic client-facing message instead
+  of `str(exception)`.
 
 ### Denial of Service
 - **Unbounded upload size.** Mitigated by `MAX_CONTENT_LENGTH`
   (`UPLOAD_MAX_MB`, default 500MB).
-- **Hung subprocesses** (ffmpeg without a timeout in a few call sites).
-  **Not yet mitigated** everywhere — noted as a remaining risk; the batch
-  subprocess calls (`master_processor.py`, `compress_and_move.py`) are
-  intentionally long-running and shouldn't get an aggressive timeout, but
-  per-file ffmpeg/ffprobe calls could reasonably get one.
+- **Hung subprocesses.** Mitigated — every ffmpeg/ffprobe call site has a
+  timeout (`media/compressor.py`, `media/keyframe_extractor.py`,
+  `handlers/meeting_dev_handler.py`): per-file probe/extract calls get a
+  bounded timeout (30-600s depending on the operation), while the two
+  intentionally long-running batch calls (`master_processor.py`,
+  `compress_and_move.py`, invoked from the dashboard's run button) are not
+  given an aggressive timeout by design — they're meant to run for as long
+  as the daily batch takes.
 - Single-process, single-user tool — not designed to survive intentional
   resource-exhaustion attacks from an untrusted network. Don't expose it to one.
 
 ### Elevation of Privilege
 - The Flask process runs with whatever OS permissions the user has. There's
   no privilege separation between "dashboard user" and "pipeline batch" —
-  by design, for a local single-user tool. If you rebind the dashboard
-  beyond localhost, anyone who reaches it effectively gets local-user-level
-  filesystem access within the allowed roots (and, before this hardening
-  pass, arbitrary read/write anywhere the process could reach).
+  by design, for a local single-user tool. Remote binding isn't possible
+  (see Spoofing above), so this no longer extends to "anyone on the LAN" —
+  it's scoped to whoever has access to this machine, same as running any
+  other local tool.
 
 ## Remaining risks (not hidden, tracked explicitly)
 
-- Absolute paths still exposed to the frontend (see Information Disclosure
-  above) — functional, not a live vulnerability post-`SafePathResolver`, but
-  more disclosure than necessary.
-- `subprocess` calls to ffmpeg/ffprobe in `media/compressor.py` and
-  `handlers/meeting_dev_handler.py` lack a timeout in a few spots — a
-  malformed/adversarial media file could hang a worker.
-- No CSRF protection on mutating dashboard endpoints — acceptable for a
-  same-origin, localhost-only, no-auth tool, but would need addressing if
-  the trust model ever changes (see "Optional remote mode" in `SECURITY.md`
-  and `docs/adr/`).
+- No CSRF-token rotation or session concept — the per-process dashboard
+  token is a single static value for the process lifetime. Sufficient for
+  the same-machine trust boundary this tool operates under, not a
+  multi-user auth system.
 - `redact_secrets()` is regex-based and will miss secrets in unrecognized
-  formats — documented, not silently claimed as complete, in `PRIVACY.md`.
+  formats, and never applies to image bytes (frame/screenshot uploads) —
+  documented, not silently claimed as complete, in `PRIVACY.md`.
+- MarkItDown's internal HTTP calls (document/image-to-markdown conversion,
+  `handlers/meeting_dev_handler.py::_scan_documents`) go through a raw
+  `openai.OpenAI` client when vision enrichment is allowed — gated by the
+  same `AIEnrichmentService.allow_document_llm()` check as everything else,
+  but the document content itself isn't passed through `redact_secrets()`
+  the way handler-generated summary text is, since MarkItDown owns that
+  HTTP call internally.

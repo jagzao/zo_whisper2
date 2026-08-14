@@ -19,9 +19,11 @@ on your machine, what can leave it, and how to control that.
 - **Storage** — transcripts, metadata, and frames are written to
   `CarpetaTranscripciones/` and the project's configured `output_path`, both
   on local/mapped disk you control.
-- **Dashboard** — binds to `127.0.0.1` by default (`DASHBOARD_HOST`); see
-  [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for what that boundary
-  does and doesn't protect against.
+- **Dashboard** — `DASHBOARD_HOST` must be a loopback address (enforced at
+  startup, `ConfigurationError` otherwise — no remote mode). Mutating
+  requests additionally require a matching Host/Origin and a per-process
+  token; see [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for what that
+  boundary does and doesn't protect against.
 
 ## What can leave the machine — and only on opt-in
 
@@ -34,18 +36,24 @@ blocked by default:
 | `ALLOW_EXTERNAL_LLM` | `false` | Must be `true` for any call to a remote (`provider_type=remote`) LLM to go through. A `local` provider (Ollama, LM Studio, llama.cpp on `localhost`/`127.0.0.1`) is never blocked by this flag. |
 | `data_classification` (per-project, in `projects.json`) | `internal` | Setting a project to `confidential` blocks remote LLM calls for that project **even if `ALLOW_EXTERNAL_LLM=true` globally**. |
 | `FRAME_DESCRIPTIONS` | `false` | Must be `true` for extracted video frames (screenshots) to be sent to a vision model at all. Still subject to `ALLOW_EXTERNAL_LLM`/`data_classification` above. |
-| `ALLOW_FRAME_UPLOAD` | `false` | Reserved for future frame-upload features; off by default. |
-| `PRIVACY_MODE` | `local` | Documents intent; `ALLOW_EXTERNAL_LLM` is what actually gates the network call. |
+| `ALLOW_FRAME_UPLOAD` | `false` | Must be `true` for frame/screenshot **image bytes** to reach a remote provider — separate from `ALLOW_EXTERNAL_LLM`, which gates text. A remote call with `ALLOW_EXTERNAL_LLM=true` but `ALLOW_FRAME_UPLOAD=false` can still generate text summaries; it just won't upload images. |
 
-`provider_type` (`local`/`remote`) is derived from `LLM_BASE_URL` — a URL
-pointing at `localhost`/`127.0.0.1` is `local`, anything else is `remote` —
-unless `LLM_PROVIDER_TYPE` overrides it explicitly. It is **never** inferred
-from the model name, so pointing a "local-sounding" model name at a remote
-API doesn't bypass the guard.
+`provider_type` (`local`/`remote`) is derived from `LLM_BASE_URL` by parsing
+its actual hostname (`urllib.parse.urlparse`, with an `ipaddress.is_loopback`
+fallback) and comparing it against `localhost`/`127.0.0.1`/`::1` exactly —
+not a substring check, so `https://localhost.example.com` correctly
+classifies as `remote`, not `local`. `LLM_PROVIDER_TYPE` overrides this
+explicitly when set. Provider type is **never** inferred from the model
+name, so pointing a "local-sounding" model name at a remote API doesn't
+bypass the guard.
 
-See `src/transcript_pipeline/llm/guard.py` (`PrivacyGuard`) for the
-enforcement point, and `src/transcript_pipeline/llm/openai_compatible.py`
-for the client itself.
+`src/transcript_pipeline/llm/enrichment.py` (`AIEnrichmentService`) is the
+single call point every handler uses — it wraps `PrivacyGuard.check()`,
+`redact_secrets()`, and the `FRAME_DESCRIPTIONS`/`ALLOW_FRAME_UPLOAD` frame
+policy behind one small API, so no caller has to remember which combination
+of checks to run. `src/transcript_pipeline/llm/guard.py` (`PrivacyGuard`) is
+the underlying enforcement primitive it wraps, and
+`src/transcript_pipeline/llm/openai_compatible.py` is the HTTP client.
 
 ## Secret redaction (best-effort, not a guarantee)
 
@@ -79,8 +87,12 @@ intermediates (frames, temp audio), never to the user's original media.
 Add `"data_classification": "public" | "internal" | "confidential"` to any
 project entry in `projects.json` (default `internal` if omitted). See
 `projects.json.example` for a worked example. `confidential` is enforced by
-`PrivacyGuard` at the point of the LLM call, not just documented — see
-`tests/test_llm_guard_and_redaction.py` for the regression coverage.
+`PrivacyGuard` at the point of every outbound call — summaries, frame
+descriptions, and document scanning all route through
+`AIEnrichmentService`, which threads the real matched project's
+classification through, not just documented — see
+`tests/test_llm_guard_and_redaction.py` and `tests/test_llm_enrichment.py`
+for the regression coverage.
 
 ## Where things are stored
 
