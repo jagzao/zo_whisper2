@@ -769,8 +769,12 @@
     </div>
 
     <script>
+        // Generated fresh per dashboard process (see app.py) — required on every
+        // mutating request so this localhost-only dashboard can't be driven by
+        // an unrelated page or process that merely reaches this port.
+        const DASHBOARD_TOKEN = {{ dashboard_token | tojson }};
         const api = path => fetch(path, { headers: { 'Accept': 'application/json' }}).then(r => r.json());
-        const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+        const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: JSON.stringify(body) }).then(r => r.json());
         const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); };
 
         async function loadFolders() {
@@ -964,7 +968,7 @@
         }
 
         async function run(mode) {
-            const res = await fetch(`/api/run/${mode}`, { method: 'POST' }).then(r => r.json());
+            const res = await fetch(`/api/run/${mode}`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => r.json());
             if (res.ok) showToast('Pipeline started');
             else showToast(res.error || 'Error');
             updateRunStatus();
@@ -1327,7 +1331,7 @@
         async function deleteFile(idEncoded) {
             const id = decodeURIComponent(idEncoded);
             if (!confirm('Delete file and its transcription?')) return;
-            const res = await fetch('/api/file?id=' + encodeURIComponent(id), { method: 'DELETE' }).then(r => r.json());
+            const res = await fetch('/api/file?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => r.json());
             if (res.ok) { showToast('File deleted'); loadFolders(); loadFiles(); }
             else showToast(res.error || 'Error deleting');
         }
@@ -1352,7 +1356,7 @@
                 const form = new FormData();
                 form.append('file', file);
                 form.append('project', document.getElementById('uploadProject').value);
-                const res = await fetch('/api/upload', { method: 'POST', body: form }).then(r => r.json());
+                const res = await fetch('/api/upload', { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: form }).then(r => r.json());
                 const msg = res.ok ? `OK ${res.name}` : `Error ${file.name}: ${res.error}`;
                 queue.innerHTML += `<div>${msg}</div>`;
             }
