@@ -6,6 +6,8 @@ import pytest
 from transcript_pipeline.dashboard import app as dashboard_app
 from transcript_pipeline.security import MediaRoot, SafePathResolver
 
+AUTH_HEADERS = {"X-Local-Dashboard-Token": "test-dashboard-token"}
+
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
@@ -23,6 +25,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setattr(dashboard_app, "TRANSCRIPTIONS_BASE", transcriptions)
     monkeypatch.setattr(dashboard_app, "PROJECTS_PATH", tmp_path / "projects.json")
     monkeypatch.setattr(dashboard_app, "PROCESSED_DB", tmp_path / "processed_files.json")
+    monkeypatch.setattr(dashboard_app, "_DASHBOARD_TOKEN", AUTH_HEADERS["X-Local-Dashboard-Token"])
     monkeypatch.setattr(
         dashboard_app,
         "RESOLVER",
@@ -122,6 +125,7 @@ def test_write_allowed_transcription(client, env):
         "/api/transcription",
         data=json.dumps({"id": mid(MediaRoot.TRANSCRIPTIONS, "meeting.txt"), "text": "new text"}),
         content_type="application/json",
+        headers=AUTH_HEADERS,
     )
     assert resp.status_code == 200
     assert tx.read_text(encoding="utf-8") == "new text"
@@ -134,6 +138,7 @@ def test_write_traversal_outside_root_not_created(client, env, tmp_path):
         "/api/transcription",
         data=json.dumps({"id": mid(MediaRoot.TRANSCRIPTIONS, "../../new_arbitrary_file.txt"), "text": "pwned"}),
         content_type="application/json",
+        headers=AUTH_HEADERS,
     )
     assert resp.status_code in (400, 404)
     assert not target.exists()
@@ -144,6 +149,7 @@ def test_write_missing_id_rejected(client):
         "/api/transcription",
         data=json.dumps({"text": "pwned"}),
         content_type="application/json",
+        headers=AUTH_HEADERS,
     )
     assert resp.status_code in (400, 404)
 
@@ -153,7 +159,7 @@ def test_write_missing_id_rejected(client):
 def test_delete_allowed_file(client, env):
     victim = env["videos"] / "clip.mp4"
     victim.write_text("data", encoding="utf-8")
-    resp = client.delete("/api/file" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
+    resp = client.delete("/api/file" + q(mid(MediaRoot.VIDEOS, "clip.mp4")), headers=AUTH_HEADERS)
     assert resp.status_code == 200
     assert not victim.exists()
 
@@ -162,7 +168,7 @@ def test_delete_traversal_outside_root_rejected(client, env, tmp_path):
     target = tmp_path.parent / "do_not_delete.txt"
     target.write_text("keep me", encoding="utf-8")
     try:
-        resp = client.delete("/api/file" + q(mid(MediaRoot.VIDEOS, "../../do_not_delete.txt")))
+        resp = client.delete("/api/file" + q(mid(MediaRoot.VIDEOS, "../../do_not_delete.txt")), headers=AUTH_HEADERS)
         assert resp.status_code in (400, 404)
         assert target.exists()
     finally:
@@ -170,7 +176,7 @@ def test_delete_traversal_outside_root_rejected(client, env, tmp_path):
 
 
 def test_delete_missing_id_rejected(client):
-    resp = client.delete("/api/file")
+    resp = client.delete("/api/file", headers=AUTH_HEADERS)
     assert resp.status_code in (400, 404)
 
 
@@ -273,20 +279,20 @@ def test_folders_response_has_no_absolute_paths(client, env):
 
 def test_upload_rejects_invalid_extension(client):
     data = {"file": (__import__("io").BytesIO(b"not media"), "payload.exe")}
-    resp = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 400
 
 
 def test_upload_accepts_supported_extension(client, env):
     data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "clip.mp3")}
-    resp = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 200
     assert (env["video_compress"] / "clip.mp3").exists()
 
 
 def test_upload_response_has_no_absolute_path(client, env):
     data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "clip2.mp3")}
-    resp = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert "path" not in resp.get_json()
 
 
@@ -297,6 +303,7 @@ def test_create_project_rejects_missing_name(client):
         "/api/projects",
         data=json.dumps({"action": "create", "project": {"match": {}}}),
         content_type="application/json",
+        headers=AUTH_HEADERS,
     )
     assert resp.status_code == 400
 
@@ -306,6 +313,7 @@ def test_create_project_rejects_unknown_handler(client):
         "/api/projects",
         data=json.dumps({"action": "create", "project": {"name": "X", "handler": "evil"}}),
         content_type="application/json",
+        headers=AUTH_HEADERS,
     )
     assert resp.status_code == 400
 
@@ -315,6 +323,7 @@ def test_create_project_rejects_malformed_match(client):
         "/api/projects",
         data=json.dumps({"action": "create", "project": {"name": "X", "match": {"prefix": "not_a_list"}}}),
         content_type="application/json",
+        headers=AUTH_HEADERS,
     )
     assert resp.status_code == 400
 
@@ -324,6 +333,7 @@ def test_create_project_accepts_valid_payload(client):
         "/api/projects",
         data=json.dumps({"action": "create", "project": {"name": "Valid Project"}}),
         content_type="application/json",
+        headers=AUTH_HEADERS,
     )
     assert resp.status_code == 200
     assert resp.get_json()["ok"] is True
@@ -331,7 +341,7 @@ def test_create_project_accepts_valid_payload(client):
 
 def test_upload_sanitizes_dangerous_filename(client, env):
     data = {"file": (__import__("io").BytesIO(b"data"), "../../evil.mp3")}
-    resp = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 200
     saved_name = resp.get_json()["name"]
     assert ".." not in saved_name
@@ -340,11 +350,11 @@ def test_upload_sanitizes_dangerous_filename(client, env):
 
 def test_upload_duplicate_filename_does_not_overwrite(client, env):
     data1 = {"file": (__import__("io").BytesIO(b"first"), "clip.mp3")}
-    resp1 = client.post("/api/upload", data=data1, content_type="multipart/form-data")
+    resp1 = client.post("/api/upload", data=data1, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp1.status_code == 200
 
     data2 = {"file": (__import__("io").BytesIO(b"second"), "clip.mp3")}
-    resp2 = client.post("/api/upload", data=data2, content_type="multipart/form-data")
+    resp2 = client.post("/api/upload", data=data2, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp2.status_code == 200
     assert resp2.get_json()["name"] != "clip.mp3"
 
@@ -356,5 +366,5 @@ def test_upload_oversize_rejected(client, monkeypatch):
     monkeypatch.setitem(dashboard_app.app.config, "MAX_CONTENT_LENGTH", 1024)
     oversize = b"x" * 2048
     data = {"file": (__import__("io").BytesIO(oversize), "big.mp3")}
-    resp = client.post("/api/upload", data=data, content_type="multipart/form-data")
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 413
