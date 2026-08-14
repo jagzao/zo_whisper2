@@ -410,7 +410,8 @@ class SimpleScanProcessor:
                 "segments": segments_list,
                 "language": info.language,
                 "duration": info.duration,
-                "processing_time": elapsed
+                "processing_time": elapsed,
+                "project": project,
             }
 
             if frame_info:
@@ -474,12 +475,15 @@ class SimpleScanProcessor:
 
                 logger.info(f"[FRAMES+TRANS] Transcription merged with frames: {mapping_file}")
 
-                self._create_readable_mapping(mapping_file.parent, mapping_data)
+                self._create_readable_mapping(
+                    mapping_file.parent, mapping_data,
+                    project_config=transcription_result.get("project"),
+                )
 
         except Exception as e:
             logger.error(f"[FRAMES+TRANS] Error merging transcription: {e}")
 
-    def _create_readable_mapping(self, frames_dir: Path, mapping_data: dict):
+    def _create_readable_mapping(self, frames_dir: Path, mapping_data: dict, project_config: dict | None = None):
         """
         Creates a human-readable markdown file with frames, transcription, and
         LLM visual descriptions. Visual descriptions are enabled via
@@ -494,7 +498,7 @@ class SimpleScanProcessor:
             frame_descriptions = {}
             if TUTORIAL_FEATURES_AVAILABLE:
                 try:
-                    _privacy_guard.check(_llm_provider, project_config=None)
+                    _privacy_guard.check(_llm_provider, project_config=project_config)
                     frame_descriptions = _llm_provider.describe_frames_for_tutorial(
                         frames_dir, transcription_mapping
                     )
