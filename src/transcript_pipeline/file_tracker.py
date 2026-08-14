@@ -16,6 +16,15 @@ controlled by `FILE_TRACKER_HASH_MODE` (default "fast"):
 
 Falls back to detecting an existing transcription in
 CarpetaTranscripciones/ either way.
+
+`is_file_processed()`'s path-keyed lookup (`processed_files[<absolute
+path>]`) revalidates the stored `hash` field against a freshly computed
+one before trusting it — otherwise a file whose content changed at the
+same path would still read as "already processed" from the old record,
+which defeated "full" mode's whole purpose. Legacy records written before
+the `hash` field existed (no `hash` key at all) are trusted on path match
+alone — a deliberately conservative compatibility policy for old
+`processed_files.json` databases, not a security boundary.
 """
 
 from __future__ import annotations
@@ -26,7 +35,7 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from transcript_pipeline.config import PROCESSED_FILES_DB, TRANSCRIPTIONS_DIR
+from transcript_pipeline.config import AUDIO_DIR, PROCESSED_FILES_DB, TRANSCRIPTIONS_DIR, VIDEOS_DIR
 from transcript_pipeline.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
@@ -99,8 +108,18 @@ class FileTracker:
                 return True
 
             if file_key in self.processed_files:
-                logger.debug("[PATH] Already processed: %s", file_path.name)
-                return True
+                info = self.processed_files[file_key]
+                stored_hash = info.get("hash")
+                if stored_hash is None:
+                    # Legacy record predating the "hash" field — trust the
+                    # path match (compat with old processed_files.json).
+                    logger.debug("[PATH] Legacy record (no hash), trusting path match: %s", file_path.name)
+                    return True
+                if stored_hash == file_hash:
+                    logger.debug("[PATH] Already processed: %s", file_path.name)
+                    return True
+                logger.debug("[PATH] Path matches but content hash diverged, reprocessing: %s", file_path.name)
+                return False
 
             if self.transcription_exists(file_path):
                 self.mark_as_processed(file_path, "auto_detected")
@@ -112,27 +131,35 @@ class FileTracker:
             logger.error("Error checking file %s: %s", file_path, e)
             return False
 
+    @staticmethod
+    def _resolve_output_folder(file_path: Path) -> Path:
+        """Mirrors SimpleScanProcessor.save_transcription()'s output-folder
+        resolution — transcripts live under TRANSCRIPTIONS_DIR at the same
+        relative path the source file has under AUDIO_DIR/VIDEOS_DIR."""
+        for base in (AUDIO_DIR, VIDEOS_DIR):
+            try:
+                relative = file_path.resolve().relative_to(base.resolve())
+                return TRANSCRIPTIONS_DIR / relative.parent
+            except ValueError:
+                continue
+        return TRANSCRIPTIONS_DIR
+
     def transcription_exists(self, file_path: Path) -> bool:
         try:
-            parts = file_path.parts
-            project_name = parts[-2] if len(parts) >= 2 else "unknown"
-
-            date_prefix = datetime.now().strftime("%y_%m_%d")
+            output_folder = self._resolve_output_folder(file_path)
             base_name = file_path.stem
-            prefixed_name = f"{date_prefix}_{base_name}"
 
-            output_folder = TRANSCRIPTIONS_DIR / project_name
-            txt_file = output_folder / f"{prefixed_name}.txt"
-
-            if txt_file.exists() and txt_file.stat().st_size > 100:
+            # Current format: no date prefix (matches save_transcription()).
+            current_file = output_folder / f"{base_name}.txt"
+            if current_file.exists() and current_file.stat().st_size > 100:
                 return True
 
-            for days_ago in range(1, 8):
+            # Legacy fallback: dated prefix, in case old transcripts (from
+            # before this naming was simplified) are still on disk.
+            for days_ago in range(0, 8):
                 old_date = datetime.now() - timedelta(days=days_ago)
                 old_prefix = old_date.strftime("%y_%m_%d")
-                old_name = f"{old_prefix}_{base_name}"
-                old_file = output_folder / f"{old_name}.txt"
-
+                old_file = output_folder / f"{old_prefix}_{base_name}.txt"
                 if old_file.exists() and old_file.stat().st_size > 100:
                     return True
 
