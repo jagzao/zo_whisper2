@@ -35,8 +35,12 @@ blocked by default:
 |---|---|---|
 | `ALLOW_EXTERNAL_LLM` | `false` | Must be `true` for any call to a remote (`provider_type=remote`) LLM to go through. A `local` provider (Ollama, LM Studio, llama.cpp on `localhost`/`127.0.0.1`) is never blocked by this flag. |
 | `data_classification` (per-project, in `projects.json`) | `internal` | Setting a project to `confidential` blocks remote LLM calls for that project **even if `ALLOW_EXTERNAL_LLM=true` globally**. |
-| `FRAME_DESCRIPTIONS` | `false` | Must be `true` for extracted video frames (screenshots) to be sent to a vision model at all. Still subject to `ALLOW_EXTERNAL_LLM`/`data_classification` above. |
-| `ALLOW_FRAME_UPLOAD` | `false` | Must be `true` for frame/screenshot **image bytes** to reach a remote provider — separate from `ALLOW_EXTERNAL_LLM`, which gates text. A remote call with `ALLOW_EXTERNAL_LLM=true` but `ALLOW_FRAME_UPLOAD=false` can still generate text summaries; it just won't upload images. |
+| `FRAME_DESCRIPTIONS` | `false` | Must be `true` for **any** visual analysis to run at all — video frames, screenshots, or document-embedded images (MarkItDown's vision path). Still subject to `ALLOW_EXTERNAL_LLM`/`data_classification` above. |
+| `ALLOW_IMAGE_UPLOAD` | `false` | Must be `true` for **image bytes** — from frames, screenshots, or document-image enrichment — to reach a remote provider. Separate from `ALLOW_EXTERNAL_LLM`, which gates text: a remote call with `ALLOW_EXTERNAL_LLM=true` but `ALLOW_IMAGE_UPLOAD=false` can still generate text summaries; it just won't upload images. (Deprecated alias: `ALLOW_FRAME_UPLOAD`, still read if `ALLOW_IMAGE_UPLOAD` is unset — its scope grew beyond video frames.) |
+
+For a `local` provider, neither `ALLOW_EXTERNAL_LLM` nor `ALLOW_IMAGE_UPLOAD`
+apply — nothing leaves the machine either way. `FRAME_DESCRIPTIONS` is still
+the deciding switch for whether visual analysis runs at all, local or remote.
 
 `provider_type` (`local`/`remote`) is derived from `LLM_BASE_URL` by parsing
 its actual hostname (`urllib.parse.urlparse`, with an `ipaddress.is_loopback`
@@ -49,11 +53,18 @@ bypass the guard.
 
 `src/transcript_pipeline/llm/enrichment.py` (`AIEnrichmentService`) is the
 single call point every handler uses — it wraps `PrivacyGuard.check()`,
-`redact_secrets()`, and the `FRAME_DESCRIPTIONS`/`ALLOW_FRAME_UPLOAD` frame
-policy behind one small API, so no caller has to remember which combination
-of checks to run. `src/transcript_pipeline/llm/guard.py` (`PrivacyGuard`) is
-the underlying enforcement primitive it wraps, and
+`redact_secrets()`, and the `FRAME_DESCRIPTIONS`/`ALLOW_IMAGE_UPLOAD`
+image policy behind one small API, so no caller has to remember which
+combination of checks to run. This includes MarkItDown's document-image
+vision path (`allow_document_llm()`) — it shares the same gate as video
+frames/screenshots, not a separate check. `src/transcript_pipeline/llm/guard.py`
+(`PrivacyGuard`) is the underlying enforcement primitive it wraps, and
 `src/transcript_pipeline/llm/openai_compatible.py` is the HTTP client.
+
+Redaction (`redact_secrets()`) is applied to outbound text only for
+**remote** providers — a `local` provider never leaves the machine, so
+there's nothing to redact against, and the unredacted text is what's
+actually sent (useful if you're debugging output against a local model).
 
 ## Secret redaction (best-effort, not a guarantee)
 

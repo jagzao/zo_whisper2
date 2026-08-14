@@ -49,6 +49,17 @@ def _bool(name: str, default: bool) -> bool:
     return val.strip().lower() not in {"0", "false", "no", ""}
 
 
+def _bool_with_legacy_alias(name: str, legacy_name: str, default: bool) -> bool:
+    """Reads `name`; if unset, falls back to the deprecated `legacy_name`
+    env var so existing `scan_config.env` files don't silently stop working
+    after a rename."""
+    import os
+
+    if os.getenv(name) is not None:
+        return _bool(name, default)
+    return _bool(legacy_name, default)
+
+
 def _str_or_none(name: str) -> str | None:
     import os
 
@@ -87,7 +98,7 @@ class Settings:
     frame_description_max: int
 
     # ── Privacy policy ────────────────────────────────────────────────
-    allow_frame_upload: bool
+    allow_image_upload: bool  # any image bytes outbound: frames, screenshots, document-embedded images
     retention_days: int
 
     # ── Dashboard ─────────────────────────────────────────────────────
@@ -127,7 +138,7 @@ class Settings:
             allow_external_llm=_bool("ALLOW_EXTERNAL_LLM", False),
             frame_descriptions=_bool("FRAME_DESCRIPTIONS", False),
             frame_description_max=int(os.getenv("FRAME_DESCRIPTION_MAX", "20")),
-            allow_frame_upload=_bool("ALLOW_FRAME_UPLOAD", False),
+            allow_image_upload=_bool_with_legacy_alias("ALLOW_IMAGE_UPLOAD", "ALLOW_FRAME_UPLOAD", False),
             retention_days=int(os.getenv("RETENTION_DAYS", "0")),
             dashboard_host=os.getenv("DASHBOARD_HOST", "127.0.0.1"),
             dashboard_port=int(os.getenv("DASHBOARD_PORT", "5000")),
