@@ -104,6 +104,10 @@ Git repo ──push──▶  Public GitHub
 ### Denial of Service
 - **Unbounded upload size.** Mitigated by `MAX_CONTENT_LENGTH`
   (`UPLOAD_MAX_MB`, default 500MB).
+- **A renamed non-media file accepted by upload.** Mitigated — after
+  saving, `/api/upload` runs `ffprobe` against the file and deletes it
+  (400) if no audio/video stream is recognized, instead of trusting the
+  claimed extension alone. Never trusts the client-sent MIME type.
 - **Hung subprocesses.** Mitigated — every ffmpeg/ffprobe call site has a
   timeout (`media/compressor.py`, `media/keyframe_extractor.py`,
   `handlers/meeting_dev_handler.py`): per-file probe/extract calls get a
