@@ -20,7 +20,6 @@ from transcript_pipeline.handlers.base import HandlerResult
 from transcript_pipeline.llm.enrichment import AIEnrichmentService
 from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
 from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
-from transcript_pipeline.llm.redaction import redact_secrets
 from transcript_pipeline.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
@@ -258,7 +257,10 @@ class MeetingDevHandler:
         try:
             prompt = _DEV_SCREEN_PROMPT
             if transcript_hint:
-                prompt += f'\n\nContext of what was being said at this moment: "{redact_secrets(transcript_hint)}"'
+                # Redaction (if the provider is remote) happens centrally in
+                # AIEnrichmentService.describe_frame_with_prompt — no need
+                # to duplicate it here.
+                prompt += f'\n\nContext of what was being said at this moment: "{transcript_hint}"'
 
             content = _ai_service.describe_frame_with_prompt(
                 frame_path, prompt, project_config, max_tokens=500, temperature=0
