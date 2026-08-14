@@ -7,6 +7,8 @@ from transcript_pipeline.dashboard import app as dashboard_app
 from transcript_pipeline.security import MediaRoot, SafePathResolver
 
 AUTH_HEADERS = {"X-Local-Dashboard-Token": "test-dashboard-token"}
+# Captured before any test monkeypatches it away (see `env` fixture below).
+_REAL_IS_VALID_MEDIA_FILE = dashboard_app._is_valid_media_file
 
 
 @pytest.fixture
@@ -26,6 +28,10 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setattr(dashboard_app, "PROJECTS_PATH", tmp_path / "projects.json")
     monkeypatch.setattr(dashboard_app, "PROCESSED_DB", tmp_path / "processed_files.json")
     monkeypatch.setattr(dashboard_app, "_DASHBOARD_TOKEN", AUTH_HEADERS["X-Local-Dashboard-Token"])
+    # These tests use fake byte content (not real media) for upload fixtures
+    # — dedicated tests below cover _is_valid_media_file's ffprobe logic
+    # itself with explicit mocking; here it would just reject every upload.
+    monkeypatch.setattr(dashboard_app, "_is_valid_media_file", lambda path: True)
     monkeypatch.setattr(
         dashboard_app,
         "RESOLVER",
@@ -368,3 +374,70 @@ def test_upload_oversize_rejected(client, monkeypatch):
     data = {"file": (__import__("io").BytesIO(oversize), "big.mp3")}
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 413
+
+
+# ── /api/upload content validation (ffprobe, not just extension) ────────
+# `env`'s _is_valid_media_file override doesn't apply here — these tests
+# mock subprocess.run directly to exercise the real function.
+
+def _fake_completed_process(stdout: str, returncode: int = 0):
+    import subprocess as sp
+
+    return sp.CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr="")
+
+
+def test_upload_rejects_renamed_non_media_file(client, env, monkeypatch):
+    # env's fixture stubs _is_valid_media_file to always True — restore the
+    # real function so this test actually exercises the ffprobe logic.
+    monkeypatch.setattr(dashboard_app, "_is_valid_media_file", _REAL_IS_VALID_MEDIA_FILE)
+    # ffprobe recognizes no streams at all — e.g. a renamed .exe.
+    monkeypatch.setattr(
+        dashboard_app.subprocess, "run",
+        lambda *a, **k: _fake_completed_process('{"streams": []}'),
+    )
+    data = {"file": (__import__("io").BytesIO(b"MZ\x90\x00fake exe bytes"), "payload.mp3")}
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert resp.status_code == 400
+    assert not (env["video_compress"] / "payload.mp3").exists()
+
+
+def test_upload_rejects_when_ffprobe_fails(client, env, monkeypatch):
+    import subprocess as sp
+
+    monkeypatch.setattr(dashboard_app, "_is_valid_media_file", _REAL_IS_VALID_MEDIA_FILE)
+
+    def _raise(*a, **k):
+        raise sp.CalledProcessError(1, "ffprobe")
+
+    monkeypatch.setattr(dashboard_app.subprocess, "run", _raise)
+    data = {"file": (__import__("io").BytesIO(b"not media"), "broken.mp4")}
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert resp.status_code == 400
+    assert not (env["video_compress"] / "broken.mp4").exists()
+
+
+def test_upload_rejects_on_ffprobe_timeout(client, env, monkeypatch):
+    import subprocess as sp
+
+    monkeypatch.setattr(dashboard_app, "_is_valid_media_file", _REAL_IS_VALID_MEDIA_FILE)
+
+    def _raise(*a, **k):
+        raise sp.TimeoutExpired(cmd="ffprobe", timeout=30)
+
+    monkeypatch.setattr(dashboard_app.subprocess, "run", _raise)
+    data = {"file": (__import__("io").BytesIO(b"data"), "hangs.mp4")}
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert resp.status_code == 400
+    assert not (env["video_compress"] / "hangs.mp4").exists()
+
+
+def test_upload_accepts_file_ffprobe_confirms_as_media(client, env, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "_is_valid_media_file", _REAL_IS_VALID_MEDIA_FILE)
+    monkeypatch.setattr(
+        dashboard_app.subprocess, "run",
+        lambda *a, **k: _fake_completed_process('{"streams": [{"codec_type": "audio"}]}'),
+    )
+    data = {"file": (__import__("io").BytesIO(b"real-ish audio bytes"), "real.mp3")}
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    assert (env["video_compress"] / "real.mp3").exists()
