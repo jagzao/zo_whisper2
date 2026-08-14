@@ -12,10 +12,14 @@ or codename in a public doc would defeat the point of cleaning them up —
 so below, `CLIENT_NAME_A`, `CLIENT_HANDLER_A`, `OLD_CLIENT_PREFIX`,
 `REDACTED_LOCAL_PATH`, `REDACTED_PROJECT`, and `REDACTED_TASK` each stand
 in for one real string the owner already knows. A regression check
-(`scripts/security.py::check_no_denylisted_identifiers`, run in CI) fails
-the build if the real values it protects against ever reappear in a
-tracked file — see that script for the actual denylist, which is
-intentionally not duplicated here either.
+(`scripts/security.py::check_no_denylisted_identifiers`) fails the build if
+the real values it protects against ever reappear in a tracked file — the
+actual denylist is never tracked in this repo (owner-local
+`.sensitive-identifiers`, gitignored, or a private `SENSITIVE_IDENTIFIERS`
+CI secret; see the docstring above `_load_private_denylist` in that
+script). Neither is required for public clones/forks — the check simply
+reports `SKIPPED: no private denylist configured` and the rest of the
+security harness still runs.
 
 ## What was audited
 

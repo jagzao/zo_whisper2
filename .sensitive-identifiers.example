@@ -1,0 +1,9 @@
+# One denylisted identifier per line (case-insensitive substring match
+# against every tracked file). Lines starting with # are comments.
+#
+# `token>>filename` denylists `token` everywhere EXCEPT that exact tracked
+# filename — a known, intentional exception (e.g. the repo owner's own name
+# as LICENSE copyright holder), not a leak.
+SYNTHETIC_IDENTIFIER_ONE
+SYNTHETIC_IDENTIFIER_TWO
+SYNTHETIC_IDENTIFIER_TWO>>LICENSE
