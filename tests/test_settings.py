@@ -17,7 +17,7 @@ def _clean_env(monkeypatch):
             "TESSERACT_CMD", "MEETING_FRAME_INTERVAL", "MEETING_MAX_SCREEN_ANALYSES",
             "MEETING_KEEP_FRAMES", "LLM_API_KEY", "LLM_MODEL", "LLM_BASE_URL",
             "LLM_PROVIDER_TYPE", "ALLOW_EXTERNAL_LLM", "FRAME_DESCRIPTIONS",
-            "FRAME_DESCRIPTION_MAX", "ALLOW_FRAME_UPLOAD",
+            "FRAME_DESCRIPTION_MAX", "ALLOW_IMAGE_UPLOAD", "ALLOW_FRAME_UPLOAD",
             "RETENTION_DAYS", "DASHBOARD_HOST", "DASHBOARD_PORT", "UPLOAD_MAX_MB",
             "ICECREAM_MUSIC", "ICECREAM_VIDEOS",
         }:
@@ -29,7 +29,7 @@ def test_defaults_are_privacy_conservative():
     assert s.dashboard_host == "127.0.0.1"
     assert s.allow_external_llm is False
     assert s.frame_descriptions is False
-    assert s.allow_frame_upload is False
+    assert s.allow_image_upload is False
     assert s.retention_days == 0
 
 
@@ -105,3 +105,17 @@ def test_bool_parsing_accepts_common_falsy_strings(monkeypatch):
     assert Settings.from_env().allow_external_llm is False
     monkeypatch.setenv("ALLOW_EXTERNAL_LLM", "true")
     assert Settings.from_env().allow_external_llm is True
+
+
+def test_allow_image_upload_reads_legacy_frame_upload_alias(monkeypatch):
+    """ALLOW_FRAME_UPLOAD was renamed to ALLOW_IMAGE_UPLOAD (its scope grew
+    beyond video frames to any outbound image bytes) — existing configs
+    using the old name must keep working."""
+    monkeypatch.setenv("ALLOW_FRAME_UPLOAD", "true")
+    assert Settings.from_env().allow_image_upload is True
+
+
+def test_allow_image_upload_new_name_takes_priority_over_legacy(monkeypatch):
+    monkeypatch.setenv("ALLOW_FRAME_UPLOAD", "true")
+    monkeypatch.setenv("ALLOW_IMAGE_UPLOAD", "false")
+    assert Settings.from_env().allow_image_upload is False

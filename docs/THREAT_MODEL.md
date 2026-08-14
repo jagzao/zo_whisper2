@@ -90,10 +90,15 @@ Git repo ──push──▶  Public GitHub
   with a hardcoded `project_config=None` instead of the real project's
   classification (fixed; see regression test in `tests/test_processor.py`).
   See `PRIVACY.md` for the documented limits of redaction.
-- **Frame/screenshot images reaching a remote provider.** Mitigated by
-  `ALLOW_FRAME_UPLOAD` (default `false`), enforced in
+- **Frame/screenshot/document-image bytes reaching a remote provider.**
+  Mitigated by `ALLOW_IMAGE_UPLOAD` (default `false`; deprecated alias
+  `ALLOW_FRAME_UPLOAD`), enforced in
   `AIEnrichmentService._check_frame_policy` — previously this flag was
-  declared in `Settings` but never actually read anywhere.
+  declared in `Settings` but never actually read anywhere. `allow_document_llm()`
+  (MarkItDown's vision-client gate for document-embedded images) shares
+  this same check — it previously only consulted `PrivacyGuard`, so a
+  local provider or a remote one with image upload disabled could still
+  describe document images.
 - **Error messages leaking resolved paths or exception internals.**
   Mitigated by the `SecurityError` errorhandler, plus the 4
   previously-leaking endpoints (`api_transcription` GET/POST,

@@ -31,4 +31,4 @@ def test_frame_descriptions_disabled_by_default():
 
 
 def test_frame_upload_disabled_by_default():
-    assert Settings.from_env().allow_frame_upload is False
+    assert Settings.from_env().allow_image_upload is False
