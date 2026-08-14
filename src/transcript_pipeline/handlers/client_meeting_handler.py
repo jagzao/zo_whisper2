@@ -3,15 +3,14 @@ from datetime import datetime
 from pathlib import Path
 
 from transcript_pipeline.handlers.base import HandlerResult
+from transcript_pipeline.llm.enrichment import AIEnrichmentService
 from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
 from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
-from transcript_pipeline.llm.redaction import redact_secrets
 from transcript_pipeline.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
 
-_llm_provider = OpenAICompatibleProvider(SETTINGS)
-_privacy_guard = PrivacyGuard(SETTINGS)
+_ai_service = AIEnrichmentService(OpenAICompatibleProvider(SETTINGS), PrivacyGuard(SETTINGS), SETTINGS)
 
 
 class ClientMeetingHandler:
@@ -50,10 +49,9 @@ class ClientMeetingHandler:
             summary_path = target_folder / "summary.md"
             if not summary_path.exists():
                 try:
-                    _privacy_guard.check(_llm_provider, project_config)
                     custom_prompt = (project_config or {}).get("summary_prompt") or None
-                    summary_text = _llm_provider.generate_summary(
-                        redact_secrets(transcription_data['text']), system_prompt=custom_prompt
+                    summary_text = _ai_service.summarize(
+                        transcription_data['text'], project_config, system_prompt=custom_prompt
                     )
                     summary_path.write_text(f"# Summary: {clean_name}\n\n{summary_text}\n", encoding='utf-8')
                     logger.info(f"[CLIENT_MEETING] LLM summary generated: {summary_path}")

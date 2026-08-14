@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 from transcript_pipeline.handlers.base import HandlerResult
+from transcript_pipeline.llm.enrichment import AIEnrichmentService
 from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
 from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
 from transcript_pipeline.llm.redaction import redact_secrets
@@ -24,8 +25,7 @@ from transcript_pipeline.settings import SETTINGS
 
 logger = logging.getLogger(__name__)
 
-_llm_provider = OpenAICompatibleProvider(SETTINGS)
-_privacy_guard = PrivacyGuard(SETTINGS)
+_ai_service = AIEnrichmentService(OpenAICompatibleProvider(SETTINGS), PrivacyGuard(SETTINGS), SETTINGS)
 
 # OCR — optional, improves content-change detection
 try:
@@ -256,13 +256,13 @@ class MeetingDevHandler:
                     "content_type": None, "key_values": [], "code_snippet": None, "error": None}
         content = None
         try:
-            _privacy_guard.check(_llm_provider, project_config)
-
             prompt = _DEV_SCREEN_PROMPT
             if transcript_hint:
                 prompt += f'\n\nContext of what was being said at this moment: "{redact_secrets(transcript_hint)}"'
 
-            content = _llm_provider.describe_frame_with_prompt(frame_path, prompt, max_tokens=500, temperature=0)
+            content = _ai_service.describe_frame_with_prompt(
+                frame_path, prompt, project_config, max_tokens=500, temperature=0
+            )
             # Strip markdown fences if the LLM adds them
             content = re.sub(r"^```[a-z]*\n?", "", content).rstrip("`").strip()
             return json.loads(content)
@@ -297,11 +297,9 @@ class MeetingDevHandler:
             # whatever provider is configured, same boundary as the other LLM calls.
             use_vision_llm = False
             if self.llm_api_key and self.llm_base_url:
-                try:
-                    _privacy_guard.check(_llm_provider, project_config)
-                    use_vision_llm = True
-                except ExternalLLMBlockedError as e:
-                    logger.info("[MEETING_DEV] MarkItDown vision LLM blocked by privacy guard: %s", e)
+                use_vision_llm = _ai_service.allow_document_llm(project_config)
+                if not use_vision_llm:
+                    logger.info("[MEETING_DEV] MarkItDown vision LLM blocked by privacy guard")
 
             if use_vision_llm:
                 try:
@@ -457,8 +455,6 @@ class MeetingDevHandler:
             _write_empty_summary(path, name)
             return
         try:
-            _privacy_guard.check(_llm_provider, project_config)
-
             screen_summary = ""
             if screen_contexts:
                 items = [f"- `{c['timestamp_fmt']}`: {c.get('summary', '')}" for c in screen_contexts[:15]]
@@ -475,9 +471,7 @@ class MeetingDevHandler:
                 "## Next steps\n\n"
                 "Be concise and focused on concrete actions."
             )
-            analysis = _llm_provider.generate_summary(
-                redact_secrets(transcript + screen_summary), system_prompt=prompt
-            )
+            analysis = _ai_service.summarize(transcript + screen_summary, project_config, system_prompt=prompt)
             path.write_text(f"# Summary: {name}\n\n{analysis}\n", encoding="utf-8")
         except ExternalLLMBlockedError as e:
             logger.info("[MEETING_DEV] Summary LLM call blocked by privacy guard: %s", e)
