@@ -11,16 +11,40 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "flask>=3.0.0",
     "pillow>=10.0.0",
-    "imagehash>=4.3.1",
     "requests>=2.31.0",
     "certifi>=2024.1.0",
-    "pytesseract>=0.3.10",
-    "openai>=1.0.0",
-    "markitdown[all]>=0.0.1",
 ]
 
 [project.optional-dependencies]
+# Meeting summaries / tutorial frame descriptions via a remote or local
+# OpenAI-compatible endpoint (see PRIVACY.md — off by default either way).
+llm = [
+    "openai>=1.0.0",
+]
+# Screen-content-change detection for meeting_dev_handler: OCR (Tesseract)
+# or perceptual-hash fallback. Needed alongside `llm` for
+# FRAME_DESCRIPTIONS=true / tutorial frame descriptions.
+vision = [
+    "pytesseract>=0.3.10",
+    "imagehash>=4.3.1",
+]
+# MarkItDown document scanning (meeting_dev_handler's PDF/Word/Excel/image
+# attachment summaries). Still `[all]` at this pin — markitdown only split
+# its dependencies into narrower extras (pdf/docx/xlsx/...) starting at
+# 0.1.0, which also changed the MarkItDown() constructor signature used by
+# meeting_dev_handler.py's llm_client/llm_model wiring. Bumping the pin to
+# get the narrower extra would be a behavior-risking upgrade, not a pure
+# dependency-scoping change — out of scope here. `[all]` still moving out
+# of core dependencies is the actual win: a plain `pip install .` no
+# longer drags in Azure SDKs at all unless this extra is requested.
+documents = [
+    "markitdown[all]>=0.0.1",
+]
+all = [
+    "transcript-pipeline[llm,vision,documents]",
+]
 dev = [
+    "transcript-pipeline[all]",
     "pytest>=8.0.0",
     "playwright>=1.40.0",
     "ruff>=0.4.0",

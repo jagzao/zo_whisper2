@@ -7,7 +7,7 @@ anyio==4.14.2
     #   httpx
     #   httpx2
     #   openai
-av==18.0.0
+av==18.1.0
     # via faster-whisper
 azure-ai-documentintelligence==1.0.2
     # via markitdown
@@ -60,7 +60,7 @@ cryptography==50.0.0
     #   pyjwt
 ctranslate2==4.8.1
     # via faster-whisper
-cyclonedx-python-lib==11.11.2
+cyclonedx-python-lib==11.12.0
     # via pip-audit
 defusedxml==0.7.1
     # via
@@ -73,7 +73,7 @@ et-xmlfile==2.0.0
     # via openpyxl
 faster-whisper==1.2.1
     # via transcript-pipeline (pyproject.toml)
-filelock==3.32.2
+filelock==3.32.3
     # via
     #   cachecontrol
     #   huggingface-hub
@@ -206,7 +206,7 @@ pip-audit==2.10.1
     # via transcript-pipeline (pyproject.toml)
 pip-requirements-parser==32.0.1
     # via pip-audit
-platformdirs==4.11.2
+platformdirs==4.11.3
     # via pip-audit
 playwright==1.62.0
     # via transcript-pipeline (pyproject.toml)
@@ -236,7 +236,7 @@ pyjwt==2.13.0
     # via msal
 pyparsing==3.3.2
     # via pip-requirements-parser
-pypdfium2==5.12.1
+pypdfium2==5.13.0
     # via pdfplumber
 pyright==1.1.411
     # via transcript-pipeline (pyproject.toml)
@@ -269,7 +269,7 @@ requests==2.34.2
     #   youtube-transcript-api
 rich==15.0.0
     # via pip-audit
-ruff==0.16.2
+ruff==0.16.3
     # via transcript-pipeline (pyproject.toml)
 scipy==1.17.1
     # via imagehash

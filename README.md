@@ -220,6 +220,13 @@ cp projects.json.example projects.json
 
 Installs the package in editable mode — `master_processor.py`, `simple_scan.py`, etc. import the code in `src/` directly, no reinstall needed after each change. `scan_config.env` and `projects.json` are local (gitignored) since they usually contain real paths and project names. For an exactly reproducible environment, `pip install -r requirements.lock.txt` instead (see `CONTRIBUTING.md` for regenerating it).
 
+Core install (`pip install -e .`, no extras) only needs faster-whisper,
+Flask, and FFmpeg — no LLM client, OCR, or document converter dependency.
+Add `[llm]`, `[vision]`, and/or `[documents]` for meeting/tutorial
+enrichment features (`[dev]` already includes all of them, for running the
+full test suite) — see `CONTRIBUTING.md` for which extra a given feature
+needs.
+
 ## Configuration
 
 **`scan_config.env`** (copy from `scan_config.env.example`): input paths (Icecream Screen Recorder), keyframe extraction method, `smart_scene` thresholds, Whisper model, dashboard bind address, and the privacy/LLM flags described in [Security & Privacy](#security--privacy) above.
