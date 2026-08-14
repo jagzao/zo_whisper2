@@ -16,11 +16,28 @@ justify a `settings/` submodule, and a flat dataclass keeps
 
 from __future__ import annotations
 
+import ipaddress
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 
 from transcript_pipeline.config import load_env
 from transcript_pipeline.errors import ConfigurationError
+
+_LOOPBACK_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
+
+
+def _infer_llm_provider_type(llm_base_url: str) -> str:
+    """Real hostname parsing, not a substring check — "localhost" in
+    "https://localhost.example.com" would otherwise misclassify a remote
+    domain as local."""
+    hostname = (urlparse(llm_base_url).hostname or "").lower()
+    if hostname in _LOOPBACK_HOSTNAMES:
+        return "local"
+    try:
+        return "local" if ipaddress.ip_address(hostname).is_loopback else "remote"
+    except ValueError:
+        return "remote"
 
 
 def _bool(name: str, default: bool) -> bool:
@@ -90,10 +107,7 @@ class Settings:
         load_env()
 
         llm_base_url = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
-        provider_type = os.getenv("LLM_PROVIDER_TYPE")
-        if not provider_type:
-            host = llm_base_url.lower()
-            provider_type = "local" if ("localhost" in host or "127.0.0.1" in host) else "remote"
+        provider_type = os.getenv("LLM_PROVIDER_TYPE") or _infer_llm_provider_type(llm_base_url)
 
         settings = cls(
             whisper_model=os.getenv("WHISPER_MODEL", "large-v3"),
