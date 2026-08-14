@@ -215,7 +215,7 @@ pycparser==3.0
     # via cffi
 pydantic==2.13.4
     # via openai
-pydantic-core==2.46.4
+pydantic-core==2.48.0
     # via pydantic
 pydub==0.25.1
     # via markitdown
