@@ -108,3 +108,107 @@ def test_fast_and_full_modes_produce_different_hashes_for_same_file(tmp_path):
     full_tracker = FileTracker(db_path=tmp_path / "db2.json", hash_mode="full")
 
     assert fast_tracker.get_file_hash(audio) != full_tracker.get_file_hash(audio)
+
+
+# ── is_file_processed() full-hash path-fallback bug ─────────────────────────
+
+def test_full_mode_reprocesses_when_content_changes_at_same_path(tmp_path):
+    tracker = FileTracker(db_path=tmp_path / "db.json", hash_mode="full")
+    audio = _make_file(tmp_path, content=b"original content")
+    tracker.mark_as_processed(audio, "completed")
+    assert tracker.is_file_processed(audio) is True
+
+    audio.write_bytes(b"replaced content, same path")
+
+    assert tracker.is_file_processed(audio) is False
+
+
+def test_full_mode_still_recognizes_unchanged_file(tmp_path):
+    tracker = FileTracker(db_path=tmp_path / "db.json", hash_mode="full")
+    audio = _make_file(tmp_path, content=b"stable content")
+    tracker.mark_as_processed(audio, "completed")
+
+    assert tracker.is_file_processed(audio) is True
+
+
+def test_full_mode_persists_across_reload_for_unchanged_file(tmp_path):
+    db_path = tmp_path / "db.json"
+    audio = _make_file(tmp_path, content=b"stable content")
+
+    tracker_a = FileTracker(db_path=db_path, hash_mode="full")
+    tracker_a.mark_as_processed(audio, "completed")
+
+    tracker_b = FileTracker(db_path=db_path, hash_mode="full")
+    assert tracker_b.is_file_processed(audio) is True
+
+
+def test_legacy_path_only_record_without_hash_is_trusted(tmp_path):
+    db_path = tmp_path / "db.json"
+    audio = _make_file(tmp_path, content=b"legacy content")
+
+    tracker = FileTracker(db_path=db_path, hash_mode="full")
+    file_key = str(audio.absolute())
+    # Simulate a record written before the "hash" field existed.
+    tracker.processed_files[file_key] = {
+        "path": file_key, "name": audio.name, "size": audio.stat().st_size,
+        "date": "2020-01-01T00:00:00", "status": "legacy",
+    }
+    tracker.save_database()
+
+    assert tracker.is_file_processed(audio) is True
+
+
+# ── transcription_exists() filename alignment ────────────────────────────────
+
+def test_transcription_exists_matches_current_stem_format(tmp_path, monkeypatch):
+    audio_dir = tmp_path / "audio"
+    transcriptions_dir = tmp_path / "CarpetaTranscripciones"
+    (audio_dir / "proj").mkdir(parents=True)
+    audio = audio_dir / "proj" / "clip.mp3"
+    audio.write_bytes(b"fake audio")
+
+    monkeypatch.setattr("transcript_pipeline.file_tracker.AUDIO_DIR", audio_dir)
+    monkeypatch.setattr("transcript_pipeline.file_tracker.VIDEOS_DIR", tmp_path / "Videos")
+    monkeypatch.setattr("transcript_pipeline.file_tracker.TRANSCRIPTIONS_DIR", transcriptions_dir)
+
+    output_folder = transcriptions_dir / "proj"
+    output_folder.mkdir(parents=True)
+    (output_folder / "clip.txt").write_text("x" * 200, encoding="utf-8")
+
+    tracker = FileTracker(db_path=tmp_path / "db.json")
+    assert tracker.transcription_exists(audio) is True
+
+
+def test_transcription_exists_legacy_dated_prefix_fallback(tmp_path, monkeypatch):
+    audio_dir = tmp_path / "audio"
+    transcriptions_dir = tmp_path / "CarpetaTranscripciones"
+    (audio_dir / "proj").mkdir(parents=True)
+    audio = audio_dir / "proj" / "clip.mp3"
+    audio.write_bytes(b"fake audio")
+
+    monkeypatch.setattr("transcript_pipeline.file_tracker.AUDIO_DIR", audio_dir)
+    monkeypatch.setattr("transcript_pipeline.file_tracker.VIDEOS_DIR", tmp_path / "Videos")
+    monkeypatch.setattr("transcript_pipeline.file_tracker.TRANSCRIPTIONS_DIR", transcriptions_dir)
+
+    output_folder = transcriptions_dir / "proj"
+    output_folder.mkdir(parents=True)
+    from datetime import datetime
+    today_prefix = datetime.now().strftime("%y_%m_%d")
+    (output_folder / f"{today_prefix}_clip.txt").write_text("x" * 200, encoding="utf-8")
+
+    tracker = FileTracker(db_path=tmp_path / "db.json")
+    assert tracker.transcription_exists(audio) is True
+
+
+def test_transcription_exists_false_when_nothing_matches(tmp_path, monkeypatch):
+    audio_dir = tmp_path / "audio"
+    (audio_dir / "proj").mkdir(parents=True)
+    audio = audio_dir / "proj" / "clip.mp3"
+    audio.write_bytes(b"fake audio")
+
+    monkeypatch.setattr("transcript_pipeline.file_tracker.AUDIO_DIR", audio_dir)
+    monkeypatch.setattr("transcript_pipeline.file_tracker.VIDEOS_DIR", tmp_path / "Videos")
+    monkeypatch.setattr("transcript_pipeline.file_tracker.TRANSCRIPTIONS_DIR", tmp_path / "CarpetaTranscripciones")
+
+    tracker = FileTracker(db_path=tmp_path / "db.json")
+    assert tracker.transcription_exists(audio) is False
