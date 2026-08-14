@@ -18,7 +18,7 @@ flask-cors  # For Review UI API
 psutil
 # Nuevas dependencias para transcripción en tiempo real
 opencv-python>=4.8.0
-sounddevice>=0.4.0
+sounddevice>=0.5.5
 numpy>=1.21.0
 pyaudio>=0.2.11
 faster-whisper>=0.9.0
