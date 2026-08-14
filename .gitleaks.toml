@@ -11,5 +11,12 @@ description = "Synthetic fixtures and documentation examples, not real secrets"
 paths = [
     '''projects\.json\.example''',
     '''docs/assets/.*''',
-    '''tests/.*''',
+    # Deliberately contains synthetic secret-shaped fixtures (fake OpenAI/
+    # GitHub/AWS key formats, including AWS's own public example key) to
+    # test redact_secrets() — not real secrets. Same two files are the only
+    # exemptions in scripts/security.py::EXCLUDE_GLOBS. Specific files, not
+    # a blanket `tests/.*`/`tests/security/.*` — a real secret accidentally
+    # committed elsewhere under tests/ or docs/ must still be caught.
+    '''tests/test_llm_guard_and_redaction\.py''',
+    '''tests/test_llm_enrichment\.py''',
 ]
