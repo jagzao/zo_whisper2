@@ -11,7 +11,10 @@ re-adding e.g. "openai" to [project.dependencies] should fail immediately.
 
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:
+    import tomli as tomllib  # Python 3.10 — the project supports >=3.10
 
 from transcript_pipeline.config import PROJECT_ROOT
 
