@@ -6,55 +6,59 @@ confirm it actually works — no destructive action has been taken against
 the real repository or its remote.** Running it for real is a deliberate,
 manual decision for the repo owner.
 
+This document intentionally uses **placeholders** instead of the real
+values found during the audit. Spelling out the actual client name, path,
+or codename in a public doc would defeat the point of cleaning them up —
+so below, `CLIENT_NAME_A`, `CLIENT_HANDLER_A`, `OLD_CLIENT_PREFIX`,
+`REDACTED_LOCAL_PATH`, `REDACTED_PROJECT`, and `REDACTED_TASK` each stand
+in for one real string the owner already knows. A regression check
+(`scripts/security.py::check_no_denylisted_identifiers`, run in CI) fails
+the build if the real values it protects against ever reappear in a
+tracked file — see that script for the actual denylist, which is
+intentionally not duplicated here either.
+
 ## What was audited
 
 Full history (`git log --all -p`) was scanned for: client/project names,
 personal file-path fragments, real email addresses, and credential-shaped
-strings (OpenAI/GitHub/AWS key patterns). The repo has grown since the
-first pass of this audit (7 commits) to 18 as of the security/architecture
-hardening work — the findings below (from the original 7) still apply;
-none of the new commits introduce further leaks (they were written with
-this exact concern in mind).
+strings (OpenAI/GitHub/AWS key patterns).
 
 ## What was found
 
-### 1. Client name "Valeris" — present in history, already removed from HEAD
+### 1. A real client name — present in history, already removed from HEAD
 
-The client name "Valeris" (and its handler `ValerisHandler`/`valeris_handler.py`,
-routing prefix `valeris_`, `VALERIS_PATH`) appears in the diffs of:
+A real client name (call it `CLIENT_NAME_A`) — along with its handler
+class (`CLIENT_HANDLER_A`), a routing prefix derived from it
+(`OLD_CLIENT_PREFIX`), and an env-var-shaped constant built from it —
+appears in the diffs of several early commits (the initial commit and the
+subsequent anonymization/translation passes that removed it from HEAD).
 
-- `041f5f4` — Initial commit (introduces it)
-- `d6718db` — Fix leaked client names in dashboard.html and smoke test, retake screenshots with mock data
-- `bbc4250` — Translate codebase to English, remove Valeris references
-- `37eae5d` — Anonymize local paths and client names for public repo
+The **current working tree is clean** (verified via
+`scripts/security.py::check_no_denylisted_identifiers`, which runs in CI
+on every push/PR). The name is only reachable by checking out or diffing
+an older commit.
 
-The **current working tree is clean** (verified via `git grep -i valeris` —
-zero hits as of this pass, after redacting the remaining occurrences found
-in `.agents/` — see below). The name is only reachable by checking out or
-diffing an older commit.
+### 2. Personal local paths — present in history, removed from HEAD
 
-### 2. Personal local paths (`C:\Jagzao\whisper\...`) — present in history, removed from HEAD in this pass
+Stale file-header comments of the form `# <REDACTED_LOCAL_PATH>\...` (an
+absolute path under the original author's local username) were found in a
+handful of files under non-production directories (leftover
+editor-generated path comments, no functional purpose). Removed from the
+working tree in an earlier pass; still visible in the diffs of the commits
+that introduced/removed them.
 
-Stale file-header comments of the form `# C:\Jagzao\whisper\...` were found
-in 5 files under `watcher/` and `deepseek/` (leftover editor-generated path
-comments, no functional purpose). Removed from the working tree in this
-pass. They remain visible in the history of:
+Note: `LICENSE`'s copyright line uses the repo owner's own name as
+copyright holder — intentional, not a leak, not in scope for redaction,
+and explicitly allowlisted in the denylist check below.
 
-- `041f5f4` — Initial commit
-- `37eae5d` — Anonymize local paths and client names for public repo
+### 3. A project/task codename — present in history only
 
-Note: `LICENSE`'s `Copyright (c) 2026 Jagzao` is the repo owner's own name
-as copyright holder — intentional, not a leak, not in scope for redaction.
-
-### 3. Project/task codename ("Apoc", `validacionesFaltantesRoles`) — present in history only
-
-A debug/test script once contained hardcoded paths:
-`C:/Jagzao/whisper/Videos/Apoc/validacionesFaltantesRoles.webm` (and the
-matching `.wav`). This does not exist in the current working tree
-(`git grep -i apoc` — zero hits) but is visible in the diffs of `041f5f4`
-and `37eae5d`. "Apoc" and the Spanish task name
-(`validacionesFaltantesRoles` = "missing-roles validations") read as a
-real project/feature reference rather than a synthetic placeholder.
+A debug/test script once contained a hardcoded path referencing an
+internal project codename and a Spanish-language task name (referred to
+here as `REDACTED_PROJECT`/`REDACTED_TASK`). This does not exist in the
+current working tree (confirmed by the denylist check) but is visible in
+the diffs of the same early commits noted above. It reads as a real
+project/feature reference rather than a synthetic placeholder.
 
 ### 4. Secrets / credentials — none found
 
@@ -83,24 +87,36 @@ git clone --mirror . ../whisper-backup-before-history-rewrite.git
 pip install git-filter-repo
 ```
 
-**3. Create a replacements file** (`replacements.txt`, project root — delete after use, don't commit it):
+**3. Find the exact strings and SHAs to replace, locally** (do not hardcode
+real values in this doc — find them fresh, since they may drift as history
+grows):
+```sh
+git log --all -p | grep -in "client_name_a\|old_client_prefix\|redacted_local_path\|redacted_project" 
 ```
-VALERIS==>NORTHWIND
-Valeris==>Northwind
-ValerisHandler==>ClientMeetingHandler
-valeris_handler==>client_meeting_handler
-valeris==>northwind
-VALERIS_PATH==>NORTHWIND_PATH
-C:\Jagzao\whisper==>REDACTED_LOCAL_PATH
-C:/Jagzao/whisper==>REDACTED_LOCAL_PATH
-Apoc==>REDACTED_PROJECT
-validacionesFaltantesRoles==>redacted_task_name
-```
-(The all-caps `VALERIS==>NORTHWIND` line matters — a `[VALERIS]` log-tag
-string in early commits wouldn't be caught by the lowercase/mixed-case
-rules alone; found by actually running this and checking the output.)
+Use the real strings you find (the client name, its handler class name,
+its routing prefix, the local path fragment, the project codename) to
+build the replacements file below — substitute your own values for every
+placeholder shown.
 
-**4. Run it — both flags, same file:**
+**4. Create a replacements file** (`replacements.txt`, project root — delete after use, don't commit it):
+```
+CLIENT_NAME_A==>REPLACEMENT_NAME
+ClientNameA==>ReplacementName
+client_name_a==>replacement_name
+ClientHandlerA==>NewHandlerName
+client_handler_a==>new_handler_name
+OLD_CLIENT_PREFIX_PATH==>NEW_PREFIX_PATH
+REDACTED_LOCAL_PATH==>SANITIZED_PATH
+REDACTED_PROJECT==>SANITIZED_PROJECT
+REDACTED_TASK==>sanitized_task_name
+```
+(Include an **all-caps** variant of the client name specifically — a
+`[CLIENT_NAME_A]`-style log-tag string in early commits would only be
+caught by that exact casing, not by the lowercase/mixed-case rules alone;
+confirmed by actually running this against a test clone and checking the
+output.)
+
+**5. Run it — both flags, same file:**
 ```sh
 git filter-repo --replace-text replacements.txt --replace-message replacements.txt --force
 ```
@@ -108,24 +124,22 @@ git filter-repo --replace-text replacements.txt --replace-message replacements.t
 that wasn't freshly cloned for this purpose — it's filter-repo's own
 safety flag, unrelated to `git push --force`.)
 
-**5. Verify:**
+**6. Verify:**
 ```sh
-git log --all -p | grep -i "valeris\|jagzao\|apoc" || echo "clean"
-git log --oneline | head -20    # confirm history still makes sense
+python scripts/security.py   # re-runs check_no_denylisted_identifiers among other gates
+git log --oneline | head -20 # confirm history still makes sense
 ```
 
-**Known cosmetic side effect, confirmed in testing:** because the
-replacement value for `valeris_handler`/`ValerisHandler` (`client_meeting_
-handler`/`ClientMeetingHandler`) is the pipeline's *current* real name, a
-commit message that narrates the actual historical rename ("renamed
-valeris_handler.py/ValerisHandler to client_meeting_handler.py/
-ClientMeetingHandler") comes out slightly redundant-looking after
-substitution (both the "from" and "to" names collapse toward the same
-text). No information is lost or leaked by this — it just reads a bit
-oddly. Not worth hand-fixing for a handful of commit messages; mentioned
-here so it isn't mistaken for the rewrite going wrong.
+**Known cosmetic side effect, confirmed in testing:** if the replacement
+value for a renamed handler is the pipeline's *current* real name, a
+commit message that narrates the actual historical rename (e.g. "renamed
+X to Y") can come out slightly redundant-looking after substitution (both
+the "from" and "to" names collapse toward the same text). No information
+is lost or leaked by this — it just reads a bit oddly. Not worth
+hand-fixing for a handful of commit messages; mentioned here so it isn't
+mistaken for the rewrite going wrong.
 
-**6. Force-push — manual, deliberate, owner-only step:**
+**7. Force-push — manual, deliberate, owner-only step:**
 ```sh
 git push --force-with-lease origin main
 ```
@@ -133,6 +147,17 @@ git push --force-with-lease origin main
 commit (in this repo, that's effectively all of them). This is why it's
 listed here as a documented procedure rather than something run
 automatically.
+
+## Checklist before running this for real
+
+- [ ] Backed up via `git clone --mirror` (step 1).
+- [ ] Confirmed no open PRs would be orphaned by a full history rewrite
+      (or accepted they'll need to be re-based/recreated).
+- [ ] Notified anyone else with a clone/fork that they'll need to re-clone.
+- [ ] Ran the replacement locally and verified with
+      `python scripts/security.py` before force-pushing.
+- [ ] Understand that a force-push cannot undo exposure for anyone who
+      already cloned/forked before the rewrite — see below.
 
 ## Risks and consequences of rewriting history
 
