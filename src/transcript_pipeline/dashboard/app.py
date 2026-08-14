@@ -199,6 +199,22 @@ def _from_media_id(media_id: str, allowed_roots: list[MediaRoot], *, must_exist:
     return RESOLVER.resolve(root, relative, must_exist=must_exist)
 
 
+def _is_valid_media_file(path: Path) -> bool:
+    """Confirms `path`'s actual content is audio/video, not just its
+    extension — a renamed `.exe` saved as `.mp3` would otherwise be
+    accepted. Same ffprobe invocation pattern/timeout as
+    `media/compressor.py::get_video_info`; never trusts the client-sent
+    MIME type, which `request.files` doesn't even expose here."""
+    cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", str(path)]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
+        streams = json.loads(result.stdout).get("streams", [])
+        return any(s.get("codec_type") in ("audio", "video") for s in streams)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
+        logger.warning("[UPLOAD] ffprobe validation failed for %s: %s", path.name, e)
+        return False
+
+
 def _ensure_folders() -> None:
     for folder in (VIDEO_COMPRESS, AUDIO_BASE, VIDEOS_BASE, TRANSCRIPTIONS_BASE):
         folder.mkdir(parents=True, exist_ok=True)
@@ -523,11 +539,16 @@ def api_upload() -> Any:
 
     try:
         file.save(str(destination))
-        logger.info("[UPLOAD] %s → %s", filename, destination)
-        return jsonify({"ok": True, "name": destination.name})
     except Exception:
         logger.exception("[UPLOAD] Error saving %s", filename)
         return jsonify({"ok": False, "error": "Could not process upload"}), 500
+
+    if not _is_valid_media_file(destination):
+        destination.unlink(missing_ok=True)
+        return jsonify({"ok": False, "error": "Uploaded file is not a valid media file"}), 400
+
+    logger.info("[UPLOAD] %s → %s", filename, destination)
+    return jsonify({"ok": True, "name": destination.name})
 
 
 @app.route("/api/run/<mode>", methods=["POST"])
