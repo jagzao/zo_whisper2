@@ -129,7 +129,7 @@ flowchart LR
     HAND["handlers/ (client_meeting, zo, meeting_dev)<br/>+ transcription/processor.py"]
     SVC{{"AIEnrichmentService<br/>single call point"}}
     GUARD["PrivacyGuard.check()<br/>ALLOW_EXTERNAL_LLM + data_classification"]
-    FRAME["frame policy<br/>FRAME_DESCRIPTIONS + ALLOW_FRAME_UPLOAD"]
+    FRAME["frame policy<br/>FRAME_DESCRIPTIONS + ALLOW_IMAGE_UPLOAD"]
     REDACT["redact_secrets()<br/>best-effort, text only"]
     LOCAL["Local provider<br/>Ollama / LM Studio (localhost)"]
     REMOTE["Remote provider<br/>OpenAI-compatible API"]
@@ -173,7 +173,7 @@ flowchart LR
 - **One typed `Settings` object**, not ~15 scattered `os.getenv()` calls: validated once at import, every module imports `SETTINGS` instead of reading the environment itself.
 - **Handler contract via `typing.Protocol` + typed result**: the pipeline programs against an interface (`handlers/base.py`), and a handler's success/failure/retryability is an explicit `HandlerResult`, not a bool whose return value used to be silently discarded.
 - **Filesystem access through one resolver**: `SafePathResolver` is the only code path allowed to turn user-controlled input into a trusted `Path` — see `docs/adr/0002-safe-filesystem-boundary.md`.
-- **Outbound AI policy through one service**: `AIEnrichmentService` (`llm/enrichment.py`) is the only code path allowed to call an LLM provider — it assembles `PrivacyGuard`, `redact_secrets()`, and the `FRAME_DESCRIPTIONS`/`ALLOW_FRAME_UPLOAD` frame policy in one place, so no handler can accidentally skip a check by calling the provider directly.
+- **Outbound AI policy through one service**: `AIEnrichmentService` (`llm/enrichment.py`) is the only code path allowed to call an LLM provider — it assembles `PrivacyGuard`, `redact_secrets()` (remote providers only), and the `FRAME_DESCRIPTIONS`/`ALLOW_IMAGE_UPLOAD` image policy in one place (video frames, screenshots, and MarkItDown's document-image path alike), so no handler can accidentally skip a check by calling the provider directly.
 - **Dashboard is fail-closed localhost-only**: a non-loopback `DASHBOARD_HOST` raises `ConfigurationError` at startup rather than logging a warning and binding anyway; mutating requests require a matching Host/Origin plus a per-process token — see `docs/adr/0005-ai-enrichment-and-local-only-dashboard.md`.
 
 ## Project structure

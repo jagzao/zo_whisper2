@@ -40,14 +40,17 @@ That arrow only fires when all of the following are true (`PrivacyGuard`,
    (default: `internal`, which is allowed if 1-2 hold).
 
 All of this is enforced through one call point, `AIEnrichmentService`
-(`src/transcript_pipeline/llm/enrichment.py`) — every handler and the
-tutorial frame-description path route through it rather than assembling
-these checks themselves. Text sent through the arrow is passed through
-`redact_secrets()` first (best-effort — see `PRIVACY.md` for limits). Frame
+(`src/transcript_pipeline/llm/enrichment.py`) — every handler, the tutorial
+frame-description path, and MarkItDown's document-image vision path all
+route through it rather than assembling these checks themselves. Text sent
+through the arrow is passed through `redact_secrets()` first (best-effort —
+see `PRIVACY.md` for limits — and only for a **remote** provider; a local
+one never leaves the machine, so nothing is redacted). Frame/document
 images sent for vision analysis are **not** text-redacted (redaction
 operates on text, not pixels) — that's why `FRAME_DESCRIPTIONS` (any visual
-analysis, local or remote) and `ALLOW_FRAME_UPLOAD` (image bytes reaching a
-*remote* provider specifically) are separate, both-default-off flags.
+analysis, local or remote) and `ALLOW_IMAGE_UPLOAD` (image bytes reaching a
+*remote* provider specifically; deprecated alias `ALLOW_FRAME_UPLOAD`) are
+separate, both-default-off flags.
 
 ## Local-only paths (never leave the machine)
 
