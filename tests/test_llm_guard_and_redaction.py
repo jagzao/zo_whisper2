@@ -19,7 +19,7 @@ def _settings(**overrides) -> Settings:
         meeting_keep_frames=False, llm_api_key=None, llm_model="gpt-4o-mini",
         llm_base_url="https://api.openai.com/v1", llm_provider_type="remote",
         allow_external_llm=False, frame_descriptions=False, frame_description_max=20,
-        privacy_mode="local", allow_frame_upload=False, retention_days=0,
+        allow_frame_upload=False, retention_days=0,
         dashboard_host="127.0.0.1", dashboard_port=5000, upload_max_mb=500,
         icecream_music=None, icecream_videos=None,
     )

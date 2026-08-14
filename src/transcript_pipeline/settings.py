@@ -87,7 +87,6 @@ class Settings:
     frame_description_max: int
 
     # ── Privacy policy ────────────────────────────────────────────────
-    privacy_mode: str  # "local" | "cloud"
     allow_frame_upload: bool
     retention_days: int
 
@@ -128,7 +127,6 @@ class Settings:
             allow_external_llm=_bool("ALLOW_EXTERNAL_LLM", False),
             frame_descriptions=_bool("FRAME_DESCRIPTIONS", False),
             frame_description_max=int(os.getenv("FRAME_DESCRIPTION_MAX", "20")),
-            privacy_mode=os.getenv("PRIVACY_MODE", "local").strip().lower(),
             allow_frame_upload=_bool("ALLOW_FRAME_UPLOAD", False),
             retention_days=int(os.getenv("RETENTION_DAYS", "0")),
             dashboard_host=os.getenv("DASHBOARD_HOST", "127.0.0.1"),
@@ -154,8 +152,6 @@ class Settings:
             )
         if self.llm_provider_type not in ("local", "remote"):
             raise ConfigurationError(f"LLM_PROVIDER_TYPE must be 'local' or 'remote': {self.llm_provider_type!r}")
-        if self.privacy_mode not in ("local", "cloud"):
-            raise ConfigurationError(f"PRIVACY_MODE must be 'local' or 'cloud': {self.privacy_mode!r}")
         if self.retention_days < 0:
             raise ConfigurationError(f"RETENTION_DAYS cannot be negative: {self.retention_days}")
         if self.upload_max_mb <= 0:

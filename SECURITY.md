@@ -27,17 +27,26 @@ Full detail: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
 This is a **local-first** tool. The primary trust boundary is the dashboard
 (Flask), which:
-- Binds to `127.0.0.1` by default (`DASHBOARD_HOST`) — not reachable from
-  the network unless you explicitly rebind it.
-- Has **no authentication** — anything that can reach the bound address can
-  read/write/delete transcripts and media, and trigger the pipeline. Binding
-  beyond localhost without adding your own auth layer (reverse proxy,
-  VPN-only network, etc.) is not supported and not recommended.
+- Must bind to a loopback address (`DASHBOARD_HOST` — `127.0.0.1`/
+  `localhost`/`::1`). A non-loopback value raises `ConfigurationError` at
+  startup; there is no remote-mode override. This is a deliberate,
+  permanent design choice, not a temporary limitation.
+- Has **no user-account authentication** (by design — single-user, local
+  tool). It does enforce a same-machine boundary: a `before_request` hook
+  rejects requests with a non-loopback Host header, and mutating requests
+  (upload/delete/save/run) additionally require a matching Origin (when
+  present) and a per-process token (`X-Local-Dashboard-Token`, generated
+  fresh at startup, never persisted or logged) — so an unrelated browser
+  tab or local process can't drive the dashboard just by knowing the port.
+  This is not equivalent to a login system; anyone with shell access to
+  this machine can read the token from the running process regardless.
 - Constrains all filesystem access to a fixed set of allowed roots
   (`audio/`, `Videos/`, `Video_compress/`, `CarpetaTranscripciones/`) via
-  `SafePathResolver` (`src/transcript_pipeline/security/path_resolver.py`) —
-  see `tests/security/` for the regression suite covering path traversal,
-  absolute paths, and symlink escape attempts.
+  `SafePathResolver` (`src/transcript_pipeline/security/path_resolver.py`),
+  exposed to the frontend only as opaque `media_id`s (never an absolute
+  path) — see `tests/security/` for the regression suite covering path
+  traversal, absolute paths, symlink escape, and the Host/Origin/token
+  checks.
 
 ## Secrets policy
 

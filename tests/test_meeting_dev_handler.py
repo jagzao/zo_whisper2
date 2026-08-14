@@ -21,7 +21,7 @@ def _settings(**overrides) -> Settings:
         meeting_max_screen_analyses=30, meeting_keep_frames=False, llm_api_key="test-key",
         llm_model="gpt-4o-mini", llm_base_url="https://api.example.com/v1", llm_provider_type="remote",
         allow_external_llm=True, frame_descriptions=False, frame_description_max=20,
-        privacy_mode="cloud", allow_frame_upload=True, retention_days=0, dashboard_host="127.0.0.1",
+        allow_frame_upload=True, retention_days=0, dashboard_host="127.0.0.1",
         dashboard_port=5000, upload_max_mb=500, icecream_music=None, icecream_videos=None,
     )
     base.update(overrides)

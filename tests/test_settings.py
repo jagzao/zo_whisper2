@@ -17,7 +17,7 @@ def _clean_env(monkeypatch):
             "TESSERACT_CMD", "MEETING_FRAME_INTERVAL", "MEETING_MAX_SCREEN_ANALYSES",
             "MEETING_KEEP_FRAMES", "LLM_API_KEY", "LLM_MODEL", "LLM_BASE_URL",
             "LLM_PROVIDER_TYPE", "ALLOW_EXTERNAL_LLM", "FRAME_DESCRIPTIONS",
-            "FRAME_DESCRIPTION_MAX", "PRIVACY_MODE", "ALLOW_FRAME_UPLOAD",
+            "FRAME_DESCRIPTION_MAX", "ALLOW_FRAME_UPLOAD",
             "RETENTION_DAYS", "DASHBOARD_HOST", "DASHBOARD_PORT", "UPLOAD_MAX_MB",
             "ICECREAM_MUSIC", "ICECREAM_VIDEOS",
         }:
@@ -30,7 +30,6 @@ def test_defaults_are_privacy_conservative():
     assert s.allow_external_llm is False
     assert s.frame_descriptions is False
     assert s.allow_frame_upload is False
-    assert s.privacy_mode == "local"
     assert s.retention_days == 0
 
 
@@ -76,12 +75,6 @@ def test_invalid_crf_rejected(monkeypatch):
 
 def test_invalid_dashboard_port_rejected(monkeypatch):
     monkeypatch.setenv("DASHBOARD_PORT", "80")
-    with pytest.raises(ConfigurationError):
-        Settings.from_env()
-
-
-def test_invalid_privacy_mode_rejected(monkeypatch):
-    monkeypatch.setenv("PRIVACY_MODE", "not-a-real-mode")
     with pytest.raises(ConfigurationError):
         Settings.from_env()
 
