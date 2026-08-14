@@ -69,11 +69,17 @@ sites.
   did.
 - `meeting_dev_handler.py::_scan_documents`'s MarkItDown vision-client gate
   now uses `AIEnrichmentService.allow_document_llm()` instead of a bare
-  `try/except` around `PrivacyGuard.check()` — same enforcement, one fewer
-  place to get it slightly wrong. MarkItDown's own internal HTTP calls for
-  document content still aren't passed through `redact_secrets()` (that
-  library owns the HTTP call, not `OpenAICompatibleProvider`) — an
-  unchanged, documented limitation, not something this ADR claims to fix.
+  `try/except` around `PrivacyGuard.check()`. **Update**: `allow_document_llm()`
+  was subsequently changed to call `_check_frame_policy()` (the same gate
+  as the video-frame path) instead of `PrivacyGuard.check()` alone — a
+  document's embedded images are the same outbound-image risk as a video
+  frame, so `FRAME_DESCRIPTIONS`/`ALLOW_IMAGE_UPLOAD` now apply to it too,
+  closing a gap where a local provider (or a remote one with image upload
+  disabled) could still describe document images. MarkItDown's own internal
+  HTTP calls for document content still aren't passed through
+  `redact_secrets()` (that library owns the HTTP call, not
+  `OpenAICompatibleProvider`) — an unchanged, documented limitation, not
+  something this ADR claims to fix.
 - The dashboard's 4 endpoints that returned raw `str(exception)` to the
   client (`api_transcription` GET/POST, `api_delete_file`, `api_upload`)
   were sanitized in the same pass — `logger.exception()` server-side, a
