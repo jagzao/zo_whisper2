@@ -30,6 +30,7 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
 from transcript_pipeline.config import PROJECT_ROOT, load_env
+from transcript_pipeline.documentation.engine import load_steps, regenerate_from_steps, remove_step, update_step
 from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.projects import validate_project
 from transcript_pipeline.security import (
@@ -813,11 +814,100 @@ def api_documentation() -> Any:
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
 
+    def ai_package_url(filename: str) -> str | None:
+        path = ai_dir / filename
+        if not path.exists():
+            return None
+        asset_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, path)
+        return f"/doc-asset?id={quote(asset_id, safe='')}"
+
+    ai_package_files = {
+        "manifest": ai_package_url("manifest.json"),
+        "chunks": ai_package_url("chunks.jsonl"),
+        "knowledge": ai_package_url("knowledge.md"),
+    } if manifest_path.exists() else None
+
+    def frame_url(relative_to_frames_parent: str) -> str:
+        # step.frame_ref is the raw frame filename, relative to frames_parent
+        # (where KeyframeExtractor wrote it) — NOT relative to manual_dir
+        # (whose assets/ only holds copies made for MANUAL.md/ai-package).
+        frame_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, frames_parent / relative_to_frames_parent)
+        return f"/doc-asset?id={quote(frame_id, safe='')}"
+
+    steps_payload = []
+    if (manual_dir / "steps.json").exists():
+        _, steps = load_steps(manual_dir)
+        for step in steps:
+            step_dict = step.to_dict()
+            if step.frame_ref:
+                step_dict["frame_url"] = frame_url(step.frame_ref)
+            steps_payload.append(step_dict)
+
     return jsonify({
         "ok": True,
         "manual_markdown": manual_md,
         "manifest": manifest,
+        "steps": steps_payload,
+        "ai_package_files": ai_package_files,
     })
+
+
+@app.route("/api/documentation/step", methods=["PATCH"])
+def api_documentation_update_step() -> Any:
+    """Human review edit (US-001 §4.8): edit a step's title/instruction, or
+    toggle its reviewed flag, and regenerate both bundles — no re-transcription."""
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None or not (frames_parent / "manual" / "steps.json").exists():
+        return jsonify({"ok": False, "error": "No documentation available"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    step_id = payload.get("step_id")
+    if not step_id:
+        return jsonify({"ok": False, "error": "step_id required"}), 400
+
+    try:
+        updated = update_step(
+            frames_parent / "manual", frames_parent / "ai-package", frames_parent, step_id,
+            title=payload.get("title"), instruction=payload.get("instruction"), reviewed=payload.get("reviewed"),
+        )
+        return jsonify({"ok": True, "step": updated})
+    except KeyError:
+        return jsonify({"ok": False, "error": f"step {step_id!r} not found"}), 404
+
+
+@app.route("/api/documentation/step", methods=["DELETE"])
+def api_documentation_remove_step() -> Any:
+    """Human review removal (US-001 §4.8): delete an invalid step and
+    regenerate both bundles — no re-transcription."""
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None or not (frames_parent / "manual" / "steps.json").exists():
+        return jsonify({"ok": False, "error": "No documentation available"}), 404
+
+    step_id = request.args.get("step_id", "")
+    if not step_id:
+        return jsonify({"ok": False, "error": "step_id required"}), 400
+
+    try:
+        result = remove_step(frames_parent / "manual", frames_parent / "ai-package", frames_parent, step_id)
+        return jsonify({"ok": True, **result})
+    except KeyError:
+        return jsonify({"ok": False, "error": f"step {step_id!r} not found"}), 404
+
+
+@app.route("/api/documentation/regenerate", methods=["POST"])
+def api_documentation_regenerate() -> Any:
+    """Explicit regenerate (US-001 §14 DoD): rebuild MANUAL.md/ai-package
+    from the current steps.json without touching frame_mapping.json or
+    re-transcribing — useful after hand-editing steps.json directly."""
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None or not (frames_parent / "manual" / "steps.json").exists():
+        return jsonify({"ok": False, "error": "No documentation available"}), 404
+
+    result = regenerate_from_steps(frames_parent / "manual", frames_parent / "ai-package", frames_parent, target.name)
+    return jsonify({"ok": True, **result})
 
 
 @app.route("/doc-asset")
