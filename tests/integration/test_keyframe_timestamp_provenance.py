@@ -16,60 +16,30 @@ would produce (0.0s / 3.0s for two frames over a 6s clip).
 from __future__ import annotations
 
 import json
-import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
 
+from tests.integration.conftest import CUT_1_S, CUT_2_S, requires_ffmpeg
 from transcript_pipeline.media.keyframe_extractor import KeyframeExtractor
 
-FFMPEG_AVAILABLE = shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None
-
-CUT_1_S = 2.0
-CUT_2_S = 4.0
 TOLERANCE_S = 0.35
-
-
-def _make_synthetic_cuts_video(path: Path) -> None:
-    """6s, 64x64, 10fps video: 2s of testsrc + 2s of smptebars + 2s of rgbtestsrc,
-    hard cuts at t=2.0s and t=4.0s.
-
-    Uses textured/patterned lavfi sources (not flat solid colors): a flat
-    color frame is a degenerate case for perceptual-hash dedup (every pixel
-    equals the mean, so average_hash collapses to the same bit pattern
-    regardless of hue), which would make the dedup phase falsely merge two
-    genuinely distinct scenes. Patterned sources keep the dedup phase honest.
-    """
-    cmd = [
-        "ffmpeg",
-        "-f", "lavfi", "-i", "testsrc=size=64x64:rate=10:duration=2",
-        "-f", "lavfi", "-i", "smptebars=size=64x64:rate=10:duration=2",
-        "-f", "lavfi", "-i", "rgbtestsrc=size=64x64:rate=10:duration=2",
-        "-filter_complex", "[0:v][1:v][2:v]concat=n=3:v=1:a=0[v]",
-        "-map", "[v]",
-        "-pix_fmt", "yuv420p",
-        "-y", str(path),
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-    assert result.returncode == 0, f"fixture generation failed: {result.stderr}"
 
 
 def _closest_distance(timestamp: float, targets: list[float]) -> float:
     return min(abs(timestamp - t) for t in targets)
 
 
-@pytest.mark.skipif(not FFMPEG_AVAILABLE, reason="ffmpeg/ffprobe not available")
+@requires_ffmpeg
 @pytest.mark.parametrize("method,env", [
     ("scene", {}),
     ("smart_scene", {"SMART_SCENE_COOLDOWN": "1.0", "SMART_SCENE_BLUR": "1"}),
 ])
-def test_frame_mapping_uses_real_pts_not_uniform_estimate(tmp_path, monkeypatch, method, env):
+def test_frame_mapping_uses_real_pts_not_uniform_estimate(tmp_path, monkeypatch, synthetic_cuts_video, method, env):
     for key, value in env.items():
         monkeypatch.setenv(key, value)
 
-    video_path = tmp_path / "cuts.mp4"
-    _make_synthetic_cuts_video(video_path)
+    video_path = synthetic_cuts_video
 
     extractor = KeyframeExtractor(output_base_dir=str(tmp_path / "Frames"))
     monkeypatch.setattr(
