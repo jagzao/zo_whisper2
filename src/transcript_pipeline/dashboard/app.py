@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import secrets
 import subprocess
 import sys
@@ -133,7 +134,47 @@ _run_state: dict[str, Any] = {
     "finished_at": None,
     "error": None,
     "log_tail": "",
+    "stage": None,
 }
+
+# The real pipeline lifecycle, in order. `_infer_stage` derives "how far the
+# current run has gotten" from real subprocess output (never fabricated) by
+# scanning for markers this codebase's own logging already emits — see
+# CLAUDE.md's Architecture section for where each marker comes from.
+PIPELINE_STAGES = ["upload", "analyze", "compress", "transcribe", "vision_ocr", "route", "document", "store"]
+
+_STAGE_MARKERS: list[tuple[str, str]] = [
+    ("STEP 1: Compressing videos", "compress"),
+    ("[SCAN]", "analyze"),
+    ("[TUTORIAL]", "analyze"),
+    ("[INIT] Loading Whisper model", "transcribe"),
+    ("[OK]", "transcribe"),
+    ("[KEYFRAMES]", "vision_ocr"),
+    ("[MEETING_DEV]", "vision_ocr"),
+    ("completed_routed", "route"),
+    ("[DOCS]", "document"),
+    ("[SAVE]", "store"),
+    ("PROCESS FINISHED", "store"),
+]
+
+
+def _infer_stage(log_tail: str) -> str | None:
+    """Furthest pipeline stage reached so far in this run's real log output.
+
+    Tracks the max stage index seen (not "last line matched") so a
+    multi-file run doesn't appear to regress when file N+1 starts back at
+    "analyze" while file N already reached "store".
+    """
+    reached_idx = -1
+    stage: str | None = None
+    for line in log_tail.splitlines():
+        for marker, candidate in _STAGE_MARKERS:
+            if marker in line:
+                idx = PIPELINE_STAGES.index(candidate)
+                if idx > reached_idx:
+                    reached_idx = idx
+                    stage = candidate
+    return stage
 
 
 def _atomic_write_text(path: Path, content: str) -> None:
@@ -386,6 +427,41 @@ def _resolve_frames(media_path: Path) -> dict | None:
         return None
 
 
+def _documentation_dirs(media_path: Path) -> Path | None:
+    """Same `frames_parent` convention as `_resolve_frames`, without requiring
+    frame_mapping.json to exist (manual/ai-package live alongside it)."""
+    try:
+        rel = media_path.relative_to(VIDEOS_BASE)
+        output_folder = TRANSCRIPTIONS_BASE / rel.parent
+    except ValueError:
+        try:
+            rel = media_path.relative_to(AUDIO_BASE)
+            output_folder = TRANSCRIPTIONS_BASE / rel.parent
+        except ValueError:
+            return None
+    return output_folder / f"{media_path.stem}_Frames" / media_path.stem
+
+
+def _resolve_documentation(media_path: Path, root: MediaRoot) -> dict | None:
+    """Reports whether the video-to-documentation engine already produced a
+    manual/AI package for this source video, without loading their content
+    (kept cheap since this runs once per row in `/api/files`)."""
+    frames_parent = _documentation_dirs(media_path)
+    if frames_parent is None:
+        return None
+    manual_meta = frames_parent / "manual" / "metadata.json"
+    ai_manifest = frames_parent / "ai-package" / "manifest.json"
+    has_manual = manual_meta.exists()
+    has_ai_package = ai_manifest.exists()
+    if not has_manual and not has_ai_package:
+        return None
+    return {
+        "has_manual": has_manual,
+        "has_ai_package": has_ai_package,
+        "media_id": _to_media_id(root, media_path),
+    }
+
+
 # ── Endpoints ────────────────────────────────────────────────────────────
 @app.route("/")
 def index() -> str:
@@ -447,6 +523,7 @@ def api_files() -> Any:
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,
                     "transcription": transcription,
+                    "documentation": _resolve_documentation(path, root),
                 }
             )
 
@@ -567,6 +644,7 @@ def api_run(mode: str) -> Any:
                 "finished_at": None,
                 "error": None,
                 "log_tail": "",
+                "stage": "upload",
             }
         )
     threading.Thread(target=_run_pipeline, args=(mode,), daemon=True).start()
@@ -706,6 +784,104 @@ def serve_frame() -> Any:
     return send_from_directory(str(target.parent), target.name)
 
 
+@app.route("/api/documentation")
+def api_documentation() -> Any:
+    """Human manual + AI package summary for a source video (US-001 §3.6)."""
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None:
+        return jsonify({"ok": False, "error": "No documentation available"}), 404
+
+    manual_dir = frames_parent / "manual"
+    ai_dir = frames_parent / "ai-package"
+    manual_md_path = manual_dir / "MANUAL.md"
+    manifest_path = ai_dir / "manifest.json"
+
+    if not manual_md_path.exists() and not manifest_path.exists():
+        return jsonify({"ok": False, "error": "No documentation available"}), 404
+
+    def asset_url(relative_to_manual_dir: str) -> str:
+        asset_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, manual_dir / relative_to_manual_dir)
+        return f"/doc-asset?id={quote(asset_id, safe='')}"
+
+    manual_md = None
+    if manual_md_path.exists():
+        raw_md = manual_md_path.read_text(encoding="utf-8")
+        # MANUAL.md references images as "assets/<file>" relative to manual_dir —
+        # rewrite each to a servable /doc-asset URL before handing it to the client.
+        manual_md = re.sub(r"assets/([\w.\-]+)", lambda m: asset_url(m.group(0)), raw_md)
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else None
+
+    return jsonify({
+        "ok": True,
+        "manual_markdown": manual_md,
+        "manifest": manifest,
+    })
+
+
+@app.route("/doc-asset")
+def serve_doc_asset() -> Any:
+    """Serves manual/ai-package assets (step screenshots) under CarpetaTranscripciones/."""
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
+    return send_from_directory(str(target.parent), target.name)
+
+
+@app.route("/api/metrics")
+def api_metrics() -> Any:
+    """Operational summary metrics (US-001 §3.3) — replaces implementation-
+    centric folder counts as the dashboard's headline numbers. Derived from
+    processed_files.json (status) and each output's *_metadata.json
+    (duration, processing_time); never fabricated."""
+    SUCCESS_STATUSES = {"completed", "completed_routed", "auto_detected", "existing_transcription"}
+    FAILURE_STATUSES = {"failed_routed"}
+
+    files_processed = 0
+    files_failed = 0
+    if PROCESSED_DB.exists():
+        try:
+            db = json.loads(PROCESSED_DB.read_text(encoding="utf-8"))
+            seen_hashes: set[str] = set()
+            for entry in db.values():
+                dedup_key = entry.get("hash") or entry.get("path", "")
+                if dedup_key in seen_hashes:
+                    continue
+                seen_hashes.add(dedup_key)
+                status = entry.get("status", "")
+                if status in SUCCESS_STATUSES:
+                    files_processed += 1
+                elif status in FAILURE_STATUSES:
+                    files_failed += 1
+        except Exception as e:
+            logger.warning("[METRICS] Error reading processed_files.json: %s", e)
+
+    total_duration = 0.0
+    total_processing_time = 0.0
+    metadata_count = 0
+    if TRANSCRIPTIONS_BASE.exists():
+        for meta_path in TRANSCRIPTIONS_BASE.rglob("*_metadata.json"):
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            total_duration += float(meta.get("duration", 0) or 0)
+            total_processing_time += float(meta.get("processing_time", 0) or 0)
+            metadata_count += 1
+
+    total_attempts = files_processed + files_failed
+    success_rate = (files_processed / total_attempts * 100) if total_attempts else None
+    avg_processing_time = (total_processing_time / metadata_count) if metadata_count else None
+
+    return jsonify({
+        "files_processed": files_processed,
+        "files_failed": files_failed,
+        "duration_processed_seconds": total_duration,
+        "duration_processed_formatted": _format_duration(total_duration),
+        "success_rate_pct": round(success_rate, 1) if success_rate is not None else None,
+        "avg_processing_time_seconds": round(avg_processing_time, 1) if avg_processing_time is not None else None,
+    })
+
+
 # ── Pipeline runner ─────────────────────────────────────────────────────
 def _run_pipeline(mode: str) -> None:
     global _run_state
@@ -713,36 +889,37 @@ def _run_pipeline(mode: str) -> None:
 
     def append_log(msg: str) -> None:
         _run_state["log_tail"] += f"{msg}\n"
+        stage = _infer_stage(_run_state["log_tail"])
+        if stage:
+            _run_state["stage"] = stage
+
+    def run_streaming(cmd: list[str]) -> int:
+        """Runs `cmd`, appending each line to log_tail (and re-inferring
+        stage) as it arrives, instead of blocking until the whole subprocess
+        exits — a long transcription run would otherwise leave the dashboard
+        showing a stale log/stage for its entire duration."""
+        process = subprocess.Popen(
+            cmd, cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            text=True, encoding="utf-8", errors="ignore", bufsize=1,
+        )
+        assert process.stdout is not None
+        for line in process.stdout:
+            append_log(line.rstrip("\n"))
+        process.wait()
+        return process.returncode
 
     try:
         if mode in ("full", "compress"):
             append_log("STEP 1: Compressing videos...")
-            result = subprocess.run(
-                [PYTHON_EXE, "compress_and_move.py"],
-                cwd=str(ROOT),
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="ignore",
-            )
-            append_log(result.stdout)
-            if result.returncode != 0:
-                append_log(result.stderr)
+            returncode = run_streaming([PYTHON_EXE, "compress_and_move.py"])
+            if returncode != 0:
+                append_log(f"compress_and_move.py exited with code {returncode}")
 
         if mode in ("full", "transcribe"):
             append_log("STEP 2: Organization + transcription...")
-            result = subprocess.run(
-                [PYTHON_EXE, "master_processor.py"],
-                cwd=str(ROOT),
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="ignore",
-            )
-            append_log(result.stdout)
-            if result.returncode != 0:
-                append_log(result.stderr)
-                raise RuntimeError("master_processor.py failed")
+            returncode = run_streaming([PYTHON_EXE, "master_processor.py"])
+            if returncode != 0:
+                raise RuntimeError(f"master_processor.py failed (exit code {returncode})")
 
         append_log("PROCESS FINISHED")
     except Exception as e:

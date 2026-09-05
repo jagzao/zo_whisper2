@@ -147,6 +147,26 @@
         }
         .folder .count { font-size: 1.75rem; font-weight: 800; color: var(--accent); text-shadow: 0 0 16px rgba(0,229,255,0.25); }
         .folder .label { font-size: 0.7rem; color: var(--muted); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; }
+        .metric {
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 0.625rem;
+            padding: 1rem 0.75rem; text-align: center;
+        }
+        .metric .value { font-size: 1.6rem; font-weight: 800; color: var(--accent); text-shadow: 0 0 16px rgba(0,229,255,0.25); }
+        .metric .label { font-size: 0.68rem; color: var(--muted); margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.06em; }
+        .pipeline-stepper {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 0.25rem;
+            padding: 0.5rem 0;
+        }
+        .pipeline-stage {
+            display: flex; align-items: center; gap: 0.4rem;
+            padding: 0.4rem 0.75rem; border-radius: 999px; border: 1px solid var(--border);
+            background: var(--panel-2); color: var(--muted); font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+        }
+        .pipeline-stage.done { color: var(--ok); border-color: rgba(0,230,118,0.35); }
+        .pipeline-stage.running { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(0,229,255,0.2); }
+        .pipeline-arrow { color: var(--border); font-size: 0.9rem; }
         table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
         th, td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); text-align: left; }
         th { color: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; background: rgba(17,26,46,0.6); }
@@ -337,7 +357,21 @@
         .action-btns .btn-edit:hover { background: var(--ok); color: #050711; border-color: var(--ok); }
         .action-btns .btn-delete { background: var(--panel-2); color: var(--danger); border: 1px solid var(--border); }
         .action-btns .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
+        .action-btns .btn-docs { background: var(--panel-2); color: var(--accent-2); border: 1px solid var(--border); }
+        .action-btns .btn-docs:hover { background: var(--accent-2); color: white; border-color: var(--accent-2); }
         .action-btns button:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+        .docs-content h2, .docs-content h3 { color: var(--accent); margin: 1rem 0 0.5rem; }
+        .docs-content p { margin: 0.4rem 0; }
+        .docs-content blockquote {
+            margin: 0.5rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--warn);
+            background: rgba(255,214,0,0.06); border-radius: 0.375rem; color: var(--text);
+        }
+        .docs-content img { max-width: 100%; border-radius: 0.5rem; border: 1px solid var(--border); margin: 0.4rem 0; }
+        .ai-package-summary {
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 0.5rem;
+            padding: 0.6rem 0.9rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--muted);
+        }
+        .ai-package-summary strong { color: var(--accent); }
         .table-toolbar {
             display: flex;
             gap: 0.75rem;
@@ -613,6 +647,16 @@
         </div>
 
         <div class="card">
+            <h2>Overview</h2>
+            <div class="metrics" id="metrics"></div>
+        </div>
+
+        <div class="card wide">
+            <h2>Pipeline</h2>
+            <div class="pipeline-stepper" id="pipelineStepper"></div>
+        </div>
+
+        <div class="card">
             <h2>Folders</h2>
             <div class="folders" id="folders"></div>
         </div>
@@ -777,6 +821,37 @@
         const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: JSON.stringify(body) }).then(r => r.json());
         const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); };
 
+        async function loadMetrics() {
+            const data = await api('/api/metrics');
+            const el = document.getElementById('metrics');
+            const pct = data.success_rate_pct != null ? `${data.success_rate_pct}%` : '—';
+            const avg = data.avg_processing_time_seconds != null ? `${data.avg_processing_time_seconds}s` : '—';
+            el.innerHTML = `
+                <div class="metric"><div class="value">${data.files_processed}</div><div class="label">Files processed</div></div>
+                <div class="metric"><div class="value">${data.duration_processed_formatted}</div><div class="label">Media processed</div></div>
+                <div class="metric"><div class="value">${pct}</div><div class="label">Success rate</div></div>
+                <div class="metric"><div class="value">${avg}</div><div class="label">Avg. processing time</div></div>
+            `;
+        }
+
+        const PIPELINE_STAGE_LABELS = {
+            upload: 'Upload', analyze: 'Analyze', compress: 'Compress', transcribe: 'Transcribe',
+            vision_ocr: 'Vision/OCR', route: 'Route', document: 'Document', store: 'Store',
+        };
+        function renderPipelineStepper(currentStage, running) {
+            const stages = Object.keys(PIPELINE_STAGE_LABELS);
+            const currentIdx = currentStage ? stages.indexOf(currentStage) : -1;
+            const el = document.getElementById('pipelineStepper');
+            if (!el) return;
+            el.innerHTML = stages.map((stage, idx) => {
+                let cls = '';
+                if (idx < currentIdx || (idx === currentIdx && !running)) cls = 'done';
+                else if (idx === currentIdx && running) cls = 'running';
+                const arrow = idx > 0 ? '<span class="pipeline-arrow">→</span>' : '';
+                return `${arrow}<span class="pipeline-stage ${cls}">${PIPELINE_STAGE_LABELS[stage]}</span>`;
+            }).join('');
+        }
+
         async function loadFolders() {
             const data = await api('/api/folders');
             const el = document.getElementById('folders');
@@ -873,6 +948,18 @@
             renderPagination(page, totalPages, total);
         }
 
+        const STATUS_LABELS = {
+            pending: 'Pending',
+            completed: 'Completed',
+            completed_routed: 'Completed (routed)',
+            failed_routed: 'Failed (routing)',
+            auto_detected: 'Detected',
+            existing_transcription: 'Already transcribed',
+        };
+        function statusLabel(status) {
+            return STATUS_LABELS[status] || status;
+        }
+
         function renderFileRows(files, start, total) {
             const el = document.getElementById('filesList');
             if (!files.length) {
@@ -894,8 +981,9 @@
                 ${files.map((f, i) => {
                     const relParts = f.relative.split('/');
                     const folder = relParts.length > 1 ? relParts.slice(0, -1).join('/') : 'root';
-                    const statusClass = f.status === 'pending' ? 'pending' : 'processed';
+                    const statusClass = f.status === 'pending' ? 'pending' : (f.status === 'failed_routed' ? 'error' : 'processed');
                     const tx = f.transcription;
+                    const doc = f.documentation;
                     const lang = f.language || 'auto';
                     const ext = f.name.split('.').pop().toLowerCase();
                     const fileType = ['mp4','avi','mkv','mov','wmv','flv','webm','m4v'].includes(ext) ? 'Video' : 'Audio';
@@ -905,7 +993,7 @@
                         <td>${folder}</td>
                         <td>${f.project || '-'}</td>
                         <td><span class="status ${lang === 'auto' ? 'pending' : 'processed'}">${lang}</span></td>
-                        <td><span class="status ${statusClass}">${f.status}</span></td>
+                        <td><span class="status ${statusClass}">${statusLabel(f.status)}</span></td>
                         <td>${tx ? `<span class="status processed">Yes</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
                         <td>
                             <div class="action-btns">
@@ -914,6 +1002,9 @@
                                 </button>
                                 <button class="btn-edit tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="editTranscription('${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="Edit" title="Edit">
                                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                </button>
+                                <button class="btn-docs tooltip" data-tip="Documentation" ${!doc ? 'disabled' : ''} onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}', true)" aria-label="Documentation" title="Documentation">
+                                    <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                                 </button>
                                 <button class="btn-delete tooltip" onclick="deleteFile('${encodeURIComponent(f.media_id)}')" aria-label="Delete" title="Delete">
                                     <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
@@ -990,8 +1081,9 @@
                 el.className = 'status processed';
             }
             if (!status.running && status.finished_at) {
-                loadFolders(); loadFiles();
+                loadFolders(); loadFiles(); loadMetrics();
             }
+            renderPipelineStepper(status.stage, status.running);
         }
 
         async function loadLogs() {
@@ -1001,7 +1093,7 @@
             el.scrollTop = el.scrollHeight;
         }
 
-        async function preview(mediaIdEncoded, txIdEncoded) {
+        async function preview(mediaIdEncoded, txIdEncoded, openDocsTab) {
             const mediaId = decodeURIComponent(mediaIdEncoded);
             const txId = txIdEncoded ? decodeURIComponent(txIdEncoded) : '';
             document.getElementById('previewTitle').textContent = mediaId.split(/[\\/]/).pop();
@@ -1057,6 +1149,7 @@
                         <div class="tabbar">
                             <button class="active" id="tabTranscript" onclick="switchEditorTab('transcript')">TRANSCRIPT</button>
                             <button id="tabFrames" onclick="switchEditorTab('frames')">FRAMES</button>
+                            <button id="tabDocs" onclick="switchEditorTab('docs')">DOCS</button>
                         </div>
                         <div id="transcriptTabPanel">
                             <div class="search-bar">
@@ -1071,6 +1164,9 @@
                         <div id="framesTabPanel" class="hidden">
                             <div class="frames-grid" id="framesGrid"></div>
                         </div>
+                        <div id="docsTabPanel" class="hidden">
+                            <div id="docsContent" class="docs-content"></div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1078,6 +1174,7 @@
             renderSegments(segments);
             window._mediaId = mediaId;
             bindMediaEvents();
+            if (openDocsTab) switchEditorTab('docs');
         }
         function closePreview() {
             const media = document.getElementById('editorMedia');
@@ -1212,9 +1309,53 @@
         function switchEditorTab(tab) {
             document.getElementById('transcriptTabPanel').classList.toggle('hidden', tab !== 'transcript');
             document.getElementById('framesTabPanel').classList.toggle('hidden', tab !== 'frames');
+            document.getElementById('docsTabPanel').classList.toggle('hidden', tab !== 'docs');
             document.getElementById('tabTranscript').classList.toggle('active', tab === 'transcript');
             document.getElementById('tabFrames').classList.toggle('active', tab === 'frames');
+            document.getElementById('tabDocs').classList.toggle('active', tab === 'docs');
             if (tab === 'frames') loadFrames();
+            if (tab === 'docs') loadDocs();
+        }
+
+        async function loadDocs() {
+            const el = document.getElementById('docsContent');
+            const mediaId = window._mediaId;
+            if (!el || !mediaId) return;
+            el.innerHTML = '<p style="color:var(--muted)">Loading documentation...</p>';
+            const res = await api('/api/documentation?id=' + encodeURIComponent(mediaId));
+            if (!res.ok) {
+                el.innerHTML = `<p style="color:var(--muted)">${res.error || 'No documentation generated for this video yet.'}</p>`;
+                return;
+            }
+            const manualHtml = res.manual_markdown ? renderManualMarkdown(res.manual_markdown) : '';
+            const manifest = res.manifest;
+            const aiSummary = manifest
+                ? `<div class="ai-package-summary">
+                    <strong>AI-ready package:</strong> ${manifest.procedures.length} step(s),
+                    schema v${manifest.schema_version}
+                    (${manifest.procedures.filter(p => p.confidence === 'low').length} flagged for review)
+                   </div>`
+                : '';
+            el.innerHTML = aiSummary + manualHtml;
+        }
+
+        // Minimal, dependency-free Markdown->HTML for MANUAL.md (headings,
+        // images, blockquote warnings, paragraphs) — no CDN markdown lib
+        // needed for this fixed, engine-generated shape.
+        function renderManualMarkdown(md) {
+            const lines = md.split('\n');
+            const html = [];
+            for (const line of lines) {
+                if (line.startsWith('## ')) html.push(`<h3>${escapeHtml(line.slice(3))}</h3>`);
+                else if (line.startsWith('# ')) html.push(`<h2>${escapeHtml(line.slice(2))}</h2>`);
+                else if (line.startsWith('> ')) html.push(`<blockquote>${escapeHtml(line.slice(2))}</blockquote>`);
+                else {
+                    const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+                    if (imgMatch) html.push(`<img src="${imgMatch[2]}" alt="${escapeHtml(imgMatch[1])}" loading="lazy">`);
+                    else if (line.trim()) html.push(`<p>${escapeHtml(line)}</p>`);
+                }
+            }
+            return html.join('\n');
         }
 
         async function loadFrames() {
@@ -1361,6 +1502,7 @@
                 queue.innerHTML += `<div>${msg}</div>`;
             }
             loadFolders();
+            loadMetrics();
             showToast('Files queued');
         }
 
@@ -1455,7 +1597,7 @@
         });
 
         setInterval(() => { updateRunStatus(); loadLogs(); }, 3000);
-        loadFolders(); loadFiles(); loadProjects(); loadLogs(); updateRunStatus();
+        loadFolders(); loadFiles(); loadProjects(); loadLogs(); loadMetrics(); updateRunStatus();
     </script>
 </body>
 </html>
