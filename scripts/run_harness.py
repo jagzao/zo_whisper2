@@ -16,6 +16,7 @@ REPORT_PATH = ROOT / "harness_report.json"
 STAGES = [
     ("quality", [sys.executable, str(ROOT / "scripts" / "quality.py")]),
     ("security", [sys.executable, str(ROOT / "scripts" / "security.py")]),
+    ("smoke", [sys.executable, str(ROOT / "scripts" / "smoke.py")]),
     ("ut", [sys.executable, str(ROOT / "scripts" / "ut.py")]),
     ("e2e", [sys.executable, str(ROOT / "scripts" / "e2e.py")]),
 ]

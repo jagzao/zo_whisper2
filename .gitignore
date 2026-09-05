@@ -44,6 +44,7 @@ logs/
 quality_report.json
 security_report.json
 ut_report.json
+smoke_report.json
 e2e_report.json
 harness_report.json
 sbom.json
