@@ -10,6 +10,7 @@ from PIL import Image
 
 def add_watermark(im: Image.Image, logo: Image.Image, margin: int = 18, width: int = 120) -> Image.Image:
     im = im.convert("RGBA")
+    logo = logo.convert("RGBA")
     ratio = width / logo.width
     logo_resized = logo.resize((width, int(logo.height * ratio)), Image.LANCZOS)
 
