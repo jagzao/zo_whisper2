@@ -309,9 +309,13 @@ python dashboard.py
 |---|---|---|
 | ![home](docs/screenshots/dashboard_home.png) | ![preview](docs/screenshots/dashboard_preview.png) | ![editor](docs/screenshots/dashboard_editor.png) |
 
-| Extracted frames | Edit transcription | Projects (CRUD) |
+| Extracted frames | Generated documentation | Edit transcription |
 |---|---|---|
-| ![frames](docs/screenshots/dashboard_frames.png) | ![edit](docs/screenshots/dashboard_edit.png) | ![projects](docs/screenshots/dashboard_projects.png) |
+| ![frames](docs/screenshots/dashboard_frames.png) | ![docs](docs/screenshots/dashboard_docs.png) | ![edit](docs/screenshots/dashboard_edit.png) |
+
+| Projects (CRUD) |
+|---|
+| ![projects](docs/screenshots/dashboard_projects.png) |
 
 | Logs | User guide |
 |---|---|
