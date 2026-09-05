@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 from generate_mock_data import MOCK_FILES, ROOT, PROCESSED_DB, VIDEOS, AUDIO, TRANSCRIPTIONS
@@ -24,6 +25,13 @@ def main() -> None:
             if f.exists():
                 f.unlink()
                 print(f"[DEL] {f}")
+
+        # make_tutorial_documentation() writes frame_mapping.json + manual/ +
+        # ai-package/ under {stem}_Frames/{stem}/ — remove that whole tree too.
+        frames_root = out_folder / f"{stem}_Frames"
+        if frames_root.exists():
+            shutil.rmtree(frames_root)
+            print(f"[DEL] {frames_root}")
 
         key = str(media_path.absolute())
         db.pop(key, None)

@@ -1,11 +1,13 @@
-# transcript-pipeline
+# Zo Whisper Studio
 
-**Privacy-first local AI transcription & meeting intelligence pipeline.**
+**Local-first AI media intelligence: turn meetings, tutorials, and screen
+recordings into searchable transcripts, structured documentation, and
+AI-ready knowledge — without sending anything off your machine by default.**
 
-Local Whisper transcription, declarative per-project routing, optional
-multimodal LLM enrichment behind an explicit opt-in boundary,
-security-hardened filesystem access, and fail-closed automated quality
-gates.
+Local Whisper transcription, declarative per-project routing, a
+video-to-documentation engine, optional multimodal LLM enrichment behind an
+explicit opt-in boundary, security-hardened filesystem access, and
+fail-closed automated quality gates.
 
 [![CI](https://github.com/jagzao/zo_whisper2/actions/workflows/dashboard-ci.yml/badge.svg)](https://github.com/jagzao/zo_whisper2/actions/workflows/dashboard-ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
@@ -15,11 +17,51 @@ gates.
 
 Every meeting, interview, or tutorial gets transcribed, routed, and
 optionally summarized automatically based on declarative rules in
-`projects.json` — no code changes needed to add a new project.
+`projects.json` — no code changes needed to add a new project. Tutorial and
+screen-recording videos additionally get a generated **human manual** and an
+**AI-ready knowledge package** — see [Video-to-Documentation](#video-to-documentation) below.
 
 Daily flow: drop files into `audio/`, `Videos/`, or `Video_compress/` →
 `RUN_MAX_QUALITY.bat` → `.txt` + metadata + (optional, opt-in) LLM summary +
-keyframes in `CarpetaTranscripciones/`.
+keyframes + manual/AI package in `CarpetaTranscripciones/`.
+
+> The importable package and pip distribution name (`transcript_pipeline` /
+> `transcript-pipeline`) are unchanged — only the product's public name and
+> branding moved to **Zo Whisper Studio**, to avoid breaking existing
+> installs, imports, and CI.
+
+## Video-to-Documentation
+
+Any tutorial/screen-recording video (filename containing `tutorial`, or
+routed through a project with keyframe extraction enabled) gets, in addition
+to its transcript:
+
+```text
+CarpetaTranscripciones/{project}/{video}_Frames/{video}/
+  frame_mapping.json          # real per-frame PTS + aligned transcript excerpts
+  manual/
+    MANUAL.md                 # human-readable, numbered, screenshot-backed manual
+    metadata.json
+    steps.json                # editable source of truth — see below
+    assets/step-NNNN.png
+  ai-package/
+    manifest.json              # schema_version, source, procedures, artifacts
+    steps.json
+    chunks.jsonl               # one RAG-ready chunk per step
+    knowledge.md
+    assets/step-NNNN.png
+```
+
+Every step's instruction text is the transcript excerpt found near its
+frame's real timestamp — **never LLM-generated wording** — so a step can
+never assert something the source video doesn't support. A frame with no
+nearby transcript is marked `confidence: "low"` instead of getting a guessed
+instruction, and is flagged for human review in `MANUAL.md`. Editing
+`manual/steps.json` and regenerating rebuilds both bundles without
+re-transcribing (`transcript_pipeline.documentation.engine.regenerate_from_steps`).
+The dashboard's file workspace has a **DOCS** tab that renders the manual and
+an AI-package summary directly (see the "Documentation" action in the files
+table).
 
 ## Security & Privacy
 

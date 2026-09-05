@@ -107,6 +107,45 @@ def make_transcription(rel_path: str, language: str, text: str, duration: float)
     )
 
 
+def make_tutorial_documentation(rel_path: str, language: str) -> None:
+    """Builds a synthetic frame_mapping.json (2 fake frames + aligned
+    transcript excerpts) for the mock tutorial video and runs the real
+    documentation engine on it — so the dashboard's DOCS tab and the
+    Documentation action have something real to render in CI screenshots
+    and the E2E smoke test, without needing an actual transcription run."""
+    import sys as _sys
+    _sys.path.insert(0, str(ROOT / "src"))
+    from transcript_pipeline.documentation.engine import generate_documentation
+
+    media_path = ROOT / rel_path
+    stem = media_path.stem
+    frames_parent = TRANSCRIPTIONS / f"{stem}_Frames" / stem
+    frames_parent.mkdir(parents=True, exist_ok=True)
+
+    # Two tiny real PNGs so the DOCS tab / MANUAL.md images actually load.
+    for i in range(2):
+        frame_path = frames_parent / f"frame_{i:04d}.png"
+        subprocess.run(
+            ["ffmpeg", "-y", "-f", "lavfi", "-i", "color=c=blue:s=64x64", "-frames:v", "1", str(frame_path)],
+            check=True, capture_output=True,
+        )
+
+    mapping = {
+        "video_info": {"name": media_path.name, "duration": 980.0, "extraction_method": "smart_scene"},
+        "transcription_summary": {"language": language},
+        "frames": [
+            {"frame_file": "frame_0000.png", "timestamp": 5.0, "timestamp_formatted": "00:00:05.000"},
+            {"frame_file": "frame_0001.png", "timestamp": 42.0, "timestamp_formatted": "00:00:42.000"},
+        ],
+        "transcription_mapping": {
+            "frame_0000.png": {"full_text": "Open the deploy pipeline dashboard and select the target environment."},
+            "frame_0001.png": {"full_text": "Click Run to start the deployment and watch the pipeline stages progress."},
+        },
+    }
+    (frames_parent / "frame_mapping.json").write_text(json.dumps(mapping), encoding="utf-8")
+    generate_documentation(frames_parent, media_path.name)
+
+
 def mark_processed(rel_path: str) -> None:
     db = json.loads(PROCESSED_DB.read_text(encoding="utf-8")) if PROCESSED_DB.exists() else {}
     media_path = ROOT / rel_path
@@ -129,6 +168,8 @@ def main() -> None:
         make_media(path, duration)
         make_transcription(rel_path, language, text, duration)
         mark_processed(rel_path)
+        if "tutorial" in rel_path.lower():
+            make_tutorial_documentation(rel_path, language)
     print("[OK] Mock data generated.")
 
 

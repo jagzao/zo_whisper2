@@ -76,6 +76,20 @@ def main() -> int:
             or page.locator("#filesPagination button").count() > 0,
         )
 
+        # Operational metrics + pipeline stepper (US-001 §3.3/§3.4)
+        all_ok &= check("metrics_visible", page.locator("#metrics .metric").count() == 4)
+        all_ok &= check(
+            "pipeline_stepper_visible", page.locator("#pipelineStepper .pipeline-stage").count() == 8
+        )
+        # Backend status strings must render as human-readable labels, not raw
+        # (e.g. "completed_routed").
+        status_texts = page.locator("#filesList table tbody tr td:nth-child(6) .status").all_inner_texts()
+        all_ok &= check(
+            "status_labels_human_readable",
+            all("_" not in t for t in status_texts),
+            f"{status_texts}",
+        )
+
         # Filter by the test file's own project (avoids hardcoding a project name)
         project_name = target.get("project")
         if project_name:
@@ -147,6 +161,31 @@ def main() -> int:
 
         page.locator("#previewModal .close-x").click()
         page.wait_for_selector("#previewModal.hidden", state="hidden", timeout=TIMEOUT_MS)
+
+        # Documentation tab (US-001 §3.6/§4.6) — only meaningful for a file
+        # the video-to-documentation engine actually ran on (the mock data's
+        # "tutorial" fixture, via generate_mock_data.py's
+        # make_tutorial_documentation()). Skips cleanly if that fixture
+        # wasn't generated in this environment, rather than failing the
+        # whole smoke run over an optional fixture.
+        tutorial_doc = next((f for f in files if (f.get("documentation") or {}).get("has_manual")), None)
+        if tutorial_doc:
+            tx = tutorial_doc.get("transcription") or {}
+            page.evaluate(
+                "([mid, tid]) => preview(encodeURIComponent(mid), tid ? encodeURIComponent(tid) : '', false)",
+                [tutorial_doc["media_id"], tx.get("id", "")],
+            )
+            page.wait_for_selector("#previewModal:not(.hidden)", timeout=TIMEOUT_MS)
+            page.wait_for_timeout(500)
+            page.locator("#tabDocs").click()
+            page.wait_for_timeout(1000)
+            docs_text = page.locator("#docsContent").inner_text(timeout=5000)
+            all_ok &= check("docs_tab_renders_manual", len(docs_text) > 20, f"{len(docs_text)} chars")
+            screenshot(page, "docs")
+            page.locator("#previewModal .close-x").click()
+            page.wait_for_selector("#previewModal.hidden", state="hidden", timeout=TIMEOUT_MS)
+        else:
+            print("[SKIP] docs_tab_renders_manual: no file with generated documentation found")
 
         # Edit modal
         edit_button.click()
