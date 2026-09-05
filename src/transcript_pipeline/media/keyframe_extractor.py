@@ -112,10 +112,10 @@ class KeyframeExtractor:
             logger.info(f"[KEYFRAMES] Método: {method}, Duración: {duration:.1f}s")
 
             # Extraer frames según el método
-            frame_count = self._extract_frames(video_path, frames_dir, method, max_frames, quality)
+            frame_count, real_pts_map = self._extract_frames(video_path, frames_dir, method, max_frames, quality)
 
-            # Crear mapa de frames con timestamps
-            self._create_frame_mapping(video_path, frames_dir, duration, method)
+            # Crear mapa de frames con timestamps (usa PTS reales cuando el método los provee)
+            self._create_frame_mapping(video_path, frames_dir, duration, method, real_pts_map)
 
             processing_time = time.time() - start_time
 
@@ -210,25 +210,35 @@ class KeyframeExtractor:
             logger.warning(f"[KEYFRAMES] Error obteniendo duración: {e}")
             return 0.0
 
-    def _create_frame_mapping(self, video_path: Path, frames_dir: Path, duration: float, method: str):
+    def _create_frame_mapping(
+        self,
+        video_path: Path,
+        frames_dir: Path,
+        duration: float,
+        method: str,
+        real_pts_map: dict[str, float] | None = None
+    ):
         """
         Crea un archivo JSON con el mapeo de frames a timestamps y espacio para transcripción.
-        
+
         Args:
             video_path: Ruta al video original
             frames_dir: Directorio donde se guardaron los frames
             duration: Duración total del video
             method: Método de extracción usado
+            real_pts_map: {frame_filename: pts_seconds} con el PTS real capturado durante
+                la extracción (scene/smart_scene). Si está presente y cubre todos los
+                frames, se usa en vez de estimar por distribución uniforme.
         """
         import json
-        
+
         try:
             # Obtener lista de frames extraídos
             frame_files = sorted([f for f in frames_dir.glob(f"*.{self.frame_format}")])
-            
-            # Calcular timestamps aproximados
+
+            # Calcular timestamps
             frame_timestamps = []
-            
+
             if method == "iframe":
                 # Para I-frames, necesitamos extraer timestamps reales
                 frame_timestamps = self._extract_frame_timestamps(video_path, frame_files)
@@ -242,8 +252,22 @@ class KeyframeExtractor:
                         "timestamp": timestamp,
                         "timestamp_formatted": self._format_timestamp(timestamp)
                     })
-            else:  # scene
-                # Para scene detection, usar distribución uniforme como aproximación
+            elif real_pts_map and all(f.name in real_pts_map for f in frame_files):
+                # scene / smart_scene: usar el PTS real capturado en la fase de detección,
+                # nunca una estimación uniforme (release blocker — ver US-001 §4.3).
+                for frame_file in frame_files:
+                    timestamp = real_pts_map[frame_file.name]
+                    frame_timestamps.append({
+                        "frame_file": frame_file.name,
+                        "timestamp": timestamp,
+                        "timestamp_formatted": self._format_timestamp(timestamp)
+                    })
+            else:
+                # Fallback defensivo: no debería ocurrir en el flujo normal de scene/smart_scene.
+                logger.warning(
+                    "[KEYFRAMES] No real PTS map for method=%s, falling back to uniform "
+                    "estimate (timestamps will be approximate)", method
+                )
                 interval = duration / len(frame_files) if frame_files else 0
                 for i, frame_file in enumerate(frame_files):
                     timestamp = i * interval
@@ -346,7 +370,7 @@ class KeyframeExtractor:
         method: str,
         max_frames: int | None,
         quality: int
-    ) -> int:
+    ) -> tuple[int, dict[str, float]]:
         """
         Extrae frames usando el método especificado.
 
@@ -358,19 +382,22 @@ class KeyframeExtractor:
             quality: Calidad de compresión
 
         Returns:
-            Número de frames extraídos
+            Tupla (frame_count, real_pts_map). real_pts_map es {frame_filename: pts_seconds}
+            para los métodos que capturan el PTS real durante la extracción (scene,
+            smart_scene); dict vacío para los métodos que no lo necesitan (iframe, interval),
+            que ya calculan su propio timestamp real/exacto en `_create_frame_mapping`.
         """
         if method == "iframe":
-            return self._extract_iframes(video_path, output_dir, max_frames, quality)
+            return self._extract_iframes(video_path, output_dir, max_frames, quality), {}
         elif method == "scene":
             return self._extract_scene_frames(video_path, output_dir, max_frames, quality)
         elif method == "smart_scene":
             return self._extract_smart_scene_frames(video_path, output_dir, max_frames, quality)
         elif method == "interval":
-            return self._extract_interval_frames(video_path, output_dir, max_frames, quality)
+            return self._extract_interval_frames(video_path, output_dir, max_frames, quality), {}
         else:
             logger.warning(f"[KEYFRAMES] Método no válido: {method}, usando iframe")
-            return self._extract_iframes(video_path, output_dir, max_frames, quality)
+            return self._extract_iframes(video_path, output_dir, max_frames, quality), {}
 
     def _extract_iframes(
         self,
@@ -430,9 +457,11 @@ class KeyframeExtractor:
         output_dir: Path,
         max_frames: int | None,
         quality: int
-    ) -> int:
+    ) -> tuple[int, dict[str, float]]:
         """
-        Extrae frames basándose en cambios de escena (naive).
+        Extrae frames basándose en cambios de escena, buscando el PTS real de cada
+        cambio detectado (misma técnica de dos fases que smart_scene, sin cooldown
+        ni dedup) para que el frame_mapping.json no dependa de una estimación uniforme.
 
         Args:
             video_path: Ruta al video
@@ -441,64 +470,34 @@ class KeyframeExtractor:
             quality: Calidad de compresión
 
         Returns:
-            Número de frames extraídos
+            Tupla (frame_count, {frame_filename: pts_seconds})
         """
-        output_pattern = str(output_dir / f"frame_%04d.{self.frame_format}")
+        pts_list = self._detect_scene_change_pts(video_path, threshold=0.4)
 
-        # Filtro para detectar cambios de escena
-        filter_complex = "select='gt(scene,0.4)'"
+        if not pts_list:
+            logger.warning("[KEYFRAMES] scene: no scene changes detected")
+            return 0, {}
 
-        cmd = [
-            self.ffmpeg_path,
-            "-i", str(video_path),
-            "-vf", filter_complex,
-            "-vsync", "vfr",
-            "-q:v", str(quality),
-            "-y",
-            output_pattern
-        ]
+        if max_frames and len(pts_list) > max_frames:
+            step = len(pts_list) / max_frames
+            pts_list = [pts_list[int(i * step)] for i in range(max_frames)]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        pts_map = self._extract_frames_at_pts(video_path, output_dir, pts_list, quality)
+        return len(pts_map), pts_map
 
-        if result.returncode != 0:
-            logger.error(f"[KEYFRAMES] FFmpeg error: {result.stderr}")
-            return 0
-
-        frame_count = len(list(output_dir.glob(f"frame_*.{self.frame_format}")))
-
-        if max_frames and frame_count > max_frames:
-            self._limit_frames(output_dir, max_frames)
-            frame_count = max_frames
-
-        return frame_count
-
-    def _extract_smart_scene_frames(
-        self,
-        video_path: Path,
-        output_dir: Path,
-        max_frames: int | None,
-        quality: int
-    ) -> int:
+    def _detect_scene_change_pts(
+        self, video_path: Path, threshold: float, prefilter: str = ""
+    ) -> list[float]:
         """
-        Extrae frames solo cuando la pantalla cambia realmente,
-        ignorando movimientos de cursor y micro-actualizaciones de UI.
+        Corre un pase de detección (opcional blur + scene filter + showinfo) y
+        devuelve la lista ordenada y deduplicada de PTS (segundos) donde FFmpeg
+        detectó un cambio de escena real.
 
-        Pipeline:
-          1. Blur ligero + scene detection con umbral alto.
-          2. Cooldown de 5 s entre frames.
-          3. Deduplicación por hash perceptual (elimina >90 %% similares).
-          4. Límite estricto a max_frames.
+        Args:
+            prefilter: filtros FFmpeg adicionales aplicados antes de `select`
+                (ej. "gblur=sigma=2:steps=1,"), con la coma final incluida.
         """
-        scene_th = float(os.getenv("SMART_SCENE_THRESHOLD", "0.5"))
-        cooldown_s = float(os.getenv("SMART_SCENE_COOLDOWN", "5.0"))
-        min_scene_blur = int(os.getenv("SMART_SCENE_BLUR", "2"))
-
-        # Phase 1: detect scene-change PTS with blurred input
-        detect_filter = (
-            f"gblur=sigma={min_scene_blur}:steps=1,"
-            f"select='gt(scene\\,{scene_th})',showinfo"
-        )
-
+        detect_filter = f"{prefilter}select='gt(scene\\,{threshold})',showinfo"
         detect_cmd = [
             self.ffmpeg_path,
             "-i", str(video_path),
@@ -512,33 +511,29 @@ class KeyframeExtractor:
         for line in result.stderr.splitlines():
             if "pts:" in line and "pts_time:" in line:
                 try:
-                    parts = line.split("pts_time:")
-                    if len(parts) >= 2:
-                        val = parts[1].split()[0].strip()
-                        pts_list.append(float(val))
+                    val = line.split("pts_time:")[1].split()[0].strip()
+                    pts_list.append(float(val))
                 except Exception:
                     continue
 
-        if not pts_list:
-            logger.warning("[KEYFRAMES] smart_scene: no scene changes detected")
-            return 0
+        return sorted(set(pts_list))
 
-        # Enforce cooldown between frames
-        filtered_pts = []
-        last = -cooldown_s
-        for pts in sorted(set(pts_list)):
-            if pts - last >= cooldown_s:
-                filtered_pts.append(pts)
-                last = pts
-
-        # Hard limit before extraction
-        if max_frames and len(filtered_pts) > max_frames:
-            step = len(filtered_pts) / max_frames
-            filtered_pts = [filtered_pts[int(i * step)] for i in range(max_frames)]
-
-        # Phase 2: extract exact frames at selected PTS
+    def _extract_frames_at_pts(
+        self,
+        video_path: Path,
+        output_dir: Path,
+        pts_list: list[float],
+        quality: int
+    ) -> dict[str, float]:
+        """
+        Extrae un frame exacto por cada PTS de `pts_list` mediante seek preciso
+        (-ss antes de -i). Devuelve {frame_filename: pts_seconds} en el orden
+        real de los frames escritos.
+        """
         fmt = self.frame_format
-        for idx, pts in enumerate(filtered_pts):
+        pts_map: dict[str, float] = {}
+
+        for idx, pts in enumerate(pts_list):
             out_file = output_dir / f"frame_{idx:04d}.{fmt}"
             cmd = [
                 self.ffmpeg_path,
@@ -549,27 +544,79 @@ class KeyframeExtractor:
                 "-y",
                 str(out_file)
             ]
-            subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if res.returncode == 0 and out_file.exists():
+                pts_map[out_file.name] = pts
 
-        extracted = sorted(output_dir.glob(f"frame_*.{fmt}"))
+        return pts_map
+
+    def _extract_smart_scene_frames(
+        self,
+        video_path: Path,
+        output_dir: Path,
+        max_frames: int | None,
+        quality: int
+    ) -> tuple[int, dict[str, float]]:
+        """
+        Extrae frames solo cuando la pantalla cambia realmente,
+        ignorando movimientos de cursor y micro-actualizaciones de UI.
+
+        Pipeline:
+          1. Blur ligero + scene detection con umbral alto.
+          2. Cooldown de 5 s entre frames.
+          3. Deduplicación por hash perceptual (elimina >90 %% similares).
+          4. Límite estricto a max_frames.
+
+        Returns:
+            Tupla (frame_count, {frame_filename: pts_seconds}) — el PTS real
+            detectado en la fase 1, nunca una estimación uniforme.
+        """
+        scene_th = float(os.getenv("SMART_SCENE_THRESHOLD", "0.5"))
+        cooldown_s = float(os.getenv("SMART_SCENE_COOLDOWN", "5.0"))
+        min_scene_blur = int(os.getenv("SMART_SCENE_BLUR", "2"))
+
+        prefilter = f"gblur=sigma={min_scene_blur}:steps=1,"
+        pts_list = self._detect_scene_change_pts(video_path, threshold=scene_th, prefilter=prefilter)
+
+        if not pts_list:
+            logger.warning("[KEYFRAMES] smart_scene: no scene changes detected")
+            return 0, {}
+
+        # Enforce cooldown between frames
+        filtered_pts = []
+        last = -cooldown_s
+        for pts in pts_list:
+            if pts - last >= cooldown_s:
+                filtered_pts.append(pts)
+                last = pts
+
+        # Hard limit before extraction
+        if max_frames and len(filtered_pts) > max_frames:
+            step = len(filtered_pts) / max_frames
+            filtered_pts = [filtered_pts[int(i * step)] for i in range(max_frames)]
+
+        pts_map = self._extract_frames_at_pts(video_path, output_dir, filtered_pts, quality)
+        extracted = sorted(output_dir.glob(f"frame_*.{self.frame_format}"))
 
         # Phase 3: deduplicate perceptual hashes
         if len(extracted) > 1:
             try:
                 extracted = self._deduplicate_by_hash(extracted, similarity=0.90)
+                pts_map = {f.name: pts_map[f.name] for f in extracted if f.name in pts_map}
             except Exception as e:
                 logger.warning(f"[KEYFRAMES] dedup skipped: {e}")
 
         # Phase 4: final strict max_frames
         if max_frames and len(extracted) > max_frames:
             for f in extracted[max_frames:]:
+                pts_map.pop(f.name, None)
                 try:
                     f.unlink()
                 except Exception:
                     pass
             extracted = extracted[:max_frames]
 
-        return len(extracted)
+        return len(extracted), pts_map
 
     def _deduplicate_by_hash(
         self,
