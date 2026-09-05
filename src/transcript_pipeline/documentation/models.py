@@ -11,15 +11,28 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 Confidence = Literal["high", "medium", "low"]
+# What grounds `instruction`, in order of preference — never upgraded by the
+# presence of `visual_description` (an unverified AI interpretation, kept
+# strictly separate; see US-001 §4.7).
+EvidenceSource = Literal["transcript", "ocr", "none"]
 
 
 @dataclass(frozen=True)
 class ProceduralStep:
     """One documented moment in the source video, grounded in evidence.
 
-    `instruction` is always derived directly from `transcript_ref` (or a
-    fixed placeholder when there is none) — never LLM-invented text — so a
-    step can never assert something the evidence doesn't support.
+    `instruction` is derived only from directly-captured evidence — the
+    transcript excerpt (`transcript_ref`) or, failing that, OCR text actually
+    read off the frame (`ocr_text`) — never LLM-invented text, so a step can
+    never assert something the evidence doesn't support. `visual_description`
+    is a separate, clearly-labeled AI *interpretation* of the frame (vision
+    LLM) that is never merged into `instruction` and never raises
+    `confidence` — see `engine.build_steps`/`_gather_visual_evidence`.
+
+    `reviewed` and `instruction`/`title` edits are the human-review surface
+    (§4.8): a human can edit/approve a step without that being confused with
+    the machine-computed `confidence` (evidence quality) or `evidence_source`
+    (what evidence produced the original instruction).
     """
     id: str
     order: int
@@ -31,6 +44,9 @@ class ProceduralStep:
     confidence: Confidence
     tags: list[str] = field(default_factory=list)
     visual_description: str | None = None
+    ocr_text: str | None = None
+    evidence_source: EvidenceSource = "transcript"
+    reviewed: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -46,7 +62,21 @@ class ProceduralStep:
             "confidence": self.confidence,
             "tags": self.tags,
             "visual_description": self.visual_description,
+            "ocr_text": self.ocr_text,
+            "evidence_source": self.evidence_source,
+            "reviewed": self.reviewed,
         }
+
+    @staticmethod
+    def from_dict(data: dict) -> ProceduralStep:
+        return ProceduralStep(
+            id=data["id"], order=data["order"], title=data["title"], instruction=data["instruction"],
+            timestamp=data["timestamp"], frame_ref=data.get("frame_ref"),
+            transcript_ref=data.get("transcript_ref", ""), confidence=data.get("confidence", "low"),
+            tags=data.get("tags", []), visual_description=data.get("visual_description"),
+            ocr_text=data.get("ocr_text"), evidence_source=data.get("evidence_source", "transcript"),
+            reviewed=data.get("reviewed", False),
+        )
 
 
 @dataclass(frozen=True)
@@ -57,3 +87,22 @@ class DocumentationSource:
     language: str
     extraction_method: str
     generated_at: str
+
+    def to_dict(self) -> dict:
+        return {
+            "video_name": self.video_name,
+            "duration": self.duration,
+            "language": self.language,
+            "extraction_method": self.extraction_method,
+            "generated_at": self.generated_at,
+        }
+
+    @staticmethod
+    def from_dict(data: dict, *, video_name: str, generated_at: str) -> DocumentationSource:
+        return DocumentationSource(
+            video_name=data.get("video_name", video_name),
+            duration=data.get("duration", 0.0),
+            language=data.get("language", "unknown"),
+            extraction_method=data.get("extraction_method", "unknown"),
+            generated_at=generated_at,
+        )

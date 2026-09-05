@@ -484,16 +484,18 @@ class SimpleScanProcessor:
         except Exception as e:
             logger.error(f"[FRAMES+TRANS] Error merging transcription: {e}")
 
-    def _generate_documentation_bundle(self, audio_path: Path, frame_info: dict):
+    def _generate_documentation_bundle(self, audio_path: Path, frame_info: dict, project_config: dict | None = None):
         """Builds the human manual + AI-ready package from the frame mapping
         this same run just wrote (real PTS, transcript-aligned). Non-fatal:
         a failure here must never block the transcription output itself.
+        `project_config` threads through to the same privacy gate every
+        other outbound-AI call site uses (vision-LLM frame descriptions).
         """
         if not TUTORIAL_FEATURES_AVAILABLE:
             return
         try:
             frames_dir = Path(frame_info["frames_dir"])
-            summary = generate_documentation(frames_dir, audio_path.name)
+            summary = generate_documentation(frames_dir, audio_path.name, project_config=project_config)
             logger.info(
                 "[DOCS] Generated manual + AI package for %s (%d steps, %d low-confidence)",
                 audio_path.name, summary["step_count"], summary["low_confidence_count"]
@@ -649,7 +651,7 @@ class SimpleScanProcessor:
             frame_info = result.get("frame_info")
             if frame_info:
                 self._integrate_transcription_with_frames(result, frame_info)
-                self._generate_documentation_bundle(audio_path, frame_info)
+                self._generate_documentation_bundle(audio_path, frame_info, result.get("project"))
 
             self.save_transcription(audio_path, result)
 
