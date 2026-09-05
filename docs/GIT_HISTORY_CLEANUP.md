@@ -13,13 +13,26 @@ so below, `CLIENT_NAME_A`, `CLIENT_HANDLER_A`, `OLD_CLIENT_PREFIX`,
 `REDACTED_LOCAL_PATH`, `REDACTED_PROJECT`, and `REDACTED_TASK` each stand
 in for one real string the owner already knows. A regression check
 (`scripts/security.py::check_no_denylisted_identifiers`) fails the build if
-the real values it protects against ever reappear in a tracked file — the
-actual denylist is never tracked in this repo (owner-local
-`.sensitive-identifiers`, gitignored, or a private `SENSITIVE_IDENTIFIERS`
-CI secret; see the docstring above `_load_private_denylist` in that
-script). Neither is required for public clones/forks — the check simply
-reports `SKIPPED: no private denylist configured` and the rest of the
-security harness still runs.
+the real values it protects against ever reappear in a tracked file. A
+second check (`check_denylisted_identifiers_in_history`) runs the same
+denylist against the *entire* git history (`git log --all -p` — commit
+messages and diff content, not just the current tree) — this automates the
+one-time manual audit below (`git log --all -p | grep ...`) into a
+repeatable regression check. Both read the same denylist, which is never
+tracked in this repo (owner-local `.sensitive-identifiers`, gitignored, or
+a private `SENSITIVE_IDENTIFIERS` CI secret; see the docstring above
+`_load_private_denylist` in that script). Neither check is required for
+public clones/forks — both simply report `SKIPPED: no private denylist
+configured` and the rest of the security harness still runs.
+
+Deliberately **not** wired into CI as a required secret: the history check
+will (correctly) keep finding the already-documented, already-accepted
+items below until the history rewrite in this doc is actually run, and
+that rewrite is explicitly an owner-only decision (see "Risks and
+consequences" at the bottom) — making it a hard CI gate would force that
+decision by CI noise rather than by choice. Run
+`python scripts/security.py` locally (with `.sensitive-identifiers`
+populated) whenever you want to re-verify both checks for real.
 
 ## What was audited
 

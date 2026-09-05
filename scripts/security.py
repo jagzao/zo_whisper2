@@ -234,6 +234,49 @@ def check_no_denylisted_identifiers(report: list[dict]) -> None:
         _log(report, "denylisted_identifier_hit", False, hit)
 
 
+def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
+    """Same denylist as `check_no_denylisted_identifiers`, but scanning
+    every commit ever pushed to any ref (`git log --all -p`), not just the
+    current tree — a real client name removed from HEAD but still sitting
+    in an old commit is still public once the repo is public. Uses the same
+    SKIPPED-not-FAILED semantics when no private denylist is configured (see
+    `_load_private_denylist`), and the same file-based exceptions."""
+    loaded = _load_private_denylist()
+    if loaded is None:
+        _log(report, "no_denylisted_identifiers_history", True, "SKIPPED: no private denylist configured")
+        return
+    denylist, denylist_allowed = loaded
+
+    try:
+        result = subprocess.run(
+            ["git", "log", "--all", "-p", "--full-history"],
+            cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=180,
+        )
+    except Exception as e:
+        _log(report, "no_denylisted_identifiers_history", False, f"git log failed: {e}")
+        return
+
+    current_file = ""
+    hits: set[str] = set()
+    for line in result.stdout.splitlines():
+        if line.startswith("diff --git a/"):
+            current_file = line[len("diff --git a/"):].split(" b/")[0]
+            continue
+        if not line.startswith(("+", "-")) or line.startswith(("+++", "---")):
+            continue
+        filename = Path(current_file).name
+        lower = line.lower()
+        for token in denylist:
+            if filename in denylist_allowed.get(token, set()):
+                continue
+            if token in lower:
+                hits.add(f"denylisted identifier found in git history ({current_file or 'unknown path'})")
+
+    _log(report, "no_denylisted_identifiers_history", not hits, f"{len(hits)} distinct location(s)")
+    for hit in sorted(hits)[:10]:
+        _log(report, "denylisted_identifier_history_hit", False, hit)
+
+
 def check_dependency_audit(report: list[dict]) -> None:
     try:
         result = subprocess.run(
@@ -261,6 +304,7 @@ def main() -> int:
     check_committed_secrets(report)
     check_env_gitignored(report)
     check_no_denylisted_identifiers(report)
+    check_denylisted_identifiers_in_history(report)
     check_path_traversal(report)
     check_dependency_audit(report)
     ok = all(r["status"] == "PASS" for r in report)
