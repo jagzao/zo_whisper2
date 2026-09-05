@@ -1,6 +1,6 @@
 [project]
 name = "transcript-pipeline"
-version = "1.0.0"
+version = "1.1.0"
 description = "Zo Whisper Studio — local-first AI media intelligence: faster-whisper transcription, declarative per-project routing, and a video-to-documentation engine for tutorials/meetings."
 readme = "README.md"
 license = "MIT"
