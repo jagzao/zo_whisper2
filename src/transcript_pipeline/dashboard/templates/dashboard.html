@@ -372,6 +372,21 @@
             padding: 0.6rem 0.9rem; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--muted);
         }
         .ai-package-summary strong { color: var(--accent); }
+        .ai-package-link { color: var(--accent); text-decoration: underline; }
+        .doc-step {
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 0.625rem;
+            padding: 0.9rem; margin-bottom: 0.75rem;
+        }
+        .doc-step-header { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .doc-step-header strong { flex: 1; color: var(--text); }
+        .doc-step-frame { max-width: 100%; max-height: 160px; border-radius: 0.375rem; border: 1px solid var(--border); margin-bottom: 0.5rem; display: block; }
+        .doc-step-instruction { width: 100%; font-family: inherit; resize: vertical; }
+        .doc-step-vision {
+            margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-left: 3px solid var(--accent-2);
+            background: rgba(123,44,255,0.06); border-radius: 0.375rem; font-size: 0.85rem; color: var(--muted);
+        }
+        .doc-step-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
+        .doc-step-reviewed { display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--muted); flex: 1; }
         .table-toolbar {
             display: flex;
             gap: 0.75rem;
@@ -1327,35 +1342,97 @@
                 el.innerHTML = `<p style="color:var(--muted)">${res.error || 'No documentation generated for this video yet.'}</p>`;
                 return;
             }
-            const manualHtml = res.manual_markdown ? renderManualMarkdown(res.manual_markdown) : '';
+            window._docsSteps = res.steps || [];
             const manifest = res.manifest;
+            const lowCount = (res.steps || []).filter(s => s.confidence === 'low').length;
+            const reviewedCount = (res.steps || []).filter(s => s.reviewed).length;
+            const files = res.ai_package_files || {};
+            const downloadLinks = ['manifest', 'chunks', 'knowledge']
+                .filter(k => files[k])
+                .map(k => `<a href="${files[k]}" target="_blank" rel="noopener" class="ai-package-link">${k}</a>`)
+                .join(' · ');
             const aiSummary = manifest
                 ? `<div class="ai-package-summary">
                     <strong>AI-ready package:</strong> ${manifest.procedures.length} step(s),
                     schema v${manifest.schema_version}
-                    (${manifest.procedures.filter(p => p.confidence === 'low').length} flagged for review)
+                    (${lowCount} flagged for review, ${reviewedCount} reviewed)
+                    <button class="secondary" style="margin-left:0.75rem;" onclick="regenerateDocs()">Regenerate</button>
+                    ${downloadLinks ? `<div style="margin-top:0.4rem;">Download: ${downloadLinks}</div>` : ''}
                    </div>`
                 : '';
-            el.innerHTML = aiSummary + manualHtml;
+            el.innerHTML = aiSummary + `<div id="docsStepsList"></div>`;
+            renderDocsSteps();
         }
 
-        // Minimal, dependency-free Markdown->HTML for MANUAL.md (headings,
-        // images, blockquote warnings, paragraphs) — no CDN markdown lib
-        // needed for this fixed, engine-generated shape.
-        function renderManualMarkdown(md) {
-            const lines = md.split('\n');
-            const html = [];
-            for (const line of lines) {
-                if (line.startsWith('## ')) html.push(`<h3>${escapeHtml(line.slice(3))}</h3>`);
-                else if (line.startsWith('# ')) html.push(`<h2>${escapeHtml(line.slice(2))}</h2>`);
-                else if (line.startsWith('> ')) html.push(`<blockquote>${escapeHtml(line.slice(2))}</blockquote>`);
-                else {
-                    const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
-                    if (imgMatch) html.push(`<img src="${imgMatch[2]}" alt="${escapeHtml(imgMatch[1])}" loading="lazy">`);
-                    else if (line.trim()) html.push(`<p>${escapeHtml(line)}</p>`);
-                }
+        function renderDocsSteps() {
+            const list = document.getElementById('docsStepsList');
+            const steps = window._docsSteps || [];
+            if (!list) return;
+            if (!steps.length) {
+                list.innerHTML = '<p style="color:var(--muted)">No steps left.</p>';
+                return;
             }
-            return html.join('\n');
+            list.innerHTML = steps.map(s => `
+                <div class="doc-step" data-step-id="${s.id}">
+                    <div class="doc-step-header">
+                        <strong>${s.order}. ${escapeHtml(s.title)}</strong>
+                        <span class="status ${s.confidence === 'high' ? 'processed' : (s.confidence === 'medium' ? 'pending' : 'error')}">${s.confidence}</span>
+                        <span class="status ${s.evidence_source === 'transcript' ? 'processed' : 'pending'}">${s.evidence_source}</span>
+                        ${s.reviewed ? '<span class="status processed">✓ reviewed</span>' : ''}
+                    </div>
+                    ${s.frame_url ? `<img src="${s.frame_url}" alt="${s.id}" loading="lazy" class="doc-step-frame">` : ''}
+                    <textarea class="doc-step-instruction" id="instr-${s.id}" rows="2">${escapeHtml(s.instruction)}</textarea>
+                    ${s.visual_description ? `<div class="doc-step-vision">🤖 AI interpretation (unverified): ${escapeHtml(s.visual_description)}</div>` : ''}
+                    <div class="doc-step-actions">
+                        <label class="doc-step-reviewed">
+                            <input type="checkbox" ${s.reviewed ? 'checked' : ''} onchange="toggleStepReviewed('${s.id}', this.checked)">
+                            Reviewed
+                        </label>
+                        <button onclick="saveStepEdit('${s.id}')">Save</button>
+                        <button class="danger" onclick="deleteStep('${s.id}')">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function saveStepEdit(stepId) {
+            const textarea = document.getElementById('instr-' + stepId);
+            if (!textarea) return;
+            const res = await fetch('/api/documentation/step?id=' + encodeURIComponent(window._mediaId), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                body: JSON.stringify({ step_id: stepId, instruction: textarea.value }),
+            }).then(r => r.json());
+            if (res.ok) { showToast('Step updated'); loadDocs(); }
+            else showToast(res.error || 'Error updating step');
+        }
+
+        async function toggleStepReviewed(stepId, reviewed) {
+            const res = await fetch('/api/documentation/step?id=' + encodeURIComponent(window._mediaId), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                body: JSON.stringify({ step_id: stepId, reviewed }),
+            }).then(r => r.json());
+            if (res.ok) showToast(reviewed ? 'Marked reviewed' : 'Marked unreviewed');
+            else showToast(res.error || 'Error updating step');
+        }
+
+        async function deleteStep(stepId) {
+            if (!confirm('Remove this step from the documentation?')) return;
+            const res = await fetch(
+                `/api/documentation/step?id=${encodeURIComponent(window._mediaId)}&step_id=${encodeURIComponent(stepId)}`,
+                { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }
+            ).then(r => r.json());
+            if (res.ok) { showToast('Step removed'); loadDocs(); }
+            else showToast(res.error || 'Error removing step');
+        }
+
+        async function regenerateDocs() {
+            const res = await fetch('/api/documentation/regenerate?id=' + encodeURIComponent(window._mediaId), {
+                method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+            }).then(r => r.json());
+            if (res.ok) { showToast('Documentation regenerated'); loadDocs(); }
+            else showToast(res.error || 'Error regenerating');
         }
 
         async function loadFrames() {
