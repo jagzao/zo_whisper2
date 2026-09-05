@@ -89,6 +89,7 @@ logger = logging.getLogger(__name__)
 
 TUTORIAL_FEATURES_AVAILABLE = False
 try:
+    from transcript_pipeline.documentation.engine import generate_documentation
     from transcript_pipeline.media.keyframe_extractor import KeyframeExtractor
     from transcript_pipeline.media.utils import clean_transcription, is_tutorial_video
     from transcript_pipeline.postprocessing.timestamp_formatter import TimestampFormatter
@@ -483,6 +484,23 @@ class SimpleScanProcessor:
         except Exception as e:
             logger.error(f"[FRAMES+TRANS] Error merging transcription: {e}")
 
+    def _generate_documentation_bundle(self, audio_path: Path, frame_info: dict):
+        """Builds the human manual + AI-ready package from the frame mapping
+        this same run just wrote (real PTS, transcript-aligned). Non-fatal:
+        a failure here must never block the transcription output itself.
+        """
+        if not TUTORIAL_FEATURES_AVAILABLE:
+            return
+        try:
+            frames_dir = Path(frame_info["frames_dir"])
+            summary = generate_documentation(frames_dir, audio_path.name)
+            logger.info(
+                "[DOCS] Generated manual + AI package for %s (%d steps, %d low-confidence)",
+                audio_path.name, summary["step_count"], summary["low_confidence_count"]
+            )
+        except Exception as e:
+            logger.warning(f"[DOCS] Documentation generation skipped for {audio_path.name}: {e}")
+
     def _create_readable_mapping(self, frames_dir: Path, mapping_data: dict, project_config: dict | None = None):
         """
         Creates a human-readable markdown file with frames, transcription, and
@@ -631,6 +649,7 @@ class SimpleScanProcessor:
             frame_info = result.get("frame_info")
             if frame_info:
                 self._integrate_transcription_with_frames(result, frame_info)
+                self._generate_documentation_bundle(audio_path, frame_info)
 
             self.save_transcription(audio_path, result)
 
