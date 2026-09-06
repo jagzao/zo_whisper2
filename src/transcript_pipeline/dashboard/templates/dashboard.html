@@ -1364,15 +1364,8 @@
             renderDocsSteps();
         }
 
-        function renderDocsSteps() {
-            const list = document.getElementById('docsStepsList');
-            const steps = window._docsSteps || [];
-            if (!list) return;
-            if (!steps.length) {
-                list.innerHTML = '<p style="color:var(--muted)">No steps left.</p>';
-                return;
-            }
-            list.innerHTML = steps.map(s => `
+        function stepCardHtml(s) {
+            return `
                 <div class="doc-step" data-step-id="${s.id}">
                     <div class="doc-step-header">
                         <strong>${s.order}. ${escapeHtml(s.title)}</strong>
@@ -1392,7 +1385,30 @@
                         <button class="danger" onclick="deleteStep('${s.id}')">Remove</button>
                     </div>
                 </div>
-            `).join('');
+            `;
+        }
+
+        function renderDocsSteps() {
+            const list = document.getElementById('docsStepsList');
+            const steps = window._docsSteps || [];
+            if (!list) return;
+            if (!steps.length) {
+                list.innerHTML = '<p style="color:var(--muted)">No steps left.</p>';
+                return;
+            }
+            list.innerHTML = steps.map(stepCardHtml).join('');
+        }
+
+        // Replaces just the one edited step's card in place — a full
+        // loadDocs() re-render (fetch + rebuild the whole panel) proved
+        // flaky to observe from outside (e.g. under E2E automation) since it
+        // tears down and recreates every card; updating in place from the
+        // PATCH response itself is both more robust and cheaper.
+        function applyStepUpdate(updatedStep) {
+            const idx = (window._docsSteps || []).findIndex(s => s.id === updatedStep.id);
+            if (idx >= 0) window._docsSteps[idx] = updatedStep;
+            const card = document.querySelector(`.doc-step[data-step-id="${updatedStep.id}"]`);
+            if (card) card.outerHTML = stepCardHtml(updatedStep);
         }
 
         async function saveStepEdit(stepId) {
@@ -1403,7 +1419,7 @@
                 headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
                 body: JSON.stringify({ step_id: stepId, instruction: textarea.value }),
             }).then(r => r.json());
-            if (res.ok) { showToast('Step updated'); loadDocs(); }
+            if (res.ok) { showToast('Step updated'); applyStepUpdate(res.step); }
             else showToast(res.error || 'Error updating step');
         }
 
@@ -1413,7 +1429,7 @@
                 headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
                 body: JSON.stringify({ step_id: stepId, reviewed }),
             }).then(r => r.json());
-            if (res.ok) showToast(reviewed ? 'Marked reviewed' : 'Marked unreviewed');
+            if (res.ok) { showToast(reviewed ? 'Marked reviewed' : 'Marked unreviewed'); applyStepUpdate(res.step); }
             else showToast(res.error || 'Error updating step');
         }
 

@@ -463,6 +463,14 @@ def _resolve_documentation(media_path: Path, root: MediaRoot) -> dict | None:
     }
 
 
+def _frame_media_url(frames_parent: Path, relative_to_frames_parent: str) -> str:
+    """URL for a raw frame file (relative to frames_parent, where
+    KeyframeExtractor wrote it — NOT manual_dir, whose assets/ only holds
+    copies made for MANUAL.md/ai-package)."""
+    frame_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, frames_parent / relative_to_frames_parent)
+    return f"/doc-asset?id={quote(frame_id, safe='')}"
+
+
 # ── Endpoints ────────────────────────────────────────────────────────────
 @app.route("/")
 def index() -> str:
@@ -827,20 +835,13 @@ def api_documentation() -> Any:
         "knowledge": ai_package_url("knowledge.md"),
     } if manifest_path.exists() else None
 
-    def frame_url(relative_to_frames_parent: str) -> str:
-        # step.frame_ref is the raw frame filename, relative to frames_parent
-        # (where KeyframeExtractor wrote it) — NOT relative to manual_dir
-        # (whose assets/ only holds copies made for MANUAL.md/ai-package).
-        frame_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, frames_parent / relative_to_frames_parent)
-        return f"/doc-asset?id={quote(frame_id, safe='')}"
-
     steps_payload = []
     if (manual_dir / "steps.json").exists():
         _, steps = load_steps(manual_dir)
         for step in steps:
             step_dict = step.to_dict()
             if step.frame_ref:
-                step_dict["frame_url"] = frame_url(step.frame_ref)
+                step_dict["frame_url"] = _frame_media_url(frames_parent, step.frame_ref)
             steps_payload.append(step_dict)
 
     return jsonify({
@@ -871,6 +872,8 @@ def api_documentation_update_step() -> Any:
             frames_parent / "manual", frames_parent / "ai-package", frames_parent, step_id,
             title=payload.get("title"), instruction=payload.get("instruction"), reviewed=payload.get("reviewed"),
         )
+        if updated.get("frame_ref"):
+            updated["frame_url"] = _frame_media_url(frames_parent, updated["frame_ref"])
         return jsonify({"ok": True, "step": updated})
     except KeyError:
         return jsonify({"ok": False, "error": f"step {step_id!r} not found"}), 404
@@ -1026,7 +1029,14 @@ def main() -> None:
     # (see settings.py) — by the time main() runs, dashboard_host is
     # guaranteed to be loopback-only.
     _ensure_folders()
-    app.run(host=SETTINGS.dashboard_host, port=SETTINGS.dashboard_port, debug=False)
+    # threaded=True: single-threaded serving repeatedly stalled unrelated
+    # requests behind a still-open media stream or the browser's own
+    # background polling (/api/status, /api/logs every 3s) — reproduced
+    # while E2E-testing the DOCS review UI. Local single-user dashboard, no
+    # locking on shared JSON files today, but writes are infrequent/
+    # user-driven (edit/delete/upload) — the concurrency risk is far smaller
+    # than a dev server that can stall client requests indefinitely.
+    app.run(host=SETTINGS.dashboard_host, port=SETTINGS.dashboard_port, debug=False, threaded=True)
 
 
 if __name__ == "__main__":

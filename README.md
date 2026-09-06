@@ -52,16 +52,26 @@ CarpetaTranscripciones/{project}/{video}_Frames/{video}/
     assets/step-NNNN.png
 ```
 
-Every step's instruction text is the transcript excerpt found near its
-frame's real timestamp — **never LLM-generated wording** — so a step can
-never assert something the source video doesn't support. A frame with no
-nearby transcript is marked `confidence: "low"` instead of getting a guessed
-instruction, and is flagged for human review in `MANUAL.md`. Editing
-`manual/steps.json` and regenerating rebuilds both bundles without
-re-transcribing (`transcript_pipeline.documentation.engine.regenerate_from_steps`).
-The dashboard's file workspace has a **DOCS** tab that renders the manual and
-an AI-package summary directly (see the "Documentation" action in the files
-table).
+Every step's instruction text comes only from **captured evidence**, in
+order: the transcript excerpt found near the frame's real timestamp
+(`confidence: "high"`); failing that, on-screen text actually read off the
+frame via local OCR (`confidence: "medium"`, only attempted when the
+transcript is empty, so most frames never touch OCR/vision at all). A
+vision-LLM description (privacy-gated exactly like every other outbound-AI
+call — off unless `FRAME_DESCRIPTIONS`/`ALLOW_EXTERNAL_LLM`/`ALLOW_IMAGE_UPLOAD`
+allow it) is only attempted when both come up empty, and is kept as a
+separate, clearly-labeled `visual_description` field — an unverified AI
+*interpretation*, never merged into the instruction and never used to raise
+confidence. A frame with neither is `confidence: "low"`, flagged for review.
+
+The dashboard's file workspace has a **DOCS** tab for exactly that review:
+each step renders as an editable card (instruction text, confidence/
+evidence-source/reviewed badges, the AI interpretation shown separately) with
+Save and Remove actions, plus AI-package download links. Editing or removing
+a step persists `manual/steps.json` and regenerates both bundles immediately
+— without re-transcribing or re-running OCR/vision
+(`transcript_pipeline.documentation.engine.update_step`/`remove_step`/
+`regenerate_from_steps`).
 
 ## Security & Privacy
 
