@@ -9,6 +9,7 @@ input.
 from __future__ import annotations
 
 import json
+import shutil
 
 import pytest
 
@@ -24,6 +25,10 @@ from transcript_pipeline.documentation.engine import (
     write_manual,
 )
 from transcript_pipeline.documentation.models import DocumentationSource, ProceduralStep
+
+requires_tesseract = pytest.mark.skipif(
+    shutil.which("tesseract") is None, reason="tesseract binary not installed"
+)
 
 MAPPING_WITH_TRANSCRIPT = {
     "video_info": {"name": "demo.mp4", "duration": 10.0, "extraction_method": "smart_scene"},
@@ -71,6 +76,7 @@ def test_build_steps_never_hallucinates_beyond_transcript_text():
 
 # ── Visual evidence layering (§4.5/§4.7) ─────────────────────────────────
 
+@requires_tesseract
 def test_ocr_evidence_grounds_instruction_when_transcript_empty(tmp_path, monkeypatch):
     """A frame with no transcript but real on-screen text (OCR) must ground
     `instruction` in that text — labeled, medium confidence — and must NOT
