@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -34,6 +35,29 @@ def _wait_for_server(timeout: float = 30.0) -> bool:
     return False
 
 
+def _drain_output(stream, sink: list[str]) -> None:
+    """Continuously reads lines from `stream` into `sink` for the process's
+    whole lifetime.
+
+    Without this, subprocess.PIPE has a small OS buffer (~64KB on Windows)
+    — Werkzeug logs a line per HTTP request to stderr, and a Playwright
+    smoke run makes enough requests (page polling + explicit calls) to fill
+    it well before the run ends. Once full, the *server process itself*
+    blocks on its next write() to the pipe, unable to handle any further
+    request, until something reads from the other end — exactly the
+    "dashboard stops responding partway through the run" symptom this fixes
+    (reproduced identically on a fresh CI runner with no prior state, always
+    at roughly the same point in a run — the buffer filling, not a load- or
+    memory-dependent flake). See Python docs' own subprocess deadlock
+    warning for stdout=PIPE/stderr=PIPE.
+    """
+    try:
+        for line in iter(stream.readline, ""):
+            sink.append(line)
+    except (ValueError, OSError):
+        pass  # stream closed under us as the process exits — fine
+
+
 def main() -> int:
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT / "src")
@@ -44,17 +68,25 @@ def main() -> int:
         cwd=str(ROOT),
         env=env,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
+        bufsize=1,
     )
+    server_output: list[str] = []
+    drain_thread = threading.Thread(target=_drain_output, args=(server.stdout, server_output), daemon=True)
+    drain_thread.start()
+
     try:
         if not _wait_for_server():
-            out, err = server.communicate(timeout=2)
+            server.terminate()
+            try:
+                server.wait(timeout=5)
+            except Exception:
+                server.kill()
             report = {
                 "status": "FAIL",
                 "detail": "dashboard did not start",
-                "stdout": out,
-                "stderr": err,
+                "server_output": "".join(server_output)[-4000:],
                 "ok": False,
             }
             REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
@@ -75,6 +107,7 @@ def main() -> int:
             "returncode": result.returncode,
             "stdout": result.stdout,
             "stderr": result.stderr,
+            "server_output": "".join(server_output)[-4000:],
             "ok": ok,
         }
     finally:

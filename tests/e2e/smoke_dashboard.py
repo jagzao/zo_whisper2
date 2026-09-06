@@ -395,12 +395,22 @@ def main() -> int:
             check=True, capture_output=True, timeout=30,
         )
         try:
+            # #fileFilter filters the already-fetched window._allFiles array
+            # client-side (applyFileFilters()) — it never re-hits /api/files,
+            # so a file created on disk *after* the page's initial load can
+            # never appear no matter how long this waits without an explicit
+            # reload first.
+            page.evaluate("() => loadFiles()")
             page.locator("#fileFilter").fill("e2e_smoke_delete_target")
             try:
                 page.wait_for_function(
                     "document.querySelectorAll(\"#filesList table tbody tr\").length === 1", timeout=TIMEOUT_MS
                 )
             except Exception as e:
+                # Still a hard, blocking failure below (check(), not
+                # check_soft()) — this only stops an unhandled Playwright
+                # TimeoutError from crashing the script before it can write
+                # its report.
                 print(f"[INFO] delete_target row did not appear: {e}")
             deletable_row = page.locator("#filesList table tbody tr:has-text('e2e_smoke_delete_target')")
             all_ok &= check("delete_target_listed", deletable_row.count() == 1, f"{deletable_row.count()} rows")
