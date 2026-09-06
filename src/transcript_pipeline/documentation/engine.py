@@ -88,17 +88,26 @@ def _vision_description(frame_path: Path, project_config: dict | None) -> str | 
         return None
 
 
-def _gather_visual_evidence(frames_dir: Path | None, frame_file: str | None, project_config: dict | None) -> tuple[str, str | None]:
-    """Returns (ocr_text, vision_description). Only called when the
-    transcript came up empty — avoids redundant vision/OCR work on frames
-    that already have strong grounding (§4.5)."""
+def _gather_visual_evidence(
+    frames_dir: Path | None, frame_file: str | None, project_config: dict | None, transcript_text: str
+) -> tuple[str, str | None]:
+    """Returns (ocr_text, vision_description).
+
+    OCR is local/cheap and always attempted (given a frame) regardless of
+    whether the transcript already grounds the step — a frame can carry
+    genuinely additional captured evidence (an on-screen value, an error
+    message) worth combining with what was said out loud. The privacy-gated
+    vision LLM is the one thing still skipped whenever *either* transcript
+    or OCR already ground the step (§4.5's "avoid redundant vision calls" —
+    OCR is not the expensive/privacy-sensitive step, the vision call is).
+    """
     if frames_dir is None or not frame_file:
         return "", None
     frame_path = frames_dir / frame_file
     ocr = _ocr_text(frame_path)
-    if ocr:
-        return ocr, None  # captured evidence found locally — no need for a vision LLM call
-    return "", _vision_description(frame_path, project_config)
+    if transcript_text or ocr:
+        return ocr, None
+    return ocr, _vision_description(frame_path, project_config)
 
 
 def build_steps(
@@ -113,6 +122,14 @@ def build_steps(
     evidence is gathered and behavior is exactly the transcript-only
     grounding this module started with (keeps existing callers/tests that
     don't care about visual evidence unaffected).
+
+    When both the transcript *and* OCR ground the same frame, `instruction`
+    combines them (evidence_source "transcript_ocr") rather than discarding
+    the on-screen text just because the transcript was non-empty — every
+    word in `instruction` still traces to one of these two captured-evidence
+    sources. `action`/`target` are never populated from either: this module
+    only ever quotes evidence verbatim, it never infers a structured action/
+    target that the evidence doesn't literally state (see ProceduralStep.to_dict).
     """
     frames = sorted(mapping_data.get("frames", []), key=lambda f: f["timestamp"])
     transcription_mapping = mapping_data.get("transcription_mapping", {})
@@ -123,12 +140,14 @@ def build_steps(
         transcript_entry = transcription_mapping.get(frame_file, {})
         transcript_text = (transcript_entry.get("full_text") or "").strip()
 
-        ocr_text = ""
-        vision_description = None
-        if not transcript_text:
-            ocr_text, vision_description = _gather_visual_evidence(frames_dir, frame_file, project_config)
+        ocr_text, vision_description = _gather_visual_evidence(frames_dir, frame_file, project_config, transcript_text)
 
-        if transcript_text:
+        if transcript_text and ocr_text:
+            instruction = f"{transcript_text}\n\nOn-screen text: {ocr_text}"
+            confidence = "high"
+            evidence_source = "transcript_ocr"
+            title_source = transcript_text
+        elif transcript_text:
             instruction = transcript_text
             confidence = "high"
             evidence_source = "transcript"
