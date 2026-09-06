@@ -16,10 +16,20 @@ top of the existing transcription pipeline.
   every tutorial video's already-aligned frame/transcript data now also
   produces `manual/MANUAL.md` (+ `steps.json`, image assets) and
   `ai-package/manifest.json` + `chunks.jsonl` + `knowledge.md`. Every step's
-  instruction is the transcript excerpt itself — never LLM-generated — and
-  a frame with no nearby transcript is marked `confidence: "low"` instead of
-  guessed. `regenerate_from_steps()` rebuilds both bundles from a
-  human-edited `steps.json` without re-transcribing. No LLM call involved.
+  instruction comes only from captured evidence — the transcript excerpt
+  (`confidence: "high"`), or failing that local OCR text read off the frame
+  (`confidence: "medium"`, only attempted when the transcript is empty). A
+  privacy-gated vision-LLM description is attempted only when both come up
+  empty, and is kept as a separate, clearly-labeled `visual_description` —
+  an unverified interpretation, never merged into the instruction and never
+  raising confidence. A frame with neither is `confidence: "low"` instead of
+  guessed.
+- **Human review UI** (§4.8): the dashboard's DOCS tab renders each step as
+  an editable card — instruction text, confidence/evidence-source/reviewed
+  badges, Save/Remove actions — plus AI-package download links and a
+  Regenerate button. `update_step`/`remove_step`/`regenerate_from_steps()`
+  persist edits and rebuild both bundles without re-transcribing or
+  re-running OCR/vision.
 - **Dashboard**: an Overview card (files processed, media duration
   processed, success rate, average processing time), a real (log-derived,
   not fabricated) 8-stage pipeline visualization, a **DOCS** tab in the file
@@ -29,6 +39,11 @@ top of the existing transcription pipeline.
 - `scripts/smoke.py`: a fast, browser-free smoke harness (core imports,
   settings, FFmpeg detection, dashboard boot, documentation engine against a
   tiny fixture) — new required CI job ahead of the E2E job.
+- `scripts/security.py::check_denylisted_identifiers_in_history`: the
+  private-identifier denylist check now also scans full git history
+  (commit messages + diffs across every ref), not only the current tree —
+  automates the one-time manual audit `docs/GIT_HISTORY_CLEANUP.md` already
+  documented into a repeatable regression check.
 
 ### Changed
 
@@ -52,6 +67,14 @@ top of the existing transcription pipeline.
   now share a detect-then-precise-seek pipeline and thread the real PTS
   through.
 - `docs/assets/watermark.py` crashed on a logo image with no alpha channel.
+- `regenerate_from_steps()` read a `source` block from `steps.json` that
+  `_write_steps_json` never actually wrote — duration/language/
+  extraction_method silently reset to `0.0`/`"unknown"` on every
+  regeneration. `steps.json` now persists `source` alongside the steps.
+- Each step's dashboard thumbnail (`frame_url`) 404'd — it was built
+  relative to `manual_dir` (matching `MANUAL.md`'s own `assets/...` image
+  references) instead of `frames_parent`, where the raw frame actually
+  lives.
 
 ## [1.0.0] — Initial public release
 

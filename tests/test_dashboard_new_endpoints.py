@@ -202,6 +202,11 @@ def test_patch_step_edits_instruction_and_persists(client, real_docs):
     assert data["ok"] is True
     assert data["step"]["instruction"] == "Confirmed: click the blue Save button."
     assert data["step"]["reviewed"] is True
+    # Regression: the frontend updates this one step's card in place from
+    # this response (no full reload) — without frame_url here, the step's
+    # thumbnail would vanish on every edit.
+    assert "/doc-asset?id=" in data["step"]["frame_url"]
+    assert client.get(data["step"]["frame_url"]).status_code == 200
 
     # Persisted — a fresh GET reflects the edit without any extra action.
     follow_up = client.get(f"/api/documentation{q(real_docs)}").get_json()

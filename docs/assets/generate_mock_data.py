@@ -85,13 +85,25 @@ def make_transcription(rel_path: str, language: str, text: str, duration: float)
     stem = media_path.stem
     (out_folder / f"{stem}.txt").write_text(text, encoding="utf-8")
 
+    # Split into multiple sentence-level segments (not one giant blob) so
+    # the dashboard's segment-click-to-seek / evidence-navigation flow has
+    # more than one segment to actually navigate between.
+    sentences = [s.strip() for s in text.replace("¿", "").split(". ") if s.strip()]
+    if not sentences:
+        sentences = [text]
+    seg_len = duration / len(sentences)
+    segments = [
+        {"start": round(i * seg_len, 1), "end": round((i + 1) * seg_len, 1), "text": s if s.endswith((".", "?")) else s + "."}
+        for i, s in enumerate(sentences)
+    ]
+
     metadata = {
         "audio_file": str(media_path),
         "language": language,
         "duration": duration,
         "processing_time": round(duration * 0.18, 1),
         "processed_at": datetime.now().isoformat(),
-        "segments_count": 1,
+        "segments_count": len(segments),
     }
     (out_folder / f"{stem}_metadata.json").write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -100,7 +112,7 @@ def make_transcription(rel_path: str, language: str, text: str, duration: float)
     segments_data = {
         **metadata,
         "text": text,
-        "segments": [{"start": 0.0, "end": duration, "text": text}],
+        "segments": segments,
     }
     (out_folder / f"{stem}_segments.json").write_text(
         json.dumps(segments_data, indent=2, ensure_ascii=False), encoding="utf-8"
