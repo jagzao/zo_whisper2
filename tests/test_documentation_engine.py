@@ -124,9 +124,13 @@ def test_vision_description_is_never_used_as_instruction_and_never_raises_confid
     assert "settings panel" not in step.instruction, "vision interpretation must never be merged into instruction"
 
 
-def test_visual_evidence_skipped_entirely_when_transcript_already_grounds_step(tmp_path, monkeypatch):
-    """§4.5: avoid redundant OCR/vision work on frames that already have
-    strong grounding."""
+def test_combined_transcript_and_ocr_ground_instruction_together(tmp_path, monkeypatch):
+    """When a frame has *both* a transcript excerpt and real on-screen text,
+    instruction must combine them (evidence_source "transcript_ocr") rather
+    than silently discarding the OCR text just because the transcript was
+    non-empty — every word still traces to one of the two captured-evidence
+    sources, and confidence stays "high" (never invented, never downgraded
+    by having more evidence)."""
     mapping_transcript_only = {
         "video_info": MAPPING_WITH_TRANSCRIPT["video_info"],
         "transcription_summary": MAPPING_WITH_TRANSCRIPT["transcription_summary"],
@@ -137,12 +141,46 @@ def test_visual_evidence_skipped_entirely_when_transcript_already_grounds_step(t
     frames_dir.mkdir()
     (frames_dir / "frame_0000.png").write_bytes(b"irrelevant")
 
-    calls = []
-    monkeypatch.setattr(engine, "_gather_visual_evidence", lambda *a, **k: calls.append(1) or ("", None))
+    monkeypatch.setattr(engine, "_ocr_text", lambda *a, **k: "New Project Wizard")
+    vision_called = []
+    monkeypatch.setattr(engine, "_vision_description", lambda *a, **k: vision_called.append(1) or "unexpected")
 
-    build_steps(mapping_transcript_only, frames_dir=frames_dir)
+    steps = build_steps(mapping_transcript_only, frames_dir=frames_dir)
 
-    assert not calls, "visual evidence must not be gathered for a frame with transcript grounding"
+    step = steps[0]
+    assert step.evidence_source == "transcript_ocr"
+    assert step.confidence == "high"
+    assert "Click the New Project button to get started." in step.instruction
+    assert "New Project Wizard" in step.instruction
+    assert step.ocr_text == "New Project Wizard"
+    assert not vision_called, "vision LLM must not be called when transcript already grounds the step, even without OCR"
+
+
+def test_vision_skipped_when_transcript_grounds_step_even_if_ocr_empty(tmp_path, monkeypatch):
+    """§4.5: the vision LLM (the expensive/privacy-sensitive step) must never
+    be called once the transcript already grounds a step — regardless of
+    what OCR finds. OCR itself (local, cheap) is still attempted."""
+    mapping_transcript_only = {
+        "video_info": MAPPING_WITH_TRANSCRIPT["video_info"],
+        "transcription_summary": MAPPING_WITH_TRANSCRIPT["transcription_summary"],
+        "frames": [MAPPING_WITH_TRANSCRIPT["frames"][0]],
+        "transcription_mapping": {"frame_0000.png": {"full_text": "Click the New Project button to get started."}},
+    }
+    frames_dir = tmp_path / "frames"
+    frames_dir.mkdir()
+    (frames_dir / "frame_0000.png").write_bytes(b"irrelevant")
+
+    ocr_calls = []
+    vision_calls = []
+    monkeypatch.setattr(engine, "_ocr_text", lambda *a, **k: ocr_calls.append(1) or "")
+    monkeypatch.setattr(engine, "_vision_description", lambda *a, **k: vision_calls.append(1) or "unexpected")
+
+    steps = build_steps(mapping_transcript_only, frames_dir=frames_dir)
+
+    assert ocr_calls, "OCR is local/cheap and should still run even though the transcript already grounds the step"
+    assert not vision_calls, "vision LLM must never be called once the transcript already grounds the step"
+    assert steps[0].evidence_source == "transcript"
+    assert steps[0].instruction == "Click the New Project button to get started."
 
 
 def test_no_frames_dir_skips_visual_evidence_entirely():

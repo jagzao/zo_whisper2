@@ -14,7 +14,7 @@ Confidence = Literal["high", "medium", "low"]
 # What grounds `instruction`, in order of preference — never upgraded by the
 # presence of `visual_description` (an unverified AI interpretation, kept
 # strictly separate; see US-001 §4.7).
-EvidenceSource = Literal["transcript", "ocr", "none"]
+EvidenceSource = Literal["transcript", "ocr", "transcript_ocr", "none"]
 
 
 @dataclass(frozen=True)
