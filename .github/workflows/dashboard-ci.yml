@@ -54,6 +54,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -128,6 +130,16 @@ jobs:
           # installs visible to subsequent steps.
           $ffmpegDir = Split-Path (Get-ChildItem -Path 'C:\ProgramData\chocolatey\lib\ffmpeg*' -Filter ffmpeg.exe -Recurse | Select-Object -First 1).FullName
           if ($ffmpegDir) { Add-Content -Path $env:GITHUB_PATH -Value $ffmpegDir }
+        shell: pwsh
+      - name: Install Tesseract
+        run: |
+          choco install tesseract -y --no-progress
+          # choco's PATH update doesn't reliably propagate to this job's
+          # later steps on windows-latest runners — GITHUB_PATH is the
+          # mechanism GitHub Actions documents for making a step's tool
+          # installs visible to subsequent steps.
+          $tesseractDir = Split-Path (Get-ChildItem -Path 'C:\ProgramData\chocolatey\lib\tesseract*' -Filter tesseract.exe -Recurse | Select-Object -First 1).FullName
+          if ($tesseractDir) { Add-Content -Path $env:GITHUB_PATH -Value $tesseractDir }
         shell: pwsh
       - name: Unit test harness
         run: python scripts/ut.py

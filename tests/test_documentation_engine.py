@@ -81,12 +81,17 @@ def test_ocr_evidence_grounds_instruction_when_transcript_empty(tmp_path, monkey
     """A frame with no transcript but real on-screen text (OCR) must ground
     `instruction` in that text — labeled, medium confidence — and must NOT
     fall through to a vision-LLM call (avoids redundant vision calls, §4.5)."""
-    from PIL import Image, ImageDraw
+    from PIL import Image, ImageDraw, ImageFont
 
     frames_dir = tmp_path / "frames"
     frames_dir.mkdir()
-    img = Image.new("RGB", (300, 60), color="white")
-    ImageDraw.Draw(img).text((5, 5), "Click Deploy Now", fill="black")
+    img = Image.new("RGB", (640, 160), color="white")
+    draw = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.truetype("arial.ttf", 72)
+    except Exception:
+        font = ImageFont.load_default()
+    draw.text((20, 20), "Click Deploy Now", fill="black", font=font)
     img.save(frames_dir / "frame_0001.png")
 
     vision_called = []
@@ -101,6 +106,48 @@ def test_ocr_evidence_grounds_instruction_when_transcript_empty(tmp_path, monkey
     assert step.ocr_text and "Deploy" in step.ocr_text
     assert step.visual_description is None
     assert not vision_called, "vision LLM must not be called when OCR already grounded the step"
+
+
+@requires_tesseract
+def test_real_ocr_combines_with_transcript_into_transcript_ocr(tmp_path, monkeypatch):
+    """Complement to the mocked `test_combined_transcript_and_ocr_ground_instruction_together`:
+    proves the `transcript_ocr` combine path with REAL OCR (no `_ocr_text`
+    monkeypatch). A frame that has both a non-empty transcript and real
+    on-screen text must combine them — `evidence_source == "transcript_ocr"`,
+    confidence stays "high", and both the transcript text and the OCR text
+    appear in `instruction`. Uses a large, high-contrast image so Tesseract
+    reads the phrase dependably across CI runners."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    mapping_transcript_only = {
+        "video_info": MAPPING_WITH_TRANSCRIPT["video_info"],
+        "transcription_summary": MAPPING_WITH_TRANSCRIPT["transcription_summary"],
+        "frames": [MAPPING_WITH_TRANSCRIPT["frames"][0]],
+        "transcription_mapping": {"frame_0000.png": {"full_text": "Click the New Project button to get started."}},
+    }
+    frames_dir = tmp_path / "frames"
+    frames_dir.mkdir()
+    img = Image.new("RGB", (640, 160), color="white")
+    draw = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.truetype("arial.ttf", 72)
+    except Exception:
+        font = ImageFont.load_default()
+    draw.text((20, 20), "Open Settings", fill="black", font=font)
+    img.save(frames_dir / "frame_0000.png")
+
+    vision_called = []
+    monkeypatch.setattr(engine, "_vision_description", lambda *a, **k: vision_called.append(1) or "unexpected")
+
+    steps = build_steps(mapping_transcript_only, frames_dir=frames_dir)
+
+    step = steps[0]
+    assert step.evidence_source == "transcript_ocr"
+    assert step.confidence == "high"
+    assert "Click the New Project button to get started." in step.instruction
+    assert "Open Settings" in step.instruction
+    assert step.ocr_text and "Open Settings" in step.ocr_text
+    assert not vision_called, "vision LLM must not be called when transcript already grounds the step"
 
 
 def test_vision_description_is_never_used_as_instruction_and_never_raises_confidence(tmp_path, monkeypatch):

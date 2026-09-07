@@ -54,15 +54,22 @@ CarpetaTranscripciones/{project}/{video}_Frames/{video}/
 
 Every step's instruction text comes only from **captured evidence**, in
 order: the transcript excerpt found near the frame's real timestamp
-(`confidence: "high"`); failing that, on-screen text actually read off the
-frame via local OCR (`confidence: "medium"`, only attempted when the
-transcript is empty, so most frames never touch OCR/vision at all). A
-vision-LLM description (privacy-gated exactly like every other outbound-AI
-call — off unless `FRAME_DESCRIPTIONS`/`ALLOW_EXTERNAL_LLM`/`ALLOW_IMAGE_UPLOAD`
-allow it) is only attempted when both come up empty, and is kept as a
+(`confidence: "high"`); on-screen text actually read off the frame via local
+OCR (`confidence: "medium"`). OCR is local/cheap and is always attempted when
+a frame is available — regardless of whether the transcript already grounds
+the step — because a frame can carry genuinely additional captured evidence
+(an on-screen value, an error message) worth combining with what was said out
+loud. When both exist, the instruction **combines** them
+(`evidence_source: "transcript_ocr"`), and confidence stays `"high"` — more
+evidence never upgrades past high. A vision-LLM description (privacy-gated
+exactly like every other outbound-AI call — off unless
+`FRAME_DESCRIPTIONS`/`ALLOW_EXTERNAL_LLM`/`ALLOW_IMAGE_UPLOAD` allow it) is
+only attempted when both transcript and OCR come up empty, and is kept as a
 separate, clearly-labeled `visual_description` field — an unverified AI
 *interpretation*, never merged into the instruction and never used to raise
 confidence. A frame with neither is `confidence: "low"`, flagged for review.
+`action`/`target` are never invented: the instruction only ever quotes
+captured evidence verbatim.
 
 The dashboard's file workspace has a **DOCS** tab for exactly that review:
 each step renders as an editable card (instruction text, confidence/

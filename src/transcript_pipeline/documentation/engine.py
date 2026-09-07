@@ -6,14 +6,19 @@ Evidence layering (§4.5), most-grounded first:
 1. Transcript excerpt already stored in `frame_mapping.json` by
    `processor._integrate_transcription_with_frames` — used as `instruction`
    verbatim, confidence "high". Never LLM-touched.
-2. OCR text read directly off the frame (`pytesseract`, local, always
-   attempted when available and the transcript is empty) — also used as
-   `instruction` (labeled as on-screen text), confidence "medium". Still
+2. OCR text read directly off the frame (`pytesseract`, local) — ALWAYS
+   attempted when a frame is available, regardless of the transcript — also
+   used as `instruction` (labeled as on-screen text), confidence "medium".
+   When BOTH transcript and OCR exist the instruction combines them
+   (evidence_source "transcript_ocr", confidence stays "high"). Still
    *captured* evidence, not an interpretation.
 3. Vision LLM description (`AIEnrichmentService.describe_frame_with_prompt`,
    privacy-gated, only attempted when 1 and 2 both came up empty) — stored
    separately as `visual_description`, an unverified AI *interpretation*.
    Never merged into `instruction`, never raises `confidence` above "low".
+
+Action/target are never inferred — this module only quotes captured evidence
+verbatim as `instruction`; it never guesses at what a step does.
 
 This module itself never calls an LLM for *wording that becomes the
 instruction* — only for the clearly-labeled, separate `visual_description`

@@ -34,6 +34,12 @@ decision by CI noise rather than by choice. Run
 `python scripts/security.py` locally (with `.sensitive-identifiers`
 populated) whenever you want to re-verify both checks for real.
 
+The CI `security` job checks out full history (`fetch-depth: 0`), so when a
+`SENSITIVE_IDENTIFIERS` secret is present the history check is honest — it
+scans every commit, not just the latest. If the repo were ever checked out
+shallow, the check fails loudly rather than reporting a partial scan as
+clean.
+
 ## What was audited
 
 Full history (`git log --all -p`) was scanned for: client/project names,

@@ -17,8 +17,10 @@ top of the existing transcription pipeline.
   produces `manual/MANUAL.md` (+ `steps.json`, image assets) and
   `ai-package/manifest.json` + `chunks.jsonl` + `knowledge.md`. Every step's
   instruction comes only from captured evidence — the transcript excerpt
-  (`confidence: "high"`), or failing that local OCR text read off the frame
-  (`confidence: "medium"`, only attempted when the transcript is empty). A
+  (`confidence: "high"`), or local OCR text read off the frame
+  (`confidence: "medium"`, always attempted when a frame is available). When
+  both exist the instruction combines them (`evidence_source:
+  "transcript_ocr"`, confidence stays "high"). A
   privacy-gated vision-LLM description is attempted only when both come up
   empty, and is kept as a separate, clearly-labeled `visual_description` —
   an unverified interpretation, never merged into the instruction and never
