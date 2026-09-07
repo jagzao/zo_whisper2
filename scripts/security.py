@@ -247,6 +247,26 @@ def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
         return
     denylist, denylist_allowed = loaded
 
+    # A shallow clone (default `actions/checkout@v4` without `fetch-depth: 0`)
+    # only has the latest commit, so `git log --all -p` would scan a single
+    # commit and report a clean audit that is really just "nothing in the one
+    # commit we fetched". Never let that masquerade as a full-history scan.
+    try:
+        shallow = subprocess.run(
+            ["git", "rev-parse", "--is-shallow-repository"],
+            cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", timeout=30,
+        )
+        if shallow.returncode == 0 and shallow.stdout.strip() == "true":
+            _log(
+                report, "no_denylisted_identifiers_history", False,
+                "cannot audit FULL history: shallow repository (fetch-depth>0 / no fetch-depth: 0). "
+                "Scan would only cover the latest commit.",
+            )
+            return
+    except Exception as e:
+        _log(report, "no_denylisted_identifiers_history", False, f"shallow-repo check failed: {e}")
+        return
+
     try:
         result = subprocess.run(
             ["git", "log", "--all", "-p", "--full-history"],
