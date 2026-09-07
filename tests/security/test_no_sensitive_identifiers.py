@@ -9,7 +9,7 @@ never become the leak it exists to prevent.
 
 import json
 
-from scripts.security import check_no_denylisted_identifiers
+from scripts.security import check_denylisted_identifiers_in_history, check_no_denylisted_identifiers
 
 
 def test_detects_synthetic_denylisted_string(tmp_path, monkeypatch):
@@ -100,3 +100,83 @@ def test_real_repo_denylist_check_runs_without_error():
     check_no_denylisted_identifiers(report)
     assert report
     assert report[0]["name"] == "no_denylisted_identifiers"
+
+
+def _fake_git_subprocess(log_diff: str = "", log_messages: str = ""):
+    """Returns a stub for `scripts.security.subprocess.run` that answers the
+    three git invocations used by `check_denylisted_identifiers_in_history`
+    (shallow check, `git log -p`, and commit-message log), dispatching on the
+    command args so the real history is never touched."""
+
+    def _run(args, **kwargs):
+        if args[:3] == ["git", "rev-parse", "--is-shallow-repository"]:
+            return type("R", (), {"returncode": 0, "stdout": "false\n"})()
+        if args[:3] == ["git", "log", "--all"]:
+            if "--format=%s%n%b" in args:
+                return type("R", (), {"returncode": 0, "stdout": log_messages})()
+            return type("R", (), {"returncode": 0, "stdout": log_diff})()
+        raise AssertionError(f"unexpected git invocation: {args}")
+
+    return _run
+
+
+def test_history_check_detects_token_in_commit_message(monkeypatch):
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: ({"test_client_secret"}, {}))
+    monkeypatch.setattr(
+        "scripts.security.subprocess.run",
+        _fake_git_subprocess(
+            log_diff="diff --git a/clean.md b/clean.md\nclean content\n",
+            log_messages="Some subject mentioning TEST_CLIENT_SECRET\n",
+        ),
+    )
+
+    report: list[dict] = []
+    check_denylisted_identifiers_in_history(report)
+
+    assert any(r["status"] == "FAIL" for r in report)
+    assert any("commit message" in r.get("detail", "") for r in report)
+
+
+def test_history_check_passes_when_token_in_neither_diff_nor_message(monkeypatch):
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: ({"test_client_secret"}, {}))
+    monkeypatch.setattr(
+        "scripts.security.subprocess.run",
+        _fake_git_subprocess(
+            log_diff="diff --git a/clean.md b/clean.md\nclean content\n",
+            log_messages="Some clean subject\n",
+        ),
+    )
+
+    report: list[dict] = []
+    check_denylisted_identifiers_in_history(report)
+
+    assert all(r["status"] == "PASS" for r in report)
+
+
+def test_history_check_detects_token_in_diff(monkeypatch):
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: ({"test_client_secret"}, {}))
+    monkeypatch.setattr(
+        "scripts.security.subprocess.run",
+        _fake_git_subprocess(
+            log_diff="diff --git a/leaky.md b/leaky.md\n+added TEST_CLIENT_SECRET line\n",
+            log_messages="Some clean subject\n",
+        ),
+    )
+
+    report: list[dict] = []
+    check_denylisted_identifiers_in_history(report)
+
+    assert any(r["status"] == "FAIL" for r in report)
+
+
+def test_history_check_skipped_cleanly_when_no_private_denylist(monkeypatch):
+    """A public clone/fork with no .sensitive-identifiers and no
+    SENSITIVE_IDENTIFIERS secret must not fail the history check."""
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: None)
+
+    report: list[dict] = []
+    check_denylisted_identifiers_in_history(report)
+
+    assert len(report) == 1
+    assert report[0]["status"] == "PASS"
+    assert "SKIPPED" in report[0]["detail"]
