@@ -267,6 +267,15 @@ def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
         _log(report, "no_denylisted_identifiers_history", False, f"shallow-repo check failed: {e}")
         return
 
+    # A denylisted token can appear in a commit's *message* (subject/body)
+    # without ever touching a file's diff, in which case `git log -p` (which
+    # only prefixes added/removed lines with +/-) would never surface it.
+    # docs/GIT_HISTORY_CLEANUP.md documents the history scan as covering
+    # commit messages too, so scan `--format=%s%n%b` (subject + body) of every
+    # commit explicitly. File-level allow-exceptions don't apply to a commit
+    # message (there is no file), so those tokens are treated as hits.
+    current_file = ""
+    hits: set[str] = set()
     try:
         result = subprocess.run(
             ["git", "log", "--all", "-p", "--full-history"],
@@ -275,9 +284,6 @@ def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
     except Exception as e:
         _log(report, "no_denylisted_identifiers_history", False, f"git log failed: {e}")
         return
-
-    current_file = ""
-    hits: set[str] = set()
     for line in result.stdout.splitlines():
         if line.startswith("diff --git a/"):
             current_file = line[len("diff --git a/"):].split(" b/")[0]
@@ -291,6 +297,20 @@ def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
                 continue
             if token in lower:
                 hits.add(f"denylisted identifier found in git history ({current_file or 'unknown path'})")
+
+    try:
+        messages = subprocess.run(
+            ["git", "log", "--all", "--format=%s%n%b"],
+            cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=30,
+        )
+    except Exception as e:
+        _log(report, "no_denylisted_identifiers_history", False, f"git log (commit messages) failed: {e}")
+        return
+    for line in messages.stdout.splitlines():
+        lower = line.lower()
+        for token in denylist:
+            if token in lower:
+                hits.add("denylisted identifier found in git history (commit message)")
 
     _log(report, "no_denylisted_identifiers_history", not hits, f"{len(hits)} distinct location(s)")
     for hit in sorted(hits)[:10]:

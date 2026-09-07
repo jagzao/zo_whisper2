@@ -65,6 +65,12 @@ jobs:
           pip install -e ".[dev]"
       - name: Security harness
         run: python scripts/security.py
+        env:
+          # Optional: only set when the repo/org defines this secret. When
+          # absent, the security harness reports the denylist checks as
+          # SKIPPED (no failure); when present, it runs the real history and
+          # tree scans against the private list.
+          SENSITIVE_IDENTIFIERS: ${{ secrets.SENSITIVE_IDENTIFIERS }}
       - name: Generate SBOM (CycloneDX)
         if: always()
         run: python -m pip_audit --format cyclonedx-json -o sbom.json
@@ -138,8 +144,23 @@ jobs:
           # later steps on windows-latest runners — GITHUB_PATH is the
           # mechanism GitHub Actions documents for making a step's tool
           # installs visible to subsequent steps.
-          $tesseractDir = Split-Path (Get-ChildItem -Path 'C:\ProgramData\chocolatey\lib\tesseract*' -Filter tesseract.exe -Recurse | Select-Object -First 1).FullName
+          # The choco tesseract package installs the binary to
+          # C:\Program Files\Tesseract-OCR\tesseract.exe (NOT under
+          # C:\ProgramData\chocolatey\lib\tesseract*), so prefer that
+          # deterministic location first and only fall back to the
+          # recursive lib search (FFmpeg-style) as a safety net.
+          $tesseract = 'C:\Program Files\Tesseract-OCR\tesseract.exe'
+          if (Test-Path -LiteralPath $tesseract) {
+            $tesseractDir = Split-Path $tesseract
+          } else {
+            $tesseractDir = Split-Path (Get-ChildItem -Path 'C:\ProgramData\chocolatey\lib\*' -Filter tesseract.exe -Recurse | Select-Object -First 1).FullName
+          }
           if ($tesseractDir) { Add-Content -Path $env:GITHUB_PATH -Value $tesseractDir }
+        shell: pwsh
+      - name: Verify Tesseract
+        run: |
+          tesseract --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         shell: pwsh
       - name: Unit test harness
         run: python scripts/ut.py
