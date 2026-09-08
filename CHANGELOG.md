@@ -77,6 +77,26 @@ top of the existing transcription pipeline.
   relative to `manual_dir` (matching `MANUAL.md`'s own `assets/...` image
   references) instead of `frames_parent`, where the raw frame actually
   lives.
+- **Release blocker, found during final manual acceptance**:
+  `MasterProcessor.run_transcription_and_routing()` — the code path actually
+  used by `RUN_MAX_QUALITY.bat` and the dashboard's **RUN Full** button —
+  reimplements `SimpleScanProcessor.process_file()`'s per-file flow by hand
+  and had silently dropped the `_generate_documentation_bundle()` call. Every
+  prior test/CI signal for the documentation engine went through
+  `process_file()` or `generate_documentation()` directly, so this drift
+  went unnoticed: a tutorial video run through the real production entry
+  point got real keyframes and an aligned transcript, but **no
+  `manual/MANUAL.md` or `ai-package/` was ever generated**. Fixed by adding
+  the missing call; regression added in
+  `tests/integration/test_handler_routing.py`
+  (`test_tutorial_frame_info_triggers_documentation_bundle`).
+- A log message containing a non-ASCII character (e.g. the `→` in
+  `[ROUTE] %s → %s`) raised `UnicodeEncodeError` inside the console
+  `StreamHandler` on a default Windows terminal (cp1252) — logging silently
+  swallowed it as a printed `Logging error`, dropping that line from the
+  console/dashboard log tail instead of crashing outright. `configure_logging()`
+  now reconfigures `sys.stdout` with `errors="backslashreplace"` when it's a
+  real `TextIOWrapper`. Regression added in `tests/test_logging_setup.py`.
 
 ## [1.0.0] — Initial public release
 
