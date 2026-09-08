@@ -19,6 +19,7 @@ be told apart from another in a shared log file.
 
 from __future__ import annotations
 
+import io
 import logging
 import sys
 import uuid
@@ -62,6 +63,15 @@ def configure_logging(log_filename: str, *, run_id: str | None = None) -> str:
         return existing or "-"
 
     run_id = run_id or new_run_id()
+    # sys.stdout's encoding follows the OS console codepage (cp1252 on a
+    # default Windows terminal) — a log message with a non-ASCII character
+    # (e.g. "→") then raises UnicodeEncodeError inside the handler, which
+    # logging swallows as a printed "Logging error" instead of crashing the
+    # process, silently dropping that line from the console/dashboard log
+    # tail. reconfigure(errors=...) keeps the console's own encoding but
+    # substitutes unencodable characters instead of failing.
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(errors="backslashreplace")
     handlers: list[logging.Handler] = [
         logging.FileHandler(PROJECT_ROOT / log_filename, encoding="utf-8"),
         logging.StreamHandler(sys.stdout),

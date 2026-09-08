@@ -25,6 +25,9 @@ audio/
 Videos/
 Video_compress/
 
+# ── Video demo sintético generado localmente (RUN_DEMO.bat) ────────────────
+demo/
+
 # ── Salidas generadas ────────────────────────────────────────────────────────
 CarpetaTranscripciones/
 Frames/
