@@ -126,6 +126,7 @@ class MasterProcessor:
                 frame_info = result.get("frame_info")
                 if frame_info:
                     processor._integrate_transcription_with_frames(result, frame_info)
+                    processor._generate_documentation_bundle(audio_path, frame_info, result.get("project"))
 
                 processor.save_transcription(audio_path, result)
 
