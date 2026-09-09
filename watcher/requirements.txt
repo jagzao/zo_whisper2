@@ -37,4 +37,4 @@ demucs>=4.0.0  # Source separation (vocals extraction)
 silero-vad>=0.4.0
 torch>=2.0.0  # For Silero VAD
 # Forced alignment for precise timestamps
-whisperx>=3.1.0
+whisperx>=3.8.6
