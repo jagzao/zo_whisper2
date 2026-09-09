@@ -42,7 +42,7 @@ vision = [
 # `dependencies` is still the real win: a plain `pip install .` never
 # drags in the Azure SDKs unless this extra is explicitly requested.
 documents = [
-    "markitdown==0.0.2",
+    "markitdown==0.1.7",
 ]
 all = [
     "transcript-pipeline[llm,vision,documents]",
