@@ -221,7 +221,7 @@ pydub==0.25.1
     # via markitdown
 pyee==13.0.1
     # via playwright
-pygments==2.20.0
+pygments==2.21.0
     # via
     #   pytest
     #   rich
