@@ -57,7 +57,7 @@ cryptography==50.0.0
     #   msal
     #   pdfminer-six
     #   pyjwt
-ctranslate2==4.8.1
+ctranslate2==4.8.2
     # via faster-whisper
 cyclonedx-python-lib==11.12.0
     # via pip-audit
