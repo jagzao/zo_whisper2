@@ -129,7 +129,7 @@ markdown-it-py==4.2.0
     # via rich
 markdownify==1.2.3
     # via markitdown
-markitdown==0.0.2
+markitdown==0.1.7
     # via transcript-pipeline (pyproject.toml)
 markupsafe==3.0.3
     # via
