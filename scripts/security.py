@@ -54,16 +54,41 @@ def _log(report: list[dict], name: str, ok: bool, detail: str = "") -> None:
     print(f"[{'PASS' if ok else 'FAIL'}] {name}: {detail}" if detail else f"[{'PASS' if ok else 'FAIL'}] {name}")
 
 
-def _git_tracked_files() -> list[Path]:
+class GitCommandError(RuntimeError):
+    """Raised when a git subprocess used by a security gate exits non-zero.
+
+    Every security gate is fail-closed: a failed git command must FAIL the
+    gate, never silently produce an empty/partial result that looks like
+    zero hits. A non-zero exit (e.g. a corrupt repo, a missing object, or a
+    permission error) is indistinguishable from "nothing to scan" only if we
+    ignore the return code — which is exactly the bug this class prevents.
+    """
+
+
+def _run_git(args: list[str], *, timeout: int = 180) -> subprocess.CompletedProcess:
+    """Run a git subprocess and raise `GitCommandError` on any non-zero exit.
+
+    Callers treat `GitCommandError` as a FAIL of their gate. This is the
+    single choke point for every git invocation in the harness so no call
+    site can accidentally fall back to a fail-open empty result.
+    """
     result = subprocess.run(
-        ["git", "ls-files"],
+        args,
         cwd=str(ROOT),
         capture_output=True,
         text=True,
         encoding="utf-8",
+        errors="ignore",
+        timeout=timeout,
     )
     if result.returncode != 0:
-        return []
+        stderr = (result.stderr or "").strip()
+        raise GitCommandError(f"git {' '.join(args)} exited {result.returncode}: {stderr}")
+    return result
+
+
+def _git_tracked_files() -> list[Path]:
+    result = _run_git(["git", "ls-files"], timeout=60)
     files: list[Path] = []
     for line in result.stdout.splitlines():
         path = ROOT / line.strip()
@@ -83,7 +108,11 @@ def _should_scan(path: Path) -> bool:
 
 
 def check_committed_secrets(report: list[dict]) -> None:
-    files = _git_tracked_files()
+    try:
+        files = _git_tracked_files()
+    except GitCommandError as e:
+        _log(report, "committed_secrets", False, f"git ls-files failed: {e}")
+        return
     hits: list[str] = []
     for path in files:
         if not _should_scan(path):
@@ -210,7 +239,11 @@ def check_no_denylisted_identifiers(report: list[dict]) -> None:
         return
     denylist, denylist_allowed = loaded
 
-    files = _git_tracked_files()
+    try:
+        files = _git_tracked_files()
+    except GitCommandError as e:
+        _log(report, "no_denylisted_identifiers", False, f"git ls-files failed: {e}")
+        return
     hits: list[str] = []
     for path in files:
         if not _should_scan(path):
@@ -252,18 +285,15 @@ def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
     # commit and report a clean audit that is really just "nothing in the one
     # commit we fetched". Never let that masquerade as a full-history scan.
     try:
-        shallow = subprocess.run(
-            ["git", "rev-parse", "--is-shallow-repository"],
-            cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", timeout=30,
-        )
-        if shallow.returncode == 0 and shallow.stdout.strip() == "true":
+        shallow = _run_git(["git", "rev-parse", "--is-shallow-repository"], timeout=30)
+        if shallow.stdout.strip() == "true":
             _log(
                 report, "no_denylisted_identifiers_history", False,
                 "cannot audit FULL history: shallow repository (fetch-depth>0 / no fetch-depth: 0). "
                 "Scan would only cover the latest commit.",
             )
             return
-    except Exception as e:
+    except GitCommandError as e:
         _log(report, "no_denylisted_identifiers_history", False, f"shallow-repo check failed: {e}")
         return
 
@@ -277,11 +307,8 @@ def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
     current_file = ""
     hits: set[str] = set()
     try:
-        result = subprocess.run(
-            ["git", "log", "--all", "-p", "--full-history"],
-            cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=180,
-        )
-    except Exception as e:
+        result = _run_git(["git", "log", "--all", "-p", "--full-history"], timeout=180)
+    except GitCommandError as e:
         _log(report, "no_denylisted_identifiers_history", False, f"git log failed: {e}")
         return
     for line in result.stdout.splitlines():
@@ -299,11 +326,8 @@ def check_denylisted_identifiers_in_history(report: list[dict]) -> None:
                 hits.add(f"denylisted identifier found in git history ({current_file or 'unknown path'})")
 
     try:
-        messages = subprocess.run(
-            ["git", "log", "--all", "--format=%s%n%b"],
-            cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="ignore", timeout=30,
-        )
-    except Exception as e:
+        messages = _run_git(["git", "log", "--all", "--format=%s%n%b"], timeout=30)
+    except GitCommandError as e:
         _log(report, "no_denylisted_identifiers_history", False, f"git log (commit messages) failed: {e}")
         return
     for line in messages.stdout.splitlines():
