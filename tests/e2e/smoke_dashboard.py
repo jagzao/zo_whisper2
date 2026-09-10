@@ -50,12 +50,20 @@ def main() -> int:
         return 1
 
     files = fetch_files()
+    # Prefer a file whose transcription is long enough to exercise the
+    # transcript/evidence UI meaningfully (the `transcription_loaded` check
+    # below requires >100 chars). The synthetic mock-data files are long; a
+    # real short file in the workspace would otherwise be picked first and
+    # fail that check for reasons unrelated to the dashboard. The
+    # transcription dict exposes `size` (bytes), which tracks text length.
     target = next(
-        (f for f in files if f.get("transcription") and f["transcription"].get("id")),
+        (f for f in files
+         if f.get("transcription") and f["transcription"].get("id")
+         and f["transcription"].get("size", 0) > 100),
         None,
     )
     if not target:
-        print("No files with a transcription available to test the modal")
+        print("No file with a sufficiently long transcription available to test the modal")
         return 1
 
     print(f"Test file: {target['name']}")
