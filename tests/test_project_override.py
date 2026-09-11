@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import time
+from pathlib import Path
 
 import pytest
 
@@ -226,3 +227,84 @@ def test_project_change_does_not_modify_transcript_or_artifacts(client, media, e
     for p, (content, mtime_ns) in before.items():
         assert p.read_bytes() == content, f"{p.name} content changed"
         assert p.stat().st_mtime_ns == mtime_ns, f"{p.name} mtime changed"
+
+
+# ── override lifecycle: delete / rename / failed-save atomicity ──────────
+
+def test_delete_media_cleans_override(client, media, env):
+    _save(client, media, "Beta")
+    assert dashboard_app._load_project_overrides() == {media["media_id"]: "Beta"}
+
+    resp = client.delete(f"/api/file?id={media['media_id']}", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+
+    assert not media["video"].exists()
+    assert dashboard_app._load_project_overrides() == {}
+    persisted = json.loads((env["root"] / "project_overrides.json").read_text(encoding="utf-8"))
+    assert persisted == {"overrides": {}}
+
+
+def test_rename_project_updates_overrides(client, media):
+    _save(client, media, "Beta")
+    renamed = {"name": "Beta2", "match": {"prefix": ["beta2_"], "filename_contains": []}, "language": "es"}
+
+    resp = client.post(
+        "/api/projects",
+        json={"action": "update", "name": "Beta", "project": renamed},
+        headers=AUTH_HEADERS,
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+
+    assert dashboard_app._load_project_overrides() == {media["media_id"]: "Beta2"}
+    row = _file_row(client, media["media_id"])
+    assert row["project"] == "Beta2"
+    assert row["project_source"] == "manual"
+
+
+def test_delete_project_cleans_overrides(client, media, env):
+    _save(client, media, "Beta")
+
+    resp = client.post(
+        "/api/projects",
+        json={"action": "delete", "name": "Beta"},
+        headers=AUTH_HEADERS,
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["ok"] is True
+
+    assert dashboard_app._load_project_overrides() == {}
+    persisted = json.loads((env["root"] / "project_overrides.json").read_text(encoding="utf-8"))
+    assert persisted == {"overrides": {}}
+
+
+def test_failed_transcription_save_leaves_no_override(client, media, env, monkeypatch):
+    real_write = dashboard_app._atomic_write_text
+
+    def flaky_write(path, content):
+        if Path(path) == media["tx"]:
+            raise OSError("simulated disk failure")
+        return real_write(path, content)
+
+    monkeypatch.setattr(dashboard_app, "_atomic_write_text", flaky_write)
+
+    resp = _save(client, media, "Beta")
+    assert resp.status_code == 500
+    assert resp.get_json()["error"] == "Could not save transcription"
+    assert dashboard_app._load_project_overrides() == {}
+    assert not (env["root"] / "project_overrides.json").exists()
+    assert media["tx"].read_text(encoding="utf-8") == "original transcription text"
+
+
+def test_failed_override_save_reports_warning_but_keeps_transcription(client, media, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "_save_project_overrides", lambda overrides: False)
+
+    resp = _save(client, media, "Beta")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["ok"] is True
+    assert data["warning"] == "transcription saved but project assignment could not be persisted"
+    # The primary action (the transcription) was saved; only the assignment failed.
+    assert media["tx"].read_text(encoding="utf-8") == "edited text"
+    assert dashboard_app._load_project_overrides() == {}
