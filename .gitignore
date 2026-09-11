@@ -74,7 +74,7 @@ node_modules/
 
 # ── Archivos de medios grandes (por si acaso llegan a raíz) ─────────────────
 *.mp4
-!docs/marketing/zo-whisper-studio-linkedin-demo.mp4
+!docs/marketing/zo-media-intelligence-linkedin-demo.mp4
 *.mkv
 *.mov
 *.avi

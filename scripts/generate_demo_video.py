@@ -24,7 +24,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUT = ROOT / "demo" / "en_demo_zo_whisper_studio_tutorial.mp4"
+DEFAULT_OUT = ROOT / "demo" / "en_demo_zo_media_intelligence_tutorial.mp4"
 SEGMENT_SECONDS = 6
 SIZE = "960x540"
 FONT = "C\\:/Windows/Fonts/arial.ttf"
@@ -44,7 +44,7 @@ VOICE = "Microsoft David Desktop"
 # (a concrete label / a config value) -> combined "transcript_ocr" evidence.
 # Segment 5 has no narration at all -> pure "ocr" evidence.
 SEGMENTS = [
-    ("testsrc", "ZO WHISPER STUDIO", "Welcome to Zo Whisper Studio."),
+    ("testsrc", "ZO MEDIA INTELLIGENCE", "Welcome to Zo Media Intelligence."),
     ("smptebars", "STEP 1: RUN FULL", "Click Run Full to start."),
     ("rgbtestsrc", "PIPELINE: COMPRESS - TRANSCRIBE - KEYFRAMES", "The pipeline transcribes and extracts keyframes."),
     ("pal75bars", "DOCS TAB: MANUAL.MD", "Open the docs tab to review the manual."),

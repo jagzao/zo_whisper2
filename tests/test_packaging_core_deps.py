@@ -41,3 +41,15 @@ def test_core_dependencies_exclude_optional_ai_document_vision_stack():
         f"{forbidden_hits} found in [project.dependencies] — these belong in the "
         "llm/vision/documents optional-dependencies extras, not core."
     )
+
+
+def test_studio_extra_targets_product_users():
+    """The `studio` extra is the product-user install: core + OCR (vision) +
+    reportlab (pdf) — everything needed to experience the public flow."""
+    data = tomllib.loads(Path(PROJECT_ROOT, "pyproject.toml").read_text(encoding="utf-8"))
+    extras = data["project"]["optional-dependencies"]
+    assert "studio" in extras, "pyproject.toml must declare a `studio` extra"
+    studio = " ".join(extras["studio"])
+    assert "vision" in studio, "studio must include the vision (OCR) extra"
+    assert "pdf" in studio, "studio must include the pdf (reportlab) extra"
+    assert "dev" in extras, "dev (contributor) extra must still exist"

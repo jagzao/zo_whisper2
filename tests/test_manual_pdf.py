@@ -237,7 +237,9 @@ def test_regeneration_does_not_retranscribe_or_rerun_ocr_vision(generated, monke
 
 def test_pdf_skipped_gracefully_when_reportlab_unavailable(generated, monkeypatch, tmp_path):
     """Core installs without the `pdf` extra must still get MANUAL.md — the
-    PDF is skipped with a warning, never an error."""
+    PDF is skipped with a warning, never an error. The metadata must record
+    the absence so the API can surface it instead of pretending the human
+    bundle is complete."""
     frames_dir, _, _ = generated
     fresh_manual_dir = tmp_path / "fresh-manual"
     monkeypatch.setattr(engine, "_PDF_AVAILABLE", False)
@@ -246,3 +248,37 @@ def test_pdf_skipped_gracefully_when_reportlab_unavailable(generated, monkeypatc
 
     assert (fresh_manual_dir / "MANUAL.md").exists()
     assert not (fresh_manual_dir / "MANUAL.pdf").exists()
+    metadata = json.loads((fresh_manual_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["manual_pdf"] == "missing"
+
+
+def test_write_manual_records_pdf_generation_failure_in_metadata(generated, monkeypatch, tmp_path):
+    """reportlab present but the PDF write raises: MANUAL.md still works
+    (graceful degradation), but metadata.json must record the failure so the
+    API/DOCS tab can report it visibly."""
+    frames_dir, _, _ = generated
+    fresh_manual_dir = tmp_path / "fresh-manual"
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated reportlab failure")
+
+    monkeypatch.setattr(engine, "write_manual_pdf", _boom)
+
+    write_manual(fresh_manual_dir, _source(), _steps(), frames_dir)
+
+    assert (fresh_manual_dir / "MANUAL.md").exists()
+    assert not (fresh_manual_dir / "MANUAL.pdf").exists()
+    metadata = json.loads((fresh_manual_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["manual_pdf"] == "failed"
+
+
+def test_write_manual_records_pdf_ok_when_generated(generated, tmp_path):
+    """Happy path: a successful PDF write is recorded as "ok" in metadata."""
+    frames_dir, _, _ = generated
+    fresh_manual_dir = tmp_path / "fresh-manual"
+
+    write_manual(fresh_manual_dir, _source(), _steps(), frames_dir)
+
+    assert (fresh_manual_dir / "MANUAL.pdf").exists()
+    metadata = json.loads((fresh_manual_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["manual_pdf"] == "ok"
