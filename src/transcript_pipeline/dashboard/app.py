@@ -341,6 +341,66 @@ def _find_matching_project(filename: str) -> dict | None:
     return None
 
 
+def _project_overrides_path() -> Path:
+    # Derived from ROOT on every access (not a module constant) so tests that
+    # monkeypatch ROOT get an isolated overrides file.
+    return ROOT / "project_overrides.json"
+
+
+def _load_project_overrides() -> dict[str, str]:
+    """Persisted `media_id -> project_name` manual assignments.
+
+    Reloaded from disk on every access: the file is tiny, and a dashboard
+    restart (or an external edit) must never be masked by a stale cache.
+    """
+    path = _project_overrides_path()
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        overrides = data.get("overrides", {})
+        if isinstance(overrides, dict):
+            return {str(k): str(v) for k, v in overrides.items()}
+    except Exception as e:
+        logger.error("[PROJECTS] Error loading project_overrides.json: %s", e)
+    return {}
+
+
+def _save_project_overrides(overrides: dict[str, str]) -> bool:
+    try:
+        _atomic_write_text(
+            _project_overrides_path(),
+            json.dumps({"overrides": overrides}, indent=2, ensure_ascii=False),
+        )
+        return True
+    except Exception as e:
+        logger.error("[PROJECTS] Error saving project_overrides.json: %s", e)
+        return False
+
+
+def _effective_project(media_id: str, filename: str) -> tuple[dict | None, str]:
+    """Resolves the project shown/used for a file.
+
+    Priority: manual override > auto-detected (filename rules) > none. A
+    manual override whose project no longer exists in projects.json is
+    dropped (and treated as no project) rather than silently falling back to
+    auto-detection — the owner explicitly chose that project.
+    """
+    overrides = _load_project_overrides()
+    if media_id and media_id in overrides:
+        override_name = overrides[media_id]
+        for project in _load_projects():
+            if project.get("name") == override_name:
+                return project, "manual"
+        overrides.pop(media_id, None)
+        _save_project_overrides(overrides)
+        return None, "none"
+    project = _find_matching_project(filename)
+    if project:
+        return project, "auto"
+    return None, "none"
+
+
 def _count_files(folder: Path, extensions: set[str] | None = None, recursive: bool = True) -> int:
     if not folder.exists():
         return 0
@@ -567,16 +627,18 @@ def api_files() -> Any:
             if not path.is_file() or path.suffix.lower() not in SUPPORTED_MEDIA:
                 continue
             transcription = _resolve_transcription(path)
-            project = _find_matching_project(path.name)
+            media_id = _to_media_id(root, path)
+            project, project_source = _effective_project(media_id, path.name)
             media_files.append(
                 {
-                    "media_id": _to_media_id(root, path),
+                    "media_id": media_id,
                     "relative": str(path.relative_to(ROOT)),
                     "name": path.name,
                     "size": path.stat().st_size,
                     "status": _file_status(path),
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,
+                    "project_source": project_source,
                     "transcription": transcription,
                     "documentation": _resolve_documentation(path, root),
                 }
@@ -771,6 +833,30 @@ def api_transcription_save() -> Any:
     payload = request.get_json(force=True) or {}
     text = payload.get("text", "")
     resolved = _from_media_id(payload.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
+
+    # Optional manual project assignment, keyed by the media file's own
+    # media_id (VIDEOS/AUDIO) — never by the transcription id. "" / null /
+    # "auto" removes the override. Validation happens before any write so a
+    # bad project name never half-saves the transcription.
+    media_id = str(payload.get("media_id") or "")
+    filename = resolved.name
+    if media_id:
+        media_target = _from_media_id(media_id, [MediaRoot.VIDEOS, MediaRoot.AUDIO], must_exist=False)
+        filename = media_target.name
+        overrides = _load_project_overrides()
+        raw_project = payload.get("project")
+        normalized = raw_project.strip() if isinstance(raw_project, str) else ""
+        if normalized and normalized.lower() != "auto":
+            if not any(p.get("name") == normalized for p in _load_projects()):
+                return jsonify({"ok": False, "error": f"Project not found: {normalized}"}), 400
+            overrides[media_id] = normalized
+        else:
+            overrides.pop(media_id, None)
+        if not _save_project_overrides(overrides):
+            return jsonify({"ok": False, "error": "Could not save project assignment"}), 500
+
+    effective, project_source = _effective_project(media_id, filename)
+
     try:
         _atomic_write_text(resolved, text)
         # Update text inside segments.json if it exists
@@ -782,7 +868,11 @@ def api_transcription_save() -> Any:
                 _atomic_write_text(segments_path, json.dumps(data, indent=2, ensure_ascii=False))
             except Exception:
                 pass
-        return jsonify({"ok": True})
+        return jsonify({
+            "ok": True,
+            "project": effective.get("name") if effective else None,
+            "project_source": project_source,
+        })
     except Exception:
         logger.exception("[TRANSCRIPTION] Error saving %s", resolved)
         return jsonify({"ok": False, "error": "Could not save transcription"}), 500
@@ -1002,13 +1092,14 @@ def api_documentation_generate() -> Any:
 
     root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
     media_id = _to_media_id(root, target)
+    project, _source = _effective_project(media_id, target.name)
     with _doc_generation_lock:
         if media_id in _doc_generation_inflight:
             return jsonify({"ok": False, "error": "Documentation is already generating for this video."}), 409
         _doc_generation_inflight.add(media_id)
 
     try:
-        generate_documentation(frames_parent, target.name)
+        generate_documentation(frames_parent, target.name, project_config=project)
     except Exception as e:
         logger.exception("[DOCS] generate failed for %s", target.name)
         return jsonify({"ok": False, "error": f"Documentation generation failed: {e}"}), 500

@@ -35,6 +35,9 @@ Frames/
 # ── Base de datos del FileTracker ───────────────────────────────────────────
 processed_files.json
 
+# ── Overrides de proyecto (se regeneran en cada run) ──────────────────────────
+project_overrides.json
+
 # ── Logs ─────────────────────────────────────────────────────────────────────
 *.log
 logs/
