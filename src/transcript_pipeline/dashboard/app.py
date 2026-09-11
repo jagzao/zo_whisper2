@@ -30,7 +30,13 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
 from transcript_pipeline.config import PROJECT_ROOT, load_env
-from transcript_pipeline.documentation.engine import load_steps, regenerate_from_steps, remove_step, update_step
+from transcript_pipeline.documentation.engine import (
+    generate_documentation,
+    load_steps,
+    regenerate_from_steps,
+    remove_step,
+    update_step,
+)
 from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.projects import validate_project
 from transcript_pipeline.security import (
@@ -80,6 +86,11 @@ _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # reads it from the page it was served (see index()) and echoes it back on
 # every mutating request via X-Local-Dashboard-Token.
 _DASHBOARD_TOKEN = secrets.token_urlsafe(32)
+
+# media_ids currently being documented (in-memory concurrency guard so a
+# second "Generate Documentation" for the same video is rejected, not queued).
+_doc_generation_lock = threading.Lock()
+_doc_generation_inflight: set[str] = set()
 
 
 def _hostname_only(host_header: str) -> str:
@@ -136,7 +147,14 @@ _run_state: dict[str, Any] = {
     "error": None,
     "log_tail": "",
     "stage": None,
+    "stages": {},
 }
+
+
+def _fresh_stages() -> dict[str, dict[str, Any]]:
+    """Per-stage state for a new run: every stage pending, no fabricated
+    progress (progress stays None unless a real measurable total exists)."""
+    return {name: {"status": "pending", "progress": None} for name in PIPELINE_STAGES}
 
 # The real pipeline lifecycle, in order. `_infer_stage` derives "how far the
 # current run has gotten" from real subprocess output (never fabricated) by
@@ -165,6 +183,10 @@ def _infer_stage(log_tail: str) -> str | None:
     Tracks the max stage index seen (not "last line matched") so a
     multi-file run doesn't appear to regress when file N+1 starts back at
     "analyze" while file N already reached "store".
+
+    Also derives the per-stage `_run_state["stages"]` map: stages before the
+    furthest reached are "completed", the furthest is "running", the rest
+    stay "pending". Progress is never fabricated — it stays None.
     """
     reached_idx = -1
     stage: str | None = None
@@ -175,7 +197,31 @@ def _infer_stage(log_tail: str) -> str | None:
                 if idx > reached_idx:
                     reached_idx = idx
                     stage = candidate
+    if stage is not None:
+        _apply_stage_derivation(stage)
     return stage
+
+
+def _apply_stage_derivation(current: str) -> None:
+    """Marks stages up to `current` as completed/running in `_run_state`.
+
+    `current` is the furthest stage reached; everything before it is
+    completed, it is running, everything after stays pending. If the run has
+    already errored, the furthest reached stage is instead marked "failed"
+    (localizing the failure to the stage where it happened) and later stages
+    remain pending.
+    """
+    current_idx = PIPELINE_STAGES.index(current)
+    stages = _run_state.setdefault("stages", _fresh_stages())
+    for name in PIPELINE_STAGES:
+        idx = PIPELINE_STAGES.index(name)
+        entry = stages.setdefault(name, {"status": "pending", "progress": None})
+        if idx < current_idx:
+            entry["status"] = "completed"
+        elif idx == current_idx:
+            entry["status"] = "failed" if _run_state.get("error") else "running"
+        else:
+            entry["status"] = "pending"
 
 
 def _atomic_write_text(path: Path, content: str) -> None:
@@ -654,6 +700,7 @@ def api_run(mode: str) -> Any:
                 "error": None,
                 "log_tail": "",
                 "stage": "upload",
+                "stages": _fresh_stages(),
             }
         )
     threading.Thread(target=_run_pipeline, args=(mode,), daemon=True).start()
@@ -813,6 +860,28 @@ def api_documentation() -> Any:
         asset_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, manual_dir / relative_to_manual_dir)
         return f"/doc-asset?id={quote(asset_id, safe='')}"
 
+    manual_pdf_path = manual_dir / "MANUAL.pdf"
+    manual_pdf_available = manual_pdf_path.exists()
+    manual_pdf_url = asset_url("MANUAL.pdf") if manual_pdf_available else None
+    manual_pdf_error = None
+    if not manual_pdf_available:
+        # Surface WHY the PDF is absent instead of silently pretending the
+        # human bundle is complete: the engine records the outcome of its
+        # PDF attempt in metadata.json ("ok" / "failed" / "missing").
+        pdf_state = None
+        metadata_path = manual_dir / "metadata.json"
+        if metadata_path.exists():
+            try:
+                pdf_state = json.loads(metadata_path.read_text(encoding="utf-8")).get("manual_pdf")
+            except Exception:
+                pdf_state = None
+        if pdf_state == "failed":
+            manual_pdf_error = "MANUAL.pdf generation failed — see server logs."
+        elif pdf_state == "missing":
+            manual_pdf_error = "reportlab not installed — install the [pdf] extra to generate MANUAL.pdf."
+        else:
+            manual_pdf_error = "MANUAL.pdf not generated."
+
     manual_md = None
     if manual_md_path.exists():
         raw_md = manual_md_path.read_text(encoding="utf-8")
@@ -850,6 +919,9 @@ def api_documentation() -> Any:
         "manifest": manifest,
         "steps": steps_payload,
         "ai_package_files": ai_package_files,
+        "manual_pdf_url": manual_pdf_url,
+        "manual_pdf_available": manual_pdf_available,
+        "manual_pdf_error": manual_pdf_error,
     })
 
 
@@ -911,6 +983,40 @@ def api_documentation_regenerate() -> Any:
 
     result = regenerate_from_steps(frames_parent / "manual", frames_parent / "ai-package", frames_parent, target.name)
     return jsonify({"ok": True, **result})
+
+
+@app.route("/api/documentation/generate", methods=["POST"])
+def api_documentation_generate() -> Any:
+    """Explicit "Generate Documentation" (US-001 §14 DoD) for a video that has
+    no manual/AI package yet. Reuses existing artifacts on disk
+    (frame_mapping.json + transcript) — never re-transcribes. Returns 409 with
+    an actionable error when the prerequisites are missing, and rejects a
+    concurrent duplicate generation for the same media_id."""
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None or not (frames_parent / "frame_mapping.json").exists():
+        return jsonify({
+            "ok": False,
+            "error": "No keyframes/frame_mapping.json found — run the pipeline first (RUN Full) to extract frames and align the transcript.",
+        }), 409
+
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    media_id = _to_media_id(root, target)
+    with _doc_generation_lock:
+        if media_id in _doc_generation_inflight:
+            return jsonify({"ok": False, "error": "Documentation is already generating for this video."}), 409
+        _doc_generation_inflight.add(media_id)
+
+    try:
+        generate_documentation(frames_parent, target.name)
+    except Exception as e:
+        logger.exception("[DOCS] generate failed for %s", target.name)
+        return jsonify({"ok": False, "error": f"Documentation generation failed: {e}"}), 500
+    finally:
+        with _doc_generation_lock:
+            _doc_generation_inflight.discard(media_id)
+
+    return jsonify({"ok": True, "documentation": _resolve_documentation(target, root)})
 
 
 @app.route("/doc-asset")
@@ -1015,13 +1121,35 @@ def _run_pipeline(mode: str) -> None:
                 raise RuntimeError(f"master_processor.py failed (exit code {returncode})")
 
         append_log("PROCESS FINISHED")
+        _mark_all_reached_completed()
     except Exception as e:
         logger.error("[RUN] Error: %s", e)
         _run_state["error"] = str(e)
         append_log(f"ERROR: {e}")
+        _mark_failed_stage()
     finally:
         _run_state["running"] = False
         _run_state["finished_at"] = datetime.now().isoformat()
+
+
+def _mark_all_reached_completed() -> None:
+    """On a clean finish, every stage the run actually reached becomes
+    "completed" (the furthest stage was left "running" by _infer_stage)."""
+    stages = _run_state.setdefault("stages", _fresh_stages())
+    for name in PIPELINE_STAGES:
+        entry = stages.setdefault(name, {"status": "pending", "progress": None})
+        if entry["status"] == "running":
+            entry["status"] = "completed"
+
+
+def _mark_failed_stage() -> None:
+    """Localizes a run failure to the stage that was running when the error
+    occurred: that stage becomes "failed", later stages stay "pending"."""
+    stages = _run_state.setdefault("stages", _fresh_stages())
+    for name in PIPELINE_STAGES:
+        entry = stages.setdefault(name, {"status": "pending", "progress": None})
+        if entry["status"] == "running":
+            entry["status"] = "failed"
 
 
 def main() -> None:

@@ -4,7 +4,7 @@ All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/); versioning follows
 [SemVer](https://semver.org/).
 
-## [1.1.0] — Zo Whisper Studio: Video-to-Documentation
+## [1.1.0] — Zo Media Intelligence: Video-to-Documentation
 
 Public rebrand and a new core capability: turning tutorial/screen-recording
 videos into a grounded human manual and an AI-ready knowledge package, on
@@ -61,12 +61,12 @@ top of the existing transcription pipeline.
   `scripts/generate_demo.py`): reproducible generation of
   `docs/marketing/hero-dashboard.png`, `pipeline-evidence.png`,
   `generated-documentation.png`, and a 1920×1080 H.264 demo MP4
-  (`zo-whisper-studio-linkedin-demo.mp4`) from the real dashboard UI using
+  (`zo-media-intelligence-linkedin-demo.mp4`) from the real dashboard UI using
   only synthetic data.
 
 ### Changed
 
-- Public product name is now **Zo Whisper Studio** (README, dashboard title/
+- Public product name is now **Zo Media Intelligence** (README, dashboard title/
   header, package description). The importable package and pip distribution
   name (`transcript_pipeline` / `transcript-pipeline`) are unchanged.
 - The dashboard's pipeline runner streams subprocess output line-by-line

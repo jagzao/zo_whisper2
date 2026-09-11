@@ -289,7 +289,7 @@ def write_manual_pdf(
         topMargin=_MARGIN,
         bottomMargin=16 * mm,
         title=f"Manual — {source.video_name}",
-        author="Zo Whisper Studio",
+        author="Zo Media Intelligence",
     )
     footer = _footer_callback(source.video_name)
     doc.build(story, onFirstPage=footer, onLaterPages=footer)

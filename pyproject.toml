@@ -1,7 +1,7 @@
 [project]
 name = "transcript-pipeline"
 version = "1.1.0"
-description = "Zo Whisper Studio — local-first AI media intelligence: faster-whisper transcription, declarative per-project routing, and a video-to-documentation engine for tutorials/meetings."
+description = "Zo Media Intelligence — local-first AI media intelligence: faster-whisper transcription, declarative per-project routing, and a video-to-documentation engine for tutorials/meetings."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -51,6 +51,12 @@ documents = [
 # it's absent).
 pdf = [
     "reportlab>=4.0.0",
+]
+# Product-user install: everything needed to experience the public flow —
+# OCR (vision) for screen evidence + reportlab (pdf) for MANUAL.pdf, on top
+# of core. Contributors/tests use `dev` instead.
+studio = [
+    "transcript-pipeline[vision,pdf]",
 ]
 all = [
     "transcript-pipeline[llm,vision,documents,pdf]",

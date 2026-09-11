@@ -5,7 +5,7 @@ chcp 65001 >nul
 
 echo.
 echo ========================================================================
-echo   ZO WHISPER STUDIO - DEMO (datos 100%% sinteticos, sin LLM externo)
+echo   ZO MEDIA INTELLIGENCE - DEMO (datos 100%% sinteticos, sin LLM externo)
 echo ========================================================================
 echo.
 
@@ -47,7 +47,7 @@ echo ========================================================================
 echo   3 PASOS PARA LA PRUEBA MANUAL:
 echo   1. Abri en el navegador:  http://127.0.0.1:5000
 echo   2. Arrastra este archivo al DROP AREA:
-echo      demo\en_demo_zo_whisper_studio_tutorial.mp4
+echo      demo\en_demo_zo_media_intelligence_tutorial.mp4
 echo   3. Click en "RUN Full" y segui el pipeline
 echo ========================================================================
 echo.

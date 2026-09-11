@@ -1,4 +1,4 @@
-# Zo Whisper Studio
+# Zo Media Intelligence
 
 **Local-first AI media intelligence that turns screen recordings into
 evidence-grounded documentation and AI-ready knowledge.**
@@ -9,13 +9,13 @@ evidence-grounded documentation and AI-ready knowledge.**
 [![pytest](https://img.shields.io/badge/tests-pytest-0A9EDC)](tests/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-![Zo Whisper Studio dashboard](docs/marketing/hero-dashboard.png)
+![Zo Media Intelligence dashboard](docs/marketing/hero-dashboard.png)
 
 **Video → Speech + Screen Evidence → Grounded Documentation → AI-ready Knowledge**
 
 ---
 
-Zo Whisper Studio turns a screen recording or tutorial video into two things
+Zo Media Intelligence turns a screen recording or tutorial video into two things
 at once: a **human-readable manual** (`MANUAL.md` + `MANUAL.pdf`) and an
 **AI-ready knowledge package** for RAG/agents — every step grounded in
 captured evidence (the transcript, the on-screen text read via OCR, and the
@@ -54,7 +54,7 @@ keyframes + manual/AI package in `CarpetaTranscripciones/`.
 
 > The importable package and pip distribution name (`transcript_pipeline` /
 > `transcript-pipeline`) are unchanged — only the product's public name and
-> branding moved to **Zo Whisper Studio**, to avoid breaking existing
+> branding moved to **Zo Media Intelligence**, to avoid breaking existing
 > installs, imports, and CI.
 
 ## Video-to-Documentation
@@ -253,6 +253,17 @@ flowchart LR
 | pytest, ruff, pyright, pip-audit, gitleaks | Quality/security/typing/dependency/secret gates — see [Testing](#testing) |
 | setuptools (src-layout) | Packaging, `pip install -e .`, entry points |
 
+### Stack at a glance
+
+- **UI**: Flask/Jinja · HTML5 · CSS3 · Vanilla JavaScript · SVG
+- **Media/AI**: Python · faster-whisper · CTranslate2 · FFmpeg · Tesseract OCR · Pillow/ImageHash
+- **Quality**: Playwright · pytest · Ruff · Pyright · pip-audit · Gitleaks · GitHub Actions
+- **Documentation**: ReportLab · Markdown · JSON/JSONL
+
+The frontend is intentionally lightweight: no Node.js, no frontend build
+step, no bundler. The dashboard is server-rendered Flask/Jinja with vanilla
+JS/CSS, which keeps the project dependency-light and easy to run anywhere.
+
 ## Design decisions
 
 - **Idempotency without an external database** (`file_tracker.py`): hash of `size + mtime + first 8KB` of the file, not the whole file — cheap even for large videos. This is an idempotency fingerprint, not a cryptographic integrity guarantee — documented as such.
@@ -303,7 +314,7 @@ whisper/
 Requires Python 3.10+, [FFmpeg](https://ffmpeg.org/) on the `PATH`, and optionally [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) for screen analysis in dev meetings.
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[studio]"
 cp scan_config.env.example scan_config.env
 cp projects.json.example projects.json
 ```
@@ -312,11 +323,13 @@ Installs the package in editable mode — `master_processor.py`, `simple_scan.py
 
 Core install (`pip install -e .`, no extras) only needs faster-whisper,
 Flask, and FFmpeg — no LLM client, OCR, or document converter dependency.
-Add `[llm]`, `[vision]`, `[documents]`, and/or `[pdf]` for meeting/tutorial
-enrichment features (`[dev]` already includes all of them, for running the
-full test suite) — see `CONTRIBUTING.md` for which extra a given feature
-needs. `[pdf]` (reportlab) is only needed to generate `MANUAL.pdf`; the
-Markdown manual works without it.
+The `[studio]` extra (the recommended product-user install) adds `[vision]`
+(OCR for screen evidence) and `[pdf]` (reportlab for `MANUAL.pdf`) on top of
+core. Add `[llm]` and/or `[documents]` for meeting/tutorial enrichment
+features; `[dev]` is contributor-only (it includes `[all]` plus the test
+tooling for running the full suite) — see `CONTRIBUTING.md` for which extra
+a given feature needs. `[pdf]` (reportlab) is only needed to generate
+`MANUAL.pdf`; the Markdown manual works without it.
 
 ## Configuration
 
@@ -357,14 +370,17 @@ python dashboard.py
 ### Quickstart (try it in minutes)
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[studio]"
 cp scan_config.env.example scan_config.env
 cp projects.json.example projects.json
 python dashboard.py          # → http://localhost:5000
 ```
 
+`[studio]` is the product-user install (core + OCR + PDF). Contributors
+installing for development/tests use `pip install -e ".[dev]"` instead.
+
 Drop a tutorial/screen-recording video into `Videos/` (or `audio/`), click
-**RUN Full** in the dashboard, and Zo Whisper Studio transcribes it, extracts
+**RUN Full** in the dashboard, and Zo Media Intelligence transcribes it, extracts
 keyframes, and generates the human manual (`MANUAL.md` + `MANUAL.pdf`) and
 the AI-ready package — all locally.
 
@@ -373,7 +389,7 @@ real UI:
 
 ```bash
 python scripts/generate_marketing_images.py   # → docs/marketing/*.png
-python scripts/generate_demo.py               # → docs/marketing/zo-whisper-studio-linkedin-demo.mp4
+python scripts/generate_demo.py               # → docs/marketing/zo-media-intelligence-linkedin-demo.mp4
 ```
 
 | Home | Preview + Insights | Transcript search |

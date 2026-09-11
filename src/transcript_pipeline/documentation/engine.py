@@ -393,8 +393,11 @@ def write_manual(
         "extraction_method": source.extraction_method,
         "generated_at": source.generated_at,
         "step_count": len(steps),
+        # Written after the PDF attempt below so the API can distinguish
+        # "generated", "failed", and "reportlab not installed" instead of
+        # silently pretending the human bundle is complete.
+        "manual_pdf": "ok",
     }
-    (manual_dir / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
 
     if write_steps_json:
         _write_steps_json(manual_dir, source, steps)
@@ -404,11 +407,15 @@ def write_manual(
             write_manual_pdf(manual_dir, source, steps, frames_dir)
         except Exception as e:
             logger.warning("[DOCS] MANUAL.pdf generation failed: %s", e)
+            metadata["manual_pdf"] = "failed"
     else:
         logger.warning(
             "[DOCS] reportlab not installed; skipping MANUAL.pdf "
             "(install with: pip install 'transcript-pipeline[pdf]')"
         )
+        metadata["manual_pdf"] = "missing"
+
+    (manual_dir / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def write_ai_package(
