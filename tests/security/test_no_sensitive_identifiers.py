@@ -180,3 +180,107 @@ def test_history_check_skipped_cleanly_when_no_private_denylist(monkeypatch):
     assert len(report) == 1
     assert report[0]["status"] == "PASS"
     assert "SKIPPED" in report[0]["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Fail-closed regression tests: a non-zero git exit code must FAIL the gate,
+# never silently produce an empty result that looks like zero hits.
+# ---------------------------------------------------------------------------
+
+
+def _fake_git_subprocess_failing(log_diff_rc: int = 0, log_messages_rc: int = 0):
+    """Stub for `scripts.security.subprocess.run` that lets the two `git log`
+    invocations fail with a configurable non-zero return code. The shallow
+    check always succeeds (non-shallow) so the scan actually proceeds."""
+
+    def _run(args, **kwargs):
+        if args[:3] == ["git", "rev-parse", "--is-shallow-repository"]:
+            return type("R", (), {"returncode": 0, "stdout": "false\n"})()
+        if args[:3] == ["git", "log", "--all"]:
+            if "--format=%s%n%b" in args:
+                return type("R", (), {"returncode": log_messages_rc, "stdout": "", "stderr": "boom"})()
+            return type("R", (), {"returncode": log_diff_rc, "stdout": "", "stderr": "boom"})()
+        raise AssertionError(f"unexpected git invocation: {args}")
+
+    return _run
+
+
+def test_history_check_fails_closed_when_git_log_diff_nonzero(monkeypatch):
+    """`git log --all -p --full-history` exiting non-zero must FAIL the gate,
+    not report a clean scan (which would be a false 0 hits)."""
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: ({"test_client_secret"}, {}))
+    monkeypatch.setattr("scripts.security.subprocess.run", _fake_git_subprocess_failing(log_diff_rc=128))
+
+    report: list[dict] = []
+    check_denylisted_identifiers_in_history(report)
+
+    assert any(r["status"] == "FAIL" for r in report)
+    assert any("git log failed" in r.get("detail", "") for r in report)
+
+
+def test_history_check_fails_closed_when_git_log_messages_nonzero(monkeypatch):
+    """`git log --all --format=%s%n%b` exiting non-zero must FAIL the gate."""
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: ({"test_client_secret"}, {}))
+    monkeypatch.setattr("scripts.security.subprocess.run", _fake_git_subprocess_failing(log_messages_rc=128))
+
+    report: list[dict] = []
+    check_denylisted_identifiers_in_history(report)
+
+    assert any(r["status"] == "FAIL" for r in report)
+    assert any("git log (commit messages) failed" in r.get("detail", "") for r in report)
+
+
+def test_history_check_fails_closed_when_shallow_check_nonzero(monkeypatch):
+    """`git rev-parse --is-shallow-repository` exiting non-zero must FAIL the
+    gate rather than falling through to a scan we can't trust."""
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: ({"test_client_secret"}, {}))
+
+    def _run(args, **kwargs):
+        if args[:3] == ["git", "rev-parse", "--is-shallow-repository"]:
+            return type("R", (), {"returncode": 128, "stdout": "", "stderr": "boom"})()
+        raise AssertionError(f"unexpected git invocation: {args}")
+
+    monkeypatch.setattr("scripts.security.subprocess.run", _run)
+
+    report: list[dict] = []
+    check_denylisted_identifiers_in_history(report)
+
+    assert any(r["status"] == "FAIL" for r in report)
+    assert any("shallow-repo check failed" in r.get("detail", "") for r in report)
+
+
+def test_committed_secrets_fails_closed_when_git_ls_files_nonzero(monkeypatch):
+    """`git ls-files` exiting non-zero must FAIL the committed-secrets gate,
+    not report 0 suspicious patterns (a false clean)."""
+    from scripts.security import check_committed_secrets
+
+    def _run(args, **kwargs):
+        if args[:2] == ["git", "ls-files"]:
+            return type("R", (), {"returncode": 128, "stdout": "", "stderr": "boom"})()
+        raise AssertionError(f"unexpected git invocation: {args}")
+
+    monkeypatch.setattr("scripts.security.subprocess.run", _run)
+
+    report: list[dict] = []
+    check_committed_secrets(report)
+
+    assert any(r["status"] == "FAIL" for r in report)
+    assert any("git ls-files failed" in r.get("detail", "") for r in report)
+
+
+def test_tree_denylist_fails_closed_when_git_ls_files_nonzero(monkeypatch):
+    """`git ls-files` exiting non-zero must FAIL the tree denylist gate too."""
+    monkeypatch.setattr("scripts.security._load_private_denylist", lambda: ({"test_client_secret"}, {}))
+
+    def _run(args, **kwargs):
+        if args[:2] == ["git", "ls-files"]:
+            return type("R", (), {"returncode": 128, "stdout": "", "stderr": "boom"})()
+        raise AssertionError(f"unexpected git invocation: {args}")
+
+    monkeypatch.setattr("scripts.security.subprocess.run", _run)
+
+    report: list[dict] = []
+    check_no_denylisted_identifiers(report)
+
+    assert any(r["status"] == "FAIL" for r in report)
+    assert any("git ls-files failed" in r.get("detail", "") for r in report)

@@ -30,8 +30,15 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
 from transcript_pipeline.config import PROJECT_ROOT, load_env
-from transcript_pipeline.documentation.engine import load_steps, regenerate_from_steps, remove_step, update_step
+from transcript_pipeline.documentation.engine import (
+    generate_documentation,
+    load_steps,
+    regenerate_from_steps,
+    remove_step,
+    update_step,
+)
 from transcript_pipeline.logging_setup import configure_logging
+from transcript_pipeline.media.utils import run_ffprobe
 from transcript_pipeline.projects import validate_project
 from transcript_pipeline.security import (
     MediaRoot,
@@ -80,6 +87,11 @@ _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # reads it from the page it was served (see index()) and echoes it back on
 # every mutating request via X-Local-Dashboard-Token.
 _DASHBOARD_TOKEN = secrets.token_urlsafe(32)
+
+# media_ids currently being documented (in-memory concurrency guard so a
+# second "Generate Documentation" for the same video is rejected, not queued).
+_doc_generation_lock = threading.Lock()
+_doc_generation_inflight: set[str] = set()
 
 
 def _hostname_only(host_header: str) -> str:
@@ -136,7 +148,14 @@ _run_state: dict[str, Any] = {
     "error": None,
     "log_tail": "",
     "stage": None,
+    "stages": {},
 }
+
+
+def _fresh_stages() -> dict[str, dict[str, Any]]:
+    """Per-stage state for a new run: every stage pending, no fabricated
+    progress (progress stays None unless a real measurable total exists)."""
+    return {name: {"status": "pending", "progress": None} for name in PIPELINE_STAGES}
 
 # The real pipeline lifecycle, in order. `_infer_stage` derives "how far the
 # current run has gotten" from real subprocess output (never fabricated) by
@@ -165,6 +184,10 @@ def _infer_stage(log_tail: str) -> str | None:
     Tracks the max stage index seen (not "last line matched") so a
     multi-file run doesn't appear to regress when file N+1 starts back at
     "analyze" while file N already reached "store".
+
+    Also derives the per-stage `_run_state["stages"]` map: stages before the
+    furthest reached are "completed", the furthest is "running", the rest
+    stay "pending". Progress is never fabricated — it stays None.
     """
     reached_idx = -1
     stage: str | None = None
@@ -175,7 +198,31 @@ def _infer_stage(log_tail: str) -> str | None:
                 if idx > reached_idx:
                     reached_idx = idx
                     stage = candidate
+    if stage is not None:
+        _apply_stage_derivation(stage)
     return stage
+
+
+def _apply_stage_derivation(current: str) -> None:
+    """Marks stages up to `current` as completed/running in `_run_state`.
+
+    `current` is the furthest stage reached; everything before it is
+    completed, it is running, everything after stays pending. If the run has
+    already errored, the furthest reached stage is instead marked "failed"
+    (localizing the failure to the stage where it happened) and later stages
+    remain pending.
+    """
+    current_idx = PIPELINE_STAGES.index(current)
+    stages = _run_state.setdefault("stages", _fresh_stages())
+    for name in PIPELINE_STAGES:
+        idx = PIPELINE_STAGES.index(name)
+        entry = stages.setdefault(name, {"status": "pending", "progress": None})
+        if idx < current_idx:
+            entry["status"] = "completed"
+        elif idx == current_idx:
+            entry["status"] = "failed" if _run_state.get("error") else "running"
+        else:
+            entry["status"] = "pending"
 
 
 def _atomic_write_text(path: Path, content: str) -> None:
@@ -249,7 +296,7 @@ def _is_valid_media_file(path: Path) -> bool:
     MIME type, which `request.files` doesn't even expose here."""
     cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", str(path)]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
+        result = run_ffprobe(cmd, retry_on_timeout=False)
         streams = json.loads(result.stdout).get("streams", [])
         return any(s.get("codec_type") in ("audio", "video") for s in streams)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
@@ -293,6 +340,66 @@ def _find_matching_project(filename: str) -> dict | None:
             if keyword.lower() in name_lower:
                 return project
     return None
+
+
+def _project_overrides_path() -> Path:
+    # Derived from ROOT on every access (not a module constant) so tests that
+    # monkeypatch ROOT get an isolated overrides file.
+    return ROOT / "project_overrides.json"
+
+
+def _load_project_overrides() -> dict[str, str]:
+    """Persisted `media_id -> project_name` manual assignments.
+
+    Reloaded from disk on every access: the file is tiny, and a dashboard
+    restart (or an external edit) must never be masked by a stale cache.
+    """
+    path = _project_overrides_path()
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        overrides = data.get("overrides", {})
+        if isinstance(overrides, dict):
+            return {str(k): str(v) for k, v in overrides.items()}
+    except Exception as e:
+        logger.error("[PROJECTS] Error loading project_overrides.json: %s", e)
+    return {}
+
+
+def _save_project_overrides(overrides: dict[str, str]) -> bool:
+    try:
+        _atomic_write_text(
+            _project_overrides_path(),
+            json.dumps({"overrides": overrides}, indent=2, ensure_ascii=False),
+        )
+        return True
+    except Exception as e:
+        logger.error("[PROJECTS] Error saving project_overrides.json: %s", e)
+        return False
+
+
+def _effective_project(media_id: str, filename: str) -> tuple[dict | None, str]:
+    """Resolves the project shown/used for a file.
+
+    Priority: manual override > auto-detected (filename rules) > none. A
+    manual override whose project no longer exists in projects.json is
+    dropped (and treated as no project) rather than silently falling back to
+    auto-detection — the owner explicitly chose that project.
+    """
+    overrides = _load_project_overrides()
+    if media_id and media_id in overrides:
+        override_name = overrides[media_id]
+        for project in _load_projects():
+            if project.get("name") == override_name:
+                return project, "manual"
+        overrides.pop(media_id, None)
+        _save_project_overrides(overrides)
+        return None, "none"
+    project = _find_matching_project(filename)
+    if project:
+        return project, "auto"
+    return None, "none"
 
 
 def _count_files(folder: Path, extensions: set[str] | None = None, recursive: bool = True) -> int:
@@ -521,16 +628,18 @@ def api_files() -> Any:
             if not path.is_file() or path.suffix.lower() not in SUPPORTED_MEDIA:
                 continue
             transcription = _resolve_transcription(path)
-            project = _find_matching_project(path.name)
+            media_id = _to_media_id(root, path)
+            project, project_source = _effective_project(media_id, path.name)
             media_files.append(
                 {
-                    "media_id": _to_media_id(root, path),
+                    "media_id": media_id,
                     "relative": str(path.relative_to(ROOT)),
                     "name": path.name,
                     "size": path.stat().st_size,
                     "status": _file_status(path),
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,
+                    "project_source": project_source,
                     "transcription": transcription,
                     "documentation": _resolve_documentation(path, root),
                 }
@@ -551,6 +660,10 @@ def api_projects_update() -> Any:
     action = payload.get("action")
     projects = _load_projects()
 
+    rename_from: str | None = None
+    rename_to: str | None = None
+    deleted_name: str | None = None
+
     if action == "create":
         new_project = payload.get("project")
         errors = validate_project(new_project)
@@ -569,15 +682,29 @@ def api_projects_update() -> Any:
         if errors or not isinstance(updated, dict):
             return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
         projects = [updated if p["name"] == name else p for p in projects]
+        if updated.get("name") != name:
+            rename_from, rename_to = name, updated.get("name")
 
     elif action == "delete":
-        name = payload.get("name")
-        projects = [p for p in projects if p["name"] != name]
+        deleted_name = payload.get("name")
+        projects = [p for p in projects if p["name"] != deleted_name]
 
     else:
         return jsonify({"ok": False, "error": "Unknown action"}), 400
 
     if _save_projects(projects):
+        if rename_from and rename_to:
+            overrides = _load_project_overrides()
+            renamed = {media_id: rename_to for media_id, name in overrides.items() if name == rename_from}
+            if renamed:
+                overrides.update(renamed)
+                if not _save_project_overrides(overrides):
+                    logger.warning("[PROJECTS] Could not update overrides after renaming %r", rename_from)
+        elif deleted_name:
+            overrides = _load_project_overrides()
+            remaining = {media_id: name for media_id, name in overrides.items() if name != deleted_name}
+            if remaining != overrides and not _save_project_overrides(remaining):
+                logger.warning("[PROJECTS] Could not clean overrides for deleted project %r", deleted_name)
         return jsonify({"ok": True, "projects": projects})
     return jsonify({"ok": False, "error": "Could not save projects.json"}), 500
 
@@ -654,6 +781,7 @@ def api_run(mode: str) -> Any:
                 "error": None,
                 "log_tail": "",
                 "stage": "upload",
+                "stages": _fresh_stages(),
             }
         )
     threading.Thread(target=_run_pipeline, args=(mode,), daemon=True).start()
@@ -724,6 +852,27 @@ def api_transcription_save() -> Any:
     payload = request.get_json(force=True) or {}
     text = payload.get("text", "")
     resolved = _from_media_id(payload.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
+
+    # Optional manual project assignment, keyed by the media file's own
+    # media_id (VIDEOS/AUDIO) — never by the transcription id. "" / null /
+    # "auto" removes the override. Validation happens before any write so a
+    # bad project name never half-saves the transcription.
+    media_id = str(payload.get("media_id") or "")
+    filename = resolved.name
+    override_project: str | None = None
+    if media_id:
+        media_target = _from_media_id(media_id, [MediaRoot.VIDEOS, MediaRoot.AUDIO], must_exist=False)
+        filename = media_target.name
+        raw_project = payload.get("project")
+        normalized = raw_project.strip() if isinstance(raw_project, str) else ""
+        if normalized and normalized.lower() != "auto":
+            if not any(p.get("name") == normalized for p in _load_projects()):
+                return jsonify({"ok": False, "error": f"Project not found: {normalized}"}), 400
+            override_project = normalized
+
+    # The transcription is written first: an override persisted before a
+    # failed transcription write would leave an assignment pointing at a
+    # stale file, so the assignment only lands once the content is on disk.
     try:
         _atomic_write_text(resolved, text)
         # Update text inside segments.json if it exists
@@ -735,10 +884,29 @@ def api_transcription_save() -> Any:
                 _atomic_write_text(segments_path, json.dumps(data, indent=2, ensure_ascii=False))
             except Exception:
                 pass
-        return jsonify({"ok": True})
     except Exception:
         logger.exception("[TRANSCRIPTION] Error saving %s", resolved)
         return jsonify({"ok": False, "error": "Could not save transcription"}), 500
+
+    assignment_warning: str | None = None
+    if media_id:
+        overrides = _load_project_overrides()
+        if override_project is not None:
+            overrides[media_id] = override_project
+        else:
+            overrides.pop(media_id, None)
+        if not _save_project_overrides(overrides):
+            assignment_warning = "transcription saved but project assignment could not be persisted"
+
+    effective, project_source = _effective_project(media_id, filename)
+    response = {
+        "ok": True,
+        "project": effective.get("name") if effective else None,
+        "project_source": project_source,
+    }
+    if assignment_warning:
+        response["warning"] = assignment_warning
+    return jsonify(response)
 
 
 @app.route("/api/file", methods=["DELETE"])
@@ -769,6 +937,13 @@ def api_delete_file() -> Any:
                 PROCESSED_DB.write_text(json.dumps(db, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception as e:
             logger.warning("[DELETE] Could not clean up DB: %s", e)
+        deleted_id = request.args.get("id", "")
+        if deleted_id:
+            overrides = _load_project_overrides()
+            if deleted_id in overrides:
+                overrides.pop(deleted_id, None)
+                if not _save_project_overrides(overrides):
+                    logger.warning("[DELETE] Could not clean project override for %s", deleted_id)
         return jsonify({"ok": True})
     except Exception:
         logger.exception("[DELETE] Error deleting %s", target)
@@ -813,6 +988,28 @@ def api_documentation() -> Any:
         asset_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, manual_dir / relative_to_manual_dir)
         return f"/doc-asset?id={quote(asset_id, safe='')}"
 
+    manual_pdf_path = manual_dir / "MANUAL.pdf"
+    manual_pdf_available = manual_pdf_path.exists()
+    manual_pdf_url = asset_url("MANUAL.pdf") if manual_pdf_available else None
+    manual_pdf_error = None
+    if not manual_pdf_available:
+        # Surface WHY the PDF is absent instead of silently pretending the
+        # human bundle is complete: the engine records the outcome of its
+        # PDF attempt in metadata.json ("ok" / "failed" / "missing").
+        pdf_state = None
+        metadata_path = manual_dir / "metadata.json"
+        if metadata_path.exists():
+            try:
+                pdf_state = json.loads(metadata_path.read_text(encoding="utf-8")).get("manual_pdf")
+            except Exception:
+                pdf_state = None
+        if pdf_state == "failed":
+            manual_pdf_error = "MANUAL.pdf generation failed — see server logs."
+        elif pdf_state == "missing":
+            manual_pdf_error = "reportlab not installed — install the [pdf] extra to generate MANUAL.pdf."
+        else:
+            manual_pdf_error = "MANUAL.pdf not generated."
+
     manual_md = None
     if manual_md_path.exists():
         raw_md = manual_md_path.read_text(encoding="utf-8")
@@ -850,6 +1047,9 @@ def api_documentation() -> Any:
         "manifest": manifest,
         "steps": steps_payload,
         "ai_package_files": ai_package_files,
+        "manual_pdf_url": manual_pdf_url,
+        "manual_pdf_available": manual_pdf_available,
+        "manual_pdf_error": manual_pdf_error,
     })
 
 
@@ -911,6 +1111,41 @@ def api_documentation_regenerate() -> Any:
 
     result = regenerate_from_steps(frames_parent / "manual", frames_parent / "ai-package", frames_parent, target.name)
     return jsonify({"ok": True, **result})
+
+
+@app.route("/api/documentation/generate", methods=["POST"])
+def api_documentation_generate() -> Any:
+    """Explicit "Generate Documentation" (US-001 §14 DoD) for a video that has
+    no manual/AI package yet. Reuses existing artifacts on disk
+    (frame_mapping.json + transcript) — never re-transcribes. Returns 409 with
+    an actionable error when the prerequisites are missing, and rejects a
+    concurrent duplicate generation for the same media_id."""
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None or not (frames_parent / "frame_mapping.json").exists():
+        return jsonify({
+            "ok": False,
+            "error": "No keyframes/frame_mapping.json found — run the pipeline first (RUN Full) to extract frames and align the transcript.",
+        }), 409
+
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    media_id = _to_media_id(root, target)
+    project, _source = _effective_project(media_id, target.name)
+    with _doc_generation_lock:
+        if media_id in _doc_generation_inflight:
+            return jsonify({"ok": False, "error": "Documentation is already generating for this video."}), 409
+        _doc_generation_inflight.add(media_id)
+
+    try:
+        generate_documentation(frames_parent, target.name, project_config=project)
+    except Exception as e:
+        logger.exception("[DOCS] generate failed for %s", target.name)
+        return jsonify({"ok": False, "error": f"Documentation generation failed: {e}"}), 500
+    finally:
+        with _doc_generation_lock:
+            _doc_generation_inflight.discard(media_id)
+
+    return jsonify({"ok": True, "documentation": _resolve_documentation(target, root)})
 
 
 @app.route("/doc-asset")
@@ -1015,13 +1250,35 @@ def _run_pipeline(mode: str) -> None:
                 raise RuntimeError(f"master_processor.py failed (exit code {returncode})")
 
         append_log("PROCESS FINISHED")
+        _mark_all_reached_completed()
     except Exception as e:
         logger.error("[RUN] Error: %s", e)
         _run_state["error"] = str(e)
         append_log(f"ERROR: {e}")
+        _mark_failed_stage()
     finally:
         _run_state["running"] = False
         _run_state["finished_at"] = datetime.now().isoformat()
+
+
+def _mark_all_reached_completed() -> None:
+    """On a clean finish, every stage the run actually reached becomes
+    "completed" (the furthest stage was left "running" by _infer_stage)."""
+    stages = _run_state.setdefault("stages", _fresh_stages())
+    for name in PIPELINE_STAGES:
+        entry = stages.setdefault(name, {"status": "pending", "progress": None})
+        if entry["status"] == "running":
+            entry["status"] = "completed"
+
+
+def _mark_failed_stage() -> None:
+    """Localizes a run failure to the stage that was running when the error
+    occurred: that stage becomes "failed", later stages stay "pending"."""
+    stages = _run_state.setdefault("stages", _fresh_stages())
+    for name in PIPELINE_STAGES:
+        entry = stages.setdefault(name, {"status": "pending", "progress": None})
+        if entry["status"] == "running":
+            entry["status"] = "failed"
 
 
 def main() -> None:

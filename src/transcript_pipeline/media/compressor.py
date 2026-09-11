@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 from transcript_pipeline.config import PROJECT_ROOT
+from transcript_pipeline.media.utils import run_ffprobe
 from transcript_pipeline.settings import SETTINGS
 
 _COMPRESSION_TIMEOUT_SECONDS = 2 * 60 * 60  # 2h — generous, catches a hung ffmpeg, not slow encoding
@@ -25,7 +26,7 @@ def get_video_info(video_path):
     ]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
+        result = run_ffprobe(cmd)
         return json.loads(result.stdout)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError) as e:
         print(f"[ERROR] Could not get video info: {e}")

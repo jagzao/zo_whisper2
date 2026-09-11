@@ -178,6 +178,62 @@ def test_documentation_get_includes_ai_package_download_links(client, real_docs)
         assert client.get(url).status_code == 200
 
 
+def test_documentation_get_includes_manual_pdf_url(client, real_docs):
+    """The real engine (reportlab installed) writes MANUAL.pdf — the API must
+    expose it as a servable /doc-asset URL, never a filesystem path."""
+    resp = client.get(f"/api/documentation{q(real_docs)}")
+    data = resp.get_json()
+    assert data["manual_pdf_available"] is True
+    assert data["manual_pdf_error"] is None
+    url = data["manual_pdf_url"]
+    assert url and url.startswith("/doc-asset?id=")
+    assert "CarpetaTranscripciones" not in url and "\\" not in url and ":" not in url.split("?")[0]
+    pdf_resp = client.get(url)
+    assert pdf_resp.status_code == 200
+    assert pdf_resp.content_type == "application/pdf"
+    assert len(pdf_resp.data) > 0
+
+
+def test_documentation_get_reports_pdf_missing_with_reason(client, env):
+    """No MANUAL.pdf on disk + metadata.json saying reportlab was absent must
+    surface a clear reason instead of pretending the bundle is complete."""
+    video = env["videos"] / "demo.mp4"
+    video.write_bytes(b"fake")
+    manual_dir = env["transcriptions"] / "demo_Frames" / "demo" / "manual"
+    (manual_dir / "assets").mkdir(parents=True)
+    (manual_dir / "MANUAL.md").write_text("# demo.mp4\n\n## 1. Step\n", encoding="utf-8")
+    (manual_dir / "metadata.json").write_text(
+        json.dumps({"manual_pdf": "missing"}), encoding="utf-8"
+    )
+
+    video_id = mid(MediaRoot.VIDEOS, "demo.mp4")
+    data = client.get(f"/api/documentation{q(video_id)}").get_json()
+
+    assert data["manual_pdf_available"] is False
+    assert data["manual_pdf_url"] is None
+    assert "reportlab" in data["manual_pdf_error"]
+
+
+def test_documentation_get_reports_pdf_generation_failed(client, env):
+    """reportlab present but the PDF write raised — the API must report the
+    failure, not silently omit the PDF."""
+    video = env["videos"] / "demo.mp4"
+    video.write_bytes(b"fake")
+    manual_dir = env["transcriptions"] / "demo_Frames" / "demo" / "manual"
+    (manual_dir / "assets").mkdir(parents=True)
+    (manual_dir / "MANUAL.md").write_text("# demo.mp4\n\n## 1. Step\n", encoding="utf-8")
+    (manual_dir / "metadata.json").write_text(
+        json.dumps({"manual_pdf": "failed"}), encoding="utf-8"
+    )
+
+    video_id = mid(MediaRoot.VIDEOS, "demo.mp4")
+    data = client.get(f"/api/documentation{q(video_id)}").get_json()
+
+    assert data["manual_pdf_available"] is False
+    assert data["manual_pdf_url"] is None
+    assert "failed" in data["manual_pdf_error"]
+
+
 def test_documentation_get_includes_editable_steps(client, real_docs):
     resp = client.get(f"/api/documentation{q(real_docs)}")
     data = resp.get_json()
@@ -249,6 +305,52 @@ def test_regenerate_endpoint_rebuilds_from_steps_json(client, real_docs):
     assert resp.status_code == 200
     assert data["ok"] is True
     assert data["step_count"] == 1
+
+
+# ── /api/documentation/generate (explicit Generate Documentation) ─────────
+
+def test_generate_endpoint_succeeds_when_frame_mapping_exists(client, real_docs):
+    """A video with frame_mapping.json on disk → generate produces (or
+    regenerates) the manual + AI package and reports the row's doc state."""
+    resp = client.post(f"/api/documentation/generate{q(real_docs)}", headers=AUTH_HEADERS)
+    data = resp.get_json()
+    assert resp.status_code == 200
+    assert data["ok"] is True
+    assert data["documentation"]["has_manual"] is True
+    assert data["documentation"]["has_ai_package"] is True
+
+
+def test_generate_endpoint_409_when_prerequisites_missing(client, env):
+    video = env["videos"] / "demo.mp4"
+    video.write_bytes(b"fake")
+    video_id = mid(MediaRoot.VIDEOS, "demo.mp4")
+    resp = client.post(f"/api/documentation/generate{q(video_id)}", headers=AUTH_HEADERS)
+    assert resp.status_code == 409
+    data = resp.get_json()
+    assert data["ok"] is False
+    assert "frame_mapping.json" in data["error"]
+    assert "RUN Full" in data["error"]
+
+
+def test_generate_endpoint_rejects_concurrent_duplicate(client, real_docs, monkeypatch):
+    """A second generate for the same media_id while one is in flight → 409.
+
+    The Flask test client is synchronous, so a real concurrent request can't
+    overlap — instead we simulate the in-flight state by seeding the guard
+    set directly (as a background thread would leave it) and assert the
+    endpoint rejects the duplicate.
+    """
+    import transcript_pipeline.dashboard.app as dash_app
+
+    with dash_app._doc_generation_lock:
+        dash_app._doc_generation_inflight.add(real_docs)
+    try:
+        resp = client.post(f"/api/documentation/generate{q(real_docs)}", headers=AUTH_HEADERS)
+        assert resp.status_code == 409
+        assert "already generating" in resp.get_json()["error"]
+    finally:
+        with dash_app._doc_generation_lock:
+            dash_app._doc_generation_inflight.discard(real_docs)
 
 
 def test_files_response_includes_documentation_flags(client, env):
