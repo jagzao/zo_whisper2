@@ -44,7 +44,7 @@ def fetch_files() -> list[dict]:
 
 def file_has_frames(media_id: str) -> bool:
     """True when the server can serve keyframes for this media id (i.e. its
-    frame_mapping.json exists) — the prerequisite for the frames tab and for
+    frame_mapping.json exists) â€” the prerequisite for the frames tab and for
     the Generate Documentation endpoint."""
     try:
         r = requests.get(f"{DASHBOARD_URL}/api/frames?id={media_id}", timeout=10)
@@ -86,7 +86,7 @@ def main() -> int:
 
         # Registered globally, from the very start: an unhandled native
         # confirm()/alert() dialog blocks the renderer indefinitely (no
-        # timeout fires) rather than raising â€” confirmed the hard way when a
+        # timeout fires) rather than raising Ã¢â‚¬â€ confirmed the hard way when a
         # narrower, conditionally-registered handler still let one run
         # through and hung the whole suite for the full outer 300s timeout.
         dialogs_seen: list[str] = []
@@ -114,7 +114,7 @@ def main() -> int:
             or page.locator("#filesPagination button").count() > 0,
         )
 
-        # Operational metrics + pipeline stepper (US-001 Â§3.3/Â§3.4)
+        # Operational metrics + pipeline stepper (US-001 Ã‚Â§3.3/Ã‚Â§3.4)
         all_ok &= check("metrics_visible", page.locator("#metrics .metric").count() == 4)
         all_ok &= check(
             "pipeline_stepper_visible", page.locator("#pipelineStepper .pipeline-stage").count() == 8
@@ -187,9 +187,9 @@ def main() -> int:
         )
         screenshot(page, "editor")
 
-        # Timestamp/evidence navigation (US-001 Â§11.3 #8): clicking a
+        # Timestamp/evidence navigation (US-001 Ã‚Â§11.3 #8): clicking a
         # transcript segment must seek the player to that segment's start.
-        # search_highlight (above) left #txSearch filled â€” filterSegments()
+        # search_highlight (above) left #txSearch filled Ã¢â‚¬â€ filterSegments()
         # hides (display:none) every non-matching segment, so clear it first
         # or "2 segments available" below would really mean "2 still visible".
         page.locator("#txSearch").fill("")
@@ -205,7 +205,7 @@ def main() -> int:
             media_duration = page.eval_on_selector("#editorMedia", "el => el.duration") or 0
             # The mock fixture's real audio file is a few seconds of silence
             # regardless of the (much longer) duration its fake metadata
-            # claims â€” a browser clamps any seek beyond the real file length
+            # claims Ã¢â‚¬â€ a browser clamps any seek beyond the real file length
             # to that real duration, so a segment starting past it lands at
             # ~media_duration, not at its nominal `data-start`. Both outcomes
             # prove seekTo() actually drove the player; only an unchanged/
@@ -230,7 +230,7 @@ def main() -> int:
             or page.locator("#framesGrid").inner_text(timeout=2000) != "",
         )
 
-        # F2 — frame cards + modal interactions. `target` may have no frames
+        # F2 â€” frame cards + modal interactions. `target` may have no frames
         # (only keyframe-extracted files do); fall back to any file that does
         # so the modal behavior is still exercised.
         frames_file = target
@@ -264,7 +264,7 @@ def main() -> int:
 
                 view_btn = frame_cards.first.locator("button[aria-label='View image']")
 
-                # open → close via X
+                # open â†’ close via X
                 view_btn.click()
                 page.wait_for_selector("#frameModal:not(.hidden)", timeout=TIMEOUT_MS)
                 all_ok &= check("frame_modal_visible", page.locator("#frameModal:not(.hidden)").count() == 1)
@@ -278,7 +278,7 @@ def main() -> int:
                 page.wait_for_selector("#frameModal.hidden", state="hidden", timeout=TIMEOUT_MS)
                 all_ok &= check("frame_modal_close_x", page.locator("#frameModal.hidden").count() == 1)
 
-                # reopen → close via Escape (the global keydown handler also
+                # reopen â†’ close via Escape (the global keydown handler also
                 # closes the preview modal, so it must be reopened below)
                 view_btn.click()
                 page.wait_for_selector("#frameModal:not(.hidden)", timeout=TIMEOUT_MS)
@@ -286,7 +286,7 @@ def main() -> int:
                 page.wait_for_selector("#frameModal.hidden", state="hidden", timeout=TIMEOUT_MS)
                 all_ok &= check("frame_modal_close_escape", page.locator("#frameModal.hidden").count() == 1)
 
-                # reopen (preview was closed by Escape) → close via backdrop
+                # reopen (preview was closed by Escape) â†’ close via backdrop
                 # click on the overlay itself, not the modal content
                 tx = frames_file.get("transcription") or {}
                 page.evaluate(
@@ -306,15 +306,15 @@ def main() -> int:
         page.locator("#previewModal .close-x").click()
         page.wait_for_selector("#previewModal.hidden", state="hidden", timeout=TIMEOUT_MS)
 
-        # Edit modal â€” kept right after this same file's preview modal closes
+        # Edit modal Ã¢â‚¬â€ kept right after this same file's preview modal closes
         # (rather than after the heavier Documentation-tab section below),
         # so it isn't affected by whatever browser-side load that section
         # accumulates (a second modal, its own media element, several
         # fetch/PATCH round-trips).
         edit_button.click()
         page.wait_for_selector("#editModal:not(.hidden)", timeout=TIMEOUT_MS)
-        # editTranscription() shows a "Loading..." placeholder synchronously,
-        # then fills the real text once its own async fetch resolves â€” wait
+        # editFile() shows a "Loading..." placeholder synchronously,
+        # then fills the real text once its own async fetch resolves Ã¢â‚¬â€ wait
         # for that, rather than a fixed sleep that can flake under load.
         page.wait_for_function(
             "document.getElementById('editTxText').value !== 'Loading...'", timeout=TIMEOUT_MS
@@ -328,7 +328,148 @@ def main() -> int:
         page.locator("#editModal .close-x").click()
         page.wait_for_selector("#editModal.hidden", state="hidden", timeout=TIMEOUT_MS)
 
-        # Documentation tab (US-001 Â§3.6/Â§4.6) â€” only meaningful for a file
+        # F5 â€” Edit File: manual project override (auto â†’ manual â†’ persisted
+        # â†’ auto). Uses a disposable file named with the first project's
+        # prefix so auto-detection is deterministic, then reassigns it to a
+        # second project and back.
+        projects = requests.get(f"{DASHBOARD_URL}/api/projects", timeout=10).json().get("projects", [])
+        proj_a = projects[0] if projects else None
+        proj_b = next((p for p in projects if p["name"] != (proj_a or {}).get("name")), None)
+        prefix_a = ((proj_a or {}).get("match", {}).get("prefix") or [None])[0]
+        if not (proj_a and proj_b and prefix_a):
+            print("[SKIP] project_override: need >=2 projects and a prefix on the first")
+        else:
+            stem = "e2e_project_override"
+            video_path = Path("Videos") / f"{prefix_a}{stem}.mp4"
+            tx_path = Path("CarpetaTranscripciones") / f"{prefix_a}{stem}.txt"
+            video_path.unlink(missing_ok=True)  # defensive: stale leftovers
+            tx_path.unlink(missing_ok=True)
+            subprocess.run(
+                ["ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=size=64x64:rate=5:duration=1", str(video_path)],
+                check=True, capture_output=True, timeout=30,
+            )
+            tx_path.write_text(
+                "E2E project override transcription text for the edit file flow.", encoding="utf-8"
+            )
+            try:
+                page.evaluate("() => loadFiles()")
+                page.locator("#fileFilter").fill(stem)
+                page.wait_for_function(
+                    "document.querySelectorAll(\"#filesList table tbody tr\").length === 1",
+                    timeout=TIMEOUT_MS,
+                )
+                row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
+                all_ok &= check(
+                    "override_auto_project",
+                    proj_a["name"] in row.inner_text(),
+                    f"auto project = {proj_a['name']}",
+                )
+
+                # Establish a known page/sort/filter state to verify preservation.
+                page.evaluate("() => { document.getElementById('pageSize').value = '5'; changePageSize(); }")
+                page.locator('th[data-sort="name"]').click()
+                page.wait_for_timeout(200)
+                state_before = page.evaluate(
+                    "() => ({ page: window._currentPage, sort: JSON.stringify(window._fileSort),"
+                    " filter: document.getElementById('fileFilter').value })"
+                )
+
+                # Edit â†’ manual B â†’ Save.
+                row.locator("button[aria-label='Edit']").click()
+                page.wait_for_selector("#editModal:not(.hidden)", timeout=TIMEOUT_MS)
+                page.wait_for_function(
+                    "document.getElementById('editTxText').value !== 'Loading...'", timeout=TIMEOUT_MS
+                )
+                page.locator("#editProject").select_option(proj_b["name"])
+                page.locator("#editModal button.ok").click()
+                page.wait_for_function(
+                    f"""() => {{
+                        const r = [...document.querySelectorAll('#filesList table tbody tr')]
+                            .find(tr => tr.textContent.includes({json.dumps(stem)}));
+                        return r && r.textContent.includes({json.dumps(proj_b['name'])});
+                    }}""",
+                    timeout=TIMEOUT_MS,
+                )
+                row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
+                all_ok &= check(
+                    "override_manual_project",
+                    proj_b["name"] in row.inner_text(),
+                    f"manual project = {proj_b['name']}",
+                )
+                all_ok &= check(
+                    "override_manual_badge",
+                    row.locator(".proj-badge.manual").count() == 1,
+                    f"{row.locator('.proj-badge.manual').count()} manual badges",
+                )
+                state_after = page.evaluate(
+                    "() => ({ page: window._currentPage, sort: JSON.stringify(window._fileSort),"
+                    " filter: document.getElementById('fileFilter').value })"
+                )
+                all_ok &= check(
+                    "override_preserves_page_sort_filter",
+                    state_after == state_before,
+                    f"before={state_before} after={state_after}",
+                )
+
+                # Reload â†’ the manual assignment must survive (disk-persisted).
+                page.reload()
+                page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
+                page.locator("#fileFilter").fill(stem)
+                page.wait_for_timeout(400)
+                row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
+                all_ok &= check(
+                    "override_persists_after_reload",
+                    row.count() == 1 and proj_b["name"] in row.inner_text(),
+                    f"{row.count()} rows, project = {proj_b['name']}",
+                )
+
+                # Filter by B â†’ the reassigned row is found.
+                page.locator("#projectFilter").select_option(proj_b["name"])
+                page.wait_for_timeout(400)
+                filtered = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
+                all_ok &= check(
+                    "override_filter_b_found",
+                    filtered.count() == 1,
+                    f"{filtered.count()} rows under filter {proj_b['name']}",
+                )
+                page.locator("#projectFilter").select_option("")
+                page.wait_for_timeout(300)
+
+                # Edit â†’ Auto-detect â†’ Save â†’ back to A.
+                row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
+                row.locator("button[aria-label='Edit']").click()
+                page.wait_for_selector("#editModal:not(.hidden)", timeout=TIMEOUT_MS)
+                page.wait_for_function(
+                    "document.getElementById('editTxText').value !== 'Loading...'", timeout=TIMEOUT_MS
+                )
+                page.locator("#editProject").select_option("")
+                page.locator("#editModal button.ok").click()
+                page.wait_for_function(
+                    f"""() => {{
+                        const r = [...document.querySelectorAll('#filesList table tbody tr')]
+                            .find(tr => tr.textContent.includes({json.dumps(stem)}));
+                        return r && r.textContent.includes({json.dumps(proj_a['name'])});
+                    }}""",
+                    timeout=TIMEOUT_MS,
+                )
+                row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
+                all_ok &= check(
+                    "override_back_to_auto",
+                    proj_a["name"] in row.inner_text(),
+                    f"auto project = {proj_a['name']}",
+                )
+                all_ok &= check(
+                    "override_auto_badge",
+                    row.locator(".proj-badge.auto").count() == 1,
+                    f"{row.locator('.proj-badge.auto').count()} auto badges",
+                )
+            finally:
+                video_path.unlink(missing_ok=True)
+                tx_path.unlink(missing_ok=True)
+                page.locator("#fileFilter").fill("")
+                page.wait_for_timeout(300)
+
+        # Documentation tab (US-001 Ã‚Â§3.6/Ã‚Â§4.6) Ã¢â‚¬â€ only meaningful for a file
         # the video-to-documentation engine actually ran on (the mock data's
         # "tutorial" fixture, via generate_mock_data.py's
         # make_tutorial_documentation()). Skips cleanly if that fixture
@@ -348,7 +489,7 @@ def main() -> int:
             docs_text = page.locator("#docsContent").inner_text(timeout=5000)
             all_ok &= check("docs_tab_renders_manual", len(docs_text) > 20, f"{len(docs_text)} chars")
 
-            # AI package download access (Â§11.3 #10).
+            # AI package download access (Ã‚Â§11.3 #10).
             download_links = page.locator("#docsContent .ai-package-link")
             all_ok &= check("ai_package_download_links_present", download_links.count() >= 2, f"{download_links.count()} links")
             # MANUAL.pdf exposure (US-002 P0): the DOCS tab must surface a
@@ -370,10 +511,10 @@ def main() -> int:
                 except Exception as e:
                     all_ok &= check("manual_pdf_serves_200", False, f"request failed: {e}")
 
-            # Human review edit persists without retranscribing (Â§11.3 #9, Â§4.8).
+            # Human review edit persists without retranscribing (Ã‚Â§11.3 #9, Ã‚Â§4.8).
             # Checked entirely in-page (re-reads the DOM after the save's own
             # loadDocs() re-render) rather than a side HTTP call from this
-            # script â€” the dev server is single-threaded and the preview
+            # script Ã¢â‚¬â€ the dev server is single-threaded and the preview
             # modal's <audio>/<video> element can be mid-stream at this point,
             # so a second, independent connection can queue for a long time.
             step_cards = page.locator(".doc-step")
@@ -387,7 +528,7 @@ def main() -> int:
                 edit_persisted = False
                 try:
                     # saveStepEdit() replaces just this one card's outerHTML
-                    # from the PATCH response (no full-panel reload) â€” poll
+                    # from the PATCH response (no full-panel reload) Ã¢â‚¬â€ poll
                     # for that, and specifically for the `reviewed` badge,
                     # not just the textarea's value: the value alone is
                     # already true right after our own `.fill()`, before Save
@@ -441,13 +582,13 @@ def main() -> int:
             page.locator(f"{modal} .close-x").click()
             page.wait_for_selector(f"{modal}.hidden", state="hidden", timeout=TIMEOUT_MS)
 
-        # Upload appears as a job (Â§11.3 #3). Uploads land in Video_compress/
-        # (pending compression/routing) â€” NOT the Filesâ†’Transcriptions table,
-        # which only lists already-organized Videos/audio â€” so "appears as a
+        # Upload appears as a job (Ã‚Â§11.3 #3). Uploads land in Video_compress/
+        # (pending compression/routing) Ã¢â‚¬â€ NOT the FilesÃ¢â€ â€™Transcriptions table,
+        # which only lists already-organized Videos/audio Ã¢â‚¬â€ so "appears as a
         # job" is checked against the upload queue message and the
         # VIDEO_COMPRESS folder count the app itself uses for this signal.
         def fetch_folders() -> dict:
-            # A bounded, exception-safe `requests` call â€” NOT page.evaluate()
+            # A bounded, exception-safe `requests` call Ã¢â‚¬â€ NOT page.evaluate()
             # with an async fetch(), which has no timeout parameter at all
             # in Playwright and hung this suite for the full 300s outer
             # ceiling at least once when a request genuinely stalled.
@@ -460,7 +601,7 @@ def main() -> int:
 
         folders_before = fetch_folders()
         # Manual temp dir (not tempfile.TemporaryDirectory()'s auto-cleanup,
-        # which raises if the OS still has the file open) â€” Chromium can
+        # which raises if the OS still has the file open) Ã¢â‚¬â€ Chromium can
         # hold its own handle on an uploaded file briefly after the
         # multipart POST completes; ignore_errors sidesteps that instead of
         # racing it.
@@ -489,15 +630,15 @@ def main() -> int:
             folders_after.get("Video_compress", 0) > folders_before.get("Video_compress", 0),
             f"Video_compress: {folders_before.get('Video_compress')} -> {folders_after.get('Video_compress')}",
         )
-        # Clean up the queued-but-not-yet-processed upload directly â€” no UI
+        # Clean up the queued-but-not-yet-processed upload directly Ã¢â‚¬â€ no UI
         # affordance exists to remove a Video_compress-pending file (only
         # already-routed Videos/audio entries are deletable from the table).
         for f in Path("Video_compress").glob("*e2e_smoke_upload*"):
             f.unlink()
 
-        # Delete requires confirmation and behaves safely (Â§11.3 #11) â€”
+        # Delete requires confirmation and behaves safely (Ã‚Â§11.3 #11) Ã¢â‚¬â€
         # against a disposable file created directly in Videos/ so it's
-        # immediately visible in the Filesâ†’Transcriptions table.
+        # immediately visible in the FilesÃ¢â€ â€™Transcriptions table.
         delete_target = Path("Videos") / "e2e_smoke_delete_target.mp4"
         delete_target.unlink(missing_ok=True)  # defensive: stale leftover from a previous crashed run
         subprocess.run(
@@ -506,7 +647,7 @@ def main() -> int:
         )
         try:
             # #fileFilter filters the already-fetched window._allFiles array
-            # client-side (applyFileFilters()) â€” it never re-hits /api/files,
+            # client-side (applyFileFilters()) Ã¢â‚¬â€ it never re-hits /api/files,
             # so a file created on disk *after* the page's initial load can
             # never appear no matter how long this waits without an explicit
             # reload first.
@@ -518,7 +659,7 @@ def main() -> int:
                 )
             except Exception as e:
                 # Still a hard, blocking failure below (check(), not
-                # check_soft()) â€” this only stops an unhandled Playwright
+                # check_soft()) Ã¢â‚¬â€ this only stops an unhandled Playwright
                 # TimeoutError from crashing the script before it can write
                 # its report.
                 print(f"[INFO] delete_target row did not appear: {e}")
@@ -544,8 +685,8 @@ def main() -> int:
             page.locator("#fileFilter").fill("")
             page.wait_for_timeout(300)
 
-        # F3 — delete preserves the current page + filter (US-001 §11.3 #11).
-        # 7 disposable files + page size 5 → page 2 holds 2 rows; deleting
+        # F3 â€” delete preserves the current page + filter (US-001 Â§11.3 #11).
+        # 7 disposable files + page size 5 â†’ page 2 holds 2 rows; deleting
         # one keeps page 2 (page preservation), deleting the last row of the
         # last page clamps back to page 1.
         pg_files = [Path("Videos") / f"e2e_pg_{i:02d}.mp4" for i in range(1, 8)]
@@ -570,7 +711,7 @@ def main() -> int:
                 f"page={page.evaluate('() => window._currentPage')}",
             )
 
-            # Delete one row on page 2 → page preserved, filter preserved.
+            # Delete one row on page 2 â†’ page preserved, filter preserved.
             page.locator("#filesList table tbody tr").first.locator("button[aria-label='Delete']").click()
             page.wait_for_function(
                 "document.querySelectorAll(\"#filesList table tbody tr\").length === 1", timeout=TIMEOUT_MS
@@ -586,7 +727,7 @@ def main() -> int:
                 page.locator("#fileFilter").input_value(),
             )
 
-            # Delete the last row of the last page → clamps back to page 1.
+            # Delete the last row of the last page â†’ clamps back to page 1.
             page.locator("#filesList table tbody tr").first.locator("button[aria-label='Delete']").click()
             page.wait_for_function(
                 "document.querySelectorAll(\"#filesList table tbody tr\").length === 5", timeout=TIMEOUT_MS
@@ -602,7 +743,7 @@ def main() -> int:
             page.locator("#fileFilter").fill("")
             page.wait_for_timeout(300)
 
-        # F4 — Generate Documentation for a file that has keyframes + a
+        # F4 â€” Generate Documentation for a file that has keyframes + a
         # transcript but no manual yet (the endpoint 409s without
         # frame_mapping.json; the mock generator only documents "tutorial"
         # files, so any tutorial fixture with frames is a candidate).
@@ -620,10 +761,10 @@ def main() -> int:
             all_ok &= check("gen_doc_button_present", gen_btn.count() == 1, f"{gen_btn.count()} buttons")
             if gen_btn.count() == 1:
                 gen_btn.click()
-                # The button flips to "Generating…" synchronously before the POST.
+                # The button flips to "Generatingâ€¦" synchronously before the POST.
                 all_ok &= check(
                     "gen_doc_shows_generating",
-                    row.locator("button[aria-label='Generating…']").count() == 1,
+                    row.locator("button[aria-label='Generatingâ€¦']").count() == 1,
                 )
                 try:
                     page.wait_for_function(
