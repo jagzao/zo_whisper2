@@ -38,6 +38,7 @@ from transcript_pipeline.documentation.engine import (
     update_step,
 )
 from transcript_pipeline.logging_setup import configure_logging
+from transcript_pipeline.media.utils import run_ffprobe
 from transcript_pipeline.projects import validate_project
 from transcript_pipeline.security import (
     MediaRoot,
@@ -295,7 +296,7 @@ def _is_valid_media_file(path: Path) -> bool:
     MIME type, which `request.files` doesn't even expose here."""
     cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", str(path)]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=30)
+        result = run_ffprobe(cmd, retry_on_timeout=False)
         streams = json.loads(result.stdout).get("streams", [])
         return any(s.get("codec_type") in ("audio", "video") for s in streams)
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
@@ -659,6 +660,10 @@ def api_projects_update() -> Any:
     action = payload.get("action")
     projects = _load_projects()
 
+    rename_from: str | None = None
+    rename_to: str | None = None
+    deleted_name: str | None = None
+
     if action == "create":
         new_project = payload.get("project")
         errors = validate_project(new_project)
@@ -677,15 +682,29 @@ def api_projects_update() -> Any:
         if errors or not isinstance(updated, dict):
             return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
         projects = [updated if p["name"] == name else p for p in projects]
+        if updated.get("name") != name:
+            rename_from, rename_to = name, updated.get("name")
 
     elif action == "delete":
-        name = payload.get("name")
-        projects = [p for p in projects if p["name"] != name]
+        deleted_name = payload.get("name")
+        projects = [p for p in projects if p["name"] != deleted_name]
 
     else:
         return jsonify({"ok": False, "error": "Unknown action"}), 400
 
     if _save_projects(projects):
+        if rename_from and rename_to:
+            overrides = _load_project_overrides()
+            renamed = {media_id: rename_to for media_id, name in overrides.items() if name == rename_from}
+            if renamed:
+                overrides.update(renamed)
+                if not _save_project_overrides(overrides):
+                    logger.warning("[PROJECTS] Could not update overrides after renaming %r", rename_from)
+        elif deleted_name:
+            overrides = _load_project_overrides()
+            remaining = {media_id: name for media_id, name in overrides.items() if name != deleted_name}
+            if remaining != overrides and not _save_project_overrides(remaining):
+                logger.warning("[PROJECTS] Could not clean overrides for deleted project %r", deleted_name)
         return jsonify({"ok": True, "projects": projects})
     return jsonify({"ok": False, "error": "Could not save projects.json"}), 500
 
@@ -840,23 +859,20 @@ def api_transcription_save() -> Any:
     # bad project name never half-saves the transcription.
     media_id = str(payload.get("media_id") or "")
     filename = resolved.name
+    override_project: str | None = None
     if media_id:
         media_target = _from_media_id(media_id, [MediaRoot.VIDEOS, MediaRoot.AUDIO], must_exist=False)
         filename = media_target.name
-        overrides = _load_project_overrides()
         raw_project = payload.get("project")
         normalized = raw_project.strip() if isinstance(raw_project, str) else ""
         if normalized and normalized.lower() != "auto":
             if not any(p.get("name") == normalized for p in _load_projects()):
                 return jsonify({"ok": False, "error": f"Project not found: {normalized}"}), 400
-            overrides[media_id] = normalized
-        else:
-            overrides.pop(media_id, None)
-        if not _save_project_overrides(overrides):
-            return jsonify({"ok": False, "error": "Could not save project assignment"}), 500
+            override_project = normalized
 
-    effective, project_source = _effective_project(media_id, filename)
-
+    # The transcription is written first: an override persisted before a
+    # failed transcription write would leave an assignment pointing at a
+    # stale file, so the assignment only lands once the content is on disk.
     try:
         _atomic_write_text(resolved, text)
         # Update text inside segments.json if it exists
@@ -868,14 +884,29 @@ def api_transcription_save() -> Any:
                 _atomic_write_text(segments_path, json.dumps(data, indent=2, ensure_ascii=False))
             except Exception:
                 pass
-        return jsonify({
-            "ok": True,
-            "project": effective.get("name") if effective else None,
-            "project_source": project_source,
-        })
     except Exception:
         logger.exception("[TRANSCRIPTION] Error saving %s", resolved)
         return jsonify({"ok": False, "error": "Could not save transcription"}), 500
+
+    assignment_warning: str | None = None
+    if media_id:
+        overrides = _load_project_overrides()
+        if override_project is not None:
+            overrides[media_id] = override_project
+        else:
+            overrides.pop(media_id, None)
+        if not _save_project_overrides(overrides):
+            assignment_warning = "transcription saved but project assignment could not be persisted"
+
+    effective, project_source = _effective_project(media_id, filename)
+    response = {
+        "ok": True,
+        "project": effective.get("name") if effective else None,
+        "project_source": project_source,
+    }
+    if assignment_warning:
+        response["warning"] = assignment_warning
+    return jsonify(response)
 
 
 @app.route("/api/file", methods=["DELETE"])
@@ -906,6 +937,13 @@ def api_delete_file() -> Any:
                 PROCESSED_DB.write_text(json.dumps(db, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception as e:
             logger.warning("[DELETE] Could not clean up DB: %s", e)
+        deleted_id = request.args.get("id", "")
+        if deleted_id:
+            overrides = _load_project_overrides()
+            if deleted_id in overrides:
+                overrides.pop(deleted_id, None)
+                if not _save_project_overrides(overrides):
+                    logger.warning("[DELETE] Could not clean project override for %s", deleted_id)
         return jsonify({"ok": True})
     except Exception:
         logger.exception("[DELETE] Error deleting %s", target)
