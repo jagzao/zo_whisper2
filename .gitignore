@@ -105,6 +105,11 @@ desktop.ini
 
 # ── Tooling de agentes IA / asistentes — refleja expertise, se suben con -f ─────
 # .agents/ contiene skills + agents genéricos; se fuerza add al subir.
+# PERO .agents/memory/ y .agents/session/ son estado de checkpoint/runtime local
+# (contienen identificadores privados del owner en JSON/MD), no se suben NUNCA.
+# Solo los deliverables SANITIZADOS de .agents/deliverables/ van al repo público.
+.agents/memory/
+.agents/session/
 # .claude/ y .vscode/ son configuraciones locales del IDE, no se suben.
 .vscode/
 AGENTS.md
