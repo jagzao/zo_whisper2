@@ -30,6 +30,9 @@ OLD_BRAND_PATTERNS = (
 
 # Synthetic path-traversal payload in a security test — not branding.
 ALLOWED_SECURITY_TEST = "tests/security/test_dashboard_local_only.py"
+# This file itself must mention the old brand (the patterns it scans for and
+# the docstring), so it is excluded from its own scan.
+ALLOWED_SELF = "tests/test_rebrand.py"
 
 BINARY_SUFFIXES = {
     ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico",
@@ -59,7 +62,8 @@ def test_no_public_facing_file_mentions_old_brand():
     for path in _tracked_files():
         if not _is_text_file(path):
             continue
-        if path.relative_to(PROJECT_ROOT).as_posix() == ALLOWED_SECURITY_TEST:
+        rel = path.relative_to(PROJECT_ROOT).as_posix()
+        if rel == ALLOWED_SECURITY_TEST or rel == ALLOWED_SELF:
             continue
         try:
             content = path.read_text(encoding="utf-8", errors="replace")
