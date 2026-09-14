@@ -66,6 +66,9 @@ The file `watcher/core/integration/llm_client.py` (to be created) should expose 
 
 **Notion is optional and disabled by default.** Do not require `NOTION_API_KEY` for core functionality.
 
+## Project-lead orchestration
+See `.agents/protocols/project-lead.md` (executor dispatch policy, stagnation detection, terminal states) and `.agents/protocols/delivery-loop.md` (AC lifecycle, validation matrix, rework loop, Definition of Done). Every US gets a deliverable doc from `.agents/deliverables/TEMPLATE.md` with frozen AC **before** implementation starts — this is what prevents scope drift and the "shipped now, hardened later" pattern.
+
 ## Analysis-to-Delivery Autonomous Execution Contract
 
 When a substantial product/architecture/UX/technical analysis has just been completed and the owner asks to **generate the deliverable**, the deliverable MUST capture the complete agreed analysis as an executable User Story (US) or implementation package. Do not reduce it to a summary or a partial backlog item.
