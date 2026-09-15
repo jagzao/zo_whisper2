@@ -1,7 +1,52 @@
 import os
 import re
 import subprocess
+import time
 from pathlib import Path
+
+# Windows exit codes are unsigned DWORDs, so a crash (e.g. 3221225794 =
+# 0xC0000409 STATUS_STACK_BUFFER_OVERRUN) arrives as a large positive value
+# instead of a negative one; POSIX reports the same class as < 0.
+_WINDOWS_CRASH_CODE_FLOOR = 0x80000000
+
+
+def _is_transient_ffprobe_error(exc: BaseException) -> bool:
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return True
+    if isinstance(exc, subprocess.CalledProcessError):
+        return exc.returncode < 0 or exc.returncode >= _WINDOWS_CRASH_CODE_FLOOR
+    return False
+
+
+def run_ffprobe(
+    cmd: list[str],
+    timeout: float = 30.0,
+    retries: int = 2,
+    backoff: float = 0.5,
+    retry_on_timeout: bool = True,
+) -> subprocess.CompletedProcess:
+    """Runs ffprobe with a bounded retry for transient failures.
+
+    Windows ffprobe intermittently crashes with STATUS_STACK_BUFFER_OVERRUN;
+    that and timeouts are retried with exponential backoff. Permanent errors
+    (non-zero exit, missing binary) are re-raised immediately so a genuinely
+    bad file isn't probed repeatedly. `retry_on_timeout=False` retries crash
+    codes only — for callers where a hung ffprobe is unlikely to recover
+    (e.g. upload validation, where 3×30s would stall the request).
+    """
+    attempt = 0
+    delay = backoff
+    while True:
+        try:
+            return subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=timeout)
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError) as exc:
+            if isinstance(exc, subprocess.TimeoutExpired) and not retry_on_timeout:
+                raise
+            if not _is_transient_ffprobe_error(exc) or attempt >= retries:
+                raise
+            time.sleep(delay)
+            delay *= 2
+            attempt += 1
 
 
 def convert_video_to_wav(video_path: str, wav_path: str) -> str | None:

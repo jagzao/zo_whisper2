@@ -25,9 +25,11 @@ converter. Add the extra(s) your usage needs:
 
 | Extra | Installs | Needed for |
 |---|---|---|
+| `studio` | `vision` + `pdf` | Product-user install: the public flow (OCR screen evidence + `MANUAL.pdf`) on top of core |
 | `llm` | `openai` | MarkItDown's vision-enabled document conversion (see `documents` below) |
 | `vision` | `pytesseract`, `imagehash` | Screen-content-change detection in `meeting_dev_handler` (OCR or perceptual-hash fallback), and tutorial frame descriptions (`FRAME_DESCRIPTIONS=true`) |
 | `documents` | `markitdown[all]` | Meeting-dev document scanning (PDF/Word/Excel/image attachments → Markdown) |
+| `pdf` | `reportlab` | Human-readable `MANUAL.pdf` next to `MANUAL.md` |
 | `all` | all of the above | Everything |
 
 Meeting summaries themselves (`generate_summary` via

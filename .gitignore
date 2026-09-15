@@ -35,6 +35,9 @@ Frames/
 # ── Base de datos del FileTracker ───────────────────────────────────────────
 processed_files.json
 
+# ── Overrides de proyecto (se regeneran en cada run) ──────────────────────────
+project_overrides.json
+
 # ── Logs ─────────────────────────────────────────────────────────────────────
 *.log
 logs/
@@ -74,6 +77,7 @@ node_modules/
 
 # ── Archivos de medios grandes (por si acaso llegan a raíz) ─────────────────
 *.mp4
+!docs/marketing/zo-media-intelligence-linkedin-demo.mp4
 *.mkv
 *.mov
 *.avi
@@ -101,6 +105,11 @@ desktop.ini
 
 # ── Tooling de agentes IA / asistentes — refleja expertise, se suben con -f ─────
 # .agents/ contiene skills + agents genéricos; se fuerza add al subir.
+# PERO .agents/memory/ y .agents/session/ son estado de checkpoint/runtime local
+# (contienen identificadores privados del owner en JSON/MD), no se suben NUNCA.
+# Solo los deliverables SANITIZADOS de .agents/deliverables/ van al repo público.
+.agents/memory/
+.agents/session/
 # .claude/ y .vscode/ son configuraciones locales del IDE, no se suben.
 .vscode/
 AGENTS.md

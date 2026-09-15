@@ -4,7 +4,7 @@ All notable changes to this project are documented here. Format loosely
 follows [Keep a Changelog](https://keepachangelog.com/); versioning follows
 [SemVer](https://semver.org/).
 
-## [1.1.0] — Zo Whisper Studio: Video-to-Documentation
+## [1.1.0] — Zo Media Intelligence: Video-to-Documentation
 
 Public rebrand and a new core capability: turning tutorial/screen-recording
 videos into a grounded human manual and an AI-ready knowledge package, on
@@ -46,10 +46,27 @@ top of the existing transcription pipeline.
   (commit messages + diffs across every ref), not only the current tree —
   automates the one-time manual audit `docs/GIT_HISTORY_CLEANUP.md` already
   documented into a repeatable regression check.
+- **`MANUAL.pdf`** (`transcript_pipeline.documentation.pdf_writer`): a
+  human-readable, paginated PDF built from the *same* `DocumentationSource` +
+  `ProceduralStep` objects that feed `MANUAL.md` — no re-extraction, no
+  re-transcription, no re-running OCR/vision. Includes title, metadata,
+  numbered steps, timestamps, embedded screenshots, confidence, evidence
+  source, reviewed badge, a visible low-confidence warning, and the
+  AI-interpretation callout clearly marked as unverified. `regenerate_from_steps()`,
+  `update_step()`, and `remove_step()` keep `MANUAL.md`, `MANUAL.pdf`,
+  `steps.json`, `knowledge.md`, `chunks.jsonl`, and `manifest.json` in sync.
+  reportlab is an optional `[pdf]` extra (pure Python, cross-platform, no
+  native Windows deps); without it the Markdown manual still works.
+- **Marketing assets** (`scripts/generate_marketing_images.py`,
+  `scripts/generate_demo.py`): reproducible generation of
+  `docs/marketing/hero-dashboard.png`, `pipeline-evidence.png`,
+  `generated-documentation.png`, and a 1920×1080 H.264 demo MP4
+  (`zo-media-intelligence-linkedin-demo.mp4`) from the real dashboard UI using
+  only synthetic data.
 
 ### Changed
 
-- Public product name is now **Zo Whisper Studio** (README, dashboard title/
+- Public product name is now **Zo Media Intelligence** (README, dashboard title/
   header, package description). The importable package and pip distribution
   name (`transcript_pipeline` / `transcript-pipeline`) are unchanged.
 - The dashboard's pipeline runner streams subprocess output line-by-line
@@ -97,6 +114,13 @@ top of the existing transcription pipeline.
   console/dashboard log tail instead of crashing outright. `configure_logging()`
   now reconfigures `sys.stdout` with `errors="backslashreplace"` when it's a
   real `TextIOWrapper`. Regression added in `tests/test_logging_setup.py`.
+- **Security harness fail-closed**: every git subprocess used by a security
+  gate (`git ls-files`, `git log --all -p --full-history`,
+  `git log --all --format=%s%n%b`, `git rev-parse`) now raises on a non-zero
+  exit and FAILs the gate instead of silently producing an empty result that
+  looked like zero hits. A single `_run_git()` choke point guarantees no call
+  site can fall back to a fail-open empty list. Regression tests simulate
+  non-zero exit codes for each invocation.
 
 ## [1.0.0] — Initial public release
 

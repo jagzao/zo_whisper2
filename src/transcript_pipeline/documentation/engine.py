@@ -59,6 +59,12 @@ try:
 except ImportError:
     _VISION_AVAILABLE = False
 
+try:
+    from transcript_pipeline.documentation.pdf_writer import write_manual_pdf
+    _PDF_AVAILABLE = True
+except ImportError:
+    _PDF_AVAILABLE = False
+
 _STEP_VISION_PROMPT = (
     "Describe concisely what UI state or action is shown in this screenshot "
     "from a software tutorial. One or two factual sentences. Do not guess at "
@@ -344,6 +350,11 @@ def write_manual(
     frames_dir: Path,
     write_steps_json: bool = True,
 ) -> None:
+    """Writes MANUAL.md (+ MANUAL.pdf when reportlab is available) and the
+    manual metadata/steps.json from the same domain objects. Every caller
+    (generate_documentation, regenerate_from_steps, update_step, remove_step)
+    goes through here, so the PDF stays in sync with the Markdown by
+    construction — no re-transcription, no re-running OCR/vision."""
     assets_dir = manual_dir / "assets"
     assets_dir.mkdir(parents=True, exist_ok=True)
 
@@ -382,11 +393,29 @@ def write_manual(
         "extraction_method": source.extraction_method,
         "generated_at": source.generated_at,
         "step_count": len(steps),
+        # Written after the PDF attempt below so the API can distinguish
+        # "generated", "failed", and "reportlab not installed" instead of
+        # silently pretending the human bundle is complete.
+        "manual_pdf": "ok",
     }
-    (manual_dir / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
 
     if write_steps_json:
         _write_steps_json(manual_dir, source, steps)
+
+    if _PDF_AVAILABLE:
+        try:
+            write_manual_pdf(manual_dir, source, steps, frames_dir)
+        except Exception as e:
+            logger.warning("[DOCS] MANUAL.pdf generation failed: %s", e)
+            metadata["manual_pdf"] = "failed"
+    else:
+        logger.warning(
+            "[DOCS] reportlab not installed; skipping MANUAL.pdf "
+            "(install with: pip install 'transcript-pipeline[pdf]')"
+        )
+        metadata["manual_pdf"] = "missing"
+
+    (manual_dir / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def write_ai_package(
