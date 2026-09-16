@@ -71,7 +71,7 @@ et-xmlfile==2.0.0
     # via openpyxl
 faster-whisper==1.2.1
     # via transcript-pipeline (pyproject.toml)
-filelock==3.32.3
+filelock==3.32.6
     # via
     #   cachecontrol
     #   huggingface-hub
