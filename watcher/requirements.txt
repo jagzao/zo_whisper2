@@ -4,7 +4,7 @@ requests
 openai
 git+https://github.com/openai/whisper.git#egg=openai-whisper
 torch==2.0.1
-triton==2.0.0
+triton==3.8.0
 python-magic
 redis
 pytest
