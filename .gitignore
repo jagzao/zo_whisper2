@@ -115,3 +115,6 @@ desktop.ini
 AGENTS.md
 CLAUDE.md
 .claude/
+
+# ── Artefactos de gates deterministas (runtime) ──
+artifacts/
