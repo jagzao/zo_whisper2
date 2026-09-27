@@ -114,6 +114,13 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
 
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Never let a report from a previous run masquerade as evidence for the
+    # current invocation when the authoritative script fails before writing
+    # its own report.
+    report_name = REPORT_FILES.get(gate)
+    if report_name:
+        (ROOT / report_name).unlink(missing_ok=True)
+
     start = time.monotonic()
     try:
         result = subprocess.run(
@@ -154,6 +161,7 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
                 "artifact": f"artifacts/gates/logs/{gate}.log",
                 "duration_seconds": round(duration, 2),
                 "command": " ".join(cmd),
+                "runner": "scripts/gate_runner.py",
             },
             ensure_ascii=False,
             indent=2,
