@@ -70,6 +70,7 @@ FROZEN_SPEC
 See:
 - `.agents/protocols/project-lead.md`
 - `.agents/protocols/model-routing.md`
+- `.agents/protocols/provider-aliases.md`
 - `.agents/protocols/deterministic-gates.md`
 - `.agents/protocols/delivery-loop.md`
 
@@ -145,3 +146,8 @@ After the owner and assistant have frozen the spec in Git, the start prompt shou
 `Project-lead: ejecuta <US-ID> completa siguiendo Project-lead V4. Termina solo en READY_FOR_OWNER_AUDIT o un blocker permitido.`
 
 The detailed scope belongs in Git, not in repeated mega-prompts.
+
+
+## OpenCode runtime enforcement
+
+`opencode.json` enforces `question=deny` and `doom_loop=deny` at project scope. This converts the minimal-owner-intervention rule from prompt guidance into a runtime permission boundary. Legitimate blockers use typed terminal states instead of interactive prompts.
