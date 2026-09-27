@@ -52,18 +52,25 @@ in a real browser. Never run E2E against real recordings or real
 
 ## Quality gates
 
-Run the same harnesses CI runs:
+Run the same deterministic harnesses used by local/Jenkins/public CI:
 
 ```
 python scripts/quality.py     # syntax, import sanity, ruff, pyright
 python scripts/security.py    # secret scan, tests/security/, pip-audit
 python scripts/ut.py          # pytest tests/
 python scripts/run_harness.py # all of the above in sequence
+python scripts/gate_runner.py quality  # compact machine-readable wrapper
 ```
 
 These are **fail-closed**: if `ruff`, `pyright`, or `pip-audit` aren't
 installed, the corresponding check reports FAIL rather than silently
 passing. Install dev extras first.
+
+### Jenkins and SonarQube
+
+`Jenkinsfile` is the self-hosted/long-running pipeline. `sonar-project.properties` configures SonarQube without embedding credentials. A missing SonarQube installation is reported as `NOT_CONFIGURED`, never as a passing quality gate.
+
+GitHub Actions remains the lightweight public PR contract so external contributors get visible checks without access to the maintainer's Jenkins environment.
 
 ## Security expectations
 
