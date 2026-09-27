@@ -25,6 +25,7 @@ Implement every P0/P1 item in `AUDIT-ZMI-001-current-state.md` necessary to reac
 11. [ ] Fresh-install acceptance path is documented and scripted so it can be run in an isolated environment.
 12. [ ] Full release gates are green and private denylist tree/history scan is clean on the final integration branch.
 13. [ ] Final DELIVERY records exact evidence and residual risks; no known P0/P1 remains.
+14. [ ] Public CI execution is enabled in repository Actions settings. If repository settings block Actions, record BLOCKED_EXTERNAL with exact owner action; do not pretend remote CI is green.
 
 ## Non-goals
 
