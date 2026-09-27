@@ -185,6 +185,17 @@ For work requiring audit:
 
 Project-lead may create/update commits and PRs autonomously. Routine commit/push/CI repair does not require owner approval.
 
+## Runtime enforcement
+
+Policy text alone is insufficient. Project-level `opencode.json` denies OpenCode's native `question` and `doom_loop` permissions so a worker cannot block the owner with routine prompts.
+
+Permitted human blockers are emitted as typed terminal text states; they do not use the interactive question tool.
+
+A host/runtime crash is a resume event:
+`LOAD_CHECKPOINT -> VERIFY_REPO_STATE -> VERIFY_PARTIAL_WRITES -> RESUME_SAME_WORK_PACKAGE`.
+
+After a crash, inspect `git status` and diffs before trusting partially written config/ignore files. Do not reset/clean away recoverable work automatically.
+
 ## Completion states
 
 - `READY_FOR_OWNER_AUDIT`
