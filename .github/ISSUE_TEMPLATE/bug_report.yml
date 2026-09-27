@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a reproducible problem in Zo Media Intelligence
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Zo Media Intelligence. Do not attach real recordings, transcripts, secrets, client names, or private filesystem paths.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: Minimal steps using synthetic/non-sensitive data.
+      placeholder: |
+        1. Start dashboard...
+        2. Upload synthetic...
+        3. Click...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v1.1.0 or commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Privacy-safe diagnostics
+      description: Include error text, gate name, or synthetic logs only. Redact local usernames, paths, tokens and private names.
