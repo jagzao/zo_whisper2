@@ -291,20 +291,83 @@ def test_failed_transcription_save_leaves_no_override(client, media, env, monkey
 
     resp = _save(client, media, "Beta")
     assert resp.status_code == 500
-    assert resp.get_json()["error"] == "Could not save transcription"
+    assert resp.get_json()["error"] == "Could not save Edit File changes safely"
     assert dashboard_app._load_project_overrides() == {}
     assert not (env["root"] / "project_overrides.json").exists()
     assert media["tx"].read_text(encoding="utf-8") == "original transcription text"
 
 
-def test_failed_override_save_reports_warning_but_keeps_transcription(client, media, monkeypatch):
+def test_failed_override_save_rolls_back_transcription(client, media, monkeypatch):
     monkeypatch.setattr(dashboard_app, "_save_project_overrides", lambda overrides: False)
 
     resp = _save(client, media, "Beta")
-    assert resp.status_code == 200
+    assert resp.status_code == 500
     data = resp.get_json()
-    assert data["ok"] is True
-    assert data["warning"] == "transcription saved but project assignment could not be persisted"
-    # The primary action (the transcription) was saved; only the assignment failed.
-    assert media["tx"].read_text(encoding="utf-8") == "edited text"
+    assert data["ok"] is False
+    assert data["error"] == "Could not save Edit File changes safely"
+    assert media["tx"].read_text(encoding="utf-8") == "original transcription text"
     assert dashboard_app._load_project_overrides() == {}
+
+
+def test_failed_override_save_rolls_back_segments(client, media, monkeypatch):
+    segments = media["tx"].parent / "alpha_demo_segments.json"
+    segments.write_text(json.dumps({"text": "original transcription text", "segments": []}), encoding="utf-8")
+    original_segments = segments.read_text(encoding="utf-8")
+    monkeypatch.setattr(dashboard_app, "_save_project_overrides", lambda overrides: False)
+
+    resp = _save(client, media, "Beta", text="edited transcription text")
+    assert resp.status_code == 500
+    assert media["tx"].read_text(encoding="utf-8") == "original transcription text"
+    assert segments.read_text(encoding="utf-8") == original_segments
+
+
+def test_project_rename_override_failure_rolls_back_both_files(client, media, env, monkeypatch):
+    _save(client, media, "Beta")
+    projects_before = (env["root"] / "projects.json").read_text(encoding="utf-8")
+    overrides_before = (env["root"] / "project_overrides.json").read_text(encoding="utf-8")
+    monkeypatch.setattr(dashboard_app, "_save_project_overrides", lambda overrides: False)
+
+    renamed = {"name": "Beta2", "match": {"prefix": ["beta2_"], "filename_contains": []}, "language": "es"}
+    resp = client.post(
+        "/api/projects",
+        json={"action": "update", "name": "Beta", "project": renamed},
+        headers=AUTH_HEADERS,
+    )
+
+    assert resp.status_code == 500
+    assert resp.get_json()["ok"] is False
+    assert (env["root"] / "projects.json").read_text(encoding="utf-8") == projects_before
+    assert (env["root"] / "project_overrides.json").read_text(encoding="utf-8") == overrides_before
+    assert dashboard_app._load_project_overrides() == {media["media_id"]: "Beta"}
+
+
+def test_project_delete_override_failure_rolls_back_both_files(client, media, env, monkeypatch):
+    _save(client, media, "Beta")
+    projects_before = (env["root"] / "projects.json").read_text(encoding="utf-8")
+    overrides_before = (env["root"] / "project_overrides.json").read_text(encoding="utf-8")
+    monkeypatch.setattr(dashboard_app, "_save_project_overrides", lambda overrides: False)
+
+    resp = client.post(
+        "/api/projects",
+        json={"action": "delete", "name": "Beta"},
+        headers=AUTH_HEADERS,
+    )
+
+    assert resp.status_code == 500
+    assert resp.get_json()["ok"] is False
+    assert (env["root"] / "projects.json").read_text(encoding="utf-8") == projects_before
+    assert (env["root"] / "project_overrides.json").read_text(encoding="utf-8") == overrides_before
+    assert dashboard_app._load_project_overrides() == {media["media_id"]: "Beta"}
+
+
+def test_delete_media_aborts_when_override_cleanup_cannot_persist(client, media, monkeypatch):
+    _save(client, media, "Beta")
+    monkeypatch.setattr(dashboard_app, "_save_project_overrides", lambda overrides: False)
+
+    resp = client.delete(f"/api/file?id={media['media_id']}", headers=AUTH_HEADERS)
+
+    assert resp.status_code == 500
+    assert resp.get_json()["ok"] is False
+    assert media["video"].exists()
+    assert dashboard_app._load_project_overrides() == {media["media_id"]: "Beta"}
+

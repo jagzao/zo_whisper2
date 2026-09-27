@@ -379,6 +379,39 @@ def _save_project_overrides(overrides: dict[str, str]) -> bool:
         return False
 
 
+def _snapshot_text_file(path: Path) -> tuple[bool, str]:
+    """Capture enough state to restore a small text persistence file exactly."""
+    if not path.exists():
+        return False, ""
+    return True, path.read_text(encoding="utf-8")
+
+
+def _restore_text_snapshot(path: Path, snapshot: tuple[bool, str]) -> None:
+    """Restore a text file snapshot using the same atomic write primitive."""
+    existed, content = snapshot
+    if existed:
+        _atomic_write_text(path, content)
+    else:
+        path.unlink(missing_ok=True)
+
+
+def _rollback_text_snapshots(snapshots: dict[Path, tuple[bool, str]]) -> bool:
+    """Best-effort rollback for a multi-file logical transaction.
+
+    Returns False if any rollback write itself fails. Callers still fail the
+    request; rollback failures are logged at CRITICAL because manual recovery
+    may be required.
+    """
+    ok = True
+    for snapshot_path, snapshot in snapshots.items():
+        try:
+            _restore_text_snapshot(snapshot_path, snapshot)
+        except Exception:
+            ok = False
+            logger.critical("[ATOMICITY] Rollback failed for %s", snapshot_path.name, exc_info=True)
+    return ok
+
+
 def _effective_project(media_id: str, filename: str) -> tuple[dict | None, str]:
     """Resolves the project shown/used for a file.
 
@@ -659,10 +692,10 @@ def api_projects_update() -> Any:
     payload = request.get_json(force=True) or {}
     action = payload.get("action")
     projects = _load_projects()
+    original_overrides = _load_project_overrides()
 
-    rename_from: str | None = None
-    rename_to: str | None = None
-    deleted_name: str | None = None
+    new_projects = list(projects)
+    new_overrides = dict(original_overrides)
 
     if action == "create":
         new_project = payload.get("project")
@@ -671,42 +704,62 @@ def api_projects_update() -> Any:
             return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
         if any(p["name"] == new_project["name"] for p in projects):
             return jsonify({"ok": False, "error": "Project already exists"}), 400
-        projects.append(new_project)
+        new_projects.append(new_project)
 
     elif action == "update":
         name = payload.get("name")
         updated = payload.get("project")
         if not name:
             return jsonify({"ok": False, "error": "Incomplete data"}), 400
+        if not any(p.get("name") == name for p in projects):
+            return jsonify({"ok": False, "error": "Project not found"}), 404
         errors = validate_project(updated)
         if errors or not isinstance(updated, dict):
             return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
-        projects = [updated if p["name"] == name else p for p in projects]
-        if updated.get("name") != name:
-            rename_from, rename_to = name, updated.get("name")
+        updated_name = updated.get("name")
+        if updated_name != name and any(p.get("name") == updated_name for p in projects):
+            return jsonify({"ok": False, "error": "Project already exists"}), 400
+
+        new_projects = [updated if p["name"] == name else p for p in projects]
+        if updated_name != name:
+            new_overrides = {
+                media_id: (updated_name if project_name == name else project_name)
+                for media_id, project_name in original_overrides.items()
+            }
 
     elif action == "delete":
         deleted_name = payload.get("name")
-        projects = [p for p in projects if p["name"] != deleted_name]
+        if not deleted_name or not any(p.get("name") == deleted_name for p in projects):
+            return jsonify({"ok": False, "error": "Project not found"}), 404
+        new_projects = [p for p in projects if p["name"] != deleted_name]
+        new_overrides = {
+            media_id: project_name
+            for media_id, project_name in original_overrides.items()
+            if project_name != deleted_name
+        }
 
     else:
         return jsonify({"ok": False, "error": "Unknown action"}), 400
 
-    if _save_projects(projects):
-        if rename_from and rename_to:
-            overrides = _load_project_overrides()
-            renamed = {media_id: rename_to for media_id, name in overrides.items() if name == rename_from}
-            if renamed:
-                overrides.update(renamed)
-                if not _save_project_overrides(overrides):
-                    logger.warning("[PROJECTS] Could not update overrides after renaming %r", rename_from)
-        elif deleted_name:
-            overrides = _load_project_overrides()
-            remaining = {media_id: name for media_id, name in overrides.items() if name != deleted_name}
-            if remaining != overrides and not _save_project_overrides(remaining):
-                logger.warning("[PROJECTS] Could not clean overrides for deleted project %r", deleted_name)
-        return jsonify({"ok": True, "projects": projects})
-    return jsonify({"ok": False, "error": "Could not save projects.json"}), 500
+    projects_snapshot = _snapshot_text_file(PROJECTS_PATH)
+    overrides_path = _project_overrides_path()
+    overrides_snapshot = _snapshot_text_file(overrides_path)
+    snapshots = {
+        PROJECTS_PATH: projects_snapshot,
+        overrides_path: overrides_snapshot,
+    }
+
+    try:
+        if not _save_projects(new_projects):
+            raise OSError("projects persistence failed")
+        if new_overrides != original_overrides and not _save_project_overrides(new_overrides):
+            raise OSError("project override persistence failed")
+    except Exception:
+        rollback_ok = _rollback_text_snapshots(snapshots)
+        logger.exception("[PROJECTS] Atomic project operation failed; rollback_ok=%s", rollback_ok)
+        return jsonify({"ok": False, "error": "Could not save project changes safely"}), 500
+
+    return jsonify({"ok": True, "projects": new_projects})
 
 
 @app.route("/api/upload", methods=["POST"])
@@ -853,10 +906,6 @@ def api_transcription_save() -> Any:
     text = payload.get("text", "")
     resolved = _from_media_id(payload.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
 
-    # Optional manual project assignment, keyed by the media file's own
-    # media_id (VIDEOS/AUDIO) — never by the transcription id. "" / null /
-    # "auto" removes the override. Validation happens before any write so a
-    # bad project name never half-saves the transcription.
     media_id = str(payload.get("media_id") or "")
     filename = resolved.name
     override_project: str | None = None
@@ -870,51 +919,76 @@ def api_transcription_save() -> Any:
                 return jsonify({"ok": False, "error": f"Project not found: {normalized}"}), 400
             override_project = normalized
 
-    # The transcription is written first: an override persisted before a
-    # failed transcription write would leave an assignment pointing at a
-    # stale file, so the assignment only lands once the content is on disk.
+    segments_path = resolved.parent / f"{resolved.stem}_segments.json"
+    segments_content: str | None = None
+    if segments_path.exists():
+        try:
+            segments_data = json.loads(segments_path.read_text(encoding="utf-8"))
+            segments_data["text"] = text
+            segments_content = json.dumps(segments_data, indent=2, ensure_ascii=False)
+        except Exception:
+            logger.exception("[TRANSCRIPTION] Could not prepare segment update for %s", resolved.name)
+            return jsonify({"ok": False, "error": "Could not prepare transcription update"}), 500
+
+    overrides_path = _project_overrides_path()
+    snapshots: dict[Path, tuple[bool, str]] = {
+        resolved: _snapshot_text_file(resolved),
+    }
+    if segments_path.exists():
+        snapshots[segments_path] = _snapshot_text_file(segments_path)
+    if media_id:
+        snapshots[overrides_path] = _snapshot_text_file(overrides_path)
+
+    new_overrides = _load_project_overrides() if media_id else {}
+    if media_id:
+        if override_project is not None:
+            new_overrides[media_id] = override_project
+        else:
+            new_overrides.pop(media_id, None)
+
     try:
         _atomic_write_text(resolved, text)
-        # Update text inside segments.json if it exists
-        segments_path = resolved.parent / f"{resolved.stem}_segments.json"
-        if segments_path.exists():
-            try:
-                data = json.loads(segments_path.read_text(encoding="utf-8"))
-                data["text"] = text
-                _atomic_write_text(segments_path, json.dumps(data, indent=2, ensure_ascii=False))
-            except Exception:
-                pass
+        if segments_content is not None:
+            _atomic_write_text(segments_path, segments_content)
+        if media_id and not _save_project_overrides(new_overrides):
+            raise OSError("project override persistence failed")
     except Exception:
-        logger.exception("[TRANSCRIPTION] Error saving %s", resolved)
-        return jsonify({"ok": False, "error": "Could not save transcription"}), 500
-
-    assignment_warning: str | None = None
-    if media_id:
-        overrides = _load_project_overrides()
-        if override_project is not None:
-            overrides[media_id] = override_project
-        else:
-            overrides.pop(media_id, None)
-        if not _save_project_overrides(overrides):
-            assignment_warning = "transcription saved but project assignment could not be persisted"
+        rollback_ok = _rollback_text_snapshots(snapshots)
+        logger.exception("[TRANSCRIPTION] Atomic Edit File save failed; rollback_ok=%s", rollback_ok)
+        return jsonify({"ok": False, "error": "Could not save Edit File changes safely"}), 500
 
     effective, project_source = _effective_project(media_id, filename)
-    response = {
-        "ok": True,
-        "project": effective.get("name") if effective else None,
-        "project_source": project_source,
-    }
-    if assignment_warning:
-        response["warning"] = assignment_warning
-    return jsonify(response)
+    return jsonify(
+        {
+            "ok": True,
+            "project": effective.get("name") if effective else None,
+            "project_source": project_source,
+        }
+    )
 
 
 @app.route("/api/file", methods=["DELETE"])
 def api_delete_file() -> Any:
+    deleted_id = request.args.get("id", "")
     target = _from_media_id(
-        request.args.get("id", ""),
+        deleted_id,
         [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS, MediaRoot.TRANSCRIPTIONS],
     )
+
+    overrides_path = _project_overrides_path()
+    overrides_snapshot = _snapshot_text_file(overrides_path)
+    overrides = _load_project_overrides()
+    had_override = bool(deleted_id and deleted_id in overrides)
+
+    # A stale manual assignment is worse than an aborted delete: persist the
+    # override cleanup before the destructive filesystem operation. If the
+    # delete itself then fails, restore the previous override snapshot.
+    if had_override:
+        updated_overrides = dict(overrides)
+        updated_overrides.pop(deleted_id, None)
+        if not _save_project_overrides(updated_overrides):
+            return jsonify({"ok": False, "error": "Could not persist project cleanup"}), 500
+
     try:
         transcription = _resolve_transcription(target)
         target.unlink()
@@ -927,25 +1001,24 @@ def api_delete_file() -> Any:
                         child.unlink()
                     except Exception as e:
                         logger.warning("[DELETE] Could not delete %s: %s", child, e)
-        # Clean up processed_files.json
+
         try:
             if PROCESSED_DB.exists():
                 db = json.loads(PROCESSED_DB.read_text(encoding="utf-8"))
                 keys = [k for k, v in db.items() if v.get("path") == str(target.absolute()) or v.get("name") == target.name]
                 for k in keys:
                     del db[k]
-                PROCESSED_DB.write_text(json.dumps(db, indent=2, ensure_ascii=False), encoding="utf-8")
+                _atomic_write_text(PROCESSED_DB, json.dumps(db, indent=2, ensure_ascii=False))
         except Exception as e:
             logger.warning("[DELETE] Could not clean up DB: %s", e)
-        deleted_id = request.args.get("id", "")
-        if deleted_id:
-            overrides = _load_project_overrides()
-            if deleted_id in overrides:
-                overrides.pop(deleted_id, None)
-                if not _save_project_overrides(overrides):
-                    logger.warning("[DELETE] Could not clean project override for %s", deleted_id)
+
         return jsonify({"ok": True})
     except Exception:
+        if had_override:
+            try:
+                _restore_text_snapshot(overrides_path, overrides_snapshot)
+            except Exception:
+                logger.critical("[DELETE] Could not restore project override after delete failure", exc_info=True)
         logger.exception("[DELETE] Error deleting %s", target)
         return jsonify({"ok": False, "error": "Could not delete file"}), 500
 

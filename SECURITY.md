@@ -87,3 +87,17 @@ private reporting — a PR or issue is fine.
 - None of these gates report PASS when the underlying tool isn't installed
   — see `scripts/quality.py`/`scripts/security.py` for the explicit
   fail-closed behavior.
+
+
+## Public CI vs maintainer-private checks
+
+Public pull requests run the repository security harness plus Gitleaks. The maintainer also keeps a local, gitignored `.sensitive-identifiers` denylist for private names/path fragments that must never be published.
+
+That private list is intentionally unavailable to forks and public CI. A public run may therefore mark only that private-identifier sub-check as `SKIPPED`; this is not treated as evidence that private history was audited. Before a public release, the maintainer runs `python scripts/security.py` locally with the private denylist configured and requires both current-tree and full-history checks to report zero hits.
+
+## Supply-chain evidence
+
+- GitHub PR workflows use read-only repository permissions unless a job explicitly needs more.
+- Jenkins/SonarQube credentials are supplied by the local runtime and never committed.
+- Gate artifacts are generated under gitignored `artifacts/`.
+- Release evidence must come from executable gates, not an LLM summary.
