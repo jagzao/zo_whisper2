@@ -692,7 +692,6 @@ def api_projects_update() -> Any:
     payload = request.get_json(force=True) or {}
     action = payload.get("action")
     projects = _load_projects()
-    original_projects = list(projects)
     original_overrides = _load_project_overrides()
 
     new_projects = list(projects)
