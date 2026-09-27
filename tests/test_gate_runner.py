@@ -76,12 +76,23 @@ def test_fail_emits_valid_compact_json_with_signature():
 def test_fail_extracts_structured_report():
     report_path = ROOT / "quality_report.json"
     original = report_path.read_text(encoding="utf-8") if report_path.exists() else None
-    report_path.write_text(
-        json.dumps({"checks": [{"name": "ruff_lint", "status": "FAIL", "detail": "boom: bad import"}], "ok": False}),
-        encoding="utf-8",
-    )
+
+    def _run_and_write_report(*_args, **_kwargs):
+        report_path.write_text(
+            json.dumps(
+                {
+                    "checks": [
+                        {"name": "ruff_lint", "status": "FAIL", "detail": "boom: bad import"}
+                    ],
+                    "ok": False,
+                }
+            ),
+            encoding="utf-8",
+        )
+        return _FakeCompleted(1, "", "")
+
     try:
-        with mock.patch.object(gate_runner.subprocess, "run", return_value=_FakeCompleted(1, "", "")):
+        with mock.patch.object(gate_runner.subprocess, "run", side_effect=_run_and_write_report):
             rc = gate_runner.run_gate("quality")
     finally:
         if original is None:
@@ -94,7 +105,6 @@ def test_fail_extracts_structured_report():
     assert data["status"] == "FAIL"
     assert data["check"] == "ruff_lint"
     assert data["error_signature"].startswith("boom")
-
 
 def test_unknown_gate_returns_2_and_writes_no_artifact():
     rc = gate_runner.run_gate("nope")
