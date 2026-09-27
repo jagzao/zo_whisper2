@@ -55,6 +55,7 @@ def test_pass_emits_valid_compact_json():
     assert data["artifact"] == "artifacts/gates/logs/pytest.log"
     assert isinstance(data["duration_seconds"], float)
     assert data["command"].endswith("-m pytest tests/ -q")
+    assert data["runner"] == "scripts/gate_runner.py"
 
 
 def test_fail_emits_valid_compact_json_with_signature():
@@ -130,3 +131,29 @@ def test_duration_seconds_rounded():
 
     assert rc == 0
     assert _read_latest()["duration_seconds"] == 1.23
+
+
+def test_stale_structured_report_is_not_reused():
+    report_path = ROOT / "quality_report.json"
+    original = report_path.read_text(encoding="utf-8") if report_path.exists() else None
+    report_path.write_text(
+        json.dumps({"checks": [{"name": "old_failure", "status": "FAIL", "detail": "stale"}], "ok": False}),
+        encoding="utf-8",
+    )
+    try:
+        with mock.patch.object(
+            gate_runner.subprocess,
+            "run",
+            return_value=_FakeCompleted(1, "", "current process failed before writing report"),
+        ):
+            rc = gate_runner.run_gate("quality")
+    finally:
+        if original is None:
+            report_path.unlink(missing_ok=True)
+        else:
+            report_path.write_text(original, encoding="utf-8")
+
+    assert rc == 1
+    data = _read_latest()
+    assert data["check"] == "quality"
+    assert data["error_signature"] == "current process failed before writing report"
