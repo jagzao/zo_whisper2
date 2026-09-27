@@ -291,7 +291,7 @@ def test_failed_transcription_save_leaves_no_override(client, media, env, monkey
 
     resp = _save(client, media, "Beta")
     assert resp.status_code == 500
-    assert resp.get_json()["error"] == "Could not save transcription"
+    assert resp.get_json()["error"] == "Could not save Edit File changes safely"
     assert dashboard_app._load_project_overrides() == {}
     assert not (env["root"] / "project_overrides.json").exists()
     assert media["tx"].read_text(encoding="utf-8") == "original transcription text"
