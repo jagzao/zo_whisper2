@@ -71,8 +71,11 @@ pipeline {
                             writeFile file: 'artifacts/gates/sonarqube.json', text: '{"status":"NOT_CONFIGURED","gate":"sonarqube"}\n'
                         }
                     } else {
-                        def sonarCmd = 'sonar-scanner -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.token="$SONAR_TOKEN"'
-                        if (isUnix()) { sh sonarCmd } else { bat sonarCmd }
+                        if (isUnix()) {
+                            sh 'sonar-scanner -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.token="$SONAR_TOKEN"'
+                        } else {
+                            bat 'sonar-scanner -Dsonar.host.url="%SONAR_HOST_URL%" -Dsonar.token="%SONAR_TOKEN%"'
+                        }
                     }
                 }
             }
