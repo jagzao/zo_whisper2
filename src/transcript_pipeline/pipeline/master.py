@@ -12,13 +12,14 @@ import shutil
 import sys
 from pathlib import Path
 
-from transcript_pipeline.config import PROJECT_ROOT, PROJECTS_CONFIG_PATH, load_env
+from transcript_pipeline.config import DATA_ROOT, PROJECTS_CONFIG_PATH, VIDEOS_DIR, load_env
 from transcript_pipeline.handlers.base import HandlerStatus, ProjectHandler
 from transcript_pipeline.handlers.client_meeting_handler import ClientMeetingHandler
 from transcript_pipeline.handlers.meeting_dev_handler import MeetingDevHandler
 from transcript_pipeline.handlers.zo_handler import ZoHandler
 from transcript_pipeline.logging_setup import configure_logging
-from transcript_pipeline.projects import load_projects, match_project
+from transcript_pipeline.projects import load_projects, match_project, resolve_project_output_path
+from transcript_pipeline.security.exceptions import PathTraversalError
 from transcript_pipeline.settings import SETTINGS
 
 load_env()
@@ -35,7 +36,7 @@ HANDLER_MAP = {"client_meeting": ClientMeetingHandler, "zo": ZoHandler, "meeting
 
 class MasterProcessor:
     def __init__(self):
-        self.base_path = PROJECT_ROOT
+        self.base_path = DATA_ROOT
         self.projects = load_projects(PROJECTS_CONFIG_PATH)
 
         # Build handler instances from projects.json output_path + handler key
@@ -48,7 +49,14 @@ class MasterProcessor:
             handler_cls = HANDLER_MAP.get(handler_key)
             if not handler_cls:
                 continue
-            resolved = Path(output_path)
+            try:
+                resolved = resolve_project_output_path(
+                    output_path, DATA_ROOT,
+                    SETTINGS.container_mode, SETTINGS.allowed_export_roots,
+                )
+            except (PathTraversalError, OSError) as exc:
+                logger.warning("[CONFIG] unsafe output_path for '%s': %s — handler disabled", proj["name"], exc)
+                continue
             if not resolved.exists():
                 logger.warning(
                     "[CONFIG] output_path does not exist for '%s': %s — handler disabled",
@@ -64,7 +72,7 @@ class MasterProcessor:
             subfolder = proj.get("videos_subfolder")
             if not subfolder:
                 continue
-            target = self.base_path / "Videos" / subfolder
+            target = VIDEOS_DIR / subfolder
             rules = proj.get("match", {})
             for prefix in rules.get("prefix", []):
                 self._organize_map.append((prefix.lower(), target))

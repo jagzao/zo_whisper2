@@ -11,7 +11,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from transcript_pipeline.config import PROJECT_ROOT
+from transcript_pipeline.config import DATA_ROOT
 from transcript_pipeline.media.utils import run_ffprobe
 from transcript_pipeline.settings import SETTINGS
 
@@ -138,7 +138,7 @@ def get_target_folder(filename, base_path):
     return base_path / "Videos" / "general"
 
 
-def process_video_compress_folder(base_path: Path = PROJECT_ROOT) -> int:
+def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
     """Processes the Video_compress folder: compresses and moves files"""
     compress_folder = base_path / "Video_compress"
 

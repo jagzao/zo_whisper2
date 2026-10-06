@@ -2,15 +2,21 @@
 
 `projects.json` defines, per project, the match rules (folder, filename
 prefix, keyword) and where/how to route the result. This module is pure
-(it doesn't touch the filesystem except to read the JSON), which makes it
-easy to test without real audio or the Whisper model.
+(it doesn't touch the filesystem except to read the JSON and the explicit
+`mkdir` in `resolve_project_output_path`, which creates a missing output
+folder so relative paths can be used out of the box), which makes it easy
+to test without real audio or the Whisper model.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import os
+from collections.abc import Sequence
 from pathlib import Path
+
+from transcript_pipeline.security.exceptions import PathTraversalError
 
 logger = logging.getLogger(__name__)
 
@@ -125,3 +131,92 @@ def match_project(audio_path: Path, projects: list[dict]) -> dict | None:
                 return proj
 
     return None
+
+
+def _is_within(candidate: Path, base: Path) -> bool:
+    """True when `candidate` is `base` itself or lives somewhere below it.
+
+    Replicates SafePathResolver._is_within instead of importing it: the
+    resolver is the dashboard's media-root boundary (MediaRoot enum,
+    media_id handling) and output routing only needs the containment
+    predicate. normcase folds case and separators on Windows (NTFS is
+    case-insensitive), and the explicit `os.sep` suffix prevents the
+    string-prefix bypass ("C:\\data_evil" must not match base "C:\\data").
+    Callers must pass already-resolve()d paths so symlink escapes are
+    caught (resolve() follows symlinks to their real target).
+    """
+    candidate_s = os.path.normcase(str(candidate))
+    base_s = os.path.normcase(str(base))
+    return candidate_s == base_s or candidate_s.startswith(base_s + os.sep)
+
+
+def resolve_project_output_path(
+    raw: str,
+    data_root: Path,
+    container_mode: bool,
+    allowed_roots: Sequence[Path] = (),
+) -> Path:
+    """Resolves a projects.json `output_path` to a safe, existing folder.
+
+    Why this exists (WP-02 / US-ZMI-DKR-001 AC 5-7): `output_path` used to
+    be a Windows absolute path trusted as-is. Relative values are the
+    portable default now (they resolve under the runtime DATA_ROOT, which
+    works unchanged inside Docker), while legacy absolute host paths stay
+    backward compatible. Container mode refuses any absolute path that is
+    not the data root or an explicitly configured allowed export root — a
+    container must not silently start writing to whatever absolute path a
+    copied config happens to contain.
+
+    Rules, in order:
+
+    1. `raw` must be a non-empty str without NUL bytes ("\\x00"), else
+       PathTraversalError — same hardening as SafePathResolver.resolve.
+    2. Drive-relative input (drive set, root empty, e.g. "C:foo") always
+       raises PathTraversalError: pathlib anchors it to the CWD *of that
+       drive*, an ambiguous escape independent of any containment check.
+    3. Absolute input:
+       - host mode (container_mode=False): legacy behavior — returned
+         resolve()d with no containment check and no mkdir. projects.json
+         is trusted local configuration on the host, and pre-WP-02
+         installs depend on absolute paths outside DATA_ROOT.
+       - container mode: allowed only when the resolved candidate is
+         within `data_root` or within any of `allowed_roots` (each also
+         resolved strict=False); otherwise PathTraversalError.
+    4. Relative input: candidate = (data_root / raw).resolve(strict=False).
+       If it is not within `data_root`, PathTraversalError — this rejects
+       "../" traversal *and* symlink escapes, because resolve() follows
+       symlinks to their real target before the containment check. When
+       within, the folder is created (parents=True, exist_ok=True) so
+       handlers receive an existing output dir; an OSError from mkdir
+       propagates as-is so the caller (MasterProcessor) can disable just
+       the affected handler instead of crashing startup.
+    """
+    if not isinstance(raw, str) or not raw or "\x00" in raw:
+        raise PathTraversalError(f"Invalid output_path: {raw!r}")
+
+    p = Path(raw)
+
+    if p.drive and not p.root:
+        raise PathTraversalError(f"Drive-relative output_path not allowed: {raw!r}")
+
+    if p.is_absolute() or p.root:
+        candidate = p.resolve(strict=False)
+        if not container_mode:
+            return candidate
+        resolved_data_root = data_root.resolve(strict=False)
+        if _is_within(candidate, resolved_data_root):
+            return candidate
+        for allowed in allowed_roots:
+            if _is_within(candidate, allowed.resolve(strict=False)):
+                return candidate
+        raise PathTraversalError(
+            f"Absolute output_path outside the data root and not in any "
+            f"allowed export root: {raw!r}"
+        )
+
+    resolved_data_root = data_root.resolve(strict=False)
+    candidate = (resolved_data_root / p).resolve(strict=False)
+    if not _is_within(candidate, resolved_data_root):
+        raise PathTraversalError(f"output_path escapes the data root: {raw!r}")
+    candidate.mkdir(parents=True, exist_ok=True)
+    return candidate

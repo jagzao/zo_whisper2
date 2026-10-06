@@ -1,6 +1,14 @@
 from pathlib import Path
 
-from transcript_pipeline.projects import load_projects, match_project, validate_project
+import pytest
+
+from transcript_pipeline.projects import (
+    load_projects,
+    match_project,
+    resolve_project_output_path,
+    validate_project,
+)
+from transcript_pipeline.security.exceptions import PathTraversalError
 
 PROJECTS = [
     {
@@ -121,3 +129,60 @@ def test_load_projects_skips_invalid_entries(tmp_path):
     )
     projects = load_projects(config)
     assert [p["name"] for p in projects] == ["Good"]
+
+
+# ── WP-02: resolve_project_output_path ─────────────────────────────────
+# Relative output_path values are the portable default (they resolve under
+# the runtime DATA_ROOT); absolute values keep legacy host behavior and are
+# contained in container mode. The attack matrix (traversal, symlink
+# escape, sibling prefix, ...) lives in tests/security/test_project_output_paths.py.
+
+
+def test_resolve_output_relative_creates_under_data_root(tmp_path):
+    data_root = tmp_path / "data"
+    resolved = resolve_project_output_path("exports/Northwind", data_root, container_mode=False)
+    assert resolved == (data_root / "exports" / "Northwind").resolve()
+    assert resolved.is_dir()  # helper created it — MasterProcessor requires an existing dir
+
+
+def test_resolve_output_nested_relative(tmp_path):
+    resolved = resolve_project_output_path("exports/Client/Reports", tmp_path, container_mode=True)
+    assert resolved == (tmp_path / "exports" / "Client" / "Reports").resolve()
+    assert resolved.is_dir()
+
+
+def test_resolve_output_relative_traversal_rejected(tmp_path):
+    with pytest.raises(PathTraversalError):
+        resolve_project_output_path("../outside", tmp_path, container_mode=False)
+
+
+def test_resolve_output_host_absolute_is_legacy_no_containment(tmp_path):
+    # Intentional legacy behavior (US-ZMI-DKR-001 AC 6): host mode trusts
+    # absolute paths in projects.json exactly as before WP-02.
+    outside = tmp_path / "elsewhere"
+    resolved = resolve_project_output_path(str(outside), tmp_path / "data", container_mode=False)
+    assert resolved == outside.resolve()
+    assert not outside.exists()  # legacy branch performs no mkdir either
+
+
+def test_resolve_output_container_absolute_under_data_root_allowed(tmp_path):
+    data_root = tmp_path / "data"
+    target = data_root / "exports"
+    resolved = resolve_project_output_path(str(target), data_root, container_mode=True)
+    assert resolved == target.resolve()
+
+
+def test_resolve_output_container_absolute_outside_rejected(tmp_path):
+    data_root = tmp_path / "data"
+    with pytest.raises(PathTraversalError):
+        resolve_project_output_path(str(tmp_path / "outside"), data_root, container_mode=True)
+
+
+def test_resolve_output_container_absolute_under_allowed_root(tmp_path):
+    data_root = tmp_path / "data"
+    allowed = tmp_path / "mnt" / "client"
+    target = allowed / "reports"
+    resolved = resolve_project_output_path(
+        str(target), data_root, container_mode=True, allowed_roots=(allowed,)
+    )
+    assert resolved == target.resolve()

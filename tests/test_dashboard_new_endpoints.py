@@ -28,6 +28,7 @@ def env(tmp_path, monkeypatch):
         d.mkdir(parents=True)
 
     monkeypatch.setattr(dashboard_app, "ROOT", tmp_path)
+    monkeypatch.setattr(dashboard_app, "LOG_DIR", tmp_path)
     monkeypatch.setattr(dashboard_app, "AUDIO_BASE", audio)
     monkeypatch.setattr(dashboard_app, "VIDEOS_BASE", videos)
     monkeypatch.setattr(dashboard_app, "VIDEO_COMPRESS", video_compress)
@@ -422,7 +423,7 @@ def test_run_full_triggers_pipeline_and_stage_updates_visibly(client, env, monke
 
     def fake_popen(cmd, **kwargs):
         calls.append(cmd)
-        if "compress_and_move.py" in cmd[1]:
+        if "transcript_pipeline.media.compressor" in cmd:
             return _FakeCompletedProcess(["STEP 1 stub: nothing to compress\n"])
         return _FakeCompletedProcess([
             "[SCAN] Folder detected: audio/demo\n",

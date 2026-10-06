@@ -353,6 +353,17 @@ a given feature needs. `[pdf]` (reportlab) is only needed to generate
 
 `match` decides which files belong to a project; `initial_prompt` reduces Whisper hallucinations with domain vocabulary; `corrections` fixes recurring transcription errors (proper names, technical jargon); `data_classification` (`public`/`internal`/`confidential`) gates whether this project's content can ever reach a remote LLM.
 
+## Docker quick start
+
+Run the complete CPU-first product with Docker Compose:
+
+```bash
+docker compose up -d --build
+# Open http://127.0.0.1:5000
+```
+
+Runtime files live in `./zmi-data` and model weights in the named Docker cache volume. The first model download may take several minutes. See [Docker operations](docs/DOCKER.md) for backup, updates, local configuration and safe cleanup.
+
 ## Usage
 
 ```bash

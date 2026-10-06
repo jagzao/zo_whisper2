@@ -31,8 +31,8 @@ import psutil
 
 from transcript_pipeline.config import (
     AUDIO_DIR,
+    DATA_ROOT,
     FRAMES_DIR,
-    PROJECT_ROOT,
     PROJECTS_CONFIG_PATH,
     TRANSCRIPTIONS_DIR,
     VIDEOS_DIR,
@@ -106,7 +106,7 @@ class SimpleScanProcessor:
     VIDEO_EXTENSIONS = {'.mp4', '.mkv', '.mov', '.avi', '.webm'}
 
     def __init__(self):
-        self.base_path = PROJECT_ROOT
+        self.base_path = DATA_ROOT
         self.audio_base = AUDIO_DIR
         self.videos_base = VIDEOS_DIR
         self.transcriptions_base = TRANSCRIPTIONS_DIR

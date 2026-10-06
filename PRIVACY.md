@@ -122,3 +122,7 @@ None of these are committed to the repository (see `.gitignore`).
 - [`SECURITY.md`](SECURITY.md) — vulnerability reporting, trust model.
 - [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — assets, actors, STRIDE-style analysis.
 - [`docs/DATA_FLOW.md`](docs/DATA_FLOW.md) — diagram of what can leave the machine and where.
+
+## Docker runtime storage
+
+Docker does not change the local-first boundary. Media, transcripts, generated documentation and application state stay under the mounted `ZMI_DATA_PATH` directory; downloaded model weights stay in the persistent `zmi-model-cache` volume. The default dashboard port is host-loopback-only. External LLM use remains opt-in (`ALLOW_EXTERNAL_LLM=false` by default); users control any enabled provider and its credentials. Compose is not a remote or multi-user deployment mode.

@@ -1,5 +1,5 @@
 {
-  "_comment": "Copy this file to projects.json and adjust it with your real projects. To add a project: copy any block and adjust the fields. custom_fillers=extra words to strip, corrections=Whisper vocabulary corrections, summary_prompt=LLM prompt for the summary (different from initial_prompt, which is for Whisper). data_classification (optional, default 'internal'): 'public' | 'internal' | 'confidential' — 'confidential' blocks any remote LLM call for this project regardless of ALLOW_EXTERNAL_LLM (see PRIVACY.md).",
+  "_comment": "Copy this file to projects.json and adjust it with your real projects. To add a project: copy any block and adjust the fields. custom_fillers=extra words to strip, corrections=Whisper vocabulary corrections, summary_prompt=LLM prompt for the summary (different from initial_prompt, which is for Whisper). data_classification (optional, default 'internal'): 'public' | 'internal' | 'confidential' — 'confidential' blocks any remote LLM call for this project regardless of ALLOW_EXTERNAL_LLM (see PRIVACY.md). relative output_path resolves under the runtime data root (portable/Docker-safe); absolute paths are legacy host-only (refused in container mode unless explicitly allowed via ZMI_ALLOWED_EXPORT_ROOTS).",
   "projects": [
     {
       "name": "Northwind",
@@ -8,7 +8,7 @@
         "prefix": ["northwind_"]
       },
       "videos_subfolder": "py_northwind",
-      "output_path": "C:/Dev/ClientProjects/Northwind",
+      "output_path": "exports/Northwind",
       "handler": "client_meeting",
       "data_classification": "confidential",
       "language": "en",
@@ -28,7 +28,7 @@
         "filename_contains": ["interview", "entrevista"]
       },
       "videos_subfolder": "py_zo",
-      "output_path": "C:/Dev/Zo/zo_portfolio/interviews",
+      "output_path": "exports/ZoInterviews",
       "handler": "zo",
       "language": null,
       "initial_prompt": "Technical job interview / Entrevista técnica. Software developer position. Companies: Contoso, Fabrikam, Northwind Traders, Adventure Works, Tailspin Toys, Wingtip Toys. Topics: architecture, .NET, Azure, C#, work experience, SQL Server, microservices.",
@@ -64,7 +64,7 @@
         "prefix": ["meeting_", "junta_", "dev_meeting_"]
       },
       "videos_subfolder": "py_meetings",
-      "output_path": "C:/Dev/Zo/whisper/CarpetaTranscripciones",
+      "output_path": "CarpetaTranscripciones",
       "handler": "meeting_dev",
       "language": "es",
       "initial_prompt": "Junta de desarrollo de software. Temas: arquitectura, código, APIs, base de datos, tareas del sprint, decisiones técnicas, bugs, deploys.",
@@ -87,7 +87,7 @@
         "prefix": ["fabrikam_"]
       },
       "videos_subfolder": "py_fabrikam",
-      "output_path": "C:/Dev/Zo/whisper/CarpetaTranscripciones/Fabrikam",
+      "output_path": "CarpetaTranscripciones/Fabrikam",
       "handler": "meeting_dev",
       "language": "es",
       "initial_prompt": "Junta de desarrollo del proyecto Fabrikam ERP. Temas: arquitectura, código, APIs, base de datos, tareas del sprint, decisiones técnicas, bugs, deploys.",

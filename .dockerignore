@@ -1,0 +1,59 @@
+# PLAN-ZMI-DKR-001 — WP-04 build-context exclusions.
+# Rule: no VCS, no runtime env/config/data, no media, no artifacts/caches,
+# no non-product local code may ever enter the image context.
+
+# VCS / CI / agent tooling
+.git
+.gitattributes
+.gitignore
+.gitleaks.toml
+.github
+.agents
+.pre-commit-config.yaml
+opencode.json
+
+# Runtime env/config/data — NEVER bake (secrets/state stay on host volumes)
+.env
+scan_config.env
+projects.json
+project_overrides.json
+processed_files.json
+
+# Media / generated data directories
+audio
+Videos
+Video_compress
+CarpetaTranscripciones
+zmi-data
+
+# Build/test artifacts, logs, caches
+artifacts
+screenshots
+logs
+.pytest_cache
+.ruff_cache
+.mypy_cache
+**/__pycache__
+*.py[cod]
+node_modules
+
+# Root-level generated dashboard screenshots / harness reports/logs
+# (tests/e2e/smoke_dashboard.py, scripts/e2e.py, scripts/security.py).
+# Root-anchored: docs/marketing assets and tests/ are unaffected.
+dashboard_*.png
+*_report.json
+sbom.json
+*.log
+
+# Host packaging artifacts (pip install / python -m build)
+build
+dist
+**/*.egg-info
+
+# Local virtualenvs
+.venv
+venv
+
+# Non-product local code
+watcher
+deepseek

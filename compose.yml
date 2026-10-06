@@ -1,0 +1,80 @@
+# PLAN-ZMI-DKR-001 — WP-05 production Compose: single local `zmi` service.
+#
+# Quick start:
+#   docker compose up -d --build
+#   # dashboard: http://127.0.0.1:5000  (published on host loopback ONLY)
+#
+# Interpolation (ZMI_PORT / ZMI_DATA_PATH): values come from the shell or a
+# `.env` file next to this compose file; `docker compose --env-file <path>`
+# selects an explicit one. Defaults: ZMI_PORT=5000, ZMI_DATA_PATH=./zmi-data.
+#
+# scan_config.env: NOT wired through compose `env_file:` because a missing
+# file would make the very first `docker compose up` fail. Instead the app
+# loads it itself from ZMI_CONFIG_ENV=/data/scan_config.env (see
+# src/transcript_pipeline/config.py): absent = safe no-op, present = loaded.
+# To customize: copy scan_config.env.example into your data directory
+# (default ./zmi-data/scan_config.env), edit, then restart the service.
+#
+# Linux note: if the daemon creates ${ZMI_DATA_PATH} for you it may be
+# root-owned and unwritable for the in-container user (uid 10001). Pre-create
+# it: `mkdir -p "${ZMI_DATA_PATH:-./zmi-data}"`.
+#
+# Security posture (frozen US AC12/13): non-root user from the image,
+# read-only root filesystem, tmpfs /tmp, all capabilities dropped,
+# no-new-privileges, no source-code mounts, loopback-only port publish.
+# Never mount the Docker socket here.
+
+services:
+  zmi:
+    build:
+      context: .
+      target: runtime
+    restart: unless-stopped
+    ports:
+      # Host loopback only — the dashboard stays single-machine by design.
+      - "127.0.0.1:${ZMI_PORT:-5000}:5000"
+    environment:
+      # Feature spec FEATURE-ZMI-DKR-002 required defaults.
+      ZMI_CONTAINER_MODE: "true"       # permits the internal 0.0.0.0 bind
+      ZMI_DATA_ROOT: /data             # all mutable state under the bind mount
+      ZMI_CONFIG_ENV: /data/scan_config.env  # optional; absent file is a no-op
+      DASHBOARD_HOST: 0.0.0.0          # inside the container only, not on host
+      DASHBOARD_PORT: "5000"
+      ALLOW_EXTERNAL_LLM: "${ALLOW_EXTERNAL_LLM:-false}"  # local-first; opt in explicitly
+      XDG_CACHE_HOME: /cache           # general caches -> named volume
+      HF_HOME: /cache/huggingface      # faster-whisper model cache -> named volume
+      OMP_WAIT_POLICY: PASSIVE         # avoid busy-wait CPU burn (CPU inference)
+    volumes:
+      - ${ZMI_DATA_PATH:-./zmi-data}:/data   # media/state/config/logs survive recreation
+      - zmi-model-cache:/cache               # model weights survive recreation
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=1073741824,mode=1777
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    # No compose-level healthcheck/depends_on needed: single service; the
+    # runtime image already ships a HEALTHCHECK against /api/status.
+
+  zmi-e2e:
+    profiles: [e2e]
+    build:
+      context: .
+      target: test
+    depends_on:
+      zmi:
+        condition: service_healthy
+    network_mode: service:zmi
+    environment:
+      ZMI_BASE_URL: http://127.0.0.1:5000
+      ZMI_DATA_ROOT: /data
+      ZMI_TEST_DATA_ROOT: /data
+      ZMI_E2E_EXTERNAL_SERVER: "1"
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      - ${ZMI_DATA_PATH:-./zmi-data}:/data
+    command: ["python", "scripts/e2e.py"]
+    restart: "no"
+
+volumes:
+  zmi-model-cache:

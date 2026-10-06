@@ -28,8 +28,12 @@ Full detail: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 This is a **local-first** tool. The primary trust boundary is the dashboard
 (Flask), which:
 - Must bind to a loopback address (`DASHBOARD_HOST` — `127.0.0.1`/
-  `localhost`/`::1`). A non-loopback value raises `ConfigurationError` at
-  startup; there is no remote-mode override. This is a deliberate,
+  `localhost`/`::1`); loopback remains required in host mode. A
+  non-loopback value raises `ConfigurationError` at startup; there is no
+  remote-mode override. The only exception: `ZMI_CONTAINER_MODE=true`
+  additionally permits an internal `0.0.0.0` bind for containers (Compose
+  must still publish only on `127.0.0.1`); the request-level
+  Host/Origin/token protections are unchanged. This is a deliberate,
   permanent design choice, not a temporary limitation.
 - Has **no user-account authentication** (by design — single-user, local
   tool). It does enforce a same-machine boundary: a `before_request` hook
@@ -101,3 +105,7 @@ That private list is intentionally unavailable to forks and public CI. A public 
 - Jenkins/SonarQube credentials are supplied by the local runtime and never committed.
 - Gate artifacts are generated under gitignored `artifacts/`.
 - Release evidence must come from executable gates, not an LLM summary.
+
+## Docker runtime boundary
+
+The supported Compose runtime remains local-only: its published port binds to `127.0.0.1`, it runs as non-root with a read-only root filesystem and no added capabilities, and it preserves Host/Origin and mutation-token checks. `ZMI_CONTAINER_MODE=true` permits only the internal container bind; it does not authorize public hosting. The default external LLM setting is false. Do not expose the port publicly or mount the Docker socket.

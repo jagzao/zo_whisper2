@@ -7,7 +7,9 @@ Features:
 - Shows the audio/video file -> transcription relationship.
 - Drop area to upload files to Video_compress/ with a project prefix.
 - Project CRUD (projects.json).
-- RUN button to execute compress_and_move + master_processor.
+- RUN button to execute the compressor and master pipeline modules
+  (`python -m transcript_pipeline.media.compressor` and
+  `python -m transcript_pipeline.pipeline.master`).
 """
 
 from __future__ import annotations
@@ -29,7 +31,17 @@ from urllib.parse import quote, urlparse
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
-from transcript_pipeline.config import PROJECT_ROOT, load_env
+from transcript_pipeline.config import (
+    AUDIO_DIR,
+    DATA_ROOT,
+    LOG_DIR,
+    PROJECTS_CONFIG_PATH,
+    PROCESSED_FILES_DB,
+    TRANSCRIPTIONS_DIR,
+    VIDEO_COMPRESS_DIR,
+    VIDEOS_DIR,
+    load_env,
+)
 from transcript_pipeline.documentation.engine import (
     generate_documentation,
     load_steps,
@@ -51,13 +63,15 @@ from transcript_pipeline.settings import SETTINGS
 
 load_env()
 
-ROOT = PROJECT_ROOT
-VIDEO_COMPRESS = ROOT / "Video_compress"
-AUDIO_BASE = ROOT / "audio"
-VIDEOS_BASE = ROOT / "Videos"
-TRANSCRIPTIONS_BASE = ROOT / "CarpetaTranscripciones"
-PROJECTS_PATH = ROOT / "projects.json"
-PROCESSED_DB = ROOT / "processed_files.json"
+# Runtime paths follow DATA_ROOT (ZMI_DATA_ROOT); module attribute names
+# are load-bearing — tests monkeypatch them.
+ROOT = DATA_ROOT
+VIDEO_COMPRESS = VIDEO_COMPRESS_DIR
+AUDIO_BASE = AUDIO_DIR
+VIDEOS_BASE = VIDEOS_DIR
+TRANSCRIPTIONS_BASE = TRANSCRIPTIONS_DIR
+PROJECTS_PATH = PROJECTS_CONFIG_PATH
+PROCESSED_DB = PROCESSED_FILES_DB
 
 RESOLVER = SafePathResolver(
     {
@@ -78,9 +92,14 @@ app = Flask(__name__, template_folder="templates", static_folder="static", stati
 app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
 
 # This dashboard is explicitly localhost-only (SETTINGS.dashboard_host is
-# enforced loopback-only at Settings.from_env() time) — no remote mode, no
-# user accounts. The token below is the only thing standing between "any
-# process that can reach this port" and "the browser tab the owner opened".
+# enforced loopback-only at Settings.from_env() time; with
+# ZMI_CONTAINER_MODE=true the bind may additionally be 0.0.0.0 — that is
+# container-internal only, since Compose publishes the port on the host's
+# loopback and never on the network) — no remote mode, no user accounts.
+# The Host/Origin/token protections below are unchanged in container mode
+# and still enforced. The token below is the only thing standing between
+# "any process that can reach this port" and "the browser tab the owner
+# opened".
 _LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # Generated fresh per process, never persisted, never logged — the frontend
@@ -236,23 +255,6 @@ def _atomic_write_text(path: Path, content: str) -> None:
     except BaseException:
         Path(tmp_name).unlink(missing_ok=True)
         raise
-
-
-def _python_exe() -> str:
-    """Resolves which Python interpreter to use, same logic as RUN_MAX_QUALITY.bat."""
-    candidates = [
-        ROOT / "watcher" / "venv" / "Scripts" / "python.exe",
-        Path(r"C:\ProgramData\miniconda3\python.exe"),
-        Path.home() / "miniconda3" / "python.exe",
-        Path(sys.executable),
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return str(candidate)
-    return "python"
-
-
-PYTHON_EXE = _python_exe()
 
 
 # ── File helpers ──────────────────────────────────────────────────────────
@@ -845,8 +847,13 @@ def api_run(mode: str) -> Any:
 def api_logs() -> Any:
     lines: list[str] = []
     for log_file in ("dashboard.log", "master_process.log", "simple_scan.log"):
-        path = ROOT / log_file
-        if path.exists():
+        # LOG_DIR is canonical since the data-root split; ROOT keeps working
+        # as a legacy fallback for logs written flat before it.
+        path = next(
+            (c for c in (LOG_DIR / log_file, ROOT / log_file) if c.exists()),
+            None,
+        )
+        if path is not None:
             try:
                 text = path.read_text(encoding="utf-8", errors="ignore")
                 lines.extend([f"[{log_file}] {line}" for line in text.splitlines()[-200:]])
@@ -1300,7 +1307,10 @@ def _run_pipeline(mode: str) -> None:
         exits — a long transcription run would otherwise leave the dashboard
         showing a stale log/stage for its entire duration."""
         process = subprocess.Popen(
-            cmd, cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            # Commands are `python -m <module>`: module resolution goes
+            # through the installed package / inherited environment
+            # (PYTHONPATH), not cwd. Streaming flags stay unchanged.
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="ignore", bufsize=1,
         )
         assert process.stdout is not None
@@ -1312,15 +1322,15 @@ def _run_pipeline(mode: str) -> None:
     try:
         if mode in ("full", "compress"):
             append_log("STEP 1: Compressing videos...")
-            returncode = run_streaming([PYTHON_EXE, "compress_and_move.py"])
+            returncode = run_streaming([sys.executable, "-m", "transcript_pipeline.media.compressor"])
             if returncode != 0:
-                append_log(f"compress_and_move.py exited with code {returncode}")
+                append_log(f"transcript_pipeline.media.compressor exited with code {returncode}")
 
         if mode in ("full", "transcribe"):
             append_log("STEP 2: Organization + transcription...")
-            returncode = run_streaming([PYTHON_EXE, "master_processor.py"])
+            returncode = run_streaming([sys.executable, "-m", "transcript_pipeline.pipeline.master"])
             if returncode != 0:
-                raise RuntimeError(f"master_processor.py failed (exit code {returncode})")
+                raise RuntimeError(f"transcript_pipeline.pipeline.master failed (exit code {returncode})")
 
         append_log("PROCESS FINISHED")
         _mark_all_reached_completed()
@@ -1357,7 +1367,9 @@ def _mark_failed_stage() -> None:
 def main() -> None:
     # A non-loopback DASHBOARD_HOST is rejected at Settings.from_env() time
     # (see settings.py) — by the time main() runs, dashboard_host is
-    # guaranteed to be loopback-only.
+    # guaranteed to be loopback-only, or 0.0.0.0 when ZMI_CONTAINER_MODE=true
+    # (container-internal bind; Compose publishes the port on host loopback
+    # only, and the Host/Origin/token request protections still apply).
     _ensure_folders()
     # threaded=True: single-threaded serving repeatedly stalled unrelated
     # requests behind a still-open media stream or the browser's own

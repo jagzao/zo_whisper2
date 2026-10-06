@@ -7,6 +7,7 @@ Generates a JSON report with passed/failed checks.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -15,7 +16,7 @@ from pathlib import Path
 
 import requests
 
-DASHBOARD_URL = "http://127.0.0.1:5000"
+DASHBOARD_URL = os.environ.get("ZMI_BASE_URL", "http://127.0.0.1:5000")
 TIMEOUT_MS = 30000
 SCREENSHOTS: list[str] = []
 REPORT: list[dict] = []
@@ -83,6 +84,7 @@ def main() -> int:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1600, "height": 1000})
+        browser_errors: list[str] = []
 
         # Registered globally, from the very start: an unhandled native
         # confirm()/alert() dialog blocks the renderer indefinitely (no
@@ -96,8 +98,19 @@ def main() -> int:
             dialog.accept()
 
         page.on("dialog", _auto_accept_dialog)
-        page.on("console", lambda msg: print(f"[CONSOLE {msg.type}] {msg.text}") if msg.type in ("error", "warning") else None)
-        page.on("pageerror", lambda exc: print(f"[PAGEERROR] {exc}"))
+
+        def _capture_console(msg):
+            if msg.type == "error":
+                browser_errors.append(f"console: {msg.text}")
+            if msg.type in ("error", "warning"):
+                print(f"[CONSOLE {msg.type}] {msg.text}")
+
+        def _capture_page_error(exc):
+            browser_errors.append(f"pageerror: {exc}")
+            print(f"[PAGEERROR] {exc}")
+
+        page.on("console", _capture_console)
+        page.on("pageerror", _capture_page_error)
 
         page.goto(DASHBOARD_URL, timeout=TIMEOUT_MS)
         page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
@@ -800,6 +813,11 @@ def main() -> int:
         page.locator("#fileFilter").fill("")
         page.wait_for_timeout(300)
 
+        all_ok &= check(
+            "critical_path_no_browser_errors",
+            not browser_errors,
+            "; ".join(browser_errors)[:1000],
+        )
         browser.close()
 
     # Report
@@ -814,4 +832,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
