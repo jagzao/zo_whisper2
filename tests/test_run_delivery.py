@@ -163,7 +163,7 @@ def test_prerequisite_failure_skips_dependents_and_continues(delivery_env):
         return _FakeCompleted(0)
 
     with mock.patch.object(run_delivery.subprocess, "run", side_effect=fake_run) as fake:
-        rc = run_delivery.run_delivery(delivery_env)
+        run_delivery.run_delivery(delivery_env)
 
     ran = _gate_names(_record(fake))
     assert "docker-config" in ran
