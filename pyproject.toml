@@ -77,6 +77,9 @@ transcript-run = "transcript_pipeline.cli:run"
 transcript-scan = "transcript_pipeline.cli:scan"
 transcript-compress = "transcript_pipeline.cli:compress"
 transcript-dashboard = "transcript_pipeline.cli:dashboard"
+transcript-kab-ingest = "transcript_pipeline.kab_ingest.cli:serve_main"
+transcript-kab-ingest-worker = "transcript_pipeline.kab_ingest.cli:worker_main"
+transcript-kab-ingest-cert = "transcript_pipeline.kab_ingest.cli:cert_main"
 
 [build-system]
 requires = ["setuptools>=68"]
