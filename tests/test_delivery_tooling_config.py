@@ -12,7 +12,7 @@ def _read(path: str) -> str:
 
 def test_jenkinsfile_contains_required_deterministic_stages():
     text = _read("Jenkinsfile")
-    for stage in ("Targeted", "Quality", "Security", "Playwright", "SonarQube", "Full E2E"):
+    for stage in ("Targeted", "Quality", "Security", "Playwright E2E", "SonarQube", "Full pytest"):
         assert f"stage('{stage}')" in text
     assert "scripts/gate_runner.py" in text
     assert "SONAR_STATUS=NOT_CONFIGURED" in text

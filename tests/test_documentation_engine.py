@@ -30,6 +30,14 @@ requires_tesseract = pytest.mark.skipif(
     shutil.which("tesseract") is None, reason="tesseract binary not installed"
 )
 
+
+@pytest.fixture(autouse=True)
+def _no_study_guide(monkeypatch):
+    """Keeps these (pre-study-guide) tests hermetic: generate_documentation
+    would otherwise fire a real study-guide LLM call. Tests that exercise
+    the integration override this with their own monkeypatch."""
+    monkeypatch.setattr(engine, "_generate_study_guide_best_effort", lambda *a, **k: "disabled")
+
 MAPPING_WITH_TRANSCRIPT = {
     "video_info": {"name": "demo.mp4", "duration": 10.0, "extraction_method": "smart_scene"},
     "transcription_summary": {"language": "en"},

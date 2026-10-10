@@ -24,7 +24,8 @@ def _settings(**overrides) -> Settings:
     base = dict(
         whisper_model="large-v3", word_timestamps=False, clean_transcription=False,
         keyframes_required=True, keyframe_method="smart_scene", file_tracker_hash_mode="fast",
-        video_compress_crf=25, tesseract_cmd=None, meeting_frame_interval=15,
+        video_compress_crf=25, video_compress_timeout=36000, video_compress_preset="medium",
+        tesseract_cmd=None, meeting_frame_interval=15,
         meeting_max_screen_analyses=30, meeting_keep_frames=False, llm_api_key="test-key",
         llm_model="gpt-4o-mini", llm_base_url="https://api.example.com/v1", llm_provider_type="remote",
         allow_external_llm=True, frame_descriptions=True, frame_description_max=20,
@@ -87,3 +88,60 @@ def test_internal_project_allows_remote_frame_description(tmp_path, monkeypatch)
     instance._integrate_transcription_with_frames(transcription_result, frame_info)
 
     fake_provider.describe_frames_for_tutorial.assert_called_once()
+
+
+# ── always_tutorial: project-level tutorial override ──────────────────────
+
+
+def _tutorial_instance(projects: list[dict]):
+    instance = _make_instance()
+    instance._projects_config = projects
+    return instance
+
+
+def test_always_tutorial_project_forces_tutorial_without_name_match(tmp_path, monkeypatch):
+    """A P&G video whose filename never says "tutorial" must still get full
+    tutorial treatment when the matched project sets always_tutorial: true."""
+    monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", True)
+    instance = _tutorial_instance([
+        {"name": "P&G", "match": {"filename_contains": ["pg_"]}, "always_tutorial": True},
+    ])
+
+    assert instance._is_tutorial(tmp_path / "pg_quarterly_review.mp4") is True
+
+
+def test_project_without_always_tutorial_keeps_name_only_heuristic(tmp_path, monkeypatch):
+    monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", True)
+    instance = _tutorial_instance([
+        {"name": "P&G", "match": {"filename_contains": ["pg_"]}},
+    ])
+
+    assert instance._is_tutorial(tmp_path / "pg_quarterly_review.mp4") is False
+    assert instance._is_tutorial(tmp_path / "pg_Tutorial_excel.mp4") is True
+
+
+def test_always_tutorial_false_keeps_name_only_heuristic(tmp_path, monkeypatch):
+    monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", True)
+    instance = _tutorial_instance([
+        {"name": "P&G", "match": {"filename_contains": ["pg_"]}, "always_tutorial": False},
+    ])
+
+    assert instance._is_tutorial(tmp_path / "pg_quarterly_review.mp4") is False
+
+
+def test_always_tutorial_ignores_unmatched_projects(tmp_path, monkeypatch):
+    monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", True)
+    instance = _tutorial_instance([
+        {"name": "P&G", "match": {"filename_contains": ["pg_"]}, "always_tutorial": True},
+    ])
+
+    assert instance._is_tutorial(tmp_path / "other_meeting.mp4") is False
+
+
+def test_tutorial_features_unavailable_disables_project_override_too(tmp_path, monkeypatch):
+    monkeypatch.setattr(processor_module, "TUTORIAL_FEATURES_AVAILABLE", False)
+    instance = _tutorial_instance([
+        {"name": "P&G", "match": {"filename_contains": ["pg_"]}, "always_tutorial": True},
+    ])
+
+    assert instance._is_tutorial(tmp_path / "pg_tutorial.mp4") is False

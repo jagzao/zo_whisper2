@@ -378,6 +378,18 @@ python dashboard.py
 # → http://localhost:5000
 ```
 
+Dashboard uploads resume in 4 MiB chunks and validate before staging. After a
+batch finishes, approve it to start or queue `Process pending`; otherwise it
+stays staged. At most two files upload concurrently. Approved pending files
+resume after a restart. Upload offsets are fsynced before acknowledgement;
+pipeline jobs and lifecycle events use a durable SQLite FIFO queue. Only one
+heavy job runs at once, with up to three attempts. Keep the phone browser tab
+active during transfer; if the mobile OS suspends it, select the same files
+again to resume. The file Edit action can assign a project before a transcript
+exists, and that manual assignment controls compression routing. Docker caps
+processing at 2 CPU by default (`ZMI_CPUS` changes the limit).
+Set `UPLOAD_MAX_MB` in `zmi-data/scan_config.env` for the largest accepted file.
+
 ### Quickstart (try it in minutes)
 
 ```bash

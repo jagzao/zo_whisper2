@@ -69,6 +69,30 @@
         @media (max-width: 980px) {
             .grid { grid-template-columns: 1fr; }
         }
+        @media (max-width: 640px) {
+            body { font-size: 16px; }
+            header { padding: 0.75rem; align-items: flex-start; }
+            header .brand { width: 100%; gap: 0.5rem; }
+            header .brand img { height: 1.8rem; }
+            header h1 { font-size: 1.05rem; }
+            header .row { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+            header #runStatus { grid-column: 1 / -1; text-align: center; }
+            header button { min-height: 44px; padding: 0.45rem; font-size: 0.75rem; }
+            header .icon-btn { width: 44px; justify-self: center; }
+            .grid { padding: 0.75rem; gap: 0.75rem; }
+            .card { min-width: 0; padding: 1rem; }
+            .dropzone { min-height: 150px; padding: 1.5rem 0.75rem; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+            .upload-project { align-items: stretch; }
+            .upload-project label, .upload-project select { width: 100%; }
+            .upload-project select { min-height: 44px; }
+            #filesList { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            #filesList table { min-width: 720px; }
+            .table-toolbar { align-items: stretch; }
+            .table-toolbar input, .table-toolbar select { min-width: 0; width: 100%; min-height: 44px; }
+            .pagination.top { min-width: 0; }
+            .modal-overlay { padding: 0.5rem; }
+            .modal { max-height: 96dvh; padding: 0.85rem; }
+        }
         .card {
             background: var(--panel);
             border: 1px solid var(--border);
@@ -98,6 +122,11 @@
         }
         .dropzone:hover { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,229,255,0.12) inset; }
         .dropzone.dragover { background: rgba(0,229,255,0.08); border-color: var(--accent); }
+        .upload-item { display: grid; gap: 0.35rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; overflow-wrap: anywhere; }
+        .upload-item progress { width: 100%; min-height: 0.65rem; accent-color: var(--accent); }
+        .upload-status { color: var(--muted); font-size: 0.85rem; }
+        .upload-status.error { color: var(--danger); }
+        .upload-status.success { color: var(--ok); }
         select, button, input, textarea {
             background: var(--panel-2);
             color: var(--text);
@@ -661,7 +690,7 @@
         </div>
         <div class="row" style="margin:0;">
             <span id="runStatus" class="status pending">Ready</span>
-            <button id="btnRunFull" onclick="run('full')">RUN Full</button>
+            <button id="btnRunFull" onclick="run('full')">Process pending</button>
             <button id="btnRunCompress" onclick="run('compress')">Compress Only</button>
             <button id="btnRunTranscribe" onclick="run('transcribe')">Transcribe Only</button>
             <button class="icon-btn tooltip" data-tip="Projects" onclick="openProjectsModal()" aria-label="Projects">
@@ -681,11 +710,11 @@
             <h2>Drop Area</h2>
             <div class="dropzone" id="dropzone">
                 <svg viewBox="0 0 24 24" width="36" height="36" fill="var(--accent)" style="margin-bottom:0.5rem;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
-                <div>Drop audio/video here</div>
-                <small style="color:var(--muted)">or click to select</small>
-                <input type="file" id="fileInput" class="hidden" accept="video/*,audio/*">
+                <div>Choose a video or audio file</div>
+                <small style="color:var(--muted)">Select multiple files · keep this tab active; interrupted uploads can resume</small>
+                <input type="file" id="fileInput" class="hidden" accept="video/*,audio/*" multiple>
             </div>
-            <div class="row" style="margin-top:1rem;">
+            <div class="row upload-project" style="margin-top:1rem;">
                 <label for="uploadProject">Project (optional):</label>
                 <select id="uploadProject"><option value="">Auto-detect</option></select>
             </div>
@@ -754,7 +783,7 @@
     <div id="editModal" class="modal-overlay hidden">
         <div class="modal">
             <div class="modal-header">
-                <h2>Edit file</h2>
+                <h2 id="editModalTitle">Edit file</h2>
                 <button class="close-x" onclick="closeEdit()">&times;</button>
             </div>
             <div class="edit-transcription">
@@ -765,8 +794,10 @@
                     <select id="editProject"><option value="">Auto-detect</option></select>
                     <span id="editProjectSource" class="status" title=""></span>
                 </div>
-                <label for="editTxText" style="display:block; margin-bottom:0.35rem; color:var(--muted);">Transcription:</label>
-                <textarea id="editTxText"></textarea>
+                <div id="editTxSection">
+                    <label for="editTxText" style="display:block; margin-bottom:0.35rem; color:var(--muted);">Transcription:</label>
+                    <textarea id="editTxText"></textarea>
+                </div>
                 <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
                     <button class="danger" onclick="closeEdit()">Cancel</button>
                     <button class="ok" onclick="saveFile()">Save</button>
@@ -1029,6 +1060,7 @@
 
         const STATUS_LABELS = {
             pending: 'Pending',
+            awaiting_approval: 'Awaiting approval',
             completed: 'Completed',
             completed_routed: 'Completed (routed)',
             failed_routed: 'Failed (routing)',
@@ -1060,7 +1092,7 @@
                 ${files.map((f, i) => {
                     const relParts = f.relative.split('/');
                     const folder = relParts.length > 1 ? relParts.slice(0, -1).join('/') : 'root';
-                    const statusClass = f.status === 'pending' ? 'pending' : (f.status === 'failed_routed' ? 'error' : 'processed');
+                    const statusClass = ['pending', 'awaiting_approval'].includes(f.status) ? 'pending' : (f.status === 'failed_routed' ? 'error' : 'processed');
                     const tx = f.transcription;
                     const doc = f.documentation;
                     const lang = f.language || 'auto';
@@ -1083,7 +1115,7 @@
                                 <button class="btn-view tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="View" title="View">
                                     <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                                 </button>
-                                <button class="btn-edit tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="editFile('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="Edit" title="Edit file">
+                                <button class="btn-edit tooltip" onclick="editFile('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="Edit" title="Edit file or project assignment">
                                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </button>
                                 ${doc
@@ -1147,20 +1179,37 @@
             return data.projects;
         }
 
-        async function run(mode) {
-            const res = await fetch(`/api/run/${mode}`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => r.json());
-            if (res.ok) showToast('Pipeline started');
-            else showToast(res.error || 'Error');
-            updateRunStatus();
+        async function run(mode, payload = null) {
+            try {
+                const headers = { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN };
+                if (payload) headers['Content-Type'] = 'application/json';
+                const response = await fetch(`/api/run/${mode}`, {
+                    method: 'POST',
+                    headers,
+                    body: payload ? JSON.stringify(payload) : undefined,
+                });
+                const res = await response.json();
+                if (res.ok) showToast(res.processing === 'queued' ? 'Added to processing queue' : 'Processing pending files');
+                else showToast(res.error || 'Error');
+                updateRunStatus();
+                return res;
+            } catch (error) {
+                showToast('Could not start processing. Check the connection and try again.');
+                return { ok: false };
+            }
         }
 
         async function updateRunStatus() {
             const status = await api('/api/status');
             const el = document.getElementById('runStatus');
             const buttons = ['btnRunFull','btnRunCompress','btnRunTranscribe'];
-            buttons.forEach(id => document.getElementById(id).disabled = status.running);
+            const queuedJobs = status.queue?.counts?.queued || 0;
+            buttons.forEach(id => document.getElementById(id).disabled = false);
             if (status.running) {
-                el.textContent = `Running: ${status.mode}`;
+                el.textContent = queuedJobs ? `Running: ${status.mode} · ${queuedJobs} queued` : `Running: ${status.mode}`;
+                el.className = 'status pending';
+            } else if (queuedJobs) {
+                el.textContent = `${queuedJobs} queued`;
                 el.className = 'status pending';
             } else if (status.error) {
                 el.textContent = 'Error';
@@ -1637,15 +1686,18 @@
         async function editFile(mediaIdEncoded, txIdEncoded) {
             const mediaId = decodeURIComponent(mediaIdEncoded);
             const txId = decodeURIComponent(txIdEncoded);
-            if (!txId) return;
+            const hasTranscription = Boolean(txId);
             document.getElementById('editTxId').value = txId;
             document.getElementById('editMediaId').value = mediaId;
-            document.getElementById('editTxText').value = 'Loading...';
+            document.getElementById('editModalTitle').textContent = hasTranscription ? 'Edit file' : 'Assign project';
+            document.getElementById('editTxSection').hidden = !hasTranscription;
+            document.getElementById('editTxText').value = hasTranscription ? 'Loading...' : '';
 
             const file = (window._allFiles || []).find(f => f.media_id === mediaId) || {};
             await populateEditProject(file.project, file.project_source);
 
             document.getElementById('editModal').classList.remove('hidden');
+            if (!hasTranscription) return;
             const txRes = await api('/api/transcription?id=' + encodeURIComponent(txId));
             if (txRes.ok) {
                 document.getElementById('editTxText').value = txRes.text;
@@ -1684,9 +1736,11 @@
             const mediaId = document.getElementById('editMediaId').value;
             const project = document.getElementById('editProject').value;
             const page = window._currentPage || 1;
-            const res = await post('/api/transcription', { id, text, project, media_id: mediaId });
+            const res = id
+                ? await post('/api/transcription', { id, text, project, media_id: mediaId })
+                : await post('/api/file/project', { media_id: mediaId, project });
             if (res.ok) {
-                showToast('File saved');
+                showToast(id ? 'File saved' : 'Project assignment saved');
                 closeEdit();
                 await loadFiles();
                 renderFilePage(page);
@@ -1736,6 +1790,10 @@
         // Drop area
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
+        const uploadJobs = [];
+        const uploadedAwaitingApproval = [];
+        const MAX_PARALLEL_UPLOADS = 2;
+        let uploadWorkersRunning = false;
         dropzone.addEventListener('click', () => fileInput.click());
         dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
         dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
@@ -1744,22 +1802,198 @@
             dropzone.classList.remove('dragover');
             handleFiles(e.dataTransfer.files);
         });
-        fileInput.addEventListener('change', e => handleFiles(e.target.files));
+        fileInput.addEventListener('change', e => {
+            handleFiles(e.target.files);
+            fileInput.value = '';
+        });
 
-        async function handleFiles(files) {
+        function handleFiles(files) {
             const queue = document.getElementById('uploadQueue');
-            queue.innerHTML = '';
+            const project = document.getElementById('uploadProject').value;
             for (const file of files) {
-                const form = new FormData();
-                form.append('file', file);
-                form.append('project', document.getElementById('uploadProject').value);
-                const res = await fetch('/api/upload', { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: form }).then(r => r.json());
-                const msg = res.ok ? `OK ${res.name}` : `Error ${file.name}: ${res.error}`;
-                queue.innerHTML += `<div>${msg}</div>`;
+                const item = document.createElement('div');
+                item.className = 'upload-item';
+                const filename = document.createElement('strong');
+                filename.textContent = file.name;
+                const progress = document.createElement('progress');
+                progress.max = 100;
+                progress.value = 0;
+                const status = document.createElement('div');
+                status.className = 'upload-status';
+                status.textContent = `Waiting to upload · ${formatUploadSize(file.size)}`;
+                item.append(filename, progress, status);
+                queue.append(item);
+                uploadJobs.push({ file, project, progress, status });
             }
-            loadFolders();
-            loadMetrics();
-            showToast('Files queued');
+            drainUploadQueue();
+        }
+
+        function drainUploadQueue() {
+            if (uploadWorkersRunning || uploadJobs.length === 0) return;
+            uploadWorkersRunning = true;
+            const worker = async () => {
+                while (uploadJobs.length) {
+                    const job = uploadJobs.shift();
+                    try {
+                        const result = await uploadFile(job.file, job.project, job.progress, job.status);
+                        job.status.className = 'upload-status success';
+                        job.status.textContent = result.alreadyQueued
+                            ? `Saved as ${result.name}; already in the processing flow`
+                            : `Uploaded as ${result.name}; awaiting approval`;
+                        if (!result.alreadyQueued) uploadedAwaitingApproval.push({ ...job, result });
+                    } catch (error) {
+                        job.status.className = 'upload-status error';
+                        job.status.textContent = error.message || 'Upload failed. Check the network and try again.';
+                    }
+                }
+            };
+            Promise.all(Array.from(
+                { length: Math.min(MAX_PARALLEL_UPLOADS, uploadJobs.length) },
+                () => worker(),
+            )).finally(async () => {
+                uploadWorkersRunning = false;
+                if (uploadJobs.length) {
+                    drainUploadQueue();
+                    return;
+                }
+                loadFolders();
+                loadFiles();
+                loadMetrics();
+                const batch = uploadedAwaitingApproval.splice(0);
+                if (!batch.length) return;
+                const count = batch.length;
+                if (window.confirm(`${count} file${count === 1 ? '' : 's'} uploaded. Add pending files to processing now?`)) {
+                    const result = await run('full', { upload_ids: batch.map(job => job.result.upload_id) });
+                    if (result.ok) {
+                        for (const job of batch) {
+                            localStorage.removeItem(job.result.resumeKey);
+                            job.status.textContent = result.processing === 'queued'
+                                ? `Added to processing queue as ${job.result.name}`
+                                : `Queued for processing as ${job.result.name}`;
+                        }
+                    }
+                } else {
+                    showToast(`${count} uploaded file${count === 1 ? '' : 's'} left pending`);
+                }
+            });
+        }
+
+        function formatUploadSize(bytes) {
+            if (!bytes) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const unit = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+            return `${(bytes / (1024 ** unit)).toFixed(unit ? 1 : 0)} ${units[unit]}`;
+        }
+
+        async function uploadJson(url, method = 'GET', body = null) {
+            const headers = { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN };
+            if (body !== null) headers['Content-Type'] = 'application/json';
+            const response = await fetch(url, {
+                method,
+                headers,
+                body: body === null ? undefined : JSON.stringify(body),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) {
+                const error = new Error(result.error || `Request failed (${response.status})`);
+                error.status = response.status;
+                error.offset = result.offset;
+                throw error;
+            }
+            return result;
+        }
+
+        async function uploadFile(file, project, progress, status) {
+            const resumeKey = `zmi-upload:${file.name}:${file.size}:${file.lastModified}`;
+            let session = null;
+            try { session = JSON.parse(localStorage.getItem(resumeKey) || 'null'); } catch {}
+            let uploadId = session && session.id;
+            let offset = 0;
+
+            if (uploadId) {
+                try {
+                    const state = await uploadJson(`/api/upload-sessions/${uploadId}`);
+                    if (state.complete) {
+                        localStorage.removeItem(resumeKey);
+                        return { ok: true, name: state.name, alreadyQueued: true };
+                    }
+                    offset = state.offset;
+                } catch (error) {
+                    if (error.status !== 404) throw error;
+                    localStorage.removeItem(resumeKey);
+                    uploadId = null;
+                }
+            }
+
+            if (!uploadId) {
+                status.textContent = `Preparing upload · ${formatUploadSize(file.size)}`;
+                const created = await uploadJson('/api/upload-sessions', 'POST', {
+                    filename: file.name,
+                    size: file.size,
+                    project,
+                });
+                uploadId = created.upload_id;
+                offset = created.offset;
+                localStorage.setItem(resumeKey, JSON.stringify({ id: uploadId }));
+            }
+
+            const chunkSize = 4 * 1024 * 1024;
+            while (offset < file.size) {
+                const end = Math.min(offset + chunkSize, file.size);
+                let attempt = 0;
+                while (true) {
+                    try {
+                        const response = await sendUploadChunk(uploadId, file.slice(offset, end), offset, end, file.size, progress, status);
+                        offset = response.offset;
+                        break;
+                    } catch (error) {
+                        let state;
+                        try { state = await uploadJson(`/api/upload-sessions/${uploadId}`); }
+                        catch { throw new Error(`Upload paused at ${Math.round(offset * 100 / file.size)}%. Select the same file again to resume.`); }
+                        if (state.complete) {
+                            localStorage.removeItem(resumeKey);
+                            return { ok: true, name: state.name, alreadyQueued: true };
+                        }
+                        if (state.offset > offset) { offset = state.offset; break; }
+                        if (attempt >= 3) throw new Error(`Upload paused at ${Math.round(offset * 100 / file.size)}%. Select the same file again to resume.`);
+                        attempt += 1;
+                        status.textContent = `Connection interrupted · retrying block ${attempt}/3…`;
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (2 ** (attempt - 1))));
+                    }
+                }
+                progress.value = Math.floor(offset * 100 / file.size);
+                status.textContent = `Uploaded ${progress.value}% · ${formatUploadSize(offset)} of ${formatUploadSize(file.size)}`;
+            }
+
+            status.textContent = 'Upload complete · validating media…';
+            const result = await uploadJson(`/api/upload-sessions/${uploadId}/complete`, 'POST', {});
+            return { ...result, resumeKey };
+        }
+
+        function sendUploadChunk(uploadId, chunk, start, end, total, progress, status) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', `/api/upload-sessions/${uploadId}`);
+                xhr.timeout = 120000;
+                xhr.setRequestHeader('X-Local-Dashboard-Token', DASHBOARD_TOKEN);
+                xhr.setRequestHeader('Content-Range', `bytes ${start}-${end - 1}/${total}`);
+                xhr.upload.addEventListener('progress', event => {
+                    const sent = Math.min(end, start + (event.lengthComputable ? event.loaded : 0));
+                    progress.value = Math.min(100, Math.round(sent * 100 / total));
+                    status.textContent = `Uploading ${progress.value}% · ${formatUploadSize(sent)} of ${formatUploadSize(total)}`;
+                });
+                xhr.addEventListener('load', () => {
+                    let result;
+                    try { result = JSON.parse(xhr.responseText); }
+                    catch { reject(Object.assign(new Error(`Invalid server response (${xhr.status})`), { status: xhr.status })); return; }
+                    if (xhr.status >= 200 && xhr.status < 300 && result.ok) resolve(result);
+                    else reject(Object.assign(new Error(result.error || `Upload failed (${xhr.status})`), { status: xhr.status, offset: result.offset }));
+                });
+                xhr.addEventListener('error', () => reject(new Error('Network interrupted while sending this block.')));
+                xhr.addEventListener('timeout', () => reject(new Error('Upload paused; checking server progress…')));
+                xhr.addEventListener('abort', () => reject(new Error('Upload cancelled.')));
+                xhr.send(chunk);
+            });
         }
 
         // Projects CRUD

@@ -1,8 +1,8 @@
-# PLAN-ZMI-DKR-001 — WP-05 production Compose: single local `zmi` service.
+# PLAN-ZMI-DKR-001 â€” WP-05 production Compose: single local `zmi` service.
 #
 # Quick start:
 #   docker compose up -d --build
-#   # dashboard: http://127.0.0.1:5000  (published on host loopback ONLY)
+#   # dashboard: http://127.0.0.1:5000 (host loopback only)
 #
 # Interpolation (ZMI_PORT / ZMI_DATA_PATH): values come from the shell or a
 # `.env` file next to this compose file; `docker compose --env-file <path>`
@@ -21,7 +21,8 @@
 #
 # Security posture (frozen US AC12/13): non-root user from the image,
 # read-only root filesystem, tmpfs /tmp, all capabilities dropped,
-# no-new-privileges, no source-code mounts, loopback-only port publish.
+# no-new-privileges, no source-code mounts. The dashboard port is published
+# on host interfaces so trusted devices on the local network can reach it.
 # Never mount the Docker socket here.
 
 services:
@@ -29,17 +30,20 @@ services:
     build:
       context: .
       target: runtime
+    cpus: "${ZMI_CPUS:-2.0}"
     restart: unless-stopped
     ports:
-      # Host loopback only — the dashboard stays single-machine by design.
-      - "127.0.0.1:${ZMI_PORT:-5000}:5000"
+      # Explicit 0.0.0.0 bind: loopback-only silently breaks LAN access
+      # (phone dashboard uploads on the local network).
+      - "0.0.0.0:${ZMI_PORT:-5000}:5000"
     environment:
       # Feature spec FEATURE-ZMI-DKR-002 required defaults.
       ZMI_CONTAINER_MODE: "true"       # permits the internal 0.0.0.0 bind
       ZMI_DATA_ROOT: /data             # all mutable state under the bind mount
       ZMI_CONFIG_ENV: /data/scan_config.env  # optional; absent file is a no-op
-      DASHBOARD_HOST: 0.0.0.0          # inside the container only, not on host
+      DASHBOARD_HOST: 0.0.0.0
       DASHBOARD_PORT: "5000"
+      DASHBOARD_ALLOWED_HOSTS: "192.168.50.19"
       ALLOW_EXTERNAL_LLM: "${ALLOW_EXTERNAL_LLM:-false}"  # local-first; opt in explicitly
       XDG_CACHE_HOME: /cache           # general caches -> named volume
       HF_HOME: /cache/huggingface      # faster-whisper model cache -> named volume

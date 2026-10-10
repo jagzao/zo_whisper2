@@ -23,6 +23,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -35,8 +36,8 @@ from transcript_pipeline.config import (
     AUDIO_DIR,
     DATA_ROOT,
     LOG_DIR,
-    PROJECTS_CONFIG_PATH,
     PROCESSED_FILES_DB,
+    PROJECTS_CONFIG_PATH,
     TRANSCRIPTIONS_DIR,
     VIDEO_COMPRESS_DIR,
     VIDEOS_DIR,
@@ -60,6 +61,7 @@ from transcript_pipeline.security import (
     SecurityError,
 )
 from transcript_pipeline.settings import SETTINGS
+from transcript_pipeline.dashboard.queue_store import QueueStore
 
 load_env()
 
@@ -84,6 +86,8 @@ RESOLVER = SafePathResolver(
 
 SUPPORTED_MEDIA = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".opus"}
 VIDEO_EXTS = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
+UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024
+_upload_sessions_lock = threading.Lock()
 
 RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
@@ -91,16 +95,12 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
 
-# This dashboard is explicitly localhost-only (SETTINGS.dashboard_host is
-# enforced loopback-only at Settings.from_env() time; with
-# ZMI_CONTAINER_MODE=true the bind may additionally be 0.0.0.0 — that is
-# container-internal only, since Compose publishes the port on the host's
-# loopback and never on the network) — no remote mode, no user accounts.
-# The Host/Origin/token protections below are unchanged in container mode
-# and still enforced. The token below is the only thing standing between
-# "any process that can reach this port" and "the browser tab the owner
-# opened".
-_LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
+# Host and Origin checks allow loopback plus explicitly configured LAN hosts.
+_LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1"} | {
+    host.strip().lower()
+    for host in os.environ.get("DASHBOARD_ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+}
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # Generated fresh per process, never persisted, never logged — the frontend
 # reads it from the page it was served (see index()) and echoes it back on
@@ -159,6 +159,7 @@ def _handle_too_large(e: Any) -> Any:
 
 # ── Global run state ─────────────────────────────────────────────────────
 _run_lock = threading.Lock()
+_queue_worker_active = False
 _run_state: dict[str, Any] = {
     "running": False,
     "mode": None,
@@ -168,6 +169,7 @@ _run_state: dict[str, Any] = {
     "log_tail": "",
     "stage": None,
     "stages": {},
+    "queued": False,
 }
 
 
@@ -489,7 +491,16 @@ def _resolve_transcription(media_path: Path) -> dict | None:
             rel = media_path.relative_to(AUDIO_BASE)
             output_folder = TRANSCRIPTIONS_BASE / rel.parent
         except ValueError:
+            project, _ = _effective_project(
+                _to_media_id(MediaRoot.VIDEO_COMPRESS, media_path), media_path.name
+            )
+            subfolder = project.get("videos_subfolder") if project else None
             output_folder = TRANSCRIPTIONS_BASE
+            if isinstance(subfolder, str) and subfolder.strip():
+                candidate = (TRANSCRIPTIONS_BASE / subfolder).resolve()
+                root = TRANSCRIPTIONS_BASE.resolve()
+                if root in candidate.parents:
+                    output_folder = candidate
 
     candidates = [
         output_folder / f"{media_path.stem}.txt",
@@ -621,7 +632,20 @@ def index() -> str:
 
 @app.route("/api/status")
 def api_status() -> Any:
-    return jsonify(_run_state)
+    return jsonify({**_run_state, "queue": _queue_store().snapshot()})
+
+
+@app.route("/api/events")
+def api_events() -> Any:
+    try:
+        after = max(0, int(request.args.get("after", "0")))
+    except ValueError:
+        return jsonify({"ok": False, "error": "Invalid event cursor"}), 400
+    return jsonify({"events": _queue_store().events_after(after)})
+
+
+def _queue_store() -> QueueStore:
+    return QueueStore(ROOT / "processing_queue.sqlite3")
 
 
 @app.route("/api/folders")
@@ -656,7 +680,11 @@ def api_files() -> Any:
     _ensure_folders()
     media_files: list[dict] = []
 
-    for base, root in ((VIDEOS_BASE, MediaRoot.VIDEOS), (AUDIO_BASE, MediaRoot.AUDIO)):
+    for base, root in (
+        (VIDEO_COMPRESS, MediaRoot.VIDEO_COMPRESS),
+        (VIDEOS_BASE, MediaRoot.VIDEOS),
+        (AUDIO_BASE, MediaRoot.AUDIO),
+    ):
         if not base.exists():
             continue
         for path in base.rglob("*"):
@@ -665,6 +693,20 @@ def api_files() -> Any:
             transcription = _resolve_transcription(path)
             media_id = _to_media_id(root, path)
             project, project_source = _effective_project(media_id, path.name)
+            if project is None and root == MediaRoot.VIDEOS:
+                project = next(
+                    (
+                        candidate
+                        for candidate in _load_projects()
+                        if any(
+                            folder.lower() in str(path.parent).lower()
+                            for folder in candidate.get("match", {}).get("folder_contains", [])
+                        )
+                    ),
+                    None,
+                )
+                if project:
+                    project_source = "auto"
             media_files.append(
                 {
                     "media_id": media_id,
@@ -719,6 +761,8 @@ def api_projects_update() -> Any:
         if errors or not isinstance(updated, dict):
             return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
         updated_name = updated.get("name")
+        if not isinstance(updated_name, str) or not updated_name:
+            return jsonify({"ok": False, "error": "Project name is required"}), 400
         if updated_name != name and any(p.get("name") == updated_name for p in projects):
             return jsonify({"ok": False, "error": "Project already exists"}), 400
 
@@ -796,27 +840,260 @@ def api_upload() -> Any:
             prefix = prefixes[0]
             filename = f"{prefix}{filename}" if not filename.lower().startswith(prefix.lower()) else filename
 
-    VIDEO_COMPRESS.mkdir(parents=True, exist_ok=True)
-    destination = VIDEO_COMPRESS / filename
-    counter = 1
-    stem = destination.stem
-    suffix = destination.suffix
-    while destination.exists():
-        destination = VIDEO_COMPRESS / f"{stem}_{counter:02d}{suffix}"
-        counter += 1
-
+    upload_id = uuid.uuid4().hex
+    session_paths = _upload_session_paths(upload_id)
+    assert session_paths is not None
+    metadata_path, temp_path = session_paths
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    with _upload_sessions_lock:
+        filename = _available_upload_filename(filename)
+        _write_upload_session(metadata_path, {
+            "filename": filename,
+            "project": project_id,
+            "received": 0,
+            "created_at": datetime.now().timestamp(),
+        })
     try:
-        file.save(str(destination))
+        file.save(str(temp_path))
+        with temp_path.open("rb") as uploaded:
+            os.fsync(uploaded.fileno())
     except Exception:
+        temp_path.unlink(missing_ok=True)
+        metadata_path.unlink(missing_ok=True)
         logger.exception("[UPLOAD] Error saving %s", filename)
         return jsonify({"ok": False, "error": "Could not process upload"}), 500
 
-    if not _is_valid_media_file(destination):
-        destination.unlink(missing_ok=True)
+    if not _is_valid_media_file(temp_path):
+        temp_path.unlink(missing_ok=True)
+        metadata_path.unlink(missing_ok=True)
         return jsonify({"ok": False, "error": "Uploaded file is not a valid media file"}), 400
 
-    logger.info("[UPLOAD] %s → %s", filename, destination)
-    return jsonify({"ok": True, "name": destination.name})
+    with _upload_sessions_lock:
+        session = _read_upload_session(metadata_path) or {}
+        session.update({
+            "size": temp_path.stat().st_size,
+            "received": temp_path.stat().st_size,
+            "ready_for_processing": True,
+        })
+        _write_upload_session(metadata_path, session)
+    _queue_store().record_event("upload_ready", {"upload_id": upload_id, "name": filename})
+
+    logger.info("[UPLOAD] %s uploaded; waiting for processing approval", filename)
+    return jsonify({"ok": True, "name": filename, "processing": "awaiting_approval", "upload_id": upload_id})
+
+
+def _upload_session_paths(upload_id: str) -> tuple[Path, Path] | None:
+    if not re.fullmatch(r"[0-9a-f]{32}", upload_id):
+        return None
+    root = ROOT / ".upload_sessions"
+    return root / f"{upload_id}.json", root / f"{upload_id}.part"
+
+
+def _read_upload_session(metadata_path: Path) -> dict[str, Any] | None:
+    try:
+        value = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _write_upload_session(metadata_path: Path, session: dict[str, Any]) -> None:
+    temporary = metadata_path.with_suffix(".tmp")
+    with temporary.open("w", encoding="utf-8") as output:
+        output.write(json.dumps(session))
+        output.flush()
+        os.fsync(output.fileno())
+    temporary.replace(metadata_path)
+
+
+def _reconcile_upload_offset(metadata_path: Path, data_path: Path, session: dict[str, Any]) -> int:
+    committed = max(0, min(int(session.get("received", 0)), int(session.get("size", 0))))
+    actual = data_path.stat().st_size if data_path.exists() else 0
+    recovered = min(committed, actual)
+    if actual != recovered:
+        with data_path.open("r+b") as output:
+            output.truncate(recovered)
+            output.flush()
+            os.fsync(output.fileno())
+    if recovered != session.get("received"):
+        session["received"] = recovered
+        _write_upload_session(metadata_path, session)
+        _queue_store().record_event("upload_offset_recovered", {"upload_id": metadata_path.stem, "offset": recovered})
+    return recovered
+
+
+def _available_upload_filename(filename: str) -> str:
+    root = VIDEO_COMPRESS if Path(filename).suffix.lower() in VIDEO_EXTS else AUDIO_BASE
+    reserved = {path.name.lower() for path in root.iterdir() if path.is_file()} if root.exists() else set()
+    sessions_root = ROOT / ".upload_sessions"
+    for metadata_path in sessions_root.glob("*.json"):
+        session = _read_upload_session(metadata_path)
+        if session and not session.get("complete"):
+            name = session.get("filename")
+            if isinstance(name, str):
+                reserved.add(name.lower())
+    candidate = filename
+    stem, suffix = Path(filename).stem, Path(filename).suffix
+    counter = 1
+    while candidate.lower() in reserved:
+        candidate = f"{stem}_{counter:02d}{suffix}"
+        counter += 1
+    return candidate
+
+
+@app.route("/api/upload-sessions", methods=["POST"])
+def api_create_upload_session() -> Any:
+    payload = request.get_json(silent=True) or {}
+    original_name = payload.get("filename")
+    size = payload.get("size")
+    project_id = payload.get("project", "")
+    if not isinstance(original_name, str) or not original_name.strip():
+        return jsonify({"ok": False, "error": "Filename is required"}), 400
+    if not isinstance(size, int) or isinstance(size, bool) or size <= 0:
+        return jsonify({"ok": False, "error": "Invalid file size"}), 400
+    if size > app.config["MAX_CONTENT_LENGTH"]:
+        return jsonify({"ok": False, "error": "File too large"}), 413
+
+    filename = secure_filename(Path(original_name).name)
+    ext = Path(filename).suffix.lower()
+    if not filename or ext not in SUPPORTED_MEDIA:
+        return jsonify({"ok": False, "error": f"Unsupported format: {ext}"}), 400
+
+    chosen_project = next(
+        (project for project in _load_projects() if project.get("name") == project_id), None
+    ) if project_id else None
+    if chosen_project:
+        prefixes = chosen_project.get("match", {}).get("prefix", [])
+        if prefixes and not _find_matching_project(filename):
+            prefix = prefixes[0]
+            if not filename.lower().startswith(prefix.lower()):
+                filename = f"{prefix}{filename}"
+
+    upload_id = uuid.uuid4().hex
+    paths = _upload_session_paths(upload_id)
+    assert paths is not None
+    metadata_path, data_path = paths
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    cutoff = datetime.now().timestamp() - 7 * 24 * 60 * 60
+    with _upload_sessions_lock:
+        for expired in metadata_path.parent.glob("*.json"):
+            try:
+                if expired.stat().st_mtime < cutoff:
+                    expired.with_suffix(".part").unlink(missing_ok=True)
+                    expired.unlink(missing_ok=True)
+            except OSError:
+                logger.warning("[UPLOAD] Could not clean stale upload session %s", expired.name)
+        filename = _available_upload_filename(filename)
+        data_path.touch()
+        _write_upload_session(metadata_path, {
+            "filename": filename,
+            "size": size,
+            "project": project_id,
+            "received": 0,
+            "created_at": datetime.now().timestamp(),
+        })
+        _queue_store().record_event("upload_created", {"upload_id": upload_id, "name": filename, "size": size})
+    logger.info("[UPLOAD] Started resumable upload %s (%s bytes)", upload_id, size)
+    return jsonify({"ok": True, "upload_id": upload_id, "offset": 0, "chunk_size": UPLOAD_CHUNK_BYTES})
+
+
+@app.route("/api/upload-sessions/<upload_id>", methods=["GET"])
+def api_upload_session_status(upload_id: str) -> Any:
+    if not secrets.compare_digest(
+        request.headers.get("X-Local-Dashboard-Token", ""), _DASHBOARD_TOKEN
+    ):
+        return jsonify({"ok": False, "error": "Forbidden"}), 403
+    paths = _upload_session_paths(upload_id)
+    if not paths:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    metadata_path, data_path = paths
+    with _upload_sessions_lock:
+        session = _read_upload_session(metadata_path)
+        if session and not session.get("complete") and not session.get("ready_for_processing"):
+            _reconcile_upload_offset(metadata_path, data_path, session)
+    if not session:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    return jsonify({
+        "ok": True,
+        "offset": session.get("received", 0),
+        "size": session.get("size", 0),
+        "complete": session.get("complete", False),
+        "ready_for_processing": session.get("ready_for_processing", False),
+        "name": session.get("saved_name") or session.get("filename"),
+    })
+
+
+@app.route("/api/upload-sessions/<upload_id>", methods=["PUT"])
+def api_upload_session_chunk(upload_id: str) -> Any:
+    paths = _upload_session_paths(upload_id)
+    if not paths:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    metadata_path, data_path = paths
+    content_range = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", request.headers.get("Content-Range", ""))
+    if not content_range:
+        return jsonify({"ok": False, "error": "Content-Range is required"}), 400
+    start, end, total = map(int, content_range.groups())
+    if request.content_length is None or request.content_length > UPLOAD_CHUNK_BYTES:
+        return jsonify({"ok": False, "error": "Invalid upload chunk size"}), 413
+    chunk = request.get_data(cache=False)
+    if not chunk or len(chunk) != end - start + 1:
+        return jsonify({"ok": False, "error": "Incomplete upload chunk"}), 400
+
+    with _upload_sessions_lock:
+        session = _read_upload_session(metadata_path)
+        if not session:
+            return jsonify({"ok": False, "error": "Upload session not found"}), 404
+        received = _reconcile_upload_offset(metadata_path, data_path, session)
+        if session.get("complete") or session.get("ready_for_processing"):
+            return jsonify({"ok": False, "error": "Upload session is complete"}), 409
+        if total != session.get("size") or start < 0 or end >= total:
+            return jsonify({"ok": False, "error": "Upload range does not match file"}), 400
+        if start < received and end < received:
+            return jsonify({"ok": True, "offset": received})
+        if start != received or len(chunk) > UPLOAD_CHUNK_BYTES:
+            return jsonify({"ok": False, "error": "Upload offset mismatch", "offset": received}), 409
+        try:
+            with data_path.open("r+b") as output:
+                output.seek(start)
+                output.write(chunk)
+                output.flush()
+                os.fsync(output.fileno())
+        except OSError:
+            logger.exception("[UPLOAD] Failed writing resumable chunk %s", upload_id)
+            return jsonify({"ok": False, "error": "Could not save upload chunk"}), 500
+        session["received"] = end + 1
+        _write_upload_session(metadata_path, session)
+        return jsonify({"ok": True, "offset": end + 1})
+
+
+@app.route("/api/upload-sessions/<upload_id>/complete", methods=["POST"])
+def api_complete_upload_session(upload_id: str) -> Any:
+    paths = _upload_session_paths(upload_id)
+    if not paths:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    metadata_path, data_path = paths
+    with _upload_sessions_lock:
+        session = _read_upload_session(metadata_path)
+        if not session:
+            return jsonify({"ok": False, "error": "Upload session not found"}), 404
+        if session.get("complete"):
+            return jsonify({"ok": True, "name": session["saved_name"], "processing": "queued", "upload_id": upload_id})
+        if session.get("ready_for_processing"):
+            return jsonify({"ok": True, "name": session["filename"], "processing": "awaiting_approval", "upload_id": upload_id})
+        _reconcile_upload_offset(metadata_path, data_path, session)
+        if session.get("received") != session.get("size") or not data_path.is_file():
+            return jsonify({"ok": False, "error": "Upload is incomplete", "offset": session.get("received", 0)}), 409
+        if data_path.stat().st_size != session["size"] or not _is_valid_media_file(data_path):
+            data_path.unlink(missing_ok=True)
+            metadata_path.unlink(missing_ok=True)
+            return jsonify({"ok": False, "error": "Uploaded file is not a valid media file"}), 400
+
+        filename = session["filename"]
+        session["ready_for_processing"] = True
+        _write_upload_session(metadata_path, session)
+        _queue_store().record_event("upload_ready", {"upload_id": upload_id, "name": filename})
+    logger.info("[UPLOAD] Completed resumable upload %s; awaiting processing approval", upload_id)
+    return jsonify({"ok": True, "name": filename, "processing": "awaiting_approval", "upload_id": upload_id})
 
 
 @app.route("/api/run/<mode>", methods=["POST"])
@@ -824,23 +1101,138 @@ def api_run(mode: str) -> Any:
     if mode not in ("full", "compress", "transcribe"):
         return jsonify({"ok": False, "error": "Invalid mode"}), 400
 
+    if mode == "full":
+        payload = request.get_json(silent=True) or {}
+        if not isinstance(payload, dict):
+            return jsonify({"ok": False, "error": "Invalid upload batch"}), 400
+        upload_ids = payload.get("upload_ids")
+        if upload_ids is not None and (
+            not isinstance(upload_ids, list)
+            or any(not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{32}", value) for value in upload_ids)
+        ):
+            return jsonify({"ok": False, "error": "Invalid upload batch"}), 400
+        _promote_ready_uploads(set(upload_ids) if upload_ids is not None else None)
+    processing = _schedule_pipeline(mode)
+    return jsonify({"ok": True, "mode": mode, "processing": processing})
+
+
+def _prepare_pipeline_run(mode: str) -> None:
+    _run_state.update(
+        {
+            "running": True,
+            "mode": mode,
+            "started_at": datetime.now().isoformat(),
+            "finished_at": None,
+            "error": None,
+            "log_tail": "",
+            "stage": "upload",
+            "stages": _fresh_stages(),
+            "queued": False,
+        }
+    )
+
+
+def _schedule_pipeline(mode: str) -> str:
+    global _queue_worker_active
     with _run_lock:
-        if _run_state["running"]:
-            return jsonify({"ok": False, "error": "A run is already in progress"}), 409
-        _run_state.update(
-            {
-                "running": True,
-                "mode": mode,
-                "started_at": datetime.now().isoformat(),
-                "finished_at": None,
-                "error": None,
-                "log_tail": "",
-                "stage": "upload",
-                "stages": _fresh_stages(),
-            }
-        )
-    threading.Thread(target=_run_pipeline, args=(mode,), daemon=True).start()
-    return jsonify({"ok": True, "mode": mode})
+        _, created = _queue_store().enqueue(mode)
+        running = _queue_worker_active
+        if not running:
+            _queue_worker_active = True
+            threading.Thread(target=_drain_pipeline_queue, daemon=True).start()
+        else:
+            _run_state["queued"] = True
+    return "queued" if running or not created else "started"
+
+
+def _drain_pipeline_queue() -> None:
+    global _queue_worker_active
+    store = _queue_store()
+    while True:
+        with _run_lock:
+            claimed = store.claim()
+            if claimed is None:
+                _queue_worker_active = False
+                _run_state["queued"] = False
+                return
+            job_id, mode = claimed
+            _prepare_pipeline_run(mode)
+        _run_pipeline(mode, job_id)
+
+
+def _start_recovered_queue() -> None:
+    global _queue_worker_active
+    with _run_lock:
+        if _queue_worker_active:
+            return
+        _queue_worker_active = True
+        threading.Thread(target=_drain_pipeline_queue, daemon=True).start()
+
+
+def _promote_ready_uploads(upload_ids: set[str] | None = None) -> list[str]:
+    promoted: list[str] = []
+    sessions_root = ROOT / ".upload_sessions"
+    with _upload_sessions_lock:
+        for metadata_path in sessions_root.glob("*.json"):
+            if upload_ids is not None and metadata_path.stem not in upload_ids:
+                continue
+            session = _read_upload_session(metadata_path)
+            if not session or session.get("complete"):
+                continue
+            data_path = metadata_path.with_suffix(".part")
+            filename = session.get("saved_name") if session.get("promoting") else session.get("filename")
+            if session.get("promoting") and isinstance(filename, str):
+                destination_root = VIDEO_COMPRESS if Path(filename).suffix.lower() in VIDEO_EXTS else AUDIO_BASE
+                destination = destination_root / filename
+                if destination.is_file():
+                    session["complete"] = True
+                    session["ready_for_processing"] = False
+                    _write_upload_session(metadata_path, session)
+                    continue
+            elif not session.get("ready_for_processing"):
+                continue
+            if not isinstance(filename, str) or not data_path.is_file():
+                continue
+            destination_root = VIDEO_COMPRESS if Path(filename).suffix.lower() in VIDEO_EXTS else AUDIO_BASE
+            destination_root.mkdir(parents=True, exist_ok=True)
+            destination = destination_root / filename
+            stem, suffix = destination.stem, destination.suffix
+            counter = 1
+            while destination.exists():
+                destination = destination_root / f"{stem}_{counter:02d}{suffix}"
+                counter += 1
+            session["promoting"] = True
+            session["saved_name"] = destination.name
+            _write_upload_session(metadata_path, session)
+            try:
+                data_path.replace(destination)
+            except OSError:
+                logger.exception("[UPLOAD] Could not queue %s for processing", filename)
+                continue
+            session["complete"] = True
+            session["ready_for_processing"] = False
+            session.pop("promoting", None)
+            _write_upload_session(metadata_path, session)
+            _queue_store().record_event("upload_approved", {"upload_id": metadata_path.stem, "name": destination.name})
+            promoted.append(destination.name)
+    return promoted
+
+
+def _has_pending_media() -> bool:
+    succeeded = {"completed", "completed_routed", "auto_detected", "existing_transcription", "processed"}
+    roots = ((VIDEO_COMPRESS, False), (VIDEOS_BASE, True), (AUDIO_BASE, True))
+    for folder, recursive in roots:
+        if not folder.exists():
+            continue
+        candidates = folder.rglob("*") if recursive else folder.iterdir()
+        if any(
+            path.is_file()
+            and path.suffix.lower() in SUPPORTED_MEDIA
+            and _file_status(path) not in succeeded
+            for path in candidates
+        ):
+            return True
+    return False
 
 
 @app.route("/api/logs")
@@ -917,7 +1309,11 @@ def api_transcription_save() -> Any:
     filename = resolved.name
     override_project: str | None = None
     if media_id:
-        media_target = _from_media_id(media_id, [MediaRoot.VIDEOS, MediaRoot.AUDIO], must_exist=False)
+        media_target = _from_media_id(
+            media_id,
+            [MediaRoot.VIDEO_COMPRESS, MediaRoot.VIDEOS, MediaRoot.AUDIO],
+            must_exist=False,
+        )
         filename = media_target.name
         raw_project = payload.get("project")
         normalized = raw_project.strip() if isinstance(raw_project, str) else ""
@@ -972,6 +1368,43 @@ def api_transcription_save() -> Any:
             "project_source": project_source,
         }
     )
+
+
+@app.route("/api/file/project", methods=["POST"])
+def api_file_project() -> Any:
+    payload = request.get_json(force=True) or {}
+    media_id = payload.get("media_id")
+    raw_project = payload.get("project")
+    if not isinstance(media_id, str) or not media_id:
+        return jsonify({"ok": False, "error": "Media file is required"}), 400
+    if raw_project is not None and not isinstance(raw_project, str):
+        return jsonify({"ok": False, "error": "Invalid project"}), 400
+
+    target = _from_media_id(
+        media_id,
+        [MediaRoot.VIDEO_COMPRESS, MediaRoot.VIDEOS, MediaRoot.AUDIO],
+    )
+    project_name = raw_project.strip() if raw_project else ""
+    if project_name and not any(p.get("name") == project_name for p in _load_projects()):
+        return jsonify({"ok": False, "error": f"Project not found: {project_name}"}), 400
+
+    overrides_path = _project_overrides_path()
+    snapshot = _snapshot_text_file(overrides_path)
+    overrides = _load_project_overrides()
+    if project_name:
+        overrides[media_id] = project_name
+    else:
+        overrides.pop(media_id, None)
+    if not _save_project_overrides(overrides):
+        _restore_text_snapshot(overrides_path, snapshot)
+        return jsonify({"ok": False, "error": "Could not save project assignment"}), 500
+
+    effective, source = _effective_project(media_id, target.name)
+    return jsonify({
+        "ok": True,
+        "project": effective.get("name") if effective else None,
+        "project_source": source,
+    })
 
 
 @app.route("/api/file", methods=["DELETE"])
@@ -1291,7 +1724,7 @@ def api_metrics() -> Any:
 
 
 # ── Pipeline runner ─────────────────────────────────────────────────────
-def _run_pipeline(mode: str) -> None:
+def _run_pipeline(mode: str, job_id: int | None = None) -> None:
     global _run_state
     logger.info("[RUN] Starting pipeline mode=%s", mode)
 
@@ -1324,7 +1757,7 @@ def _run_pipeline(mode: str) -> None:
             append_log("STEP 1: Compressing videos...")
             returncode = run_streaming([sys.executable, "-m", "transcript_pipeline.media.compressor"])
             if returncode != 0:
-                append_log(f"transcript_pipeline.media.compressor exited with code {returncode}")
+                raise RuntimeError(f"transcript_pipeline.media.compressor failed (exit code {returncode})")
 
         if mode in ("full", "transcribe"):
             append_log("STEP 2: Organization + transcription...")
@@ -1340,8 +1773,12 @@ def _run_pipeline(mode: str) -> None:
         append_log(f"ERROR: {e}")
         _mark_failed_stage()
     finally:
-        _run_state["running"] = False
-        _run_state["finished_at"] = datetime.now().isoformat()
+        if job_id is not None:
+            _queue_store().finish(job_id, _run_state.get("error"))
+        with _run_lock:
+            _run_state["running"] = False
+            _run_state["finished_at"] = datetime.now().isoformat()
+            _run_state["queued"] = bool(_queue_store().snapshot()["counts"].get("queued", 0))
 
 
 def _mark_all_reached_completed() -> None:
@@ -1365,12 +1802,16 @@ def _mark_failed_stage() -> None:
 
 
 def main() -> None:
-    # A non-loopback DASHBOARD_HOST is rejected at Settings.from_env() time
-    # (see settings.py) — by the time main() runs, dashboard_host is
-    # guaranteed to be loopback-only, or 0.0.0.0 when ZMI_CONTAINER_MODE=true
-    # (container-internal bind; Compose publishes the port on host loopback
-    # only, and the Host/Origin/token request protections still apply).
+    # Container binding may use 0.0.0.0; Compose publishes only to the
+    # trusted LAN, with request Host/Origin protections still enforced.
     _ensure_folders()
+    _queue_store().recover()
+    if _has_pending_media():
+        logger.info("[RUN] Resuming pending media from data root")
+        _schedule_pipeline("full")
+    elif _queue_store().snapshot()["counts"].get("queued", 0):
+        logger.info("[RUN] Resuming durable processing queue")
+        _start_recovered_queue()
     # threaded=True: single-threaded serving repeatedly stalled unrelated
     # requests behind a still-open media stream or the browser's own
     # background polling (/api/status, /api/logs every 3s) — reproduced

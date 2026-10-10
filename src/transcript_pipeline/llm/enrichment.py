@@ -54,6 +54,25 @@ class AIEnrichmentService:
         safe_text = redact_secrets(text) if self._is_remote() else text
         return self._provider.generate_summary(safe_text, system_prompt=system_prompt)
 
+    def generate_text(
+        self,
+        text: str,
+        system_prompt: str,
+        project_config: dict[str, Any] | None = None,
+        *,
+        max_tokens: int = 4000,
+        temperature: float = 0.2,
+    ) -> str:
+        """Text generation for callers that need their own prompt and
+        sampling settings (e.g. the study guide's chunk/synthesis passes),
+        with the same guard + redaction policy summarize() uses — never a
+        bypass around the privacy boundary."""
+        self._guard.check(self._provider, project_config)
+        safe_text = redact_secrets(text) if self._is_remote() else text
+        return self._provider.generate_text(
+            safe_text, system_prompt=system_prompt, max_tokens=max_tokens, temperature=temperature
+        )
+
     def describe_frame_with_prompt(
         self,
         image_path: str | Path,

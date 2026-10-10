@@ -13,7 +13,6 @@ so it can't be "fixed" away by accident either.
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 import pytest
 

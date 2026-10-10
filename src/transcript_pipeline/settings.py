@@ -26,6 +26,13 @@ from transcript_pipeline.errors import ConfigurationError
 
 _LOOPBACK_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
 
+# x264/x265/ffmpeg speed presets (both codecs share these names), in
+# canonical order (fastest → slowest).
+_X265_PRESETS = (
+    "ultrafast", "superfast", "veryfast", "faster", "fast",
+    "medium", "slow", "slower", "veryslow",
+)
+
 
 def _infer_llm_provider_type(llm_base_url: str) -> str:
     """Real hostname parsing, not a substring check — "localhost" in
@@ -97,6 +104,8 @@ class Settings:
 
     # ── Video ─────────────────────────────────────────────────────────
     video_compress_crf: int
+    video_compress_timeout: int
+    video_compress_preset: str
     tesseract_cmd: str | None
 
     # ── Meeting handler ──────────────────────────────────────────────
@@ -126,11 +135,24 @@ class Settings:
     icecream_music: Path | None
     icecream_videos: Path | None
 
+    # ── Video codec ───────────────────────────────────────────────────
+    # libx264 default: in-container x265 encodes at ~0.5x realtime
+    # (~8h for 90 min of video) vs ~2.5x realtime measured for x264.
+    # Defaulted for the same reason as container_mode: keyword-constructing
+    # test fixtures that predate the field keep working.
+    video_compress_codec: str = "libx264"
+
     # ── Container runtime (dashboard bind + export routing) ──────────
     # Defaults keep direct keyword construction (test fixtures) working;
     # from_env() always sets them explicitly from the environment.
     container_mode: bool = False
     allowed_export_roots: tuple[Path, ...] = ()
+
+    # ── Documentation ─────────────────────────────────────────────────
+    # Per-video STUDY_GUIDE.md generation (see documentation/study_guide.py).
+    # Defaulted for the same reason as container_mode: keyword-constructing
+    # test fixtures that predate the flag keep working.
+    study_guide_enabled: bool = True
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -149,6 +171,9 @@ class Settings:
             keyframe_method=os.getenv("KEYFRAME_METHOD", "smart_scene").strip().lower() or "smart_scene",
             file_tracker_hash_mode=os.getenv("FILE_TRACKER_HASH_MODE", "fast").strip().lower() or "fast",
             video_compress_crf=int(os.getenv("VIDEO_COMPRESS_CRF", "25")),
+            video_compress_timeout=int(os.getenv("VIDEO_COMPRESS_TIMEOUT", "36000")),
+            video_compress_preset=os.getenv("VIDEO_COMPRESS_PRESET", "medium").strip().lower() or "medium",
+            video_compress_codec=os.getenv("VIDEO_COMPRESS_CODEC", "libx264").strip().lower() or "libx264",
             tesseract_cmd=_str_or_none("TESSERACT_CMD"),
             meeting_frame_interval=int(os.getenv("MEETING_FRAME_INTERVAL", "15")),
             meeting_max_screen_analyses=int(os.getenv("MEETING_MAX_SCREEN_ANALYSES", "30")),
@@ -169,6 +194,7 @@ class Settings:
             icecream_videos=Path(v) if (v := os.getenv("ICECREAM_VIDEOS")) else None,
             container_mode=_bool("ZMI_CONTAINER_MODE", False),
             allowed_export_roots=_allowed_export_roots(os.getenv("ZMI_ALLOWED_EXPORT_ROOTS")),
+            study_guide_enabled=_bool("STUDY_GUIDE_ENABLED", True),
         )
         settings._validate()
         return settings
@@ -178,6 +204,18 @@ class Settings:
             raise ConfigurationError(f"FILE_TRACKER_HASH_MODE must be 'fast' or 'full': {self.file_tracker_hash_mode!r}")
         if not (0 <= self.video_compress_crf <= 51):
             raise ConfigurationError(f"VIDEO_COMPRESS_CRF out of range (0-51): {self.video_compress_crf}")
+        if self.video_compress_timeout <= 0:
+            raise ConfigurationError(f"VIDEO_COMPRESS_TIMEOUT must be positive: {self.video_compress_timeout}")
+        if self.video_compress_preset not in _X265_PRESETS:
+            raise ConfigurationError(
+                f"VIDEO_COMPRESS_PRESET must be one of {', '.join(_X265_PRESETS)}: "
+                f"{self.video_compress_preset!r}"
+            )
+        if self.video_compress_codec not in ("libx264", "libx265"):
+            raise ConfigurationError(
+                f"VIDEO_COMPRESS_CODEC must be 'libx264' or 'libx265': "
+                f"{self.video_compress_codec!r}"
+            )
         if not (1024 <= self.dashboard_port <= 65535):
             raise ConfigurationError(f"DASHBOARD_PORT invalid: {self.dashboard_port}")
         if self.container_mode:

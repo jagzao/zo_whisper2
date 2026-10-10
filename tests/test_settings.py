@@ -21,13 +21,14 @@ def _clean_env(monkeypatch):
         if key in {
             "WHISPER_MODEL", "WORD_TIMESTAMPS", "CLEAN_TRANSCRIPTION",
             "KEYFRAMES_REQUIRED", "KEYFRAME_METHOD", "FILE_TRACKER_HASH_MODE", "VIDEO_COMPRESS_CRF",
+            "VIDEO_COMPRESS_TIMEOUT", "VIDEO_COMPRESS_PRESET", "VIDEO_COMPRESS_CODEC",
             "TESSERACT_CMD", "MEETING_FRAME_INTERVAL", "MEETING_MAX_SCREEN_ANALYSES",
             "MEETING_KEEP_FRAMES", "LLM_API_KEY", "LLM_MODEL", "LLM_BASE_URL",
             "LLM_PROVIDER_TYPE", "ALLOW_EXTERNAL_LLM", "FRAME_DESCRIPTIONS",
             "FRAME_DESCRIPTION_MAX", "ALLOW_IMAGE_UPLOAD", "ALLOW_FRAME_UPLOAD",
             "RETENTION_DAYS", "DASHBOARD_HOST", "DASHBOARD_PORT", "UPLOAD_MAX_MB",
             "ICECREAM_MUSIC", "ICECREAM_VIDEOS", "ZMI_DATA_ROOT", "ZMI_CONFIG_ENV",
-            "ZMI_CONTAINER_MODE", "ZMI_ALLOWED_EXPORT_ROOTS",
+            "ZMI_CONTAINER_MODE", "ZMI_ALLOWED_EXPORT_ROOTS", "STUDY_GUIDE_ENABLED",
         }:
             monkeypatch.delenv(key, raising=False)
 
@@ -77,6 +78,61 @@ def test_llm_provider_type_explicit_override_wins(monkeypatch):
 
 def test_invalid_crf_rejected(monkeypatch):
     monkeypatch.setenv("VIDEO_COMPRESS_CRF", "999")
+    with pytest.raises(ConfigurationError):
+        Settings.from_env()
+
+
+def test_video_compress_timeout_defaults_to_36000():
+    assert Settings.from_env().video_compress_timeout == 36000
+
+
+def test_video_compress_timeout_env_override_accepted(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_TIMEOUT", "7200")
+    assert Settings.from_env().video_compress_timeout == 7200
+
+
+def test_non_positive_video_compress_timeout_rejected(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_TIMEOUT", "0")
+    with pytest.raises(ConfigurationError):
+        Settings.from_env()
+
+
+def test_video_compress_preset_defaults_to_medium():
+    assert Settings.from_env().video_compress_preset == "medium"
+
+
+def test_video_compress_preset_env_override_accepted(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_PRESET", "slow")
+    assert Settings.from_env().video_compress_preset == "slow"
+
+
+def test_video_compress_preset_normalizes_case_and_whitespace(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_PRESET", "  FAST ")
+    assert Settings.from_env().video_compress_preset == "fast"
+
+
+def test_invalid_video_compress_preset_rejected(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_PRESET", "turbo")
+    with pytest.raises(ConfigurationError):
+        Settings.from_env()
+
+
+def test_video_compress_codec_defaults_to_libx264():
+    assert Settings.from_env().video_compress_codec == "libx264"
+
+
+def test_video_compress_codec_env_override_accepted(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_CODEC", "libx265")
+    assert Settings.from_env().video_compress_codec == "libx265"
+
+
+def test_video_compress_codec_normalizes_case_and_whitespace(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_CODEC", "  LibX265 ")
+    assert Settings.from_env().video_compress_codec == "libx265"
+
+
+def test_invalid_video_compress_codec_rejected(monkeypatch):
+    monkeypatch.setenv("VIDEO_COMPRESS_CODEC", "libvpx")
     with pytest.raises(ConfigurationError):
         Settings.from_env()
 
@@ -270,3 +326,34 @@ def test_allowed_export_roots_relative_rejected(monkeypatch):
     monkeypatch.setenv("ZMI_ALLOWED_EXPORT_ROOTS", "relative/exports")
     with pytest.raises(ConfigurationError):
         Settings.from_env()
+
+
+# ── Study guide flag (STUDY_GUIDE_ENABLED, default true) ──
+
+
+def test_study_guide_enabled_defaults_to_true():
+    assert Settings.from_env().study_guide_enabled is True
+
+
+def test_study_guide_enabled_env_override(monkeypatch):
+    monkeypatch.setenv("STUDY_GUIDE_ENABLED", "false")
+    assert Settings.from_env().study_guide_enabled is False
+    monkeypatch.setenv("STUDY_GUIDE_ENABLED", "1")
+    assert Settings.from_env().study_guide_enabled is True
+
+
+def test_direct_construction_without_flag_keeps_default():
+    # Keyword construction predating the flag (test fixtures, older callers)
+    # must keep working thanks to the field default.
+    s = Settings(
+        whisper_model="large-v3", word_timestamps=False, clean_transcription=False,
+        keyframes_required=True, keyframe_method="smart_scene", file_tracker_hash_mode="fast",
+        video_compress_crf=25, video_compress_timeout=36000, video_compress_preset="medium",
+        tesseract_cmd=None, meeting_frame_interval=15,
+        meeting_max_screen_analyses=30, meeting_keep_frames=False, llm_api_key=None,
+        llm_model="gpt-4o-mini", llm_base_url="https://api.example.com/v1", llm_provider_type="remote",
+        allow_external_llm=False, frame_descriptions=False, frame_description_max=20,
+        allow_image_upload=False, retention_days=0, dashboard_host="127.0.0.1",
+        dashboard_port=5000, upload_max_mb=500, icecream_music=None, icecream_videos=None,
+    )
+    assert s.study_guide_enabled is True

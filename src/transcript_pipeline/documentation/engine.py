@@ -243,7 +243,35 @@ def generate_documentation(
         "ai_package_dir": str(ai_package_dir),
         "step_count": len(steps),
         "low_confidence_count": sum(1 for s in steps if s.confidence == "low"),
+        "study_guide": _generate_study_guide_best_effort(
+            manual_dir, frames_dir, video_name, project_config
+        ),
     }
+
+
+def _generate_study_guide_best_effort(
+    manual_dir: Path, frames_dir: Path, video_name: str, project_config: dict | None
+) -> str:
+    """Runs the per-video study guide after the manual is complete.
+
+    Returns a status string ("ok"/"blocked"/"failed"/"unavailable"/
+    "disabled") for the summary dict — never raises, and never lets a
+    study-guide problem break the MANUAL that was just written.
+    Gated on the same LLM availability signal as the vision path plus the
+    STUDY_GUIDE_ENABLED setting (default true).
+    """
+    if not (_VISION_AVAILABLE and _LLM_SETTINGS.study_guide_enabled):
+        return "disabled"
+    try:
+        from transcript_pipeline.documentation.study_guide import generate_study_guide
+
+        result = generate_study_guide(
+            manual_dir, frames_dir, video_name, project_config=project_config
+        )
+        return str(result.get("status", "failed"))
+    except Exception as e:
+        logger.warning("[DOCS] Study guide generation failed for %s: %s", video_name, e)
+        return "failed"
 
 
 def load_steps(manual_dir: Path) -> tuple[DocumentationSource, list[ProceduralStep]]:

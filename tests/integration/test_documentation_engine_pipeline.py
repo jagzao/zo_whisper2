@@ -49,6 +49,10 @@ def _integrate_transcription(frames_dir, segments) -> None:
 def test_full_video_to_documentation_pipeline(tmp_path, monkeypatch, synthetic_cuts_video):
     monkeypatch.setenv("SMART_SCENE_COOLDOWN", "1.0")
     monkeypatch.setenv("SMART_SCENE_BLUR", "1")
+    # No LLM/network involved in this test: the study guide best-effort hook
+    # must stay silent here (it would otherwise attempt a real provider call).
+    import transcript_pipeline.documentation.engine as docs_engine
+    monkeypatch.setattr(docs_engine, "_generate_study_guide_best_effort", lambda *a, **k: "disabled")
 
     extractor = KeyframeExtractor(output_base_dir=str(tmp_path / "Frames"))
     monkeypatch.setattr(extractor, "_get_output_paths", lambda vp: (tmp_path / "Frames", vp.stem))

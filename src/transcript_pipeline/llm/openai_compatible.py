@@ -81,6 +81,23 @@ class OpenAICompatibleProvider:
     def generate_summary(
         self, text: str, system_prompt: str | None = None, max_tokens: int = 2000
     ) -> str:
+        return self.generate_text(text, system_prompt=system_prompt, max_tokens=max_tokens)
+
+    def generate_text(
+        self,
+        text: str,
+        system_prompt: str | None = None,
+        *,
+        max_tokens: int = 2000,
+        temperature: float = 0.3,
+    ) -> str:
+        """Plain chat completion with caller-supplied sampling settings.
+
+        summarize()/generate_from_template() keep their historical 0.3
+        temperature through this default; callers needing stricter
+        determinism (e.g. the study guide's JSON passes) set temperature
+        explicitly.
+        """
         return self._make_request(
             {
                 "model": self._settings.llm_model,
@@ -89,7 +106,7 @@ class OpenAICompatibleProvider:
                     {"role": "user", "content": text},
                 ],
                 "max_tokens": max_tokens,
-                "temperature": 0.3,
+                "temperature": temperature,
             }
         )
 

@@ -69,6 +69,10 @@ def validate_project(project: object) -> list[str]:
     if classification not in VALID_DATA_CLASSIFICATIONS:
         errors.append(f"'data_classification' must be one of {sorted(VALID_DATA_CLASSIFICATIONS)}")
 
+    always_tutorial = project.get("always_tutorial")
+    if always_tutorial is not None and not isinstance(always_tutorial, bool):
+        errors.append("'always_tutorial' must be a boolean or null")
+
     for field in ("custom_fillers",):
         value = project.get(field)
         if value is not None and not (isinstance(value, list) and all(isinstance(v, str) for v in value)):

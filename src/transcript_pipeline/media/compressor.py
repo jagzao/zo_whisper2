@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Video Compressor & Mover - Compresses videos with high efficiency (H.265)
-and moves them to their destination folder.
+Video Compressor & Mover - Compresses videos with the codec configured in
+VIDEO_COMPRESS_CODEC (libx264 default, libx265 opt-in) and moves them to
+their destination folder.
 """
 
 import json
@@ -13,9 +14,12 @@ from pathlib import Path
 
 from transcript_pipeline.config import DATA_ROOT
 from transcript_pipeline.media.utils import run_ffprobe
+from transcript_pipeline.projects import load_projects, match_project
 from transcript_pipeline.settings import SETTINGS
 
-_COMPRESSION_TIMEOUT_SECONDS = 2 * 60 * 60  # 2h — generous, catches a hung ffmpeg, not slow encoding
+
+def _codec_label(codec: str) -> str:
+    return "H.265" if codec == "libx265" else "H.264"
 
 
 def get_video_info(video_path):
@@ -34,7 +38,7 @@ def get_video_info(video_path):
 
 
 def compress_video_high_efficiency(input_path, output_path):
-    """Compresses video with H.265 using a configurable CRF (24-26 recommended)."""
+    """Compresses video with the configured codec (libx264/libx265) using a configurable CRF (24-26 recommended)."""
     print(f"[INFO] Analyzing: {input_path.name}")
 
     info = get_video_info(input_path)
@@ -68,19 +72,23 @@ def compress_video_high_efficiency(input_path, output_path):
     # Recommended CRF range: 24 to 26.
     crf = max(24, min(26, SETTINGS.video_compress_crf))
 
+    codec = SETTINGS.video_compress_codec
+    # hvc1/avc1: the MP4 tag players need to stream HEVC/AVC directly.
+    tag = "hvc1" if codec == "libx265" else "avc1"
+
     cmd = [
         'ffmpeg', '-i', str(input_path),
-        '-c:v', 'libx265',            # H.265/HEVC codec
-        '-preset', 'slow',            # Compression/time tradeoff for HEVC
+        '-c:v', codec,                 # H.264/H.265 codec from settings
+        '-preset', SETTINGS.video_compress_preset,  # Compression/time tradeoff
         '-crf', str(crf),             # Recommended range: 24-26
-        '-tag:v', 'hvc1',             # Better player compatibility
+        '-tag:v', tag,                # Better player compatibility
         '-c:a', 'copy',               # Copy audio without re-encoding
         '-movflags', '+faststart',   # Streaming optimization
         '-pix_fmt', 'yuv420p',      # Compatible pixel format
         '-y', str(output_path)       # Overwrite if it exists
     ]
 
-    print(f"[INFO] Compressing with H.265 + CRF {crf} + preset slow...")
+    print(f"[INFO] Compressing with {_codec_label(codec)} + CRF {crf} + preset {SETTINGS.video_compress_preset}...")
 
     try:
         process = subprocess.Popen(
@@ -91,13 +99,15 @@ def compress_video_high_efficiency(input_path, output_path):
         )
 
         try:
-            # H.265 encoding is genuinely slow for large/long videos — this
-            # bounds a truly hung ffmpeg process, not normal compression time.
-            stdout, stderr = process.communicate(timeout=_COMPRESSION_TIMEOUT_SECONDS)
+            # Encoding is genuinely slow for large/long videos — this
+            # bounds a truly hung ffmpeg process, not normal compression
+            # time. The budget is configurable (VIDEO_COMPRESS_TIMEOUT)
+            # because a 90-min 1080p encode legitimately takes hours.
+            stdout, stderr = process.communicate(timeout=SETTINGS.video_compress_timeout)
         except subprocess.TimeoutExpired:
             process.kill()
             process.communicate()
-            print(f"[ERROR] FFmpeg compression timed out after {_COMPRESSION_TIMEOUT_SECONDS}s")
+            print(f"[ERROR] FFmpeg compression timed out after {SETTINGS.video_compress_timeout}s")
             return False
 
         if process.returncode != 0:
@@ -121,6 +131,21 @@ def compress_video_high_efficiency(input_path, output_path):
 def get_target_folder(filename, base_path):
     """Determines the destination folder based on the filename prefix"""
     filename_lower = filename.lower()
+    projects = load_projects(base_path / "projects.json")
+    configured_project = match_project(Path(filename), projects)
+    if configured_project is None:
+        try:
+            overrides = json.loads((base_path / "project_overrides.json").read_text(encoding="utf-8"))
+            project_name = overrides.get("overrides", {}).get(f"video_compress:{filename}")
+            configured_project = next((p for p in projects if p.get("name") == project_name), None)
+        except (OSError, ValueError, AttributeError):
+            configured_project = None
+    subfolder = configured_project.get("videos_subfolder") if configured_project else None
+    if subfolder:
+        videos_root = (base_path / "Videos").resolve()
+        target = (videos_root / subfolder).resolve()
+        if target != videos_root and videos_root in target.parents:
+            return target
 
     # Prefix-to-folder map (same convention as pipeline/master.py)
     target_map = {
@@ -143,7 +168,7 @@ def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
     compress_folder = base_path / "Video_compress"
 
     print("=" * 60)
-    print("VIDEO COMPRESSION - H.265 (CRF 24-26)")
+    print(f"VIDEO COMPRESSION - {_codec_label(SETTINGS.video_compress_codec)} (CRF 24-26)")
     print("=" * 60)
     print()
 
@@ -154,8 +179,12 @@ def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
         return 0
 
     video_extensions = {'.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v'}
+    # temp_* files are partial outputs from aborted compressions — treating
+    # them as sources would re-compress a truncated file and rename it over
+    # the original.
     video_files = [f for f in compress_folder.iterdir()
-                   if f.is_file() and f.suffix.lower() in video_extensions]
+                   if f.is_file() and f.suffix.lower() in video_extensions
+                   and not f.name.startswith("temp_")]
 
     if not video_files:
         print("[INFO] No videos pending compression in Video_compress/")
@@ -177,6 +206,18 @@ def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
 
         try:
             if compress_video_high_efficiency(video_file, temp_compressed):
+                # An ffmpeg killed mid-encode (e.g. VM shutdown during
+                # communicate()) can leave a small partial temp behind;
+                # never trade the good original away for it.
+                min_plausible = max(10 * 1024 * 1024, 0.05 * video_file.stat().st_size)
+                if temp_compressed.stat().st_size < min_plausible:
+                    print(
+                        f"[ERROR] Compressed output implausibly small "
+                        f"({temp_compressed.stat().st_size / (1024 * 1024):.1f}MB) — keeping original"
+                    )
+                    temp_compressed.unlink()
+                    continue
+
                 final_path = target_folder / video_file.name
 
                 if final_path.exists():

@@ -28,6 +28,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setattr(dashboard_app, "PROJECTS_PATH", tmp_path / "projects.json")
     monkeypatch.setattr(dashboard_app, "PROCESSED_DB", tmp_path / "processed_files.json")
     monkeypatch.setattr(dashboard_app, "_DASHBOARD_TOKEN", AUTH_HEADERS["X-Local-Dashboard-Token"])
+    monkeypatch.setattr(dashboard_app, "_schedule_pipeline", lambda *args, **kwargs: "started")
     # These tests use fake byte content (not real media) for upload fixtures
     # — dedicated tests below cover _is_valid_media_file's ffprobe logic
     # itself with explicit mocking; here it would just reject every upload.
@@ -293,7 +294,10 @@ def test_upload_accepts_supported_extension(client, env):
     data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "clip.mp3")}
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 200
-    assert (env["video_compress"] / "clip.mp3").exists()
+    upload_id = resp.get_json()["upload_id"]
+    assert resp.get_json()["processing"] == "awaiting_approval"
+    assert (env["root"] / ".upload_sessions" / f"{upload_id}.part").exists()
+    assert not (env["audio"] / "clip.mp3").exists()
 
 
 def test_upload_response_has_no_absolute_path(client, env):
@@ -351,7 +355,9 @@ def test_upload_sanitizes_dangerous_filename(client, env):
     assert resp.status_code == 200
     saved_name = resp.get_json()["name"]
     assert ".." not in saved_name
-    assert (env["video_compress"] / saved_name).resolve().parent == env["video_compress"].resolve()
+    upload_id = resp.get_json()["upload_id"]
+    session = json.loads((env["root"] / ".upload_sessions" / f"{upload_id}.json").read_text())
+    assert session["filename"] == saved_name
 
 
 def test_upload_duplicate_filename_does_not_overwrite(client, env):
@@ -364,8 +370,11 @@ def test_upload_duplicate_filename_does_not_overwrite(client, env):
     assert resp2.status_code == 200
     assert resp2.get_json()["name"] != "clip.mp3"
 
-    assert (env["video_compress"] / "clip.mp3").read_bytes() == b"first"
-    assert (env["video_compress"] / resp2.get_json()["name"]).read_bytes() == b"second"
+    first_id = resp1.get_json()["upload_id"]
+    second_id = resp2.get_json()["upload_id"]
+    sessions = env["root"] / ".upload_sessions"
+    assert (sessions / f"{first_id}.part").read_bytes() == b"first"
+    assert (sessions / f"{second_id}.part").read_bytes() == b"second"
 
 
 def test_upload_oversize_rejected(client, monkeypatch):
@@ -440,4 +449,4 @@ def test_upload_accepts_file_ffprobe_confirms_as_media(client, env, monkeypatch)
     data = {"file": (__import__("io").BytesIO(b"real-ish audio bytes"), "real.mp3")}
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 200
-    assert (env["video_compress"] / "real.mp3").exists()
+    assert (env["audio"] / "real.mp3").exists()
