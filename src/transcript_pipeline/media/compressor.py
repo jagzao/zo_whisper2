@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Video Compressor & Mover - Compresses videos with the codec configured in
 VIDEO_COMPRESS_CODEC (libx264 default, libx265 opt-in) and moves them to
@@ -99,7 +99,7 @@ def compress_video_high_efficiency(input_path, output_path):
         )
 
         try:
-            # Encoding is genuinely slow for large/long videos — this
+            # Encoding is genuinely slow for large/long videos â€” this
             # bounds a truly hung ffmpeg process, not normal compression
             # time. The budget is configurable (VIDEO_COMPRESS_TIMEOUT)
             # because a 90-min 1080p encode legitimately takes hours.
@@ -117,7 +117,7 @@ def compress_video_high_efficiency(input_path, output_path):
         if output_path.exists():
             final_size_mb = output_path.stat().st_size / (1024 * 1024)
             reduction = ((current_size_mb - final_size_mb) / current_size_mb * 100) if current_size_mb > 0 else 0
-            print(f"[OK] Compressed: {current_size_mb:.1f}MB → {final_size_mb:.1f}MB ({reduction:.1f}% reduction)")
+            print(f"[OK] Compressed: {current_size_mb:.1f}MB â†’ {final_size_mb:.1f}MB ({reduction:.1f}% reduction)")
             return True
         else:
             print("[ERROR] Output file was not generated")
@@ -179,7 +179,7 @@ def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
         return 0
 
     video_extensions = {'.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v'}
-    # temp_* files are partial outputs from aborted compressions — treating
+    # temp_* files are partial outputs from aborted compressions â€” treating
     # them as sources would re-compress a truncated file and rename it over
     # the original.
     video_files = [f for f in compress_folder.iterdir()
@@ -209,11 +209,11 @@ def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
                 # An ffmpeg killed mid-encode (e.g. VM shutdown during
                 # communicate()) can leave a small partial temp behind;
                 # never trade the good original away for it.
-                min_plausible = max(10 * 1024 * 1024, 0.05 * video_file.stat().st_size)
+                min_plausible = max(10 * 1024 * 1024, 0.01 * video_file.stat().st_size)
                 if temp_compressed.stat().st_size < min_plausible:
                     print(
                         f"[ERROR] Compressed output implausibly small "
-                        f"({temp_compressed.stat().st_size / (1024 * 1024):.1f}MB) — keeping original"
+                        f"({temp_compressed.stat().st_size / (1024 * 1024):.1f}MB) â€” keeping original"
                     )
                     temp_compressed.unlink()
                     continue
@@ -253,7 +253,7 @@ def main() -> None:
     if sys.platform == "win32":
         import codecs
         # sys.stdout/stderr are typed as TextIO, which typeshed doesn't
-        # declare .detach() on — it's real on the TextIOWrapper Python
+        # declare .detach() on â€” it's real on the TextIOWrapper Python
         # actually hands you here, just not part of the abstract interface.
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())  # type: ignore[attr-defined]
         sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())  # type: ignore[attr-defined]

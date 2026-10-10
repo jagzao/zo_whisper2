@@ -4,6 +4,7 @@ Polls CarpetaTranscripciones for frame_mapping.json files whose manual bundle
 is missing, and regenerates documentation (idempotent). Runs ~22h max, logs to
 stdout (visible via docker logs / docker attach).
 """
+import json
 import time
 import traceback
 from collections import Counter
@@ -36,10 +37,24 @@ def main() -> None:
                 key = str(frames_dir)
                 if key in done or attempts[key] >= MAX_ATTEMPTS:
                     continue
+                # Gate on COMPLETED transcription: the plain-text transcript
+                # must exist AND frame_mapping must carry the integrated
+                # transcription mapping. Otherwise the guide would be built
+                # from frames+OCR only and never regenerate.
+                stem = frames_dir.name
+                txt = frames_dir.parent.parent / f"{stem}.txt"
+                if not txt.exists():
+                    continue
+                try:
+                    payload = json.loads(mapping.read_text(encoding="utf-8"))
+                except Exception:
+                    payload = {}
+                if not payload.get("transcription_mapping"):
+                    continue
                 if (frames_dir / "manual" / "STUDY_GUIDE.md").exists():
                     done.add(key)
                     continue
-                name = frames_dir.name
+                name = stem
                 try:
                     project = match_project(Path(name), projects)
                 except Exception:
