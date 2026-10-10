@@ -118,3 +118,7 @@ CLAUDE.md
 
 # Deterministic gate runtime artifacts
 artifacts/
+processing_queue.sqlite3*
+
+# Runtime data root del contenedor (videos/transcripciones/sesiones de clientes) - nunca commitear
+zmi-data/

@@ -10,6 +10,7 @@ Run:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import time
@@ -43,6 +44,18 @@ def _truncate(text: str, limit: int = 500) -> str:
     return text if len(text) <= limit else text[:limit]
 
 
+def _build_artifacts_dir() -> Path:
+    build = (os.environ.get("BUILD_NUMBER") or "local").strip()
+    safe = "".join(c if c.isalnum() or c in "-_" else "-" for c in build)[:80] or "local"
+    return ARTIFACTS_DIR / f"build-{safe}"
+
+
+def _report_path(gate: str, report_name: str) -> Path:
+    if gate == "e2e":
+        return Path(os.environ.get("ZMI_TEST_DATA_ROOT", str(ROOT))).resolve() / report_name
+    return ROOT / report_name
+
+
 def _existing_files_from_detail(detail: str) -> list[str]:
     """Best-effort: relative paths mentioned in a failure detail that exist."""
     found: list[str] = []
@@ -67,7 +80,7 @@ def _extract_structured_failure(gate: str, combined_output: str) -> tuple[str, s
     """
     report_name = REPORT_FILES.get(gate)
     if report_name:
-        report_path = ROOT / report_name
+        report_path = _report_path(gate, report_name)
         if report_path.exists():
             try:
                 report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -112,14 +125,16 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
     else:
         return 2
 
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    build_dir = _build_artifacts_dir()
+    build_logs_dir = build_dir / "logs"
+    build_logs_dir.mkdir(parents=True, exist_ok=True)
 
     # Never let a report from a previous run masquerade as evidence for the
     # current invocation when the authoritative script fails before writing
     # its own report.
     report_name = REPORT_FILES.get(gate)
     if report_name:
-        (ROOT / report_name).unlink(missing_ok=True)
+        _report_path(gate, report_name).unlink(missing_ok=True)
 
     start = time.monotonic()
     try:
@@ -140,7 +155,8 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
     duration = time.monotonic() - start
 
     combined_output = f"{stdout}\n{stderr}"
-    (LOGS_DIR / f"{gate}.log").write_text(combined_output, encoding="utf-8")
+    log_path = build_logs_dir / f"{gate}.log"
+    log_path.write_text(combined_output, encoding="utf-8")
 
     status = "PASS" if returncode == 0 else "FAIL"
     if status == "PASS":
@@ -150,26 +166,22 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
     else:
         check, error_signature, affected_files = _extract_structured_failure(gate, combined_output)
 
-    LATEST_PATH.write_text(
-        json.dumps(
-            {
+    report = {
                 "status": status,
                 "gate": gate,
                 "check": check,
                 "error_signature": error_signature,
                 "affected_files": affected_files,
-                "artifact": f"artifacts/gates/logs/{gate}.log",
+                "artifact": log_path.relative_to(ROOT).as_posix(),
                 "duration_seconds": round(duration, 2),
                 "command": " ".join(cmd),
                 "runner": "scripts/gate_runner.py",
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
+            }
+    serialized = json.dumps(report, ensure_ascii=False, indent=2)
+    LATEST_PATH.write_text(serialized, encoding="utf-8")
+    (build_dir / f"{gate}.json").write_text(serialized, encoding="utf-8")
 
-    print(f"[{status}] {gate} ({round(duration, 2)}s) -> artifacts/gates/latest.json")
+    print(f"[{status}] {gate} ({round(duration, 2)}s) -> {build_dir.relative_to(ROOT).as_posix()}/{gate}.json")
     return 0 if status == "PASS" else 1
 
 

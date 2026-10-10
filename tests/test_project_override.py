@@ -64,7 +64,13 @@ def env(tmp_path, monkeypatch):
         ),
     )
     (tmp_path / "projects.json").write_text(json.dumps(PROJECTS), encoding="utf-8")
-    return {"root": tmp_path, "audio": audio, "videos": videos, "transcriptions": transcriptions}
+    return {
+        "root": tmp_path,
+        "audio": audio,
+        "videos": videos,
+        "video_compress": video_compress,
+        "transcriptions": transcriptions,
+    }
 
 
 @pytest.fixture
@@ -116,6 +122,47 @@ def test_no_project_when_nothing_matches(client, env):
     row = _file_row(client, "videos:unmatched.mp4")
     assert row["project"] is None
     assert row["project_source"] == "none"
+
+
+def test_pending_video_compress_file_can_be_assigned_to_project(client, env):
+    video = env["video_compress"] / "unmatched.mp4"
+    video.write_bytes(b"fake-video")
+
+    response = client.post(
+        "/api/file/project",
+        json={"media_id": "video_compress:unmatched.mp4", "project": "Beta"},
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["project"] == "Beta"
+    row = _file_row(client, "video_compress:unmatched.mp4")
+    assert row["project"] == "Beta"
+    assert row["project_source"] == "manual"
+
+
+def test_video_compress_transcription_can_be_edited(client, env):
+    video = env["video_compress"] / "unmatched.mp4"
+    video.write_bytes(b"fake-video")
+    tx = env["transcriptions"] / "unmatched.txt"
+    tx.write_text("original text", encoding="utf-8")
+
+    response = client.post(
+        "/api/transcription",
+        json={
+            "id": "transcriptions:unmatched.txt",
+            "text": "edited text",
+            "project": "Beta",
+            "media_id": "video_compress:unmatched.mp4",
+        },
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert tx.read_text(encoding="utf-8") == "edited text"
+    assert dashboard_app._load_project_overrides() == {
+        "video_compress:unmatched.mp4": "Beta"
+    }
 
 
 # ── manual override ──────────────────────────────────────────────────────
@@ -370,4 +417,3 @@ def test_delete_media_aborts_when_override_cleanup_cannot_persist(client, media,
     assert resp.get_json()["ok"] is False
     assert media["video"].exists()
     assert dashboard_app._load_project_overrides() == {media["media_id"]: "Beta"}
-

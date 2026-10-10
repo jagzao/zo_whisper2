@@ -159,7 +159,7 @@ class _FakeCompletedProcess:
 
 def test_full_run_marks_all_stages_completed(client, env, monkeypatch):
     def fake_popen(cmd, **kwargs):
-        if "compress_and_move.py" in cmd[1]:
+        if "transcript_pipeline.media.compressor" in cmd:
             return _FakeCompletedProcess(["STEP 1 stub: nothing to compress\n"])
         return _FakeCompletedProcess([
             "[SCAN] Folder detected: audio/demo\n",
@@ -189,9 +189,9 @@ def test_full_run_marks_all_stages_completed(client, env, monkeypatch):
 
 def test_failing_run_marks_failing_stage_failed_and_later_pending(client, env, monkeypatch):
     def fake_popen(cmd, **kwargs):
-        if "compress_and_move.py" in cmd[1]:
+        if "transcript_pipeline.media.compressor" in cmd:
             return _FakeCompletedProcess(["STEP 1 stub: nothing to compress\n"])
-        # master_processor reaches transcribe then fails (returncode 1).
+        # master module reaches transcribe then fails (returncode 1).
         return _FakeCompletedProcess([
             "[SCAN] Folder detected: audio/demo\n",
             "[INIT] Loading Whisper model large-v3...\n",

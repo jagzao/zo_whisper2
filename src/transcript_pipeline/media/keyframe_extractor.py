@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Keyframe Extractor Module
 Extracts keyframes from tutorial videos using FFmpeg
@@ -10,6 +10,8 @@ import subprocess
 import time
 from pathlib import Path
 from typing import Any
+
+from transcript_pipeline.config import DATA_ROOT
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ class KeyframeExtractor:
 
         # Validar formato
         if self.frame_format not in ["png", "jpg", "jpeg", "webp"]:
-            logger.warning(f"Formato no válido: {frame_format}, usando PNG")
+            logger.warning(f"Formato no vÃ¡lido: {frame_format}, usando PNG")
             self.frame_format = "png"
 
         # Crear directorio base
@@ -55,18 +57,18 @@ class KeyframeExtractor:
 
         Args:
             video_path: Ruta al archivo de video
-            method: Método de extracción ("iframe", "scene", "interval")
-            max_frames: Número máximo de frames a extraer (None = sin límite)
-            quality: Calidad de compresión (1-31, menor = mejor calidad)
+            method: MÃ©todo de extracciÃ³n ("iframe", "scene", "interval")
+            max_frames: NÃºmero mÃ¡ximo de frames a extraer (None = sin lÃ­mite)
+            quality: Calidad de compresiÃ³n (1-31, menor = mejor calidad)
 
         Returns:
-            Dict con información sobre la extracción:
+            Dict con informaciÃ³n sobre la extracciÃ³n:
             - success: bool
             - frames_dir: str (ruta a la carpeta de frames)
             - frame_count: int
             - video_duration: float (segundos)
             - processing_time: float (segundos)
-            - method: str (método usado)
+            - method: str (mÃ©todo usado)
             - error: str (si hubo error)
         """
         start_time = time.time()
@@ -84,12 +86,12 @@ class KeyframeExtractor:
                     "method": method
                 }
 
-            # Obtener duración del video
+            # Obtener duraciÃ³n del video
             duration = self._get_video_duration(video_path)
             if duration == 0:
                 return {
                     "success": False,
-                    "error": "No se pudo obtener la duración del video",
+                    "error": "No se pudo obtener la duraciÃ³n del video",
                     "frames_dir": "",
                     "frame_count": 0,
                     "video_duration": 0.0,
@@ -97,7 +99,7 @@ class KeyframeExtractor:
                     "method": method
                 }
             
-            # Optimización para videos largos (>2h)
+            # OptimizaciÃ³n para videos largos (>2h)
             if duration > 7200 and max_frames and max_frames > 50:
                 import os
                 max_frames = int(os.getenv("FRAME_EXTRACTION_LONG_VIDEO_MAX_FRAMES", "50"))
@@ -109,17 +111,17 @@ class KeyframeExtractor:
             frames_dir.mkdir(parents=True, exist_ok=True)
 
             logger.info(f"[KEYFRAMES] Extrayendo frames de: {video_path.name}")
-            logger.info(f"[KEYFRAMES] Método: {method}, Duración: {duration:.1f}s")
+            logger.info(f"[KEYFRAMES] MÃ©todo: {method}, DuraciÃ³n: {duration:.1f}s")
 
-            # Extraer frames según el método
+            # Extraer frames segÃºn el mÃ©todo
             frame_count, real_pts_map = self._extract_frames(video_path, frames_dir, method, max_frames, quality)
 
-            # Crear mapa de frames con timestamps (usa PTS reales cuando el método los provee)
+            # Crear mapa de frames con timestamps (usa PTS reales cuando el mÃ©todo los provee)
             self._create_frame_mapping(video_path, frames_dir, duration, method, real_pts_map)
 
             processing_time = time.time() - start_time
 
-            logger.info(f"[KEYFRAMES] Extraídos {frame_count} frames en {processing_time:.1f}s")
+            logger.info(f"[KEYFRAMES] ExtraÃ­dos {frame_count} frames en {processing_time:.1f}s")
             logger.info(f"[KEYFRAMES] Guardados en: {frames_dir}")
 
             return {
@@ -160,54 +162,47 @@ class KeyframeExtractor:
         project_name = parts[-2] if len(parts) >= 2 else "default"
         video_name = video_path.stem
 
-        base_path = Path(os.getenv("TRANSCRIPTIONS_PATH") or (Path(__file__).parents[3] / "CarpetaTranscripciones"))
+        base_path = Path(os.getenv("TRANSCRIPTIONS_PATH") or (DATA_ROOT / "CarpetaTranscripciones"))
         project_dir = base_path / project_name / f"{video_name}_Frames"
 
         return project_dir, video_name
 
     def _get_video_duration(self, video_path: Path) -> float:
         """
-        Obtiene la duración del video usando FFprobe/FFmpeg.
+        Obtiene la duraciÃ³n del video con ffprobe (lectura de metadatos).
+
+        La implementaciÃ³n anterior decodificaba el video completo
+        (`ffmpeg -i ... -f null -`) solo para leer la lÃ­nea "Duration:";
+        con su timeout de 30s cualquier video de mÃ¡s de ~5 minutos
+        fallaba el probe y con Ã©l todo el pipeline de keyframes.
 
         Args:
             video_path: Ruta al video
 
         Returns:
-            Duración en segundos (0 si hay error)
+            DuraciÃ³n en segundos (0 si hay error)
         """
         try:
             cmd = [
-                self.ffmpeg_path,
-                "-i", str(video_path),
-                "-f", "null",
-                "-"
+                "ffprobe",
+                "-v", "error",
+                "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1",
+                str(video_path),
             ]
 
             result = subprocess.run(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stderr=subprocess.PIPE,
                 text=True,
                 timeout=30
             )
 
-            # Buscar duración en la salida
-            for line in result.stdout.split('\n'):
-                if "Duration:" in line:
-                    # Formato: "Duration: 00:01:23.45, start: 0.000000, bitrate: 1234 kb/s"
-                    duration_str = line.split("Duration:")[1].split(",")[0].strip()
-                    # Parsear HH:MM:SS.mmm
-                    parts = duration_str.split(":")
-                    if len(parts) == 3:
-                        hours = float(parts[0])
-                        minutes = float(parts[1])
-                        seconds = float(parts[2])
-                        return hours * 3600 + minutes * 60 + seconds
-
-            return 0.0
+            return float(result.stdout.strip())
 
         except Exception as e:
-            logger.warning(f"[KEYFRAMES] Error obteniendo duración: {e}")
+            logger.warning(f"[KEYFRAMES] Error obteniendo duraciÃ³n: {e}")
             return 0.0
 
     def _create_frame_mapping(
@@ -219,21 +214,21 @@ class KeyframeExtractor:
         real_pts_map: dict[str, float] | None = None
     ):
         """
-        Crea un archivo JSON con el mapeo de frames a timestamps y espacio para transcripción.
+        Crea un archivo JSON con el mapeo de frames a timestamps y espacio para transcripciÃ³n.
 
         Args:
             video_path: Ruta al video original
             frames_dir: Directorio donde se guardaron los frames
-            duration: Duración total del video
-            method: Método de extracción usado
+            duration: DuraciÃ³n total del video
+            method: MÃ©todo de extracciÃ³n usado
             real_pts_map: {frame_filename: pts_seconds} con el PTS real capturado durante
-                la extracción (scene/smart_scene). Si está presente y cubre todos los
-                frames, se usa en vez de estimar por distribución uniforme.
+                la extracciÃ³n (scene/smart_scene). Si estÃ¡ presente y cubre todos los
+                frames, se usa en vez de estimar por distribuciÃ³n uniforme.
         """
         import json
 
         try:
-            # Obtener lista de frames extraídos
+            # Obtener lista de frames extraÃ­dos
             frame_files = sorted([f for f in frames_dir.glob(f"*.{self.frame_format}")])
 
             # Calcular timestamps
@@ -243,7 +238,7 @@ class KeyframeExtractor:
                 # Para I-frames, necesitamos extraer timestamps reales
                 frame_timestamps = self._extract_frame_timestamps(video_path, frame_files)
             elif method == "interval":
-                # Para intervalos, calcular basado en duración y cantidad
+                # Para intervalos, calcular basado en duraciÃ³n y cantidad
                 interval = duration / len(frame_files) if frame_files else 0
                 for i, frame_file in enumerate(frame_files):
                     timestamp = i * interval
@@ -253,8 +248,8 @@ class KeyframeExtractor:
                         "timestamp_formatted": self._format_timestamp(timestamp)
                     })
             elif real_pts_map and all(f.name in real_pts_map for f in frame_files):
-                # scene / smart_scene: usar el PTS real capturado en la fase de detección,
-                # nunca una estimación uniforme (release blocker — ver US-001 §4.3).
+                # scene / smart_scene: usar el PTS real capturado en la fase de detecciÃ³n,
+                # nunca una estimaciÃ³n uniforme (release blocker â€” ver US-001 Â§4.3).
                 for frame_file in frame_files:
                     timestamp = real_pts_map[frame_file.name]
                     frame_timestamps.append({
@@ -263,7 +258,7 @@ class KeyframeExtractor:
                         "timestamp_formatted": self._format_timestamp(timestamp)
                     })
             else:
-                # Fallback defensivo: no debería ocurrir en el flujo normal de scene/smart_scene.
+                # Fallback defensivo: no deberÃ­a ocurrir en el flujo normal de scene/smart_scene.
                 logger.warning(
                     "[KEYFRAMES] No real PTS map for method=%s, falling back to uniform "
                     "estimate (timestamps will be approximate)", method
@@ -288,7 +283,7 @@ class KeyframeExtractor:
                     "extraction_date": time.strftime("%Y-%m-%d %H:%M:%S")
                 },
                 "frames": frame_timestamps,
-                "transcription_mapping": {}  # Se llenará después de la transcripción
+                "transcription_mapping": {}  # Se llenarÃ¡ despuÃ©s de la transcripciÃ³n
             }
             
             # Guardar mapa en JSON
@@ -337,7 +332,7 @@ class KeyframeExtractor:
                 while frame_index < len(frame_files):
                     timestamps.append({
                         "frame_file": frame_files[frame_index].name,
-                        "timestamp": frame_index * 10.0,  # Estimación
+                        "timestamp": frame_index * 10.0,  # EstimaciÃ³n
                         "timestamp_formatted": self._format_timestamp(frame_index * 10.0)
                     })
                     frame_index += 1
@@ -372,19 +367,19 @@ class KeyframeExtractor:
         quality: int
     ) -> tuple[int, dict[str, float]]:
         """
-        Extrae frames usando el método especificado.
+        Extrae frames usando el mÃ©todo especificado.
 
         Args:
             video_path: Ruta al video
             output_dir: Directorio de salida
-            method: Método de extracción
-            max_frames: Límite de frames
-            quality: Calidad de compresión
+            method: MÃ©todo de extracciÃ³n
+            max_frames: LÃ­mite de frames
+            quality: Calidad de compresiÃ³n
 
         Returns:
             Tupla (frame_count, real_pts_map). real_pts_map es {frame_filename: pts_seconds}
-            para los métodos que capturan el PTS real durante la extracción (scene,
-            smart_scene); dict vacío para los métodos que no lo necesitan (iframe, interval),
+            para los mÃ©todos que capturan el PTS real durante la extracciÃ³n (scene,
+            smart_scene); dict vacÃ­o para los mÃ©todos que no lo necesitan (iframe, interval),
             que ya calculan su propio timestamp real/exacto en `_create_frame_mapping`.
         """
         if method == "iframe":
@@ -396,7 +391,7 @@ class KeyframeExtractor:
         elif method == "interval":
             return self._extract_interval_frames(video_path, output_dir, max_frames, quality), {}
         else:
-            logger.warning(f"[KEYFRAMES] Método no válido: {method}, usando iframe")
+            logger.warning(f"[KEYFRAMES] MÃ©todo no vÃ¡lido: {method}, usando iframe")
             return self._extract_iframes(video_path, output_dir, max_frames, quality), {}
 
     def _extract_iframes(
@@ -412,11 +407,11 @@ class KeyframeExtractor:
         Args:
             video_path: Ruta al video
             output_dir: Directorio de salida
-            max_frames: Límite de frames
-            quality: Calidad de compresión
+            max_frames: LÃ­mite de frames
+            quality: Calidad de compresiÃ³n
 
         Returns:
-            Número de frames extraídos
+            NÃºmero de frames extraÃ­dos
         """
         output_pattern = str(output_dir / f"frame_%04d.{self.frame_format}")
 
@@ -435,16 +430,16 @@ class KeyframeExtractor:
         ]
 
         # Ejecutar comando
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
 
         if result.returncode != 0:
             logger.error(f"[KEYFRAMES] FFmpeg error: {result.stderr}")
             return 0
 
-        # Contar frames extraídos
+        # Contar frames extraÃ­dos
         frame_count = len(list(output_dir.glob(f"frame_*.{self.frame_format}")))
 
-        # Aplicar límite si es necesario
+        # Aplicar lÃ­mite si es necesario
         if max_frames and frame_count > max_frames:
             self._limit_frames(output_dir, max_frames)
             frame_count = max_frames
@@ -459,15 +454,15 @@ class KeyframeExtractor:
         quality: int
     ) -> tuple[int, dict[str, float]]:
         """
-        Extrae frames basándose en cambios de escena, buscando el PTS real de cada
-        cambio detectado (misma técnica de dos fases que smart_scene, sin cooldown
-        ni dedup) para que el frame_mapping.json no dependa de una estimación uniforme.
+        Extrae frames basÃ¡ndose en cambios de escena, buscando el PTS real de cada
+        cambio detectado (misma tÃ©cnica de dos fases que smart_scene, sin cooldown
+        ni dedup) para que el frame_mapping.json no dependa de una estimaciÃ³n uniforme.
 
         Args:
             video_path: Ruta al video
             output_dir: Directorio de salida
-            max_frames: Límite de frames
-            quality: Calidad de compresión
+            max_frames: LÃ­mite de frames
+            quality: Calidad de compresiÃ³n
 
         Returns:
             Tupla (frame_count, {frame_filename: pts_seconds})
@@ -489,9 +484,9 @@ class KeyframeExtractor:
         self, video_path: Path, threshold: float, prefilter: str = ""
     ) -> list[float]:
         """
-        Corre un pase de detección (opcional blur + scene filter + showinfo) y
+        Corre un pase de detecciÃ³n (opcional blur + scene filter + showinfo) y
         devuelve la lista ordenada y deduplicada de PTS (segundos) donde FFmpeg
-        detectó un cambio de escena real.
+        detectÃ³ un cambio de escena real.
 
         Args:
             prefilter: filtros FFmpeg adicionales aplicados antes de `select`
@@ -506,7 +501,7 @@ class KeyframeExtractor:
             "-"
         ]
 
-        result = subprocess.run(detect_cmd, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(detect_cmd, capture_output=True, text=True, timeout=1800)
         pts_list = []
         for line in result.stderr.splitlines():
             if "pts:" in line and "pts_time:" in line:
@@ -564,12 +559,12 @@ class KeyframeExtractor:
         Pipeline:
           1. Blur ligero + scene detection con umbral alto.
           2. Cooldown de 5 s entre frames.
-          3. Deduplicación por hash perceptual (elimina >90 %% similares).
-          4. Límite estricto a max_frames.
+          3. DeduplicaciÃ³n por hash perceptual (elimina >90 %% similares).
+          4. LÃ­mite estricto a max_frames.
 
         Returns:
-            Tupla (frame_count, {frame_filename: pts_seconds}) — el PTS real
-            detectado en la fase 1, nunca una estimación uniforme.
+            Tupla (frame_count, {frame_filename: pts_seconds}) â€” el PTS real
+            detectado en la fase 1, nunca una estimaciÃ³n uniforme.
         """
         scene_th = float(os.getenv("SMART_SCENE_THRESHOLD", "0.5"))
         cooldown_s = float(os.getenv("SMART_SCENE_COOLDOWN", "5.0"))
@@ -627,7 +622,7 @@ class KeyframeExtractor:
         Elimina frames consecutivos cuya similitud de hash perceptual
         supere el umbral. Conserva el primero de cada serie duplicada.
 
-        Requiere Pillow + imagehash; lanza RuntimeError si no están.
+        Requiere Pillow + imagehash; lanza RuntimeError si no estÃ¡n.
         """
         try:
             import imagehash
@@ -671,17 +666,17 @@ class KeyframeExtractor:
         Args:
             video_path: Ruta al video
             output_dir: Directorio de salida
-            max_frames: Límite de frames
-            quality: Calidad de compresión
+            max_frames: LÃ­mite de frames
+            quality: Calidad de compresiÃ³n
 
         Returns:
-            Número de frames extraídos
+            NÃºmero de frames extraÃ­dos
         """
         duration = self._get_video_duration(video_path)
         if duration == 0:
             return 0
 
-        # Calcular intervalo: 1 frame cada 30 segundos o según max_frames
+        # Calcular intervalo: 1 frame cada 30 segundos o segÃºn max_frames
         if max_frames:
             interval = duration / max_frames
         else:
@@ -700,7 +695,7 @@ class KeyframeExtractor:
             output_pattern
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
 
         if result.returncode != 0:
             logger.error(f"[KEYFRAMES] FFmpeg error: {result.stderr}")
@@ -712,11 +707,11 @@ class KeyframeExtractor:
 
     def _limit_frames(self, output_dir: Path, max_frames: int):
         """
-        Limita el número de frames manteniendo los más importantes.
+        Limita el nÃºmero de frames manteniendo los mÃ¡s importantes.
 
         Args:
             output_dir: Directorio con los frames
-            max_frames: Número máximo de frames a mantener
+            max_frames: NÃºmero mÃ¡ximo de frames a mantener
         """
         # Obtener todos los frames
         frames = sorted(output_dir.glob(f"frame_*.{self.frame_format}"))
@@ -733,7 +728,7 @@ class KeyframeExtractor:
 
     def get_frame_list(self, video_path: Path) -> list[str]:
         """
-        Obtiene la lista de frames extraídos para un video.
+        Obtiene la lista de frames extraÃ­dos para un video.
 
         Args:
             video_path: Ruta al video original
@@ -769,11 +764,11 @@ class KeyframeExtractor:
             for frame in frames_dir.glob(f"frame_*.{self.frame_format}"):
                 frame.unlink()
 
-            # Eliminar directorio si está vacío
+            # Eliminar directorio si estÃ¡ vacÃ­o
             try:
                 frames_dir.rmdir()
             except OSError:
-                pass  # Directorio no vacío
+                pass  # Directorio no vacÃ­o
 
             logger.info(f"[KEYFRAMES] Frames eliminados: {frames_dir}")
 
@@ -787,7 +782,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Uso: python keyframe_extractor.py <video_path> [method]")
-        print("Métodos: iframe, scene, interval")
+        print("MÃ©todos: iframe, scene, interval")
         sys.exit(1)
 
     video_path = Path(sys.argv[1])
@@ -803,11 +798,11 @@ if __name__ == "__main__":
     result = extractor.extract_keyframes(video_path, method=method)
 
     print("\n=== RESULTADO ===")
-    print(f"Éxito: {result['success']}")
-    print(f"Frames extraídos: {result['frame_count']}")
-    print(f"Duración del video: {result['video_duration']:.1f}s")
+    print(f"Ã‰xito: {result['success']}")
+    print(f"Frames extraÃ­dos: {result['frame_count']}")
+    print(f"DuraciÃ³n del video: {result['video_duration']:.1f}s")
     print(f"Tiempo de procesamiento: {result['processing_time']:.1f}s")
-    print(f"Método: {result['method']}")
+    print(f"MÃ©todo: {result['method']}")
     print(f"Directorio de frames: {result['frames_dir']}")
 
     if result['error']:

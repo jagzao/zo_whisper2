@@ -353,6 +353,17 @@ a given feature needs. `[pdf]` (reportlab) is only needed to generate
 
 `match` decides which files belong to a project; `initial_prompt` reduces Whisper hallucinations with domain vocabulary; `corrections` fixes recurring transcription errors (proper names, technical jargon); `data_classification` (`public`/`internal`/`confidential`) gates whether this project's content can ever reach a remote LLM.
 
+## Docker quick start
+
+Run the complete CPU-first product with Docker Compose:
+
+```bash
+docker compose up -d --build
+# Open http://127.0.0.1:5000
+```
+
+Runtime files live in `./zmi-data` and model weights in the named Docker cache volume. The first model download may take several minutes. See [Docker operations](docs/DOCKER.md) for backup, updates, local configuration and safe cleanup.
+
 ## Usage
 
 ```bash
@@ -366,6 +377,18 @@ python simple_scan.py
 python dashboard.py
 # → http://localhost:5000
 ```
+
+Dashboard uploads resume in 4 MiB chunks and validate before staging. After a
+batch finishes, approve it to start or queue `Process pending`; otherwise it
+stays staged. At most two files upload concurrently. Approved pending files
+resume after a restart. Upload offsets are fsynced before acknowledgement;
+pipeline jobs and lifecycle events use a durable SQLite FIFO queue. Only one
+heavy job runs at once, with up to three attempts. Keep the phone browser tab
+active during transfer; if the mobile OS suspends it, select the same files
+again to resume. The file Edit action can assign a project before a transcript
+exists, and that manual assignment controls compression routing. Docker caps
+processing at 2 CPU by default (`ZMI_CPUS` changes the limit).
+Set `UPLOAD_MAX_MB` in `zmi-data/scan_config.env` for the largest accepted file.
 
 ### Quickstart (try it in minutes)
 

@@ -52,7 +52,7 @@ def test_pass_emits_valid_compact_json():
     assert data["check"] == "pytest"
     assert data["error_signature"] == ""
     assert data["affected_files"] == []
-    assert data["artifact"] == "artifacts/gates/logs/pytest.log"
+    assert data["artifact"].endswith("/logs/pytest.log")
     assert isinstance(data["duration_seconds"], float)
     assert data["command"].endswith("-m pytest tests/ -q")
     assert data["runner"] == "scripts/gate_runner.py"
@@ -70,7 +70,7 @@ def test_fail_emits_valid_compact_json_with_signature():
     assert data["gate"] == "pytest"
     assert data["check"] == "pytest"
     assert data["error_signature"] == "1 failed"
-    assert data["artifact"] == "artifacts/gates/logs/pytest.log"
+    assert data["artifact"].endswith("/logs/pytest.log")
 
 
 def test_fail_extracts_structured_report():
@@ -141,6 +141,37 @@ def test_duration_seconds_rounded():
 
     assert rc == 0
     assert _read_latest()["duration_seconds"] == 1.23
+
+
+def test_gate_report_is_also_persisted_under_build_artifacts(monkeypatch):
+    monkeypatch.setenv("BUILD_NUMBER", "123")
+    build_dir = ROOT / "artifacts" / "gates" / "build-123"
+    try:
+        with mock.patch.object(gate_runner.subprocess, "run", return_value=_FakeCompleted(0, "ok", "")):
+            assert gate_runner.run_gate("pytest") == 0
+        report = json.loads((build_dir / "pytest.json").read_text(encoding="utf-8"))
+        assert report["status"] == "PASS"
+        assert report["artifact"] == "artifacts/gates/build-123/logs/pytest.log"
+        assert (build_dir / "logs" / "pytest.log").read_text(encoding="utf-8") == "ok\n"
+    finally:
+        import shutil
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+
+def test_e2e_failure_report_comes_from_isolated_test_data_root(tmp_path, monkeypatch):
+    monkeypatch.setenv("ZMI_TEST_DATA_ROOT", str(tmp_path))
+    report_path = tmp_path / "e2e_report.json"
+
+    def _run_and_write_report(*_args, **_kwargs):
+        report_path.write_text(json.dumps({"status": "FAIL", "detail": "isolated browser failure"}), encoding="utf-8")
+        return _FakeCompleted(1, "", "")
+
+    with mock.patch.object(gate_runner.subprocess, "run", side_effect=_run_and_write_report):
+        assert gate_runner.run_gate("e2e") == 1
+
+    data = _read_latest()
+    assert data["check"] == "e2e"
+    assert data["error_signature"] == "isolated browser failure"
 
 
 def test_stale_structured_report_is_not_reused():

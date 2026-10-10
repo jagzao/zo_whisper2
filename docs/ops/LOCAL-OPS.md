@@ -34,7 +34,7 @@ Zo Media Intelligence is a web application; its UI adapter is Playwright Chromiu
 ## Jenkins
 
 `Jenkinsfile` orchestrates:
-`targeted -> quality -> security -> Playwright -> SonarQube -> full E2E -> optional soak -> artifacts`.
+`targeted -> full pytest -> quality -> security -> Docker config/build -> Docker smoke/persistence/ASR -> host and Docker Playwright E2E -> SonarQube -> optional soak -> aggregate/archive/notify`.
 
 SonarQube credentials/URL are supplied by the local Jenkins environment. If SonarQube is not configured, Jenkins records `NOT_CONFIGURED`; it never invents a PASS.
 
@@ -55,3 +55,14 @@ Runtime checkpoints and gate artifacts stay local:
 - `.agents/session/`
 - `.agents/memory/`
 - `artifacts/`
+
+## Docker local product
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=200 zmi
+docker compose stop
+```
+
+The dashboard URL is `http://127.0.0.1:5000`. `docker compose down` removes the app container but preserves `zmi-data` and the named model cache. `docker compose down -v` removes the cache volume; deleting `zmi-data` removes runtime data. See [Docker operations](../../docs/DOCKER.md) for backup, update, configuration, first model download and troubleshooting.

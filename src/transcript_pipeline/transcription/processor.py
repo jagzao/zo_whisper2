@@ -31,8 +31,8 @@ import psutil
 
 from transcript_pipeline.config import (
     AUDIO_DIR,
+    DATA_ROOT,
     FRAMES_DIR,
-    PROJECT_ROOT,
     PROJECTS_CONFIG_PATH,
     TRANSCRIPTIONS_DIR,
     VIDEOS_DIR,
@@ -45,6 +45,7 @@ from transcript_pipeline.llm.enrichment import AIEnrichmentService
 from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
 from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
 from transcript_pipeline.logging_setup import configure_logging
+from transcript_pipeline.media.utils import is_tutorial_video
 from transcript_pipeline.projects import load_projects, match_project
 from transcript_pipeline.settings import SETTINGS
 
@@ -91,7 +92,7 @@ TUTORIAL_FEATURES_AVAILABLE = False
 try:
     from transcript_pipeline.documentation.engine import generate_documentation
     from transcript_pipeline.media.keyframe_extractor import KeyframeExtractor
-    from transcript_pipeline.media.utils import clean_transcription, is_tutorial_video
+    from transcript_pipeline.media.utils import clean_transcription
     from transcript_pipeline.postprocessing.timestamp_formatter import TimestampFormatter
     TUTORIAL_FEATURES_AVAILABLE = True
     logger.info("[INIT] Tutorial features available")
@@ -106,7 +107,7 @@ class SimpleScanProcessor:
     VIDEO_EXTENSIONS = {'.mp4', '.mkv', '.mov', '.avi', '.webm'}
 
     def __init__(self):
-        self.base_path = PROJECT_ROOT
+        self.base_path = DATA_ROOT
         self.audio_base = AUDIO_DIR
         self.videos_base = VIDEOS_DIR
         self.transcriptions_base = TRANSCRIPTIONS_DIR
@@ -132,7 +133,11 @@ class SimpleScanProcessor:
         self.keyframe_extractor = None
         if TUTORIAL_FEATURES_AVAILABLE:
             try:
-                self.keyframe_extractor = KeyframeExtractor()
+                # Absolute base under the data root: the default relative
+                # "Frames" lands on the read-only rootfs in container mode.
+                self.keyframe_extractor = KeyframeExtractor(
+                    output_base_dir=str(self.frames_base)
+                )
                 logger.info("[INIT] Keyframe extractor initialized")
             except Exception as e:
                 logger.warning(f"[WARN] Error initializing keyframe extractor: {e}")
@@ -189,6 +194,18 @@ class SimpleScanProcessor:
 
     def _find_project(self, audio_path: Path) -> dict | None:
         return match_project(audio_path, self._projects_config)
+
+    def _is_tutorial(self, audio_path: Path) -> bool:
+        """Filename heuristic plus the matched project's `always_tutorial`
+        override (projects.json) — projects like P&G get full tutorial
+        treatment (keyframes, manual, study guide) even when the filename
+        never says "tutorial". Unmatched/flag-less projects keep the old
+        name-only behavior."""
+        if not TUTORIAL_FEATURES_AVAILABLE:
+            return False
+        if is_tutorial_video(audio_path):
+            return True
+        return bool((self._find_project(audio_path) or {}).get("always_tutorial"))
 
     def find_audio_files(self) -> list[Path]:
         """Finds all audio files in the target folders"""
@@ -607,7 +624,7 @@ class SimpleScanProcessor:
         with open(segments_path, 'w', encoding='utf-8') as f:
             json.dump(segments_data, f, indent=2, ensure_ascii=False)
 
-        is_tutorial = TUTORIAL_FEATURES_AVAILABLE and is_tutorial_video(audio_path)
+        is_tutorial = self._is_tutorial(audio_path)
 
         if is_tutorial and result.get('segments'):
             try:
@@ -640,7 +657,7 @@ class SimpleScanProcessor:
                 self.stats["already_processed"] += 1
                 return True
 
-            is_tutorial = TUTORIAL_FEATURES_AVAILABLE and is_tutorial_video(audio_path)
+            is_tutorial = self._is_tutorial(audio_path)
 
             if is_tutorial:
                 logger.info(f"[TUTORIAL] Tutorial video detected: {audio_path.name}")

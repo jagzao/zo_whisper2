@@ -93,6 +93,7 @@ def test_double_generate_docs_rejected(client, env):
 
 def test_duplicate_upload_gets_unique_name(client, env, monkeypatch):
     monkeypatch.setattr(dashboard_app, "_is_valid_media_file", lambda path: True)
+    monkeypatch.setattr(dashboard_app, "_schedule_pipeline", lambda *args, **kwargs: "started")
 
     def upload(filename: str):
         return client.post(
@@ -110,5 +111,6 @@ def test_duplicate_upload_gets_unique_name(client, env, monkeypatch):
     assert second.status_code == 200
     assert second.get_json()["name"] == "demo_01.mp4"
 
-    assert (env["video_compress"] / "demo.mp4").exists()
-    assert (env["video_compress"] / "demo_01.mp4").exists()
+    sessions = env["root"] / ".upload_sessions"
+    assert (sessions / f"{first.get_json()['upload_id']}.part").read_bytes() == b"fake"
+    assert (sessions / f"{second.get_json()['upload_id']}.part").read_bytes() == b"fake"

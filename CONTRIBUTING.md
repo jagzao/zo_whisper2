@@ -113,3 +113,7 @@ GitHub Actions remains the lightweight public PR contract so external contributo
 - Run `python scripts/run_harness.py` before opening a PR.
 - Describe *why* in the PR description, not just *what* — the diff already
   shows what changed.
+
+## Docker runtime
+
+The root `compose.yml` runs the same app in a CPU-only local container. Use `docker compose up -d --build`, then open `http://127.0.0.1:5000`. The host binding is loopback-only. Docker test services are synthetic and isolated; never mount real media into acceptance tests. See [Docker operations](docs/DOCKER.md) for runtime data, cache, update and backup behavior.

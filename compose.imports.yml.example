@@ -1,0 +1,27 @@
+# PLAN-ZMI-DKR-001 — WP-05 optional Icecream Screen Recorder source mounts.
+#
+# DISABLED BY DEFAULT: this example file is never picked up automatically.
+# `docker compose up -d` (without -f flags) ignores it entirely.
+#
+# To enable:
+#   1. copy this file to compose.imports.yml
+#   2. set host paths, e.g. in your .env file:
+#        ZMI_ICECREAM_MUSIC_PATH=C:\Users\you\Music\Icecream Screen Recorder
+#        ZMI_ICECREAM_VIDEOS_PATH=C:\Users\you\Videos\Icecream Screen Recorder
+#   3. run both files together:
+#        docker compose -f compose.yml -f compose.imports.yml up -d
+#
+# The `:?` interpolation below makes the command fail with a clear message if
+# the override is applied without configuring the host paths — an unconfigured
+# optional mount must never silently bind a wrong directory.
+#
+# Sources are mounted read-only: the pipeline only reads from them.
+
+services:
+  zmi:
+    environment:
+      ICECREAM_MUSIC: /imports/music
+      ICECREAM_VIDEOS: /imports/videos
+    volumes:
+      - ${ZMI_ICECREAM_MUSIC_PATH:?set ZMI_ICECREAM_MUSIC_PATH (see compose.imports.yml.example)}:/imports/music:ro
+      - ${ZMI_ICECREAM_VIDEOS_PATH:?set ZMI_ICECREAM_VIDEOS_PATH (see compose.imports.yml.example)}:/imports/videos:ro

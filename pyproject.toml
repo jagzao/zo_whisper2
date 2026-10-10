@@ -6,6 +6,10 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
+    # av>=14 dropped open(metadata_errors=...), which faster-whisper's
+    # decode_audio still passes — audio decode crashes at runtime. Cap av
+    # until faster-whisper ships a fix.
+    "av>=11,<14",
     "faster-whisper>=1.0.0",
     "psutil>=5.9.0",
     "python-dotenv>=1.0.0",
@@ -87,6 +91,12 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+# The dashboard template must ship inside the wheel: the Docker runtime
+# installs the project with `pip install --no-deps .` and renders the UI
+# from the installed package (no source-tree checkout in the image).
+"transcript_pipeline.dashboard" = ["templates/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
