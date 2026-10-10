@@ -84,30 +84,30 @@ function Prepare-Worktree {
         [string]$Branch
     )
 
-    Write-RunNote "$Name: fetching origin"
+    Write-RunNote "${Name}: fetching origin"
     & git -C $RepoRoot fetch origin 2>&1 | Add-Content (Join-Path $RunRoot "$Name-git.log")
-    if ($LASTEXITCODE -ne 0) { throw "$Name: git fetch failed" }
+    if ($LASTEXITCODE -ne 0) { throw "${Name}: git fetch failed" }
 
     & git -C $RepoRoot show-ref --verify --quiet "refs/remotes/origin/$Branch"
-    if ($LASTEXITCODE -ne 0) { throw "$Name: remote branch origin/$Branch not found" }
+    if ($LASTEXITCODE -ne 0) { throw "${Name}: remote branch origin/$Branch not found" }
 
     $existing = Get-ExistingBranchWorktree -RepoRoot $RepoRoot -Branch $Branch
     if ($existing) {
-        Write-RunNote "$Name: using existing worktree $existing"
+        Write-RunNote "${Name}: using existing worktree $existing"
         return $existing
     }
 
     & git -C $RepoRoot show-ref --verify --quiet "refs/heads/$Branch"
     if ($LASTEXITCODE -ne 0) {
         & git -C $RepoRoot branch --track $Branch "origin/$Branch" 2>&1 | Add-Content (Join-Path $RunRoot "$Name-git.log")
-        if ($LASTEXITCODE -ne 0) { throw "$Name: could not create local tracking branch" }
+        if ($LASTEXITCODE -ne 0) { throw "${Name}: could not create local tracking branch" }
     }
 
     $target = Join-Path $WorktreeRoot "knowledge-$RunId-$Name"
     & git -C $RepoRoot worktree add $target $Branch 2>&1 | Add-Content (Join-Path $RunRoot "$Name-git.log")
-    if ($LASTEXITCODE -ne 0) { throw "$Name: git worktree add failed" }
+    if ($LASTEXITCODE -ne 0) { throw "${Name}: git worktree add failed" }
 
-    Write-RunNote "$Name: created isolated worktree $target"
+    Write-RunNote "${Name}: created isolated worktree $target"
     return $target
 }
 
@@ -130,7 +130,12 @@ function New-GlmRuntimeConfig {
         experimental = @{
             policies = @(
                 @{ action = "provider.use"; resource = "*"; effect = "deny" },
-                @{ action = "provider.use"; resource = "zai-coding-plan"; effect = "allow" }
+                @{ action = "provider.use"; resource = "zai-coding-plan"; effect = "allow" },
+                @{ action = "permission"; resource = "subagent:*"; effect = "deny" },
+                @{ action = "permission"; resource = "task:*"; effect = "deny" },
+                @{ action = "permission"; resource = "webfetch:*"; effect = "deny" },
+                @{ action = "permission"; resource = "websearch:*"; effect = "deny" },
+                @{ action = "permission"; resource = "question:*"; effect = "deny" }
             )
         }
     } | ConvertTo-Json -Depth 8 -Compress
@@ -182,14 +187,14 @@ $Branch
 Finish with the exact compact terminal output required by the contract.
 "@
 
-    Write-RunNote "$Name: starting OpenCode GLM implementation in $Worktree"
+    Write-RunNote "${Name}: starting OpenCode GLM implementation in $Worktree"
 
     Push-Location $Worktree
     try {
         & git fetch origin *> (Join-Path $RunRoot "$Name-preflight-git.log")
         & git pull --ff-only origin $Branch *>> (Join-Path $RunRoot "$Name-preflight-git.log")
         if ($LASTEXITCODE -ne 0) {
-            Write-RunNote "$Name: fast-forward pull could not complete; implementation worker will inspect/preserve repository state"
+            Write-RunNote "${Name}: fast-forward pull could not complete; implementation worker will inspect/preserve repository state"
         }
 
         & opencode --pure run --dir $Worktree --model $Model --agent implementation-worker --auto $prompt *> $log
@@ -215,7 +220,7 @@ Finish with the exact compact terminal output required by the contract.
     $head = (& git -C $Worktree rev-parse HEAD 2>$null | Out-String).Trim()
     $remoteHead = (& git -C $Worktree rev-parse "origin/$Branch" 2>$null | Out-String).Trim()
 
-    Write-RunNote "$Name: OpenCode exit=$exitCode status=$status head=$head remote=$remoteHead"
+    Write-RunNote "${Name}: OpenCode exit=$exitCode status=$status head=$head remote=$remoteHead"
 
     return [pscustomobject]@{
         name = $Name
