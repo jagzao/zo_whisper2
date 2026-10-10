@@ -180,6 +180,24 @@ or
 or
 `BLOCKED_EXTERNAL:<reason>`
 
+## Required compact evidence files
+
+Always write, even on FAIL/BLOCKED:
+- `artifacts/knowledge-to-action/SUMMARY.json`
+- `artifacts/knowledge-to-action/SUMMARY.md`
+
+`SUMMARY.json` must contain at minimum:
+- branch
+- head
+- status
+- required gate results
+- failed test ids
+- blockers
+- changed file count
+
+The files are local evidence; do not commit them unless the repository already tracks that artifact path by policy.
+The terminal response must agree with SUMMARY.json.
+
 ## Final response only
 
 ```
