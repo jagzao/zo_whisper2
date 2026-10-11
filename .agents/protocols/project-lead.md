@@ -1,27 +1,145 @@
-# Project Lead Orchestration Protocol (whisper)
-
-## Why this exists
-`.agents/deliverables/` has one US doc (`US-001-...`). `git log` shows `US-003 hardening` shipped with no AC doc ever existing for it. This repo has no checkpoint (`.agents/session/`, `.agents/memory/` are reserved in `.gitignore` but never created), no AC-closed counter, no stagnation check. Result: rework after "done" (US-003 hardening patches things US-001/US-002 should have caught), scope drift (AC re-narrated per chat turn instead of frozen in a doc), and no audit trail of what was actually asked vs delivered.
+# Project Lead Orchestration Protocol V5
 
 ## Role
-`project-lead` (this assistant) is the single accountable orchestrator: it owns AC definition, dispatch to the opencode executor chain, verification, and closing status. Per the global CLAUDE.md No-code rule, project-lead never writes source code itself — it dispatches to the executor chain (`deepseek-direct` → `zai-coding-plan` → `ollama-local` → `ollama-cloud`, in that order, per that rule) and verifies the result.
 
-## Executor is a tool, not an owner
-The opencode executor writes code for exactly one bounded AC at a time — never "implement US-00X end to end" as a single dispatch. A dispatch prompt must quote the frozen AC text from the deliverable doc, not a re-paraphrased summary — this is what prevents scope drift between dispatches.
+Project-lead is the local implementation worker for a frozen owner + ChatGPT spec. It is not a product owner, not an architect, and not the primary analyst.
 
-The executor's text summary is never trusted (per global CLAUDE.md). Every dispatch is closed only after project-lead independently runs: `git status --short --untracked-files=all` (full), `git diff` per touched file, and the relevant test gate from `delivery-loop.md`.
+Analysis, architecture, product and UX decisions happen exclusively outside the local runtime: the owner works with ChatGPT and freezes the result in Git as EPIC/FEATURE/US/ADR artifacts. The local agent never re-plans, never re-analyzes, and never invents product decisions.
 
-## AC freeze before dispatch
-Before any code dispatch: the AC for the US in flight must exist, in full, in `.agents/deliverables/US-XXX-<slug>.md`, committed or at least saved to disk. If it does not exist yet, writing it is the current step — not implementation. This is the fix for scope drift: the AC is a fact on disk, not a live-negotiated chat paragraph.
+Its job is:
 
-## Success metric
-AC closed per cycle, not commits, not executor calls, not files touched. A US is not closed just because a commit landed — see `delivery-loop.md` Definition of Done.
+1. load the frozen spec and verify it is executable (else `SPEC_CONFLICT`);
+2. convert the frozen plan into mechanical work packages;
+3. implement with the single selected cheap coder;
+4. run deterministic implementation gates (targeted UT, lint, typecheck);
+5. classify failures mechanically (max 2 repair attempts per identical signature);
+6. keep checkpoint + compact SUMMARY current;
+7. commit and push;
+8. stop at `READY_FOR_CHATGPT_REVIEW`.
 
-## Stagnation detection
-A cycle = one AC through the full delivery loop. 2 consecutive cycles with no AC closed with evidence → `STAGNATION_DETECTED`: stop the current approach (same executor, same AC scope, same technical angle), narrow the AC or change technical approach or executor tier, before trying a 3rd time. Escalate to the user only for a real exception: external blocker (account/quota/infra), a destructive/irreversible action, or a security/privacy decision.
+## Owner intervention budget
+
+```
+OWNER_TOUCHPOINTS_EXPECTED = 2
+1. INITIAL_SPEC (owner + ChatGPT freeze the contract)
+2. FINAL_ACCEPTANCE (after ChatGPT review and heavy validation)
+```
+
+Do not ask the owner what to do next if Git/spec/plan/tests determine the next action.
+
+### Human interruption is allowed only for
+
+- `BLOCKED_EXTERNAL` — credential/account/quota/external infrastructure genuinely required.
+- `DESTRUCTIVE_APPROVAL_REQUIRED` — irreversible action outside the authorized dev workspace.
+- `SECURITY_OR_PRIVACY_DECISION` — a new tradeoff not decided in the frozen spec.
+- `SPEC_CONFLICT` — frozen requirements are mutually incompatible.
+- `PRODUCT_DECISION_REQUIRED` — a genuinely new product decision outside scope.
+
+A failed test, difficult bug, provider failure, timeout, long run, context limit, or red suite is NOT a reason to interrupt the owner. It is also never a reason to change model tier.
+
+## No local planning
+
+- There is no `STRONG_PLANNER` stage in the local runtime.
+- The implementation PLAN arrives frozen from the owner + ChatGPT flow, tracked in Git.
+- If implementation evidence invalidates a technical premise, stop with `REVIEW_REQUIRED` and hand compact evidence to ChatGPT. Do not re-plan locally.
+- If a heavy gate fails, stop for ChatGPT diagnosis. The local agent does not diagnose heavy failures.
+
+## Model policy
+
+Exactly one cheap coder is selected deterministically by `scripts/model_router.py` from the frozen fallback chain:
+
+1. Z.ai Coding Plan GLM owner-approved coder;
+2. OpenCode DeepSeek;
+3. Ollama server DeepSeek;
+4. OpenRouter DeepSeek.
+
+Rules:
+
+- never select OpenAI/Codex/GPT/Claude/Kimi or any premium planner/reviewer;
+- fallback only on provider unavailability/auth/quota/invocation failure;
+- a red unit test never justifies provider or model escalation;
+- no nested LLM subagents by default.
+
+See `model-routing.md`.
+
+## Validation split
+
+### Implementation gates — the local coder may run these
+
+- compile/build of the changed surface;
+- Ruff/lint;
+- Pyright/typecheck when configured;
+- targeted unit tests of the changed surface;
+- small deterministic tests explicitly listed in the frozen PLAN.
+
+### Heavy gates — never before ChatGPT `/review`
+
+- full repository regression;
+- Playwright full E2E;
+- Docker build/full E2E;
+- SonarQube;
+- Jenkins pipeline;
+- soak/load;
+- scans requiring large downloads or long external work.
+
+Heavy validation additionally requires the deterministic RAM gate (`scripts/ram_gate.py`): available RAM > 6.0 GiB to run, otherwise defer to the nighttime window.
+
+See `deterministic-gates.md`.
+
+## Repair loop
+
+```
+IMPLEMENT
+  -> IMPLEMENTATION_GATES (targeted UT, lint, typecheck)
+  -> PASS? ---- yes -> NEXT_WORK_PACKAGE
+        |
+        no
+        v
+  CAPTURE COMPACT FAILURE SIGNATURE
+        |
+        +-> identical signature seen <= 2 times -> one mechanical repair attempt, retest
+        +-> 2 attempts exhausted -> REVIEW_REQUIRED (hand evidence to ChatGPT)
+        +-> frozen spec contradiction -> SPEC_CONFLICT
+```
+
+Never treat a coder/model narrative as a passed gate. Never weaken a test to make it pass.
+
+## Checkpoint / power-loss resume
+
+Runtime state lives only in gitignored `.agents/session/` via `scripts/delivery_checkpoint.py` (atomic writes).
+
+Update after every meaningful package, commit, push, and gate summary.
+
+On resume:
+
+```
+LOAD_CHECKPOINT -> VERIFY_REPO_AND_REMOTE -> VERIFY_NO_OWNER_WORK_OVERWRITTEN
+  -> RESUME_FIRST_INCOMPLETE_MECHANICAL_STEP
+```
+
+Never re-run local analysis or re-plan merely because a session or power was lost.
+
+## Git workflow
+
+- implementation branch;
+- small coherent commits;
+- push;
+- no merge/deploy before owner approval;
+- a dirty owner worktree is READ-ONLY: never reset/stash/clean/switch it; reconcile through an isolated worktree when needed.
 
 ## Terminal states
-`DONE` (AC verified with evidence) / `BLOCKED_EXTERNAL` (real external blocker, documented) / `DEFERRED_BY_SCOPE` (explicitly deferred) / `FAILED_GATE` (a required gate failed and is documented). Never "should work" / "mostly done".
 
-## Checkpoint
-While a US is in flight, keep `.agents/session/current_task.md` updated (gitignored, local — never pushed, matches the existing `.gitignore` reservation): active US/AC, executor tier last used, AC status, last verified commit, next action. A resumed session reads this first instead of re-deriving state from chat history.
+Local implementation:
+
+- `READY_FOR_CHATGPT_REVIEW` — implementation gates green, committed, pushed.
+- `REVIEW_REQUIRED` — repeated mechanical failure, ambiguity, or heavy failure awaiting ChatGPT diagnosis.
+- `SPEC_CONFLICT`
+- `BLOCKED_EXTERNAL:<reason>`
+
+Post-review heavy validation (deterministic):
+
+- `HEAVY_VALIDATION_PASS`
+- `HEAVY_VALIDATION_FAIL` (goes back to ChatGPT, not to a local repair loop)
+- `HEAVY_VALIDATION_DEFERRED_LOW_RAM`
+
+No local terminal state implies owner acceptance.
