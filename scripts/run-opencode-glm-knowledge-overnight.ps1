@@ -3,7 +3,11 @@ param(
     [string]$DevRoot = "C:\Dev\Zo"
 )
 
-$ErrorActionPreference = "Stop"
+# Windows PowerShell 5.1 / PowerShell ISE turns ordinary native STDERR
+# (for example Git's "From https://..." progress line) into NativeCommandError.
+# The runner checks native process success with $LASTEXITCODE explicitly, so
+# native STDERR must not become a terminating PowerShell error.
+$ErrorActionPreference = "Continue"
 $RunId = Get-Date -Format "yyyyMMdd-HHmmss"
 $RunRoot = Join-Path $DevRoot ".knowledge-overnight\$RunId"
 $WorktreeRoot = Join-Path $DevRoot ".worktrees"
