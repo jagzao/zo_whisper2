@@ -11,8 +11,22 @@ First repair the Project Lead workflow/tooling. Commit and push that as an isola
 
 Current local branch may contain uncommitted work from the interrupted V4 implementation.
 
+The dirty owner worktree is SOURCE-ONLY for reconciliation. Do not commit/rebase/switch it.
+
+Required isolation:
+1. keep the original dirty worktree untouched;
+2. `git fetch origin`;
+3. create a NEW isolated integration worktree from the latest
+   `origin/feat/project-lead-v4-autonomous-delivery`, preferably detached or on
+   a temporary local reconciliation branch;
+4. copy/apply ONLY allowlisted Project Lead/tooling candidate changes from the dirty
+   worktree into the isolated integration worktree;
+5. reconcile those copied files to the frozen PLV5 contract there;
+6. commit/test/push from the isolated integration worktree;
+7. never require the dirty owner worktree to become clean.
+
 Rules:
-- never reset --hard;
+- never reset --hard the owner worktree;
 - never stash automatically;
 - never clean -fd;
 - never discard untracked files;
@@ -210,14 +224,16 @@ Before committing Project Lead changes run only:
 - no Sonar;
 - no soak.
 
-Then:
+Then, FROM THE ISOLATED INTEGRATION WORKTREE:
 - selectively stage only allowlisted Project Lead files;
 - commit;
 - fetch origin;
-- rebase the local commit(s) onto latest `origin/feat/project-lead-v4-autonomous-delivery` if needed;
-- push;
+- if remote advanced concurrently, rebase the CLEAN integration commit(s) onto latest origin there (never in the dirty owner worktree);
+- push HEAD to `feat/project-lead-v4-autonomous-delivery`;
 - verify remote SHA;
 - write compact implementation summary.
+
+The original dirty worktree remains untouched throughout.
 
 ## WP-J — Resume pending Knowledge-to-Action implementation
 
