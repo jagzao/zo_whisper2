@@ -403,7 +403,7 @@ foreach ($r in $results) {
 }
 $lines += "## Fixture sanity"
 foreach ($f in $fixtureChecks) {
-    $lines += "- $($f.name): $(if ($f.ok) {'PASS'} else {'FAIL'}) — $($f.detail)"
+    $lines += "- $($f.name): $(if ($f.ok) {'PASS'} else {'FAIL'}) - $($f.detail)"
 }
 $lines | Set-Content -Path $masterMd -Encoding UTF8
 
