@@ -118,10 +118,13 @@ function Prepare-Worktree {
 function New-GlmRuntimeConfig {
     param([string]$SelectedModel)
 
+    # Compatibility-safe configuration for the installed OpenCode CLI.
+    # The explicit --model flag below chooses GLM for the run itself; this
+    # inline config also pins small_model and provider availability and disables
+    # all subagent/task delegation. No experimental policy syntax is required.
     return @{
         model = $SelectedModel
         small_model = $SelectedModel
-        default_agent = "implementation-worker"
         subagent_depth = 0
         enabled_providers = @("zai-coding-plan")
         permission = @{
@@ -131,18 +134,8 @@ function New-GlmRuntimeConfig {
             question = "deny"
             doom_loop = "deny"
         }
-        experimental = @{
-            policies = @(
-                @{ action = "provider.use"; resource = "*"; effect = "deny" },
-                @{ action = "provider.use"; resource = "zai-coding-plan"; effect = "allow" },
-                @{ action = "permission"; resource = "subagent:*"; effect = "deny" },
-                @{ action = "permission"; resource = "task:*"; effect = "deny" },
-                @{ action = "permission"; resource = "webfetch:*"; effect = "deny" },
-                @{ action = "permission"; resource = "websearch:*"; effect = "deny" },
-                @{ action = "permission"; resource = "question:*"; effect = "deny" }
-            )
-        }
-    } | ConvertTo-Json -Depth 8 -Compress
+        share = "disabled"
+    } | ConvertTo-Json -Depth 6 -Compress
 }
 
 function Invoke-ImplementationRun {
@@ -201,8 +194,14 @@ Finish with the exact compact terminal output required by the contract.
             Write-RunNote "${Name}: fast-forward pull could not complete; implementation worker will inspect/preserve repository state"
         }
 
-        & opencode --pure run --dir $Worktree --model $Model --agent implementation-worker --auto $prompt *> $log
+        & opencode --pure run --dir $Worktree --model $Model --auto $prompt *> $log
         $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0 -and (Test-Path $log)) {
+            Write-RunNote "${Name}: OpenCode returned exit=$exitCode; last 20 launcher log lines follow"
+            Get-Content $log -Tail 20 -ErrorAction SilentlyContinue | ForEach-Object {
+                Write-RunNote "${Name}/opencode: $_"
+            }
+        }
     } finally {
         Pop-Location
     }
@@ -256,7 +255,7 @@ Write-RunNote "Provider lock: zai-coding-plan only"
 Write-RunNote "Main model: $Model"
 Write-RunNote "Small model: $Model"
 Write-RunNote "Subagent depth: 0"
-Write-RunNote "OpenCode mode: non-interactive --pure --auto"
+Write-RunNote "OpenCode mode: non-interactive --pure --auto (built-in primary agent, frozen prompt)"
 Write-RunNote "Codex/OpenAI is not part of this launcher"
 
 $definitions = @(
