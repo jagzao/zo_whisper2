@@ -237,13 +237,70 @@ def generate_documentation(
     _write_steps_json(manual_dir, source, steps)  # editable source of truth for regeneration
     write_manual(manual_dir, source, steps, frames_dir, write_steps_json=False)
     write_ai_package(ai_package_dir, source, steps, frames_dir)
+    knowledge_result = publish_knowledge_from_documentation(
+        ai_package_dir, source, steps, project_config, frames_dir=frames_dir
+    )
 
     return {
         "manual_dir": str(manual_dir),
         "ai_package_dir": str(ai_package_dir),
         "step_count": len(steps),
         "low_confidence_count": sum(1 for s in steps if s.confidence == "low"),
+        "knowledge": knowledge_result,
     }
+
+
+def publish_knowledge_from_documentation(
+    ai_package_dir: Path,
+    source: DocumentationSource,
+    steps: list[ProceduralStep],
+    project_config: dict | None,
+    *,
+    frames_dir: Path | None = None,
+    existing_knowledge: dict | None = None,
+    supersedes_knowledge_id: str | None = None,
+) -> dict:
+    """Knowledge-to-Action hook (PLAN WP-04): after documentation succeeds,
+    resolve the matched project's second_brain config and, when enabled,
+    build + write + enqueue a Knowledge Package v2 on the durable outbox.
+
+    Never raises — a publisher/outbox problem must not fail documentation
+    generation (ZK-16). Disabled/absent config returns {"published": false}
+    as a clean no-op (ZK-01). Raw transcripts/media are never published
+    (package builder enforces this fail-closed).
+    """
+    try:
+        from transcript_pipeline.knowledge.package_builder import (
+            build_knowledge_package,
+            resolve_second_brain,
+            write_package_files,
+        )
+        from transcript_pipeline.knowledge.publisher import enqueue_knowledge_package
+
+        if resolve_second_brain(project_config) is None:
+            return {"published": False, "reason": "second_brain_disabled"}
+
+        package = build_knowledge_package(
+            source=source,
+            steps=steps,
+            project_config=project_config,
+            existing_knowledge=existing_knowledge,
+            supersedes_knowledge_id=supersedes_knowledge_id,
+        )
+        if package is None:
+            return {"published": False, "reason": "second_brain_disabled"}
+
+        write_package_files(ai_package_dir, package)
+
+        from transcript_pipeline.config import DATA_ROOT
+        from transcript_pipeline.knowledge.outbox import KnowledgeOutbox
+
+        outbox = KnowledgeOutbox(DATA_ROOT)
+        entry = enqueue_knowledge_package(outbox, package.to_dict())
+        return {"published": True, "packageId": package.package_id, "outbox": entry}
+    except Exception as e:  # noqa: BLE001 - knowledge publishing is best-effort
+        logger.warning("[KNOWLEDGE] knowledge package skipped: %s", e)
+        return {"published": False, "reason": f"error:{type(e).__name__}"}
 
 
 def load_steps(manual_dir: Path) -> tuple[DocumentationSource, list[ProceduralStep]]:

@@ -32,13 +32,12 @@ from transcript_pipeline.kab_ingest.auth import constant_time_token_match, extra
 from transcript_pipeline.kab_ingest.bind import validate_bind_host
 from transcript_pipeline.kab_ingest.errors import (
     KabIngestError,
-    KabIngestNotFound,
     KabIngestValidationError,
 )
 from transcript_pipeline.kab_ingest.settings import KabIngestSettings
 from transcript_pipeline.kab_ingest.store import (
-    DEFAULT_READ_DEADLINE_SECONDS,
     COMPLETED_DIR,
+    DEFAULT_READ_DEADLINE_SECONDS,
     SessionStore,
 )
 
@@ -121,9 +120,22 @@ def create_app(
                 payload.get("segmentDurationSec"), what="segmentDurationSec"
             ),
             "requiredTracks": validation.validate_required_tracks(payload.get("requiredTracks")),
+            # Optional explicit project identity (SPEC §13): absent for legacy
+            # senders, never guessed from filename/title.
+            "projectKey": validation.validate_project_key(payload.get("projectKey")),
         }
         session, created = store.create_session(record)
         return jsonify({"created": created, "session": _safe_session_summary(session)}), (201 if created else 200)
+
+    # ── GET /kab/v1/projects — safe project catalog (SPEC §13) ────────
+
+    @app.get("/kab/v1/projects")
+    def list_projects() -> Response:
+        """Safe authenticated fields only: key, display name, scope default,
+        artifact default. No prompts, filesystem paths, secrets or internal
+        configuration are exposed."""
+        catalog = knowledge_project_catalog()
+        return jsonify({"projects": catalog})
 
     # ── GET /kab/v1/sessions/{id} ────────────────────────────────────
 
@@ -290,8 +302,58 @@ def _safe_session_summary(session: dict) -> dict:
         "createdAt": session.get("createdAt"),
         "segmentDurationSec": session.get("segmentDurationSec"),
         "requiredTracks": session.get("requiredTracks"),
+        "projectKey": session.get("projectKey"),
         "status": session.get("status"),
     }
+
+
+def _load_knowledge_projects() -> list[dict]:
+    """Loads projects.json entries that have second_brain enabled."""
+    from transcript_pipeline.config import PROJECTS_CONFIG_PATH
+    from transcript_pipeline.projects import load_projects
+
+    projects = load_projects(PROJECTS_CONFIG_PATH)
+    return [
+        p
+        for p in projects
+        if isinstance(p.get("second_brain"), dict) and p["second_brain"].get("enabled")
+    ]
+
+
+def knowledge_project_catalog() -> list[dict]:
+    """Safe project catalog for the K'ab sender (SPEC §13).
+
+    Only safe authenticated fields: key, display name, scope default,
+    artifact type default. No prompts, paths, secrets or internal config.
+    """
+    catalog: list[dict] = []
+    for project in _load_knowledge_projects():
+        sb = project.get("second_brain") if isinstance(project, dict) else None
+        if not isinstance(sb, dict):
+            continue
+        catalog.append(
+            {
+                "key": project.get("name"),
+                "displayName": project.get("name"),
+                "scopeDefault": sb.get("scope", "PROJECT"),
+                "artifactTypeDefault": sb.get("default_artifact_type", "KT"),
+            }
+        )
+    return catalog
+
+
+def resolve_project_config_by_key(project_key: str | None) -> dict | None:
+    """Deterministic project lookup by explicit key (never filename guessing).
+
+    Returns None when the key is absent or matches no configured project —
+    callers treat that as "publishing disabled for this session" (ZK-20).
+    """
+    if not project_key:
+        return None
+    for project in _load_knowledge_projects():
+        if project.get("name") == project_key:
+            return project
+    return None
 
 
 def _data_root() -> Path:

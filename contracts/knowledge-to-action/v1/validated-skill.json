@@ -1,0 +1,38 @@
+{
+  "skillId": "fake.azure.datafactory.create-pipeline",
+  "knowledgeRef": {
+    "knowledgeId": "kn-fixtureazure0000000000000002",
+    "version": 2,
+    "scope": "GLOBAL",
+    "projectId": null
+  },
+  "status": "VALIDATED",
+  "requiredCapabilities": [
+    "fake.azure.datafactory.createPipeline"
+  ],
+  "parameters": [
+    {
+      "name": "resourceGroupName",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "factoryName",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "pipelineName",
+      "type": "string",
+      "required": true
+    }
+  ],
+  "approvalPolicy": "BEFORE_WRITE",
+  "riskTag": "MEDIUM",
+  "preconditions": ["An Azure Data Factory instance exists."],
+  "postconditions": ["A pipeline with the requested name exists in the factory."],
+  "rollback": {
+    "supported": false
+  },
+  "evidenceRefs": []
+}

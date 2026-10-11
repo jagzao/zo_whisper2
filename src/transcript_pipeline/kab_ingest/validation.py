@@ -16,6 +16,30 @@ from transcript_pipeline.kab_ingest.errors import KabIngestValidationError
 
 SESSION_ID_RE: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 SHA256_RE: Final[re.Pattern[str]] = re.compile(r"^[0-9a-f]{64}$")
+PROJECT_KEY_RE: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
+
+MAX_PROJECT_KEY_LENGTH: Final[int] = 64
+
+
+def validate_project_key(value: object) -> str | None:
+    """Optional explicit K'ab project identity (SPEC §13).
+
+    None is valid (legacy senders omit it). A provided key must be a plain
+    identifier — it references a projects.json entry by name and is never a
+    path, prompt, or free text.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise KabIngestValidationError("projectKey must be a string", code="invalid_project_key")
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    if len(cleaned) > MAX_PROJECT_KEY_LENGTH or not PROJECT_KEY_RE.fullmatch(cleaned):
+        raise KabIngestValidationError(
+            "projectKey must match ^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$", code="invalid_project_key"
+        )
+    return cleaned
 
 TRACKS: Final[tuple[str, ...]] = ("video", "audio")
 VIDEO_EXTENSIONS: Final[frozenset[str]] = frozenset({".mp4", ".mkv", ".mov", ".webm"})

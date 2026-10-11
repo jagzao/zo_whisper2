@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 2,
+  "packageId": "sha256:fixture-pg-project-package-deterministic-0000000000000000000000000000000000000000000000000001",
+  "knowledgeId": "kn-fixturepg0000000000000001",
+  "version": 1,
+  "scope": "PROJECT",
+  "projectId": "p-g",
+  "domain": "second-brain/p-g",
+  "artifactType": "TUTORIAL",
+  "actionability": "GUIDED",
+  "dataClassification": "confidential",
+  "status": "ACTIVE",
+  "source": {
+    "sourceId": "sha256:fixture-pg-source-deterministic-000000000000000000000000000000000000000000000000000001",
+    "sourceHash": "sha256:fixture-pg-derived-deterministic-000000000000000000000000000000000000000000000000000001",
+    "mediaName": "internal-process-overview.mp4",
+    "mediaType": "video",
+    "durationSeconds": 900,
+    "language": "en",
+    "generatedAt": "2026-01-01T00:00:00Z",
+    "pipelineVersion": "zo-media-intelligence"
+  },
+  "provenance": {
+    "producer": "zo-media-intelligence",
+    "projectMatch": "explicit",
+    "rawTranscriptPublished": false,
+    "rawMediaPublished": false
+  },
+  "knowledge": {
+    "title": "Internal process overview (synthetic fixture)",
+    "summary": "Synthetic PROJECT-scoped fixture package for contract tests. Contains no real client data.",
+    "tags": ["fixture", "contract", "project"],
+    "procedures": [
+      {
+        "schemaVersion": 1,
+        "procedureId": "kn-fixturepg0000000000000001:proc",
+        "knowledgeId": "kn-fixturepg0000000000000001",
+        "version": 1,
+        "scope": "PROJECT",
+        "projectId": "p-g",
+        "actionability": "GUIDED",
+        "title": "Internal process overview (synthetic fixture)",
+        "parameters": [],
+        "steps": [
+          {
+            "id": "step-0001",
+            "order": 1,
+            "instruction": "Open the internal dashboard and select the reports module.",
+            "timestamp": 12.5,
+            "evidence": {
+              "transcriptExcerpt": "Open the internal dashboard and select the reports module.",
+              "ocrText": null,
+              "frameRef": null,
+              "sourceSegmentIndex": null,
+              "confidence": "high",
+              "reviewed": true
+            },
+            "semanticAction": null,
+            "semanticTarget": null
+          }
+        ],
+        "preconditions": [],
+        "expectedOutcomes": []
+      }
+    ]
+  },
+  "evidence": [],
+  "supersedesKnowledgeId": null
+}

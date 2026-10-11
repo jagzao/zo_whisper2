@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 2,
+  "packageId": "sha256:fixture-confidential-global-invalid-deterministic-00000000000000000000000000000003",
+  "knowledgeId": "kn-fixturebadcfg0000000000000003",
+  "version": 1,
+  "scope": "GLOBAL",
+  "projectId": null,
+  "domain": "second-brain/global",
+  "artifactType": "KT",
+  "actionability": "REFERENCE",
+  "dataClassification": "confidential",
+  "status": "ACTIVE",
+  "source": {
+    "sourceId": "sha256:fixture-confidential-source-deterministic-000000000000000000000000000000000000000003",
+    "sourceHash": "sha256:fixture-confidential-derived-deterministic-0000000000000000000000000000000000000003",
+    "mediaName": "confidential-briefing.mp4",
+    "mediaType": "video",
+    "durationSeconds": 600,
+    "language": "en",
+    "generatedAt": "2026-01-01T00:00:00Z",
+    "pipelineVersion": "zo-media-intelligence"
+  },
+  "provenance": {
+    "producer": "zo-media-intelligence",
+    "projectMatch": "default",
+    "rawTranscriptPublished": false,
+    "rawMediaPublished": false
+  },
+  "knowledge": {
+    "title": "INVALID fixture: confidential content must never be GLOBAL",
+    "summary": "Negative contract fixture: dataClassification=confidential with scope=GLOBAL must be rejected by every producer, importer and validator.",
+    "tags": ["fixture", "contract", "invalid"],
+    "procedures": []
+  },
+  "evidence": [],
+  "supersedesKnowledgeId": null
+}

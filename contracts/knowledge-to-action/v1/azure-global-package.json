@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 2,
+  "packageId": "sha256:fixture-azure-global-package-deterministic-0000000000000000000000000000000000000000002",
+  "knowledgeId": "kn-fixtureazure0000000000000002",
+  "version": 1,
+  "scope": "GLOBAL",
+  "projectId": null,
+  "domain": "second-brain/global",
+  "artifactType": "TUTORIAL",
+  "actionability": "GUIDED",
+  "dataClassification": "public",
+  "status": "ACTIVE",
+  "source": {
+    "sourceId": "sha256:fixture-azure-source-deterministic-000000000000000000000000000000000000000000000000002",
+    "sourceHash": "sha256:fixture-azure-derived-deterministic-000000000000000000000000000000000000000000000000002",
+    "mediaName": "azure-data-factory-pipeline-basics.mp4",
+    "mediaType": "video",
+    "durationSeconds": 1200,
+    "language": "en",
+    "generatedAt": "2026-01-01T00:00:00Z",
+    "pipelineVersion": "zo-media-intelligence"
+  },
+  "provenance": {
+    "producer": "zo-media-intelligence",
+    "projectMatch": "default",
+    "rawTranscriptPublished": false,
+    "rawMediaPublished": false
+  },
+  "knowledge": {
+    "title": "Azure Data Factory pipeline basics (synthetic fixture)",
+    "summary": "Synthetic GLOBAL fixture package for contract tests. Public generic tutorial content only.",
+    "tags": ["fixture", "contract", "azure", "global"],
+    "procedures": [
+      {
+        "schemaVersion": 1,
+        "procedureId": "kn-fixtureazure0000000000000002:proc",
+        "knowledgeId": "kn-fixtureazure0000000000000002",
+        "version": 1,
+        "scope": "GLOBAL",
+        "projectId": null,
+        "actionability": "EXECUTABLE",
+        "title": "Create an Azure Data Factory pipeline (synthetic fixture)",
+        "parameters": [
+          {
+            "name": "resourceGroupName",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "factoryName",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "pipelineName",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "steps": [
+          {
+            "id": "step-0001",
+            "order": 1,
+            "instruction": "Open the Azure portal, navigate to your data factory, and select New pipeline.",
+            "timestamp": 34.2,
+            "evidence": {
+              "transcriptExcerpt": "Open the Azure portal, navigate to your data factory, and select New pipeline.",
+              "ocrText": "New pipeline",
+              "frameRef": null,
+              "sourceSegmentIndex": null,
+              "confidence": "high",
+              "reviewed": true
+            },
+            "semanticAction": null,
+            "semanticTarget": null
+          }
+        ],
+        "preconditions": ["An Azure Data Factory instance exists."],
+        "expectedOutcomes": ["A new pipeline exists in the factory."]
+      }
+    ]
+  },
+  "evidence": [],
+  "supersedesKnowledgeId": null
+}

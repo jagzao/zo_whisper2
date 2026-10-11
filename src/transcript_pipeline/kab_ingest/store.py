@@ -34,10 +34,11 @@ import os
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from transcript_pipeline.kab_ingest import validation
 from transcript_pipeline.kab_ingest.atomic import atomic_write_json, read_json
@@ -213,6 +214,7 @@ class SessionStore:
                 "createdAt": payload["createdAt"],
                 "segmentDurationSec": payload["segmentDurationSec"],
                 "requiredTracks": payload["requiredTracks"],
+                "projectKey": payload.get("projectKey"),
                 "status": "ACTIVE",
                 "expectedSegmentCount": None,
                 "endedAt": None,
@@ -592,8 +594,6 @@ class SessionStore:
         worker_state = state_entry.get("state")
         if worker_state not in ("PROCESSING", "PROCESSED", "FAILED"):
             worker_state = "RECEIVED"
-        session = read_json(paths.session_file) or {}
-        required_tracks: list[str] = session.get("requiredTracks") or []
         tracks: dict[str, Any] = {}
         for track in validation.TRACKS:
             meta = read_json(_meta_path_for(paths, track, index))
@@ -698,6 +698,7 @@ def _canonical_session_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "createdAt": payload.get("createdAt"),
         "segmentDurationSec": payload.get("segmentDurationSec"),
         "requiredTracks": payload.get("requiredTracks"),
+        "projectKey": payload.get("projectKey"),
         "schemaVersion": payload.get("schemaVersion"),
     }
 

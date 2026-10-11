@@ -114,6 +114,19 @@ def consolidate_session(
     write_manual(manual_dir, source, merged_steps, merged_frames_dir, write_steps_json=True)
     write_ai_package(ai_package_dir, source, merged_steps, merged_frames_dir)
 
+    # Knowledge-to-Action (PLAN WP-04/WP-05): the consolidated session is the
+    # single publication point for K'ab media. Project identity comes only
+    # from the session's explicit projectKey — never guessed from the phone
+    # filename or title. Unresolvable project -> publishing disabled for this
+    # session (ZK-20); a publishing problem never fails consolidation.
+    from transcript_pipeline.documentation.engine import publish_knowledge_from_documentation
+    from transcript_pipeline.kab_ingest.server import resolve_project_config_by_key
+
+    project_config = resolve_project_config_by_key(session.get("projectKey"))
+    knowledge_result = publish_knowledge_from_documentation(
+        ai_package_dir, source, merged_steps, project_config, frames_dir=merged_frames_dir
+    )
+
     transcripts_dir = session_transcripts_dir(data_root, session_id)
     completion = {
         "schemaVersion": 1,
@@ -136,6 +149,11 @@ def consolidate_session(
             "manual": (manual_dir / "MANUAL.md").is_file(),
             "manualPdf": (manual_dir / "MANUAL.pdf").is_file(),
             "aiPackage": (ai_package_dir / "manifest.json").is_file(),
+        },
+        "knowledge": {
+            "published": bool(knowledge_result.get("published")),
+            "packageId": knowledge_result.get("packageId"),
+            "reason": knowledge_result.get("reason"),
         },
     }
     atomic_write_json(paths.completed / COMPLETION_FILE, completion)

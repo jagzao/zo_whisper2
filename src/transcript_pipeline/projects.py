@@ -24,6 +24,73 @@ VALID_HANDLERS = {"client_meeting", "zo", "meeting_dev"}
 VALID_DATA_CLASSIFICATIONS = {"public", "internal", "confidential"}
 _MATCH_LIST_FIELDS = ("folder_contains", "prefix", "filename_contains")
 
+# ── Knowledge-to-Action (SPEC-ZO-KNOWLEDGE-001 §1/§2) ────────────────────
+KNOWLEDGE_SCOPES = frozenset({"PROJECT", "GLOBAL"})
+KNOWLEDGE_ACTIONABILITY = frozenset({"REFERENCE", "GUIDED", "EXECUTABLE"})
+KNOWLEDGE_ARTIFACT_TYPES = frozenset(
+    {"TUTORIAL", "PROCEDURE", "KT", "TROUBLESHOOTING", "INCIDENT", "POLICY", "DECISION", "APPLICATION", "REFERENCE"}
+)
+
+
+def validate_second_brain(project: dict) -> list[str]:
+    """Validates the optional `second_brain` knowledge-publishing config.
+
+    Rules (frozen SPEC §2):
+    - absent -> publishing disabled (legacy projects stay valid);
+    - enabled PROJECT -> project_id and domain required;
+    - enabled GLOBAL -> domain required, project_id may be absent;
+    - confidential data_classification + GLOBAL -> invalid;
+    - scope is never inferred from data_classification;
+    - unknown enum values rejected;
+    - publish_assets defaults to false.
+    """
+    sb = project.get("second_brain")
+    if sb is None:
+        return []
+
+    errors: list[str] = []
+    if not isinstance(sb, dict):
+        return ["'second_brain' must be an object"]
+
+    enabled = sb.get("enabled", False)
+    if not isinstance(enabled, bool):
+        errors.append("'second_brain.enabled' must be a boolean")
+        enabled = False
+
+    scope = sb.get("scope", "PROJECT")
+    if scope not in KNOWLEDGE_SCOPES:
+        errors.append(f"'second_brain.scope' must be one of {sorted(KNOWLEDGE_SCOPES)}")
+
+    default_artifact = sb.get("default_artifact_type", "KT")
+    if default_artifact not in KNOWLEDGE_ARTIFACT_TYPES:
+        errors.append(
+            f"'second_brain.default_artifact_type' must be one of {sorted(KNOWLEDGE_ARTIFACT_TYPES)}"
+        )
+
+    default_actionability = sb.get("default_actionability", "REFERENCE")
+    if default_actionability not in KNOWLEDGE_ACTIONABILITY:
+        errors.append(
+            f"'second_brain.default_actionability' must be one of {sorted(KNOWLEDGE_ACTIONABILITY)}"
+        )
+
+    if sb.get("publish_assets", False) is not None and not isinstance(sb.get("publish_assets", False), bool):
+        errors.append("'second_brain.publish_assets' must be a boolean")
+
+    if enabled:
+        domain = sb.get("domain")
+        if not isinstance(domain, str) or not domain.strip():
+            errors.append("'second_brain.domain' is required when enabled")
+
+        if scope == "PROJECT":
+            project_id = sb.get("project_id")
+            if not isinstance(project_id, str) or not project_id.strip():
+                errors.append("'second_brain.project_id' is required when scope is PROJECT")
+
+        if scope == "GLOBAL" and project.get("data_classification", "internal") == "confidential":
+            errors.append("confidential data_classification cannot use GLOBAL second_brain scope")
+
+    return errors
+
 
 def validate_project(project: object) -> list[str]:
     """Returns a list of validation error messages ([] if valid).
@@ -79,6 +146,8 @@ def validate_project(project: object) -> list[str]:
         isinstance(corrections, dict) and all(isinstance(v, str) for v in corrections.values())
     ):
         errors.append("'corrections' must be an object of string -> string")
+
+    errors.extend(validate_second_brain(project))
 
     return errors
 
