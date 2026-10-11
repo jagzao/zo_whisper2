@@ -34,26 +34,28 @@ The worker MUST read these files from `origin/feat/project-lead-v4-autonomous-de
 ## Required sequence
 
 1. `git fetch origin`.
-2. Do NOT pull/switch/reset/stash/clean the dirty worktree.
-3. Read frozen V5 artifacts directly from origin with `git show origin/feat/project-lead-v4-autonomous-delivery:<path>` when necessary.
-4. Inspect existing local dirty Project Lead/toolchain work.
-5. Reconcile it mechanically to the exact V5 frozen plan.
-6. Implement V5 tooling/protocol changes.
-7. Run ONLY V5 lightweight targeted validation:
+2. Treat the original dirty worktree as READ-ONLY owner state. Do NOT pull/switch/reset/stash/clean/commit/rebase it.
+3. Read frozen V5 artifacts directly from origin with `git show origin/feat/project-lead-v4-autonomous-delivery:<path>`.
+4. Create an isolated Project Lead reconciliation worktree from latest `origin/feat/project-lead-v4-autonomous-delivery` (detached or temporary local branch).
+5. Inspect the dirty owner worktree only to recover existing Project Lead/tooling candidate changes.
+6. Copy/apply ONLY the allowlisted Project Lead/tooling files from the dirty owner worktree into the isolated integration worktree.
+7. Reconcile those files mechanically to the exact frozen V5 plan in the isolated worktree.
+8. Implement any remaining V5 tooling/protocol changes there.
+9. Run ONLY V5 lightweight targeted validation:
    - targeted workflow/router/RAM/checkpoint tests;
    - Ruff on changed tooling;
    - Pyright/typecheck on changed tooling when configured.
 8. Do NOT run full repository E2E, Docker, Jenkins, Sonar, soak or full heavy regression in Phase 1.
-9. Selectively stage only the allowlisted Project Lead/tooling paths defined by PLAN-PLV5.
-10. Commit the Project Lead V5 implementation.
-11. Fetch origin again.
-12. Rebase the new local Project Lead commit(s) onto the latest remote branch. The frozen V5 docs on remote must remain intact.
-13. Push `feat/project-lead-v4-autonomous-delivery`.
-14. Verify remote SHA contains the Project Lead V5 implementation.
-15. Write compact implementation summary.
-16. Only then enter PHASE 2.
+10. Selectively stage only the allowlisted Project Lead/tooling paths defined by PLAN-PLV5 in the ISOLATED worktree.
+11. Commit the Project Lead V5 implementation there.
+12. Fetch origin again.
+13. If remote advanced concurrently, rebase the CLEAN isolated integration commit(s) there; never rebase the dirty owner worktree.
+14. Push HEAD to `feat/project-lead-v4-autonomous-delivery`.
+15. Verify remote SHA contains the Project Lead V5 implementation.
+16. Write compact implementation summary.
+17. Only then enter PHASE 2.
 
-If unrelated product code remains dirty after the selective Project Lead commit, LEAVE IT UNTOUCHED.
+The original dirty owner worktree MUST remain byte-for-byte untouched by Phase 1 except for read-only inspection.
 
 # PHASE 2 — Resume Knowledge-to-Action implementation
 
