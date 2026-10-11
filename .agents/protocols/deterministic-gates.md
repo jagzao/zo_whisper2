@@ -1,34 +1,55 @@
-# Deterministic Gates V4
+# Deterministic Gates V5
 
 ## Principle
 
-LLMs plan and code. Deterministic tools validate repeatedly at zero LLM-token cost.
+LLMs implement. Deterministic tools validate repeatedly at zero LLM-token cost.
 
 A gate is authoritative only when it has an executable command/tool and machine-readable or reproducible evidence.
 
-## Gate classes
+`scripts/gate_runner.py` is the single compact runner. It splits gates into two PLV5 categories and never silently treats `NOT_CONFIGURED` as `PASS`.
 
-### Fast targeted gates
+## Gate categories
 
-Run after each relevant work package:
-- targeted pytest
-- Ruff on touched Python surface
-- Pyright on typed production surface
-- narrow security regression
-- narrow Playwright scenario
-- FFmpeg/ffprobe fixture verification
+### Implementation (light) gates — before ChatGPT review
 
-### Release gates
+Run by the local coder after each work package:
+- `targeted` / `unit` — pytest on the changed surface (paths required)
+- `lint` — Ruff on scripts/tests
+- `quality` — `scripts/quality.py`
+- `typecheck` — compileall of src/scripts (Pyright when configured)
+- `security` — `scripts/security.py`
+- `smoke` — `scripts/smoke.py`
+- FFmpeg/ffprobe fixture verification when the surface is media
 
-Run at US/feature closure:
-- `pytest tests/ -q`
-- `python scripts/quality.py`
-- `python scripts/security.py`
-- `python scripts/smoke.py`
-- `python scripts/e2e.py`
-- SonarQube quality gate when configured
-- Jenkins integration/soak workflow when configured
-- GitHub Actions/public PR checks when enabled
+### Heavy gates — only after ChatGPT `/review` and the RAM gate
+
+Run by `scripts/heavy_validation_runner.py`:
+- `pytest` — full repository regression
+- `e2e` / `playwright` — `scripts/e2e.py` full E2E
+- `sonar` — SonarQube quality gate
+- `docker-build` / `docker-e2e` — Docker gates when configured
+- `jenkins` — Jenkins pipeline when configured
+- `soak` — soak/load when configured
+- dependency/security scans requiring large downloads
+
+Heavy gates never run before `/review`, never modify product code, and never invoke a model. A heavy failure is handed to ChatGPT for diagnosis.
+
+## RAM gate (heavy validation precondition)
+
+`scripts/ram_gate.py` measures available physical RAM deterministically:
+
+```
+available_ram_gib >  6.0  -> HEAVY_VALIDATION_ALLOWED
+available_ram_gib <= 6.0  -> HEAVY_VALIDATION_DEFERRED_LOW_RAM
+```
+
+Low RAM is not a product failure and must not cause an LLM loop. A deferred run retries the deterministic RAM gate in the nighttime window.
+
+Exit codes: 0 ALLOWED, 3 DEFERRED_LOW_RAM, 2 measurement/config error.
+
+## NOT_CONFIGURED
+
+A gate whose authoritative command is not installed reports `NOT_CONFIGURED` (exit 4). It is neither PASS nor FAIL. If every heavy gate is NOT_CONFIGURED, the heavy runner reports `BLOCKED`.
 
 ## Compact failure contract
 
@@ -42,15 +63,16 @@ Example:
 {
   "status": "FAIL",
   "gate": "playwright",
+  "category": "heavy",
   "check": "project_override_persists_after_reload",
-  "error_signature": "expected Zo Interviews, got Valeris",
+  "error_signature": "expected Project A, got Project B",
   "affected_files": ["src/transcript_pipeline/dashboard/app.py"],
   "artifact": "artifacts/playwright/project-override.zip",
   "duration_seconds": 12.4
 }
 ```
 
-The coder receives this compact evidence first. Raw logs are fetched only when needed.
+The coder receives this compact evidence first. Raw logs are fetched only when needed. Raw logs are never embedded in summaries.
 
 ## Playwright
 
@@ -75,14 +97,14 @@ Jenkins is the preferred local/long-running orchestrator when installed/configur
 Intended pipeline:
 ```
 changed-file analysis
- -> targeted tests
- -> quality
- -> security
- -> Playwright
- -> SonarQube
- -> integration/full E2E
- -> optional soak/nightly
- -> artifacts
+  -> targeted tests
+  -> quality
+  -> security
+  -> Playwright
+  -> SonarQube
+  -> integration/full E2E
+  -> optional soak/nightly
+  -> artifacts
 ```
 
 Jenkins is complementary to public PR CI; it does not replace GitHub Actions when the latter is available.
@@ -98,7 +120,7 @@ Use SonarQube for deterministic static-quality findings such as:
 - maintainability findings
 - coverage/quality thresholds when configured
 
-Do not spend strong-model tokens manually rediscovering what SonarQube can report deterministically.
+Do not spend model tokens manually rediscovering what SonarQube can report deterministically.
 
 A failing Sonar rule should be routed as structured evidence:
 - rule id
@@ -113,3 +135,5 @@ Once a gate/test exists, project-lead must be able to rerun it without invoking 
 An LLM is used only when:
 - authoring/updating a test as part of implementation, or
 - fixing a deterministic failure.
+
+No LLM waits for or polls a deterministic process: pytest, Playwright, Docker, Jenkins and Sonar run to completion on their own.

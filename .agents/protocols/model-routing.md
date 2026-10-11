@@ -1,114 +1,75 @@
-# Model Routing V4
+# Model Routing V5
 
 ## Goal
 
-Use expensive intelligence only where it materially improves outcome. Use deterministic software for repeated validation and low-cost models for mechanical work.
+The local runtime uses exactly one cheap coding model, selected deterministically. There are no model tiers, no planners, and no escalation ladders inside the local runtime.
 
-Provider/model names are runtime aliases so credentials and vendor choices can change without rewriting product specs.
+Owner + ChatGPT are the only analysis/architecture level. The local agent is an implementation worker.
 
-## Roles
+## Frozen fallback chain
 
-### STRONG_PLANNER
+`scripts/model_router.py` implements this exact priority:
 
-Purpose:
-- consume frozen EPIC/FEATURE/US/ADR
-- inspect relevant repository context
-- create/update the implementation PLAN
-- resolve difficult technical planning after evidence proves a premise wrong
+1. Z.ai Coding Plan — owner-approved GLM coder (e.g. `glm-5.2`).
+2. OpenCode provider — DeepSeek coding model.
+3. Ollama server — DeepSeek coding model.
+4. OpenRouter — DeepSeek coding model.
 
-Rules:
-- does not write production code
-- does not run normal fix loops
-- is not invoked merely because a unit test fails
-- plan is subordinate to frozen spec
+A provider is tried only when the previous one failed for availability, authentication, quota, or invocation reasons.
 
-Runtime provider: configurable. The owner may use Claude/GPT interactively for product analysis; autonomous access requires whatever authorized provider is actually connected at runtime.
+## Hard prohibitions
 
-### PRIMARY_CODER
+Never select or invoke:
 
-Default: OpenCode Go.
+- OpenAI / Codex / GPT;
+- Claude / Anthropic;
+- Kimi / Moonshot;
+- any premium planner or reviewer model;
+- any nested LLM subagent by default.
 
-Purpose:
-- normal production feature implementation
-- non-mechanical refactors
-- complex test creation tied to implementation
-- first meaningful repair of a normal code defect
+A red test, a difficult bug, or a long task NEVER justifies changing model tier or provider beyond the frozen chain order. Routing is a pure function of provider availability — never of task complexity or test results.
 
-### FREE_WORKER
+## Routing rules
 
-Default: Ollama local.
+- selection is deterministic and machine-readable (`model_router.py` emits JSON);
+- if only forbidden providers are available, fail closed: no selection, `FAIL_CLOSED` status;
+- no network beyond the provider/model availability command already required by the runtime;
+- no LLM decides routing.
 
-Purpose:
-- repository search/exploration
-- mechanical edits
-- lint/type fixes with deterministic diagnostics
-- repetitive refactors
-- docs
-- fixture maintenance
-- simple regression-test repairs
-- small code transformations with explicit expected output
+## Token rules
 
-Do not assign a high-risk architectural rewrite to FREE_WORKER merely because it is free.
-
-### SECONDARY_CODER
-
-Default: Ollama Pro / Ollama Cloud.
-
-Purpose:
-- overflow when PRIMARY_CODER is unavailable
-- alternative implementation after repeated failure
-- difficult bug after compact evidence + regression test exist
-- second independent coding approach
-
-## Failure routing
-
-```
-MECHANICAL / EXACT DIAGNOSTIC
-  -> FREE_WORKER
-
-NORMAL PRODUCTION DEFECT
-  -> PRIMARY_CODER
-
-SAME ERROR SIGNATURE AFTER 2 MEANINGFUL ATTEMPTS
-  -> SECONDARY_CODER
-
-CODER TIERS FAIL BECAUSE TECHNICAL PREMISE IS WRONG
-  -> STRONG_PLANNER bounded re-plan
-
-FROZEN REQUIREMENTS CONTRADICT
-  -> SPEC_CONFLICT
-```
-
-## Pool failure
-
-If a pool is unavailable, project-lead automatically tries the next permitted pool appropriate for the task.
-
-Do not interrupt the owner simply to choose a model.
+- no strong planner inside the local runtime;
+- no nested LLM subagents by default;
+- no autonomous recursive repair loop;
+- at most 2 bounded mechanical repair attempts for one identical failure signature;
+- deterministic tools (pytest, Ruff, Pyright, Playwright, Docker, Jenkins, Sonar) consume zero LLM tokens;
+- no LLM waits for or polls a deterministic process;
+- raw logs are not fed to an LLM by default; compact JSON/MD evidence first.
 
 ## Context budget
 
-Workers receive:
-- frozen AC(s) relevant to the package
-- PLAN work package
-- minimal relevant file/context set
-- compact deterministic failure report when fixing
-- explicit acceptance evidence required
+The coder receives:
 
-Workers should not receive complete historical chat logs or multi-thousand-line CI logs by default.
+- frozen AC(s) relevant to the package;
+- the PLAN work package;
+- minimal relevant file/context set;
+- compact deterministic failure report when repairing;
+- explicit acceptance evidence required.
+
+The coder does not receive complete historical chat logs or multi-thousand-line CI logs.
 
 ## Validation token policy
 
 Validation tools do not require an LLM:
+
 - pytest
 - Ruff
 - Pyright
-- security.py
-- pip-audit
-- Gitleaks
+- security.py / pip-audit / Gitleaks
 - FFmpeg/ffprobe
 - Playwright
 - SonarQube
 - Jenkins
 - GitHub Actions
 
-LLMs interpret a concise failure only when repair is needed.
+An LLM interprets a concise failure only when a repair is actually needed.

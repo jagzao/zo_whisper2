@@ -49,22 +49,34 @@ EPIC -> FEATURE -> US/ADR -> PLAN -> CODE -> DELIVERY
 - If implementation reveals a genuine contradiction in frozen requirements, stop with `SPEC_CONFLICT`.
 - Runtime state never belongs in tracked files.
 
-## Project-lead V4
+## Deployed source and UI parity
 
-Project-lead is an autonomous delivery orchestrator, not a product owner and not the primary coder.
+- Before rebuilding or restarting a deployed service, identify the Compose build
+  context and the exact checkout that supplies the running image. Parallel
+  checkouts do not share edits; compare and port every in-scope change explicitly.
+- Validate the artifact served by the running service after deployment. For UI
+  changes, include phone and desktop viewport checks; confirm the mobile layout,
+  touch controls, and absence of page-level horizontal overflow.
+- Do not treat a successful image build or a localhost response as proof that the
+  deployed UI contains the intended responsive changes.
+
+## Project-lead V5
+
+Project-lead is the local implementation worker for a frozen owner + ChatGPT spec, not a product owner and not an analyst.
 
 Its normal lifecycle is:
 
 ```
-FROZEN_SPEC
-  -> STRONG_PLAN
-  -> IMPLEMENT
-  -> DETERMINISTIC_VALIDATE
-  -> CLASSIFY_FAILURE
-  -> CHEAP_FIX_LOOP
-  -> PR/CI
-  -> READY_FOR_OWNER_AUDIT
-  -> READY_FOR_HUMAN_ACCEPTANCE
+FROZEN_SPEC (owner + ChatGPT)
+  -> FROZEN_PLAN (in Git; no local STRONG_PLAN stage)
+  -> IMPLEMENT (single selected cheap coder)
+  -> IMPLEMENTATION_GATES (targeted UT, lint, typecheck)
+  -> BOUNDED_REPAIR (max 2 per identical signature)
+  -> COMMIT + PUSH
+  -> READY_FOR_CHATGPT_REVIEW
+  -> [ChatGPT /review]
+  -> HEAVY_VALIDATION (RAM-gated, deterministic, LLM-free)
+  -> OWNER_ACCEPTANCE
 ```
 
 See:
@@ -72,23 +84,29 @@ See:
 - `.agents/protocols/model-routing.md`
 - `.agents/protocols/deterministic-gates.md`
 - `.agents/protocols/delivery-loop.md`
+- `.agents/protocols/provider-aliases.md`
 
-## Model roles
+## Model policy
 
-Provider names are runtime configuration, not hardcoded product logic.
+Exactly one cheap coder, selected deterministically by `scripts/model_router.py`:
 
-- `STRONG_PLANNER` — expensive/high-capability planner; plans from frozen spec; does not write production code.
-- `PRIMARY_CODER` — OpenCode Go; normal production implementation.
-- `FREE_WORKER` — Ollama local; search, mechanical changes, lint/type/test fixes, repetitive refactors, docs.
-- `SECONDARY_CODER` — Ollama Pro / Ollama Cloud; overflow, difficult bugs, alternative implementation after stagnation.
+1. Z.ai Coding Plan GLM owner-approved coder (default);
+2. OpenCode DeepSeek;
+3. Ollama server DeepSeek;
+4. OpenRouter DeepSeek.
+
+Never: OpenAI/Codex/GPT, Claude, Kimi, premium planner/reviewer models, nested LLM subagents by default. A red test never justifies escalation. There is no local STRONG_PLANNER.
 
 Do not commit provider credentials or private endpoints.
 
 ## Deterministic-first validation
 
-LLMs plan and implement. Software proves correctness.
+LLMs implement. Software proves correctness.
 
-Prefer deterministic tools for repeated validation:
+Implementation (light) gates the coder may run: targeted pytest, Ruff, typecheck, quality.py, security.py, smoke.py.
+
+Heavy gates run only after ChatGPT `/review` and the RAM gate (`scripts/ram_gate.py`, available RAM > 6.0 GiB): full regression, Playwright E2E, Docker, SonarQube, Jenkins, soak — orchestrated LLM-free by `scripts/heavy_validation_runner.py`.
+
 - pytest
 - Ruff
 - Pyright
@@ -121,8 +139,9 @@ Coding difficulty, failing tests, one exhausted model pool, timeouts, long-runni
 
 ## Resume contract
 
-After every meaningful work package, persist a local checkpoint under `.agents/session/` containing:
-- active US and plan
+After every meaningful work package, `scripts/delivery_checkpoint.py` atomically
+persists a local checkpoint under gitignored `.agents/session/` containing:
+- active US and frozen plan/contract
 - completed/pending work packages
 - last verified SHA
 - last green gates
@@ -130,18 +149,19 @@ After every meaningful work package, persist a local checkpoint under `.agents/s
 - running processes/artifacts
 - exact next action
 
-On a new session:
+On a new session or after a power loss:
 
 ```
-LOAD_CHECKPOINT -> VERIFY_REPO_STATE -> RESUME
+LOAD_CHECKPOINT -> VERIFY_REPO_STATE -> RESUME_FIRST_INCOMPLETE_MECHANICAL_STEP
 ```
 
-Never ask the owner to reconstruct context already recoverable from Git/checkpoint.
+Never re-run local analysis or re-plan merely because a session restarted. Never
+ask the owner to reconstruct context already recoverable from Git/checkpoint.
 
 ## How the owner starts execution
 
-After the owner and assistant have frozen the spec in Git, the start prompt should stay short:
+After the owner and ChatGPT have frozen the spec in Git, the start prompt should stay short:
 
-`Project-lead: ejecuta <US-ID> completa siguiendo Project-lead V4. Termina solo en READY_FOR_OWNER_AUDIT o un blocker permitido.`
+`Project-lead: ejecuta <US-ID> completa siguiendo Project-lead V5. Termina solo en READY_FOR_CHATGPT_REVIEW o un blocker permitido.`
 
 The detailed scope belongs in Git, not in repeated mega-prompts.

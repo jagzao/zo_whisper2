@@ -105,6 +105,53 @@ def test_targeted_gate_requires_paths():
     assert gate_runner.run_gate("targeted") == 2
 
 
+def test_named_gate_registry_uses_authoritative_commands():
+    assert {"quality", "security", "smoke", "playwright", "e2e", "sonar"} <= gate_runner.GATES.keys()
+    assert gate_runner.GATES["quality"][-1] == "scripts/quality.py"
+    assert gate_runner.GATES["security"][-1] == "scripts/security.py"
+    assert gate_runner.GATES["smoke"][-1] == "scripts/smoke.py"
+    assert gate_runner.GATES["playwright"][-1] == "scripts/e2e.py"
+
+
+def test_gate_categories_split_implementation_from_heavy():
+    heavy = {"pytest", "e2e", "playwright", "sonar", "docker-build", "docker-e2e", "jenkins", "soak"}
+    light = {"targeted", "unit", "lint", "quality", "typecheck", "security", "smoke"}
+    assert heavy <= gate_runner.HEAVY_GATES
+    assert light <= gate_runner.LIGHT_GATES
+    assert not (gate_runner.HEAVY_GATES & gate_runner.LIGHT_GATES)
+    for gate in heavy | light:
+        assert gate_runner.category_of(gate) in ("light", "heavy")
+    assert gate_runner.category_of("e2e") == "heavy"
+    assert gate_runner.category_of("targeted") == "light"
+
+
+def test_not_configured_gate_is_never_reported_as_pass():
+    # sonar-scanner is not installed in this repo's dev environment; if it ever
+    # IS on PATH this test asserts the stronger property directly via stubbing.
+    with mock.patch.object(gate_runner, "_command_is_configured", return_value=False):
+        with mock.patch.object(
+            gate_runner.subprocess, "run", side_effect=AssertionError("must not spawn")
+        ):
+            rc = gate_runner.run_gate("sonar")
+
+    assert rc == 4
+    data = _read_latest()
+    assert data["status"] == "NOT_CONFIGURED"
+    assert data["category"] == "heavy"
+
+
+def test_list_registry_reports_categories():
+    import io
+    from contextlib import redirect_stdout
+
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        assert gate_runner.main(["--list"]) == 0
+    registry = json.loads(buffer.getvalue())
+    assert registry["e2e"]["category"] == "heavy"
+    assert registry["quality"]["category"] == "light"
+
+
 def test_gate_runner_imports_no_provider_sdk():
     source = (ROOT / "scripts" / "gate_runner.py").read_text(encoding="utf-8")
     for forbidden in ("import openai", "import anthropic", "import requests", "import httpx", "import litellm"):
