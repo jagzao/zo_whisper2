@@ -32,6 +32,9 @@ demo/
 CarpetaTranscripciones/
 Frames/
 
+# ── K'ab ingest runtime (media recibido, certs, token — nunca en Git) ───────
+kab-inbox/
+
 # ── Base de datos del FileTracker ───────────────────────────────────────────
 processed_files.json
 

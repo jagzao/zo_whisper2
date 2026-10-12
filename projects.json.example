@@ -1,6 +1,67 @@
 {
-  "_comment": "Copy this file to projects.json and adjust it with your real projects. To add a project: copy any block and adjust the fields. custom_fillers=extra words to strip, corrections=Whisper vocabulary corrections, summary_prompt=LLM prompt for the summary (different from initial_prompt, which is for Whisper). data_classification (optional, default 'internal'): 'public' | 'internal' | 'confidential' — 'confidential' blocks any remote LLM call for this project regardless of ALLOW_EXTERNAL_LLM (see PRIVACY.md). relative output_path resolves under the runtime data root (portable/Docker-safe); absolute paths are legacy host-only (refused in container mode unless explicitly allowed via ZMI_ALLOWED_EXPORT_ROOTS).",
+  "_comment": "Copy this file to projects.json and adjust it with your real projects. To add a project: copy any block and adjust the fields. custom_fillers=extra words to strip, corrections=Whisper vocabulary corrections, summary_prompt=LLM prompt for the summary (different from initial_prompt, which is for Whisper). data_classification (optional, default 'internal'): 'public' | 'internal' | 'confidential' — 'confidential' blocks any remote LLM call for this project regardless of ALLOW_EXTERNAL_LLM (see PRIVACY.md). relative output_path resolves under the runtime data root (portable/Docker-safe); absolute paths are legacy host-only (refused in container mode unless explicitly allowed via ZMI_ALLOWED_EXPORT_ROOTS). second_brain (optional): knowledge publishing to a Second Brain — see docs/knowledge-to-action.md. scope 'PROJECT' requires project_id; 'GLOBAL' requires public/internal classification (confidential+GLOBAL is rejected).",
   "projects": [
+    {
+      "name": "P&G",
+      "match": {
+        "folder_contains": ["py_pg"],
+        "prefix": ["pg_"]
+      },
+      "videos_subfolder": "py_pg",
+      "output_path": "exports/PG",
+      "handler": null,
+      "data_classification": "confidential",
+      "language": "en",
+      "second_brain": {
+        "enabled": true,
+        "project_id": "p-g",
+        "domain": "second-brain/p-g",
+        "scope": "PROJECT",
+        "default_artifact_type": "KT",
+        "default_actionability": "REFERENCE",
+        "publish_assets": false
+      },
+      "initial_prompt": null,
+      "summary_prompt": null,
+      "custom_fillers": [],
+      "corrections": {}
+    },
+    {
+      "name": "Global Tutorials",
+      "match": {
+        "filename_contains": ["tutorial"]
+      },
+      "videos_subfolder": null,
+      "output_path": null,
+      "handler": null,
+      "data_classification": "public",
+      "language": null,
+      "second_brain": {
+        "enabled": true,
+        "domain": "second-brain/global",
+        "scope": "GLOBAL",
+        "default_artifact_type": "TUTORIAL",
+        "default_actionability": "GUIDED",
+        "publish_assets": false
+      },
+      "initial_prompt": "Tutorial técnico de software. Se muestra código, Azure DevOps, Azure Portal, pipelines CI/CD, Git, GitHub, dashboards, configuraciones de infraestructura y herramientas de desarrollo.",
+      "summary_prompt": null,
+      "custom_fillers": [],
+      "corrections": {
+        "Dev ops": "DevOps",
+        "dev ops": "DevOps",
+        "CI CD": "CI/CD",
+        "cube CTL": "kubectl",
+        "cue CTL": "kubectl",
+        "cube control": "kubectl",
+        "helm": "Helm",
+        "terra form": "Terraform",
+        "terra forms": "Terraform",
+        "kube netes": "Kubernetes",
+        "cocker": "Docker",
+        "docker file": "Dockerfile"
+      }
+    },
     {
       "name": "Northwind",
       "match": {
