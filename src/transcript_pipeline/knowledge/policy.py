@@ -73,15 +73,21 @@ def validate_enums(*, artifact_type: str, actionability: str) -> None:
 
 def assert_no_forbidden_payload(package_payload: dict) -> None:
     """Fail-closed guard: a package carrying whole raw transcript/VTT/media
-    fields must never reach the outbox."""
-    for key in FORBIDDEN_PACKAGE_FIELDS:
-        if key in package_payload:
-            raise PublishPolicyError(f"forbidden raw payload field in package: {key}")
-    source = package_payload.get("source") or {}
-    for key in FORBIDDEN_PACKAGE_FIELDS:
-        if key in source:
-            raise PublishPolicyError(f"forbidden raw payload field in package.source: {key}")
-    knowledge = package_payload.get("knowledge") or {}
-    for key in FORBIDDEN_PACKAGE_FIELDS:
-        if key in knowledge:
-            raise PublishPolicyError(f"forbidden raw payload field in package.knowledge: {key}")
+    fields anywhere (recursively, including inside nested evidence dicts and
+    lists) must never reach the outbox.
+
+    Bounded evidence such as `transcriptExcerpt` stays allowed: only the
+    whole raw fields in FORBIDDEN_PACKAGE_FIELDS are rejected.
+    """
+    _scan_for_forbidden(package_payload, "package")
+
+
+def _scan_for_forbidden(value: object, path: str) -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in FORBIDDEN_PACKAGE_FIELDS:
+                raise PublishPolicyError(f"forbidden raw payload field in {path}: {key}")
+            _scan_for_forbidden(child, f"{path}.{key}")
+    elif isinstance(value, (list, tuple)):
+        for index, child in enumerate(value):
+            _scan_for_forbidden(child, f"{path}[{index}]")

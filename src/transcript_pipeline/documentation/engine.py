@@ -38,6 +38,17 @@ logger = logging.getLogger(__name__)
 
 SCHEMA_VERSION = "1.0"
 
+# Knowledge-to-Action publish wakeup (DELTA-ZO-KNOWLEDGE-002). After a
+# successful enqueue, when a publisher is explicitly configured, the hook runs
+# ONE bounded publish cycle. Never a background loop; never an LLM.
+KNOWLEDGE_PUBLISH_WAKEUP_SECONDS = 15.0
+
+KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED = "SECOND_BRAIN_DISABLED"
+KNOWLEDGE_STATE_ENQUEUED = "ENQUEUED"
+KNOWLEDGE_STATE_PUBLISHED = "PUBLISHED"
+KNOWLEDGE_STATE_PENDING_RETRY = "PENDING_RETRY"
+KNOWLEDGE_STATE_TERMINAL_FAILURE = "TERMINAL_FAILURE"
+
 try:
     import pytesseract
     from PIL import Image as PILImage
@@ -264,10 +275,20 @@ def publish_knowledge_from_documentation(
     resolve the matched project's second_brain config and, when enabled,
     build + write + enqueue a Knowledge Package v2 on the durable outbox.
 
+    When a publisher is explicitly configured (`publisher_from_env`), the hook
+    also runs ONE bounded publish cycle (<= KNOWLEDGE_PUBLISH_WAKEUP_SECONDS)
+    so a processed document does not sit forever in pending/. Without a
+    configured publisher it stays enqueue-only. There is never a background
+    recursive loop and never an LLM (DELTA-ZO-KNOWLEDGE-002).
+
     Never raises — a publisher/outbox problem must not fail documentation
-    generation (ZK-16). Disabled/absent config returns {"published": false}
-    as a clean no-op (ZK-01). Raw transcripts/media are never published
-    (package builder enforces this fail-closed).
+    generation (ZK-16). Disabled/absent config returns a clean no-op
+    (ZK-01). Raw transcripts/media are never published (package builder and
+    the recursive policy guard enforce this fail-closed).
+
+    The returned dict distinguishes:
+    SECOND_BRAIN_DISABLED, ENQUEUED, PUBLISHED (ACK), PENDING_RETRY,
+    TERMINAL_FAILURE via the `knowledgeState` key.
     """
     try:
         from transcript_pipeline.knowledge.package_builder import (
@@ -275,10 +296,18 @@ def publish_knowledge_from_documentation(
             resolve_second_brain,
             write_package_files,
         )
-        from transcript_pipeline.knowledge.publisher import enqueue_knowledge_package
+        from transcript_pipeline.knowledge.publisher import (
+            enqueue_knowledge_package,
+            publisher_from_env,
+            run_publish_cycle,
+        )
 
         if resolve_second_brain(project_config) is None:
-            return {"published": False, "reason": "second_brain_disabled"}
+            return {
+                "published": False,
+                "reason": "second_brain_disabled",
+                "knowledgeState": KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED,
+            }
 
         package = build_knowledge_package(
             source=source,
@@ -288,7 +317,11 @@ def publish_knowledge_from_documentation(
             supersedes_knowledge_id=supersedes_knowledge_id,
         )
         if package is None:
-            return {"published": False, "reason": "second_brain_disabled"}
+            return {
+                "published": False,
+                "reason": "second_brain_disabled",
+                "knowledgeState": KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED,
+            }
 
         write_package_files(ai_package_dir, package)
 
@@ -297,7 +330,53 @@ def publish_knowledge_from_documentation(
 
         outbox = KnowledgeOutbox(DATA_ROOT)
         entry = enqueue_knowledge_package(outbox, package.to_dict())
-        return {"published": True, "packageId": package.package_id, "outbox": entry}
+        entry_state = entry.get("state", "PENDING") if isinstance(entry, dict) else "PENDING"
+
+        if entry_state == "PUBLISHED":
+            return {
+                "published": True,
+                "packageId": package.package_id,
+                "outbox": entry,
+                "knowledgeState": KNOWLEDGE_STATE_PUBLISHED,
+                "publishCycle": None,
+            }
+        if entry_state == "FAILED":
+            return {
+                "published": True,
+                "packageId": package.package_id,
+                "outbox": entry,
+                "knowledgeState": KNOWLEDGE_STATE_TERMINAL_FAILURE,
+                "publishCycle": None,
+            }
+
+        publisher = publisher_from_env()
+        if publisher is None:
+            # No configured publisher: enqueue-only, package waits in pending/.
+            return {
+                "published": True,
+                "packageId": package.package_id,
+                "outbox": entry,
+                "knowledgeState": KNOWLEDGE_STATE_ENQUEUED,
+                "publishCycle": None,
+            }
+
+        # Configured publisher: one bounded immediate wakeup cycle.
+        cycle = run_publish_cycle(outbox, publisher, max_seconds=KNOWLEDGE_PUBLISH_WAKEUP_SECONDS)
+        refreshed = outbox.ledger.get(package.package_id) or entry
+        final_state = refreshed.get("state", "PENDING") if isinstance(refreshed, dict) else "PENDING"
+        if final_state == "PUBLISHED":
+            knowledge_state = KNOWLEDGE_STATE_PUBLISHED
+        elif final_state == "FAILED":
+            knowledge_state = KNOWLEDGE_STATE_TERMINAL_FAILURE
+        else:
+            knowledge_state = KNOWLEDGE_STATE_PENDING_RETRY
+        return {
+            "published": True,
+            "packageId": package.package_id,
+            "outbox": refreshed,
+            "knowledgeState": knowledge_state,
+            "publishCycle": cycle,
+        }
     except Exception as e:  # noqa: BLE001 - knowledge publishing is best-effort
         logger.warning("[KNOWLEDGE] knowledge package skipped: %s", e)
         return {"published": False, "reason": f"error:{type(e).__name__}"}
