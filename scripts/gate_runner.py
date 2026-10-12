@@ -6,10 +6,14 @@ invokes existing scripts — it never reimplements their logic.
 
 Gates are split into two PLV5 categories:
 
-- LIGHT (implementation phase): targeted, unit, lint, quality, typecheck,
-  security, smoke. The local coder may run these before ChatGPT review.
-- HEAVY (post-review, RAM-gated): pytest, e2e, playwright, sonar, jenkins,
-  docker*, soak. Never run before /review.
+- LIGHT (implementation phase): targeted, unit, lint, quality, typecheck.
+  The local coder may run these before ChatGPT review.
+- HEAVY (post-review, RAM-gated): pytest, security, smoke, e2e, sonar,
+  docker-build, docker-e2e, jenkins, soak. Never run before /review.
+
+`e2e` is the single authoritative full-E2E gate. The former `playwright`
+alias was removed because it invoked the same command as `e2e`, which made
+full E2E run twice.
 
 A gate whose authoritative command is not installed reports NOT_CONFIGURED.
 NOT_CONFIGURED is never silently reported as PASS.
@@ -43,7 +47,6 @@ GATES: dict[str, list[str]] = {
     "quality": [sys.executable, "scripts/quality.py"],
     "security": [sys.executable, "scripts/security.py"],
     "smoke": [sys.executable, "scripts/smoke.py"],
-    "playwright": [sys.executable, "scripts/e2e.py"],
     "e2e": [sys.executable, "scripts/e2e.py"],
     "sonar": ["sonar-scanner"],
     "lint": [sys.executable, "-m", "ruff", "check", "scripts", "tests"],
@@ -56,10 +59,10 @@ GATES: dict[str, list[str]] = {
 
 # PLV5 gate categories: implementation/light vs heavy (post-review only).
 LIGHT_GATES: frozenset[str] = frozenset(
-    {"targeted", "unit", "lint", "quality", "typecheck", "security", "smoke"}
+    {"targeted", "unit", "lint", "quality", "typecheck"}
 )
 HEAVY_GATES: frozenset[str] = frozenset(
-    {"pytest", "e2e", "playwright", "sonar", "docker-build", "docker-e2e", "jenkins", "soak"}
+    {"pytest", "security", "smoke", "e2e", "sonar", "docker-build", "docker-e2e", "jenkins", "soak"}
 )
 
 GATE_CATEGORY: dict[str, str] = {
@@ -154,7 +157,7 @@ def _extract_structured_failure(gate: str, combined_output: str) -> tuple[str, s
             except (OSError, ValueError):
                 report = None
             if isinstance(report, dict):
-                if gate in {"e2e", "playwright"}:
+                if gate == "e2e":
                     detail = report.get("detail") or report.get("stdout") or report.get("stderr") or ""
                     return "e2e", _truncate(str(detail)), []
                 checks = report.get("checks")

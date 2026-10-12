@@ -38,8 +38,9 @@ SUMMARY_PATH = ROOT / "artifacts" / "gates" / "heavy-validation.json"
 # machine report NOT_CONFIGURED (never silently PASS).
 HEAVY_GATE_ORDER: list[str] = [
     "pytest",
+    "security",
+    "smoke",
     "e2e",
-    "playwright",
     "sonar",
     "docker-build",
     "docker-e2e",

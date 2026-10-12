@@ -72,10 +72,15 @@ See `model-routing.md`.
 - targeted unit tests of the changed surface;
 - small deterministic tests explicitly listed in the frozen PLAN.
 
+`security` and `smoke` are NOT implementation gates; they are heavy-only.
+
 ### Heavy gates — never before ChatGPT `/review`
 
-- full repository regression;
-- Playwright full E2E;
+In this order:
+- full repository regression (`pytest`);
+- `security` (`scripts/security.py`);
+- `smoke` (`scripts/smoke.py`);
+- full E2E (`e2e`, the single authoritative gate — no `playwright` alias);
 - Docker build/full E2E;
 - SonarQube;
 - Jenkins pipeline;

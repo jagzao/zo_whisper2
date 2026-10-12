@@ -1,4 +1,11 @@
-"""PLV5 heavy validation runner tests (TEST-MATRIX PLV5-H04..H08, T02)."""
+"""PLV5 heavy validation runner tests (TEST-MATRIX PLV5-H04..H08, T02).
+
+DELTA-PLV5-001 additions:
+- AC-1: heavy runner includes security and smoke, in order after pytest;
+- AC-2: full E2E is invoked only once (no playwright duplicate);
+- AC-3: <= 6.0 GiB available RAM starts no heavy child process;
+- AC-4: the heavy runner never invokes a model/provider.
+"""
 from __future__ import annotations
 
 import json
@@ -27,6 +34,10 @@ def _clean_summary():
         SUMMARY_PATH.unlink()
 
 
+def _read_summary() -> dict:
+    return json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
+
+
 def test_h04_deferred_run_starts_no_heavy_child():
     calls: list[str] = []
 
@@ -42,7 +53,7 @@ def test_h04_deferred_run_starts_no_heavy_child():
 
     assert rc == 3
     assert calls == []
-    data = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
+    data = _read_summary()
     assert data["terminal_state"] == "DEFERRED_LOW_RAM"
     assert data["gates"] == []
     assert data["ram"]["heavy_validation"] == "DEFERRED_LOW_RAM"
@@ -60,7 +71,7 @@ def test_h05_allowed_run_invokes_configured_heavy_gates():
 
     assert rc == 0
     assert invoked == list(heavy_validation_runner.HEAVY_GATE_ORDER)
-    data = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
+    data = _read_summary()
     assert data["terminal_state"] == "PASS"
     assert all(g["status"] == "PASS" for g in data["gates"])
 
@@ -78,7 +89,7 @@ def test_h06_and_h07_gate_failure_does_not_repair_or_skip_independent_gates():
     assert rc == 1
     # H07: every configured heavy gate still ran after the pytest failure.
     assert invoked == list(heavy_validation_runner.HEAVY_GATE_ORDER)
-    data = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
+    data = _read_summary()
     assert data["terminal_state"] == "FAIL"
     pytest_entry = next(g for g in data["gates"] if g["gate"] == "pytest")
     assert pytest_entry["status"] == "FAIL"
@@ -99,6 +110,46 @@ def test_all_gates_not_configured_is_blocked_not_pass():
         rc = heavy_validation_runner.run(available_gib_override=7.5)
 
     assert rc == 5
-    data = json.loads(SUMMARY_PATH.read_text(encoding="utf-8"))
+    data = _read_summary()
     assert data["terminal_state"] == "BLOCKED"
     assert all(g["status"] == "NOT_CONFIGURED" for g in data["gates"])
+
+
+def test_heavy_order_includes_security_and_smoke():
+    order = heavy_validation_runner.HEAVY_GATE_ORDER
+    assert order[:4] == ["pytest", "security", "smoke", "e2e"]
+    assert "security" in order and "smoke" in order
+    # e2e appears exactly once and the playwright duplicate is gone
+    assert order.count("e2e") == 1
+    assert "playwright" not in order
+
+
+def test_low_ram_boundary_starts_no_heavy_child_process():
+    calls: list[str] = []
+
+    def _spy(gate: str) -> int:
+        calls.append(gate)
+        raise AssertionError("no heavy gate may start when RAM <= 6.0 GiB")
+
+    with mock.patch.object(heavy_validation_runner, "_run_gate", side_effect=_spy):
+        rc = heavy_validation_runner.run(available_gib_override=6.0)
+
+    assert rc == 3
+    assert calls == []
+    assert _read_summary()["terminal_state"] == "DEFERRED_LOW_RAM"
+
+
+def test_allowed_ram_runs_security_and_smoke_in_order():
+    seen: list[str] = []
+
+    def _ok(gate: str) -> int:
+        seen.append(gate)
+        return 0
+
+    with mock.patch.object(heavy_validation_runner, "_run_gate", side_effect=_ok):
+        rc = heavy_validation_runner.run(available_gib_override=6.01)
+
+    assert rc == 0
+    assert seen == heavy_validation_runner.HEAVY_GATE_ORDER
+    assert "security" in seen and "smoke" in seen
+    assert seen.count("e2e") == 1

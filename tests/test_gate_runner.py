@@ -106,16 +106,24 @@ def test_targeted_gate_requires_paths():
 
 
 def test_named_gate_registry_uses_authoritative_commands():
-    assert {"quality", "security", "smoke", "playwright", "e2e", "sonar"} <= gate_runner.GATES.keys()
+    assert {"quality", "security", "smoke", "e2e", "sonar"} <= gate_runner.GATES.keys()
     assert gate_runner.GATES["quality"][-1] == "scripts/quality.py"
     assert gate_runner.GATES["security"][-1] == "scripts/security.py"
     assert gate_runner.GATES["smoke"][-1] == "scripts/smoke.py"
-    assert gate_runner.GATES["playwright"][-1] == "scripts/e2e.py"
+    assert gate_runner.GATES["e2e"][-1] == "scripts/e2e.py"
+
+
+def test_playwright_alias_removed_so_e2e_runs_once():
+    # `playwright` was a duplicate alias of `e2e` (same command). It must be gone
+    # so the full E2E never runs twice, and exactly one gate maps to e2e.py.
+    assert "playwright" not in gate_runner.GATES
+    e2e_commands = [cmd for cmd in gate_runner.GATES.values() if cmd[-1] == "scripts/e2e.py"]
+    assert len(e2e_commands) == 1
 
 
 def test_gate_categories_split_implementation_from_heavy():
-    heavy = {"pytest", "e2e", "playwright", "sonar", "docker-build", "docker-e2e", "jenkins", "soak"}
-    light = {"targeted", "unit", "lint", "quality", "typecheck", "security", "smoke"}
+    heavy = {"pytest", "security", "smoke", "e2e", "sonar", "docker-build", "docker-e2e", "jenkins", "soak"}
+    light = {"targeted", "unit", "lint", "quality", "typecheck"}
     assert heavy <= gate_runner.HEAVY_GATES
     assert light <= gate_runner.LIGHT_GATES
     assert not (gate_runner.HEAVY_GATES & gate_runner.LIGHT_GATES)
@@ -123,6 +131,18 @@ def test_gate_categories_split_implementation_from_heavy():
         assert gate_runner.category_of(gate) in ("light", "heavy")
     assert gate_runner.category_of("e2e") == "heavy"
     assert gate_runner.category_of("targeted") == "light"
+
+
+def test_security_and_smoke_are_not_light_gates():
+    # Frozen V5 split: security and smoke are heavy-only. They must never be
+    # selectable as implementation/light gates.
+    for gate in ("security", "smoke"):
+        assert gate not in gate_runner.LIGHT_GATES
+        assert gate in gate_runner.HEAVY_GATES
+        assert gate_runner.category_of(gate) == "heavy"
+    assert gate_runner.LIGHT_GATES == frozenset(
+        {"targeted", "unit", "lint", "quality", "typecheck"}
+    )
 
 
 def test_not_configured_gate_is_never_reported_as_pass():

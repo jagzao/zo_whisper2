@@ -17,20 +17,26 @@ Run by the local coder after each work package:
 - `lint` — Ruff on scripts/tests
 - `quality` — `scripts/quality.py`
 - `typecheck` — compileall of src/scripts (Pyright when configured)
-- `security` — `scripts/security.py`
-- `smoke` — `scripts/smoke.py`
 - FFmpeg/ffprobe fixture verification when the surface is media
+
+`security` and `smoke` are NOT light gates. They are heavy and never run
+during the implementation phase.
 
 ### Heavy gates — only after ChatGPT `/review` and the RAM gate
 
-Run by `scripts/heavy_validation_runner.py`:
+Run by `scripts/heavy_validation_runner.py` in this exact order:
 - `pytest` — full repository regression
-- `e2e` / `playwright` — `scripts/e2e.py` full E2E
+- `security` — `scripts/security.py`
+- `smoke` — `scripts/smoke.py`
+- `e2e` — `scripts/e2e.py` full E2E (single authoritative E2E gate)
 - `sonar` — SonarQube quality gate
 - `docker-build` / `docker-e2e` — Docker gates when configured
 - `jenkins` — Jenkins pipeline when configured
 - `soak` — soak/load when configured
 - dependency/security scans requiring large downloads
+
+The former `playwright` alias was removed: it invoked the same command as
+`e2e`, so full E2E would run twice. Heavy E2E runs exactly once.
 
 Heavy gates never run before `/review`, never modify product code, and never invoke a model. A heavy failure is handed to ChatGPT for diagnosis.
 
@@ -62,12 +68,12 @@ Example:
 ```json
 {
   "status": "FAIL",
-  "gate": "playwright",
+  "gate": "e2e",
   "category": "heavy",
   "check": "project_override_persists_after_reload",
   "error_signature": "expected Project A, got Project B",
   "affected_files": ["src/transcript_pipeline/dashboard/app.py"],
-  "artifact": "artifacts/playwright/project-override.zip",
+  "artifact": "artifacts/e2e/project-override.zip",
   "duration_seconds": 12.4
 }
 ```
