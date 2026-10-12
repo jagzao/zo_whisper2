@@ -1,32 +1,89 @@
-# Delivery Loop (whisper)
+# Delivery Loop V5
 
-## Story lifecycle
-`ANALYSIS -> SPEC (frozen AC doc) -> IMPLEMENTATION (bounded executor dispatch) -> VALIDATION -> REWORK LOOP -> DELIVERY`
+## Lifecycle
 
-## Analysis
-Read `CLAUDE.md`, `.agents/AGENTS.md`, the relevant `src/transcript_pipeline/` module, and any existing tests before writing AC — the fastest source of scope drift is writing AC from memory of the codebase instead of its current state.
+```
+OWNER_ANALYSIS (owner + ChatGPT, outside local runtime)
+  -> FROZEN_SPEC (EPIC/FEATURE/US/ADR in Git)
+  -> FROZEN_PLAN (in Git; no local STRONG_PLAN stage)
+  -> MECHANICAL_WORK_PACKAGES
+  -> IMPLEMENTATION (single selected cheap coder)
+  -> IMPLEMENTATION_GATES (targeted UT, lint, typecheck)
+  -> BOUNDED_REPAIR (max 2 per identical signature)
+  -> COMMIT + PUSH
+  -> READY_FOR_CHATGPT_REVIEW
+  -> [ChatGPT /review]
+  -> HEAVY_VALIDATION (RAM-gated, deterministic, LLM-free)
+  -> OWNER_ACCEPTANCE
+```
 
-## Spec
-Write `.agents/deliverables/US-XXX-<slug>.md` with 3-6 concrete acceptance criteria before any implementation dispatch. Each AC must be independently testable (a specific pytest, a specific manual repro, or a specific `agent-browser` flow for dashboard UI — see Validation below). This file is the frozen scope; do not renegotiate it mid-implementation without editing it and noting why.
+## 1. Owner analysis / frozen spec
 
-## Implementation
-Dispatch one AC per executor call (per `project-lead.md`'s executor policy), quoting the AC text verbatim in the prompt. Small, reversible commits — one AC's implementation should be reviewable as one diff.
+Product, architecture and UX analysis is performed by the owner with ChatGPT outside the autonomous coding loop and persisted in Git as EPIC/FEATURE/US/ADR.
 
-## Validation matrix
-Run only what the AC touches:
-- **Unit**: `pytest tests/ -v` scoped to the touched module (`.projects`, `.language`, `.file_tracker`, `.settings`, `.llm.guard`/`.redaction`, `.documentation.engine`, etc.).
-- **Security**: `tests/security/` + `scripts/security.py` — mandatory whenever the AC touches `SafePathResolver`, upload handling, the dashboard token/Host check, or LLM/privacy flags (`ALLOW_EXTERNAL_LLM`, `ALLOW_FRAME_UPLOAD`).
-- **Integration**: `tests/integration/` — mandatory whenever the AC touches handler routing, `HandlerResult`/`FileTracker` state, or keyframe/documentation generation.
-- **Smoke**: `scripts/smoke.py` (fast, no browser) — run whenever the AC touches settings, dashboard boot, or the documentation engine.
-- **Dashboard/UI AC**: per the global Web Validation Standard, use `agent-browser` as the primary loop — open the dashboard, exercise the exact changed flow, check console/network — before considering the AC implemented. Run the Playwright smoke (`scripts/e2e.py` / `tests/e2e/smoke_dashboard.py`) as the closing gate for that AC, not the full suite for every small edit.
+Project-lead starts from that frozen contract. It may not silently add product scope, and it may not re-plan.
 
-Do not run the full `pytest tests/` + Playwright suite on every small AC — that's for epic/release closure. Run what the AC's own surface requires.
+## 2. Frozen plan
 
-## Rework loop
-For every finding (test failure, bug found during validation, or a defect reported after a prior "done"): `REPRODUCE -> ROOT CAUSE -> REGRESSION TEST -> FIX -> VALIDATE -> RE-RUN THE RELEVANT GATE`. A fix without a reproduced failure and a regression test is not closed — this is the direct fix for the "US-003 hardening" pattern (bugs shipped as "done", patched later with no regression test proving they won't recur).
+The implementation PLAN is part of the frozen contract in Git. If a genuine contradiction appears, stop with `SPEC_CONFLICT`. If a technical premise is invalidated by evidence, stop with `REVIEW_REQUIRED` and hand compact evidence to ChatGPT.
 
-## Definition of Done
-An AC is DONE only when: the AC's own test/repro passes, `git diff` for every touched file has been read line by line (per global CLAUDE.md verification rule — never trust the executor's text summary), and the deliverable doc's AC checklist is updated with the evidence (which test, what it showed). Do not mark DONE on "should work" or an executor's claim alone.
+## 3. Implementation
 
-## Delivery
-Commit only after Definition of Done is met for the AC. Update `.agents/deliverables/US-XXX-<slug>.md`'s checklist and, if a session is in flight, `.agents/session/current_task.md`.
+One cheap coder selected by `scripts/model_router.py` from the frozen fallback chain. No planner, no tier escalation, no subagents.
+
+Prefer one context-rich implementation pass per coherent work package over many micro-dispatches that reread the same repository context.
+
+## 4. Implementation gates (before review)
+
+Run only:
+
+- compile/typecheck of the changed surface;
+- Ruff/lint;
+- targeted unit tests of the changed surface;
+- explicitly frozen lightweight deterministic tests.
+
+These gates run via `scripts/gate_runner.py` light-category gates and never consume LLM tokens.
+
+## 5. Bounded repair
+
+```
+CAPTURE -> COMPACT -> CLASSIFY -> REGRESSION TEST -> ONE REPAIR ATTEMPT -> RETEST
+```
+
+- identical mechanical failure signature: at most 2 repair attempts, then `REVIEW_REQUIRED`;
+- never weaken a test to make it pass;
+- never mark a defect fixed without deterministic evidence;
+- product/behavior ambiguity -> `REVIEW_REQUIRED`, do not invent.
+
+## 6. Heavy gates (after ChatGPT /review)
+
+Never run before `/review`. When authorized, `scripts/heavy_validation_runner.py`:
+
+1. runs `scripts/ram_gate.py` first;
+2. available RAM > 6.0 GiB -> run heavy gates;
+3. available RAM <= 6.0 GiB -> `HEAVY_VALIDATION_DEFERRED_LOW_RAM`, defer to nighttime;
+4. runs gates sequentially with no LLM, continuing after one failure;
+5. never modifies product code;
+6. a heavy failure goes to ChatGPT for diagnosis, never to a local repair loop.
+
+## 7. Checkpoint / power-loss resume
+
+`scripts/delivery_checkpoint.py` atomically maintains `.agents/session/delivery-checkpoint.json`.
+
+```
+LOAD_CHECKPOINT -> VERIFY_REPO_AND_REMOTE -> RESUME_FIRST_INCOMPLETE_MECHANICAL_STEP
+```
+
+A session/power loss never triggers local re-analysis or re-planning.
+
+## 8. Evidence and summary
+
+Each implementation run ends with `scripts/implementation_summary.py` writing a compact `SUMMARY.json`/`SUMMARY.md` (contract id, branch, SHAs, changed files, selected model, gate results, blockers, terminal state). Raw logs are never embedded.
+
+## 9. Handoff
+
+Normal autonomous terminal state is `READY_FOR_CHATGPT_REVIEW`.
+
+Do not require owner conversation between the initial instruction and that state unless a permitted blocker from `project-lead.md` occurs.
+
+No merge. No deploy. No heavy validation without ChatGPT authorization.

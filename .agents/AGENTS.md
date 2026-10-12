@@ -1,115 +1,167 @@
 # .agents Architecture Guide
 
-This directory defines a **provider-agnostic AI layer** for the Whisper transcription project. It is designed to work with any LLM (OpenAI, DeepSeek, Claude, local Ollama, etc.) through a unified interface.
+This directory defines the provider-agnostic AI orchestration layer for Zo Media Intelligence.
 
-## Philosophy
+## Core principle
 
-- `.kilo/` is Kilo-specific IDE configuration (commands, TUI, shortcuts).
-- `.agents/` is the **AI orchestration layer**: skills, prompts, agents, and MCP tools independent of any single IDE or model provider.
-- By keeping `.agents/` generic, the same automation definitions can be consumed by Kilo, Claude Code, Cursor, Roo Code, or custom scripts.
+Product/architecture/UX decisions are made outside the autonomous coding loop by the owner working with ChatGPT/Claude. Those decisions are persisted in Git as frozen EPIC / FEATURE / US / ADR artifacts. Autonomous agents execute that contract; they do not redefine it.
 
-## Directory Layout
+The target owner interaction budget for a normal feature is exactly two touchpoints:
+
+1. INITIAL_SPEC — owner + assistant define/freeze the work and send one start instruction.
+2. FINAL_ACCEPTANCE — after implementation, deterministic validation, PR/CI, and external audit, the owner performs the final product check.
+
+Any extra owner interruption must be exceptional and documented.
+
+## Directory layout
 
 ```
 .agents/
-├── AGENTS.md                          # This file
-├── skills/
-│   └── transcription-pipeline/
-│       └── SKILL.md                   # Domain skill for the transcription flow
-├── agents/
-│   └── (specialized agent definitions per task)
-├── prompts/
-│   └── (reusable system/user prompts)
+├── AGENTS.md
+├── protocols/
+│   ├── project-lead.md
+│   ├── delivery-loop.md
+│   ├── model-routing.md
+│   └── deterministic-gates.md
+├── deliverables/
+│   ├── TEMPLATE.md
+│   ├── EPIC-*.md
+│   ├── FEATURE-*.md
+│   ├── US-*.md
+│   ├── PLAN-*.md
+│   └── DELIVERY-*.md
 ├── templates/
-│   └── (markdown templates for summaries, QA, etc.)
-└── mcp/
-    └── (Model Context Protocol server definitions)
+├── skills/
+├── agents/
+├── session/      # local runtime checkpoint; gitignored
+└── memory/       # local runtime memory; gitignored
 ```
 
-## Conventions
+## Source of truth
 
-1. **Skills** are self-contained task guides. Each `SKILL.md` explains context, file paths, critical commands, and decision trees for a domain (e.g., transcription pipeline, scene extraction).
-2. **Agents** define personas (e.g., `transcription-reviewer`, `scene-extraction-optimizer`). They reference skills and prompts.
-3. **Prompts** are plain text or Jinja2 templates without business logic.
-4. **MCP** servers expose project-specific tools (e.g., query processed_files.json, trigger RUN_MAX_QUALITY.bat).
-
-## Integration with Existing Pipeline
-
-The local workflow (`RUN_MAX_QUALITY.bat` -> `master_processor.py` -> `simple_scan.py`) is the primary engine. `.agents/` does not replace it; it **augments** it with LLM-driven post-processing and quality gates.
-
-See `CLAUDE.md` for the full architecture, file naming conventions, and output structure.
-
-### Example Flow
-
-1. Human drops video in `Videos/`.
-2. `RUN_MAX_QUALITY.bat` runs Whisper + scene extraction.
-3. `.agents/agents/transcription-analyst` reads the transcript and generates a structured Markdown summary using `.agents/templates/summary.md`.
-4. The agent routes output to the correct project folder based on filename prefixes (`zo_`, `northwind_`, `jm_`).
-
-### Language Detection
-
-- Filename prefix `es_` or `en_` → explicit language
-- `lang.txt` in a subfolder (contains just `es` or `en`) → folder-level default
-- No prefix or file → Whisper auto-detects
-
-## LLM Provider Abstraction
-
-Keep provider-specific tokens and URLs in local `.env` files (never in skills). Skills reference generic environment variables:
-
-```env
-LLM_API_KEY=...
-LLM_BASE_URL=https://api.openai.com/v1   # or Ollama: http://localhost:11434/v1
-LLM_MODEL=gpt-4o-mini                    # or mistral, deepseek-chat, etc.
+```
+EPIC -> FEATURE -> US/ADR -> PLAN -> CODE -> DELIVERY
 ```
 
-The file `watcher/core/integration/llm_client.py` (to be created) should expose a single `generate_summary(text, prompt_template) -> str` that calls any OpenAI-compatible `/v1/chat/completions` endpoint using these three variables.
+- EPIC / FEATURE / US / ADR are owner-approved product truth.
+- PLAN is an implementation artifact produced from the frozen spec.
+- PLAN may not silently change the frozen spec.
+- If implementation reveals a genuine contradiction in frozen requirements, stop with `SPEC_CONFLICT`.
+- Runtime state never belongs in tracked files.
 
-**Notion is optional and disabled by default.** Do not require `NOTION_API_KEY` for core functionality.
+## Deployed source and UI parity
 
-## Project-lead orchestration
-See `.agents/protocols/project-lead.md` (executor dispatch policy, stagnation detection, terminal states) and `.agents/protocols/delivery-loop.md` (AC lifecycle, validation matrix, rework loop, Definition of Done). Every US gets a deliverable doc from `.agents/deliverables/TEMPLATE.md` with frozen AC **before** implementation starts — this is what prevents scope drift and the "shipped now, hardened later" pattern.
+- Before rebuilding or restarting a deployed service, identify the Compose build
+  context and the exact checkout that supplies the running image. Parallel
+  checkouts do not share edits; compare and port every in-scope change explicitly.
+- Validate the artifact served by the running service after deployment. For UI
+  changes, include phone and desktop viewport checks; confirm the mobile layout,
+  touch controls, and absence of page-level horizontal overflow.
+- Do not treat a successful image build or a localhost response as proof that the
+  deployed UI contains the intended responsive changes.
 
-## Analysis-to-Delivery Autonomous Execution Contract
+## Project-lead V5
 
-When a substantial product/architecture/UX/technical analysis has just been completed and the owner asks to **generate the deliverable**, the deliverable MUST capture the complete agreed analysis as an executable User Story (US) or implementation package. Do not reduce it to a summary or a partial backlog item.
+Project-lead is the local implementation worker for a frozen owner + ChatGPT spec, not a product owner and not an analyst.
 
-The generated US/deliverable MUST include, when applicable:
+Its normal lifecycle is:
 
-- complete functional scope and every decision agreed during the analysis;
-- architecture, data-flow, UX/UI, integration, privacy, security and non-functional requirements;
-- explicit acceptance criteria and definition of done;
-- implementation tasks/subtasks detailed enough for `project-lead` to execute autonomously;
-- Unit Tests (UT);
-- integration tests where applicable;
-- End-to-End (E2E) tests;
-- smoke tests;
-- regression tests for existing behavior affected by the change;
-- security/privacy tests and negative/abuse cases where applicable;
-- observability, diagnostics and error-path validation where applicable;
-- documentation and release/readme changes required by the feature;
-- a validation loop that continues until implementation and all applicable gates are green.
+```
+FROZEN_SPEC (owner + ChatGPT)
+  -> FROZEN_PLAN (in Git; no local STRONG_PLAN stage)
+  -> IMPLEMENT (single selected cheap coder)
+  -> IMPLEMENTATION_GATES (targeted UT, lint, typecheck)
+  -> BOUNDED_REPAIR (max 2 per identical signature)
+  -> COMMIT + PUSH
+  -> READY_FOR_CHATGPT_REVIEW
+  -> [ChatGPT /review]
+  -> HEAVY_VALIDATION (RAM-gated, deterministic, LLM-free)
+  -> OWNER_ACCEPTANCE
+```
 
-### Autonomous implementation loop
+See:
+- `.agents/protocols/project-lead.md`
+- `.agents/protocols/model-routing.md`
+- `.agents/protocols/deterministic-gates.md`
+- `.agents/protocols/delivery-loop.md`
+- `.agents/protocols/provider-aliases.md`
 
-`project-lead` must treat the US as a completion contract, not as planning guidance.
+## Model policy
 
-1. Read the repository memory/rules/skills and the complete US before editing code.
-2. Inspect the current implementation and establish the real baseline.
-3. Implement the full scope end-to-end.
-4. Run the applicable UT, integration, E2E, smoke, regression, security, quality and static-analysis gates.
-5. If a gate fails, diagnose it, fix the root cause and rerun the relevant gates.
-6. Repeat implementation → test → diagnose → fix → retest for as many iterations as necessary.
-7. Do not stop because the task is large, takes a long time, or has already consumed many iterations. There is no artificial time-box for completion.
-8. Do not declare completion with knowingly failing tests, TODO placeholders, mocked production behavior, skipped acceptance criteria or unverified assumptions unless an external hard blocker truly prevents completion.
-9. If an external hard blocker exists, record exact evidence, what remains blocked, and what was completed independently of that blocker.
-10. Finish with an auditable handoff: changed files, implemented acceptance criteria, tests/gates executed and results, security/privacy validation, known residual risks, and exact manual checks (if any) still worth performing.
+Exactly one cheap coder, selected deterministically by `scripts/model_router.py`:
 
-The expected outcome is **completed implementation ready for owner/assistant audit and validation**, not a proposal for future work.
+1. Z.ai Coding Plan GLM owner-approved coder (default);
+2. OpenCode DeepSeek;
+3. Ollama server DeepSeek;
+4. OpenRouter DeepSeek.
 
-### How the owner should start execution
+Never: OpenAI/Codex/GPT, Claude, Kimi, premium planner/reviewer models, nested LLM subagents by default. A red test never justifies escalation. There is no local STRONG_PLANNER.
 
-The repository contains the persistent implementation memory, so the assistant MUST NOT generate a new mega-prompt merely to start the agent. After creating the complete US/deliverable, give the owner one short execution instruction that references it, for example:
+Do not commit provider credentials or private endpoints.
 
-`Project-lead: toma la US <ruta-o-id> y ejecútala completa de inicio a fin siguiendo la memoria y reglas del repo. Termina solo cuando implementación y gates aplicables estén completos y verdes, y entrega el handoff de validación.`
+## Deterministic-first validation
 
-Keep that start instruction short. The detailed scope belongs in the US and repository memory, not duplicated into a giant chat prompt.
+LLMs implement. Software proves correctness.
+
+Implementation (light) gates the coder may run: targeted pytest, Ruff, typecheck, quality.py, security.py, smoke.py.
+
+Heavy gates run only after ChatGPT `/review` and the RAM gate (`scripts/ram_gate.py`, available RAM > 6.0 GiB): full regression, Playwright E2E, Docker, SonarQube, Jenkins, soak — orchestrated LLM-free by `scripts/heavy_validation_runner.py`.
+
+- pytest
+- Ruff
+- Pyright
+- security.py / pip-audit / Gitleaks
+- FFmpeg/ffprobe checks
+- Playwright
+- SonarQube
+- Jenkins
+- GitHub Actions for public PR checks
+
+An LLM may create the first Playwright scenario for a feature. Re-running the scenario must consume zero LLM tokens.
+
+Do not add Electron to a web project merely for validation. Validation adapter:
+- web -> Playwright Chromium
+- electron -> Playwright Electron
+- mobile -> native/Appium-equivalent driver
+
+## Owner interruption policy
+
+Project-lead MUST NOT ask the owner what to do next when the next action can be derived from the frozen spec, plan, repository state, deterministic gate result, or CI result.
+
+Allowed human-blocking states only:
+- `BLOCKED_EXTERNAL`
+- `DESTRUCTIVE_APPROVAL_REQUIRED`
+- `SECURITY_OR_PRIVACY_DECISION`
+- `SPEC_CONFLICT`
+- `PRODUCT_DECISION_REQUIRED`
+
+Coding difficulty, failing tests, one exhausted model pool, timeouts, long-running tests, or a session/context limit are not owner blockers.
+
+## Resume contract
+
+After every meaningful work package, `scripts/delivery_checkpoint.py` atomically
+persists a local checkpoint under gitignored `.agents/session/` containing:
+- active US and frozen plan/contract
+- completed/pending work packages
+- last verified SHA
+- last green gates
+- current deterministic failures
+- running processes/artifacts
+- exact next action
+
+On a new session or after a power loss:
+
+```
+LOAD_CHECKPOINT -> VERIFY_REPO_STATE -> RESUME_FIRST_INCOMPLETE_MECHANICAL_STEP
+```
+
+Never re-run local analysis or re-plan merely because a session restarted. Never
+ask the owner to reconstruct context already recoverable from Git/checkpoint.
+
+## How the owner starts execution
+
+After the owner and ChatGPT have frozen the spec in Git, the start prompt should stay short:
+
+`Project-lead: ejecuta <US-ID> completa siguiendo Project-lead V5. Termina solo en READY_FOR_CHATGPT_REVIEW o un blocker permitido.`
+
+The detailed scope belongs in Git, not in repeated mega-prompts.
