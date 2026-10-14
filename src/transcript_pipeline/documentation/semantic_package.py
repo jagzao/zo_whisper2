@@ -27,7 +27,7 @@ from typing import Any
 
 from transcript_pipeline.documentation.evidence import EvidenceTimeline
 from transcript_pipeline.documentation.evidence_writer import format_timestamp
-from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument
+from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument, executive_summary_evidence_refs
 from transcript_pipeline.documentation.models import DocumentationSource
 from transcript_pipeline.documentation.modes import ARTIFACT_TYPE_FOR_MODE
 from transcript_pipeline.documentation.screenshots import ScreenshotSelection
@@ -175,6 +175,7 @@ def _build_chunks(
             list(section.evidence_refs), timeline,
             _refs_time_range(list(section.evidence_refs), timeline),
         )
+        base_meta["summaryEvidenceRefs"] = list(section.summary_evidence_refs)
         header = f"[{section.section_type}] {section.title}"
 
         # Split long sections on claim boundaries, never arbitrary slices.
@@ -218,15 +219,26 @@ def _build_chunks(
         )
         meta["sectionId"] = procedure.id
         meta["sectionType"] = "PROCEDURE"
+        meta["metadataEvidenceRefs"] = list(procedure.metadata_evidence_refs)
         lines = [f"[PROCEDURE] {procedure.title}"]
         if procedure.purpose:
             lines.append(procedure.purpose)
+        lines.extend(f"Prerequisite: {value}" for value in procedure.prerequisites)
         for step in procedure.steps:
             lines.append(f"{step.order}. {step.instruction} ({', '.join(step.evidence_refs)})")
+        lines.extend(f"Expected outcome: {value}" for value in procedure.expected_outcomes)
+        if procedure.metadata_evidence_refs:
+            lines.append(f"Evidence: {', '.join(procedure.metadata_evidence_refs)}")
         text = "\n".join(lines)
         if len(text) > chunk_max_chars:
             # Split on step boundaries, not arbitrary slices.
-            part: list[str] = [f"[PROCEDURE] {procedure.title}"]
+            prefix = [f"[PROCEDURE] {procedure.title}"]
+            if procedure.purpose:
+                prefix.append(procedure.purpose)
+            prefix.extend(f"Prerequisite: {value}" for value in procedure.prerequisites)
+            if refs:
+                prefix.append(f"Evidence: {', '.join(refs)}")
+            part: list[str] = list(prefix)
             for step in procedure.steps:
                 line = f"{step.order}. {step.instruction} ({', '.join(step.evidence_refs)})"
                 if len("\n".join(part + [line])) > chunk_max_chars and len(part) > 1:
@@ -235,8 +247,9 @@ def _build_chunks(
                         "text": "\n".join(part),
                         "metadata": meta,
                     })
-                    part = [f"[PROCEDURE] {procedure.title} (cont.)"]
+                    part = [f"[PROCEDURE] {procedure.title} (cont.)", *prefix[1:]]
                 part.append(line)
+            part.extend(f"Expected outcome: {value}" for value in procedure.expected_outcomes)
             text = "\n".join(part)
         chunks.append({"id": f"{procedure.id}-c{len(chunks) + 1:02d}", "text": text, "metadata": meta})
 
@@ -246,13 +259,23 @@ def _build_chunks(
 def _render_knowledge_md(document: KnowledgeDocument, timeline: EvidenceTimeline) -> str:
     lines = [f"# {document.title} — AI knowledge package\n\n"]
     if document.executive_summary:
-        lines.append(f"## Executive Summary\n\n{document.executive_summary}\n\n")
+        refs = " ".join(
+            f"[{r} @ {format_timestamp(timeline.by_id()[r].timestamp_start)}]"
+            if r in timeline.by_id() else f"[{r}]"
+            for r in executive_summary_evidence_refs(document)
+        )
+        lines.append(f"## Executive Summary\n\n{document.executive_summary} {refs}\n\n")
     for section in document.sections:
         if not section.summary and not section.claims:
             continue
         lines.append(f"## {section.title}\n\n")
         if section.summary:
-            lines.append(f"{section.summary}\n\n")
+            summary_refs = " ".join(
+                f"[{r} @ {format_timestamp(timeline.by_id()[r].timestamp_start)}]"
+                if r in timeline.by_id() else f"[{r}]"
+                for r in section.summary_evidence_refs
+            )
+            lines.append(f"{section.summary} {summary_refs}\n\n")
         for claim in section.claims:
             ts_refs = " ".join(
                 f"[{r} @ {format_timestamp(timeline.by_id()[r].timestamp_start)}]" if r in timeline.by_id() else f"[{r}]"
@@ -262,11 +285,19 @@ def _render_knowledge_md(document: KnowledgeDocument, timeline: EvidenceTimeline
         lines.append("\n")
     for procedure in document.procedures:
         lines.append(f"## Procedure: {procedure.title}\n\n")
+        if procedure.purpose:
+            lines.append(f"{procedure.purpose}\n\n")
+        if procedure.prerequisites:
+            lines.append("Prerequisites: " + "; ".join(procedure.prerequisites) + "\n\n")
+        if procedure.metadata_evidence_refs:
+            lines.append("Evidence: " + ", ".join(procedure.metadata_evidence_refs) + "\n\n")
         for step in procedure.steps:
             lines.append(f"{step.order}. {step.instruction} ({', '.join(step.evidence_refs)})\n")
+        if procedure.expected_outcomes:
+            lines.append("Expected outcomes: " + "; ".join(procedure.expected_outcomes) + "\n")
         lines.append("\n")
     if document.glossary:
         lines.append("## Glossary\n\n")
         for entry in document.glossary:
-            lines.append(f"- **{entry.term}** — {entry.definition}\n")
+            lines.append(f"- **{entry.term}** — {entry.definition} ({', '.join(entry.evidence_refs)})\n")
     return "".join(lines)

@@ -110,7 +110,7 @@ def test_strict_schema_rejects_empty_unknown_and_malformed(raw):
 
 
 def test_strict_schema_accepts_grounded_reference_claim():
-    raw = json.dumps({"sections": [{"sectionType": "REFERENCE", "title": "Ref", "summary": "s", "claims": [
+    raw = json.dumps({"sections": [{"sectionType": "REFERENCE", "title": "Ref", "summary": "s", "evidenceIds": ["E-001"], "claims": [
         {"text": "Grounded fact", "evidenceIds": ["E-001"]}
     ]}], "procedures": [], "glossary": []})
     assert _validate_fragment_shape(raw)[0] is True

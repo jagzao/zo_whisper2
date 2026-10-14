@@ -87,8 +87,23 @@ def validate_knowledge_document(
         if section.section_type not in SECTION_TYPES:
             errors.append(f"{section.id}: unknown sectionType {section.section_type!r}")
 
+    executive_section = next(
+        (section for section in document.sections if section.section_type == "EXECUTIVE_SUMMARY"), None
+    )
+    grounded_executive_summary = ""
+    if executive_section is not None:
+        if executive_section.summary and executive_section.summary_evidence_refs:
+            grounded_executive_summary = executive_section.summary
+        else:
+            grounded_claims = [claim.text for claim in executive_section.claims if claim.evidence_refs]
+            grounded_executive_summary = " ".join(grounded_claims)
+    if document.executive_summary and document.executive_summary != grounded_executive_summary:
+        errors.append("executive summary has no grounded EXECUTIVE_SUMMARY source")
+
     # 1. each claim has >= 1 evidence ref.
     for section in document.sections:
+        if section.summary and not section.summary_evidence_refs:
+            errors.append(f"{section.id}: section summary without evidence refs")
         for claim in section.claims:
             report.claim_count += 1
             if not claim.evidence_refs:
@@ -107,6 +122,11 @@ def validate_knowledge_document(
         report.procedure_count += 1
         if not procedure.steps:
             errors.append(f"{procedure.id}: procedure without steps")
+        metadata_present = bool(procedure.purpose.strip()) or any(
+            value.strip() for value in (*procedure.prerequisites, *procedure.expected_outcomes)
+        )
+        if metadata_present and not procedure.metadata_evidence_refs:
+            errors.append(f"{procedure.id}: procedure metadata without evidence refs")
         for step in procedure.steps:
             if not step.evidence_refs:
                 errors.append(f"{procedure.id}: step {step.order} without evidence refs")
@@ -120,11 +140,26 @@ def validate_knowledge_document(
 
     # 5. placeholders cannot be the sole support for a factual claim.
     for section in document.sections:
+        if section.summary and section.summary_evidence_refs:
+            placeholders = [r for r in section.summary_evidence_refs if r in timeline_by_id and timeline_by_id[r].is_placeholder()]
+            non_placeholders = [r for r in section.summary_evidence_refs if r in timeline_by_id and not timeline_by_id[r].is_placeholder()]
+            if placeholders and not non_placeholders:
+                errors.append(f"{section.id}: only placeholder evidence supports a factual summary")
         for claim in section.claims:
             placeholders = [r for r in claim.evidence_refs if r in timeline_by_id and timeline_by_id[r].is_placeholder()]
             non_placeholders = [r for r in claim.evidence_refs if r in timeline_by_id and not timeline_by_id[r].is_placeholder()]
             if claim.text and placeholders and not non_placeholders:
                 errors.append(f"{claim.id}: only placeholder evidence supports a factual claim")
+
+    for procedure in document.procedures:
+        metadata_present = bool(procedure.purpose.strip()) or any(
+            value.strip() for value in (*procedure.prerequisites, *procedure.expected_outcomes)
+        )
+        if metadata_present and procedure.metadata_evidence_refs:
+            placeholders = [r for r in procedure.metadata_evidence_refs if r in timeline_by_id and timeline_by_id[r].is_placeholder()]
+            non_placeholders = [r for r in procedure.metadata_evidence_refs if r in timeline_by_id and not timeline_by_id[r].is_placeholder()]
+            if placeholders and not non_placeholders:
+                errors.append(f"{procedure.id}: only placeholder evidence supports procedure metadata")
 
     # 6. generated content cannot set reviewed/HUMAN_REVIEWED.
     for section in document.sections:

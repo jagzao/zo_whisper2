@@ -378,3 +378,215 @@ def test_validation_report_persisted_and_source_mutation_fails(tmp_path, tmp_pat
     persisted = json.loads(path.read_text(encoding="utf-8"))
     assert persisted["valid"] is True
     assert persisted["claimCount"] == 0
+
+
+def test_delta005_section_summary_requires_block_local_evidence(tmp_path):
+    from transcript_pipeline.documentation.synthesis import _validate_fragment_shape
+
+    _, timeline = _timeline(tmp_path)
+    evidence_id = timeline.facts()[0].evidence_id
+    fragment = {"sections": [{
+        "sectionType": "CONCEPT", "title": "Context", "summary": "Grounded context.",
+        "claims": [{"text": "A grounded claim.", "evidenceIds": [evidence_id]}],
+    }]}
+    valid, error, _ = _validate_fragment_shape(json.dumps(fragment), {evidence_id})
+    assert not valid
+    assert error == "section summary without evidence ids"
+
+    fragment["sections"][0]["evidenceIds"] = [evidence_id]
+    valid, _, _ = _validate_fragment_shape(json.dumps(fragment), {"E-OTHER"})
+    assert not valid
+
+    valid, _, _ = _validate_fragment_shape(json.dumps(fragment), {evidence_id})
+    assert valid
+    service = SynthesisService(MockKTSynthesisProvider(), MockAllowAllGuard(), model_name="m")
+    merged = service._merge_fragments([fragment], timeline, "REFERENCE", 1).document
+    section = merged.sections[0]
+    assert section.evidence_refs == (evidence_id,)
+    assert validate_knowledge_document(merged, timeline).valid
+
+
+def test_delta005_final_grounding_rejects_summary_without_refs_and_placeholder_only(tmp_path):
+    _, timeline = _timeline(tmp_path)
+    document = KnowledgeDocument(
+        documentation_mode="REFERENCE", title="t",
+        sections=[KnowledgeSection(
+            id="section-01", section_type="CONCEPT", title="Context",
+            summary="Unsupported context.", evidence_refs=(),
+        )],
+        evidence_index=[ref.to_ref() for ref in timeline.items],
+    )
+    report = validate_knowledge_document(document, timeline)
+    assert not report.valid
+    assert any("section summary without evidence refs" in error for error in report.errors)
+
+    placeholder = next((item for item in timeline.items if item.is_placeholder()), None)
+    if placeholder is not None:
+        document.sections[0] = KnowledgeSection(
+            id="section-01", section_type="CONCEPT", title="Context",
+            summary="Unsupported context.", evidence_refs=(placeholder.evidence_id,),
+            summary_evidence_refs=(placeholder.evidence_id,),
+        )
+        report = validate_knowledge_document(document, timeline)
+        assert any("only placeholder evidence supports a factual summary" in error for error in report.errors)
+
+    evidence_id = timeline.facts()[0].evidence_id
+    document.sections = []
+    document.procedures = [SynthesizedProcedure(
+        id="procedure-001", title="Process", purpose="Ungrounded purpose.",
+        steps=(SynthesizedStep(order=1, instruction="A step.", evidence_refs=(evidence_id,)),),
+    )]
+    report = validate_knowledge_document(document, timeline)
+    assert any("procedure metadata without evidence refs" in error for error in report.errors)
+
+
+def test_delta005_procedure_metadata_requires_refs_and_merges_deterministically(tmp_path):
+    from transcript_pipeline.documentation.synthesis import _validate_fragment_shape
+
+    _, timeline = _timeline(tmp_path)
+    evidence_id = timeline.facts()[0].evidence_id
+    procedure = {
+        "title": "Process", "purpose": "Why it is used.", "prerequisites": ["Access"],
+        "expectedOutcomes": ["A completed task."],
+        "steps": [{"instruction": "Perform the task.", "evidenceIds": [evidence_id]}],
+    }
+    base = {"sections": [], "procedures": [procedure]}
+    valid, error, _ = _validate_fragment_shape(json.dumps(base), {evidence_id})
+    assert not valid
+    assert error == "procedure metadata without evidence ids"
+
+    procedure["evidenceIds"] = [evidence_id]
+    valid, _, _ = _validate_fragment_shape(json.dumps(base), {evidence_id})
+    assert valid
+    service = SynthesisService(MockKTSynthesisProvider(), MockAllowAllGuard(), model_name="m")
+    merged = service._merge_fragments([base], timeline, "TUTORIAL", 1).document
+    assert merged.procedures[0].evidence_refs == (evidence_id,)
+    assert validate_knowledge_document(merged, timeline).valid
+
+    for field, value in (("prerequisites", ["Access"]), ("expectedOutcomes", ["Done."])):
+        candidate = dict(procedure, purpose="", prerequisites=[], expectedOutcomes=[])
+        candidate[field] = value
+        candidate.pop("evidenceIds")
+        valid, _, _ = _validate_fragment_shape(
+            json.dumps({"sections": [], "procedures": [candidate]}), {evidence_id}
+        )
+        assert not valid
+
+
+def test_delta005_grounded_summary_procedure_and_exec_summary_render_with_refs(tmp_path):
+    from transcript_pipeline.documentation.knowledge_models import executive_summary_evidence_refs
+    from transcript_pipeline.documentation.semantic_manual_writer import _render_markdown
+
+    frames_dir, timeline = _timeline(tmp_path)
+    evidence_id = timeline.facts()[0].evidence_id
+    section = KnowledgeSection(
+        id="section-01", section_type="EXECUTIVE_SUMMARY", title="Overview",
+        summary="Grounded overview.", evidence_refs=(evidence_id,), summary_evidence_refs=(evidence_id,),
+    )
+    procedure = SynthesizedProcedure(
+        id="procedure-001", title="Grounded process", purpose="Why this process is used.",
+        prerequisites=("Approved access",),
+        steps=(SynthesizedStep(order=1, instruction="Complete the action.", evidence_refs=(evidence_id,)),),
+        expected_outcomes=("The task is complete.",), evidence_refs=(evidence_id,),
+        metadata_evidence_refs=(evidence_id,),
+    )
+    document = KnowledgeDocument(
+        documentation_mode="TUTORIAL", title="Grounding", executive_summary=section.summary,
+        sections=[section], procedures=[procedure],
+        evidence_index=[item.to_ref() for item in timeline.items],
+    )
+    assert executive_summary_evidence_refs(document) == (evidence_id,)
+    markdown = _render_markdown(document, timeline, {})
+    assert f"Grounded overview. [{evidence_id} @" in markdown
+    assert f"Procedure evidence:** [{evidence_id} @" in markdown
+
+    from transcript_pipeline.documentation.models import DocumentationSource
+    from transcript_pipeline.documentation.screenshots import ScreenshotSelection
+    from transcript_pipeline.documentation.semantic_pdf_writer import write_semantic_manual_pdf
+    pdf_path = write_semantic_manual_pdf(
+        frames_dir / "manual", document, timeline, ScreenshotSelection([]),
+        DocumentationSource("source.mp4", timeline.duration, "en", "test", "now"),
+    )
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        pytest.skip("pypdf is not installed")
+    pdf_text = "\n".join(page.extract_text() or "" for page in PdfReader(str(pdf_path)).pages)
+    assert evidence_id in pdf_text
+    assert "Approved access" in pdf_text
+    assert "The task is complete." in pdf_text
+
+
+def test_delta005_executive_summary_never_uses_ungrounded_summary(tmp_path):
+    from transcript_pipeline.documentation.synthesis import _executive_summary
+
+    ungrounded = KnowledgeSection(
+        id="section-01", section_type="EXECUTIVE_SUMMARY", title="Overview",
+        summary="Untracked factual prose.",
+    )
+    assert _executive_summary([ungrounded]) == ""
+    _, timeline = _timeline(tmp_path)
+    invalid_document = KnowledgeDocument(
+        documentation_mode="REFERENCE", title="t", executive_summary="Untracked factual prose.",
+        sections=[ungrounded], evidence_index=[item.to_ref() for item in timeline.items],
+    )
+    report = validate_knowledge_document(invalid_document, timeline)
+    assert any("executive summary has no grounded" in error for error in report.errors)
+
+    evidence_id = timeline.facts()[0].evidence_id
+    claim = KnowledgeClaim(id="claim-001", text="Grounded claim.", evidence_refs=(evidence_id,))
+    grounded_claims = KnowledgeSection(
+        id="section-02", section_type="EXECUTIVE_SUMMARY", title="Overview", claims=(claim,),
+    )
+    assert _executive_summary([grounded_claims]) == "Grounded claim."
+
+
+def test_delta005_semantic_chunks_and_knowledge_package_keep_prose_refs(tmp_path):
+    from transcript_pipeline.documentation.knowledge_models import executive_summary_evidence_refs
+    from transcript_pipeline.documentation.semantic_package import _build_chunks
+    from transcript_pipeline.documentation.models import DocumentationSource
+    from transcript_pipeline.knowledge.package_builder import build_knowledge_package_from_document
+
+    frames_dir, timeline = _timeline(tmp_path)
+    evidence_id = timeline.facts()[0].evidence_id
+    section = KnowledgeSection(
+        id="section-01", section_type="EXECUTIVE_SUMMARY", title="Overview",
+        summary="Grounded summary.", evidence_refs=(evidence_id,), summary_evidence_refs=(evidence_id,),
+    )
+    procedure = SynthesizedProcedure(
+        id="procedure-001", title="Process", purpose="Grounded purpose.",
+        prerequisites=("Access",),
+        steps=(SynthesizedStep(order=1, instruction="Run task.", evidence_refs=(evidence_id,)),),
+        expected_outcomes=("Done.",), evidence_refs=(evidence_id,), metadata_evidence_refs=(evidence_id,),
+    )
+    document = KnowledgeDocument(
+        documentation_mode="TUTORIAL", title="Knowledge", executive_summary=section.summary,
+        sections=[section], procedures=[procedure],
+        evidence_index=[item.to_ref() for item in timeline.items],
+    )
+    chunks = _build_chunks(
+        document, timeline, DocumentationSource("source.mp4", timeline.duration, "en", "test", "now"),
+        "PROJECT", "acme", "TUTORIAL", "GUIDED", 4000,
+    )
+    summary_chunk = next(chunk for chunk in chunks if chunk["id"].startswith("section-"))
+    procedure_chunk = next(chunk for chunk in chunks if chunk["metadata"]["sectionType"] == "PROCEDURE")
+    assert evidence_id in summary_chunk["metadata"]["evidenceRefs"]
+    assert evidence_id in procedure_chunk["metadata"]["evidenceRefs"]
+    assert "Grounded purpose." in procedure_chunk["text"]
+    assert "Prerequisite: Access" in procedure_chunk["text"]
+    assert "Expected outcome: Done." in procedure_chunk["text"]
+    assert executive_summary_evidence_refs(document) == (evidence_id,)
+    package = build_knowledge_package_from_document(
+        knowledge_document=document,
+        evidence_timeline=timeline,
+        project_config={"second_brain": {
+            "enabled": True, "scope": "PROJECT", "project_id": "acme",
+            "domain": "second-brain/acme", "default_artifact_type": "TUTORIAL",
+            "default_actionability": "GUIDED",
+        }},
+    )
+    assert package is not None
+    knowledge = package.to_dict()["knowledge"]
+    assert knowledge["summaryEvidenceRefs"] == [evidence_id]
+    assert knowledge["sections"][0]["summaryEvidenceRefs"] == [evidence_id]
+    assert knowledge["procedures"][0]["metadataEvidenceRefs"] == [evidence_id]

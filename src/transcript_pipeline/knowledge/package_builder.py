@@ -299,6 +299,7 @@ def build_knowledge_package_from_document(
     Returns None when publishing is disabled (same no-op contract as the
     legacy builder). PROJECT/GLOBAL/policy/outbox behavior is preserved.
     """
+    from transcript_pipeline.documentation.knowledge_models import executive_summary_evidence_refs
     from transcript_pipeline.documentation.modes import ARTIFACT_TYPE_FOR_MODE
 
     sb = resolve_second_brain(project_config)
@@ -366,8 +367,7 @@ def build_knowledge_package_from_document(
             )
             for step in procedure.steps
         ]
-        procedures.append(
-            Procedure(
+        procedure_payload = Procedure(
                 procedure_id=f"{knowledge_id}:proc:{procedure.id}",
                 knowledge_id=knowledge_id,
                 version=version,
@@ -379,12 +379,14 @@ def build_knowledge_package_from_document(
                 preconditions=list(procedure.prerequisites),
                 expected_outcomes=list(procedure.expected_outcomes),
             ).to_dict()
-        )
+        procedure_payload.update({
+            "purpose": procedure.purpose,
+            "evidenceRefs": list(procedure.evidence_refs),
+            "metadataEvidenceRefs": list(procedure.metadata_evidence_refs),
+        })
+        procedures.append(procedure_payload)
 
-    summary = knowledge_document.executive_summary or (
-        f"{len(knowledge_document.sections)} semantic sections synthesized from "
-        f"{knowledge_document.source}."
-    )
+    summary = knowledge_document.executive_summary
 
     package = KnowledgePackage(
         package_id="",
@@ -420,9 +422,11 @@ def build_knowledge_package_from_document(
         knowledge={
             "title": knowledge_document.title,
             "summary": summary,
+            "summaryEvidenceRefs": list(executive_summary_evidence_refs(knowledge_document)),
             "tags": sorted({tag for section in knowledge_document.sections for claim in section.claims for tag in claim.tags}),
             "glossary": [
-                {"term": entry.term, "definition": entry.definition}
+                {"term": entry.term, "definition": entry.definition,
+                 "evidenceRefs": list(entry.evidence_refs)}
                 for entry in knowledge_document.glossary
             ],
             "sections": [section.to_dict() for section in knowledge_document.sections],

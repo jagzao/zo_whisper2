@@ -19,7 +19,7 @@ from typing import Any
 
 from transcript_pipeline.documentation.evidence import EvidenceTimeline
 from transcript_pipeline.documentation.evidence_writer import format_timestamp
-from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument
+from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument, executive_summary_evidence_refs
 from transcript_pipeline.documentation.models import DocumentationSource
 from transcript_pipeline.documentation.screenshots import ScreenshotSelection
 
@@ -136,7 +136,8 @@ def _render_markdown(
 
     if document.executive_summary:
         lines.append("## Executive Summary\n\n")
-        lines.append(f"{document.executive_summary}\n\n")
+        refs = " ".join(_evidence_ref_label(r, timeline) for r in executive_summary_evidence_refs(document))
+        lines.append(f"{document.executive_summary} {refs}\n\n")
 
     for section in document.sections:
         if section.section_type == "EXECUTIVE_SUMMARY" and not section.claims and not section.summary:
@@ -144,7 +145,8 @@ def _render_markdown(
         heading = section.title or section.section_type.replace("_", " ").title()
         lines.append(f"## {heading}\n\n")
         if section.summary:
-            lines.append(f"{section.summary}\n\n")
+            refs = " ".join(_evidence_ref_label(r, timeline) for r in section.summary_evidence_refs)
+            lines.append(f"{section.summary} {refs}\n\n")
         for claim in section.claims:
             refs = " ".join(_evidence_ref_label(r, timeline) for r in claim.evidence_refs)
             badge = " ✓" if claim.verification_status == "HUMAN_REVIEWED" else ""
@@ -173,6 +175,9 @@ def _render_markdown(
             for outcome in procedure.expected_outcomes:
                 lines.append(f"- {outcome}\n")
             lines.append("\n")
+        if procedure.metadata_evidence_refs:
+            refs = " ".join(_evidence_ref_label(r, timeline) for r in procedure.metadata_evidence_refs)
+            lines.append(f"**Procedure evidence:** {refs}\n\n")
         for (section_id, _), asset_name in asset_names.items():
             if section_id == procedure.id:
                 lines.append(f"![{procedure.id}](assets/{asset_name})\n\n")

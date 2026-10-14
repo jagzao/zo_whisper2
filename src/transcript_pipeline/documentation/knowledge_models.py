@@ -70,6 +70,7 @@ class KnowledgeSection:
     evidence_refs: tuple[str, ...] = ()
     screenshot_candidates: tuple[str, ...] = ()
     order: int = 0
+    summary_evidence_refs: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -79,6 +80,7 @@ class KnowledgeSection:
             "summary": self.summary,
             "claims": [claim.to_dict() for claim in self.claims],
             "evidenceRefs": list(self.evidence_refs),
+            "summaryEvidenceRefs": list(self.summary_evidence_refs),
             "screenshotCandidates": list(self.screenshot_candidates),
             "order": self.order,
         }
@@ -92,6 +94,7 @@ class KnowledgeSection:
             summary=str(data.get("summary", "")),
             claims=tuple(KnowledgeClaim.from_dict(c) for c in data.get("claims", [])),
             evidence_refs=tuple(data.get("evidenceRefs", [])),
+            summary_evidence_refs=tuple(data.get("summaryEvidenceRefs", [])),
             screenshot_candidates=tuple(data.get("screenshotCandidates", [])),
             order=int(data.get("order", 0)),
         )
@@ -135,6 +138,7 @@ class SynthesizedProcedure:
     expected_outcomes: tuple[str, ...] = ()
     evidence_refs: tuple[str, ...] = ()
     actionability: str = "GUIDED"
+    metadata_evidence_refs: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -145,6 +149,7 @@ class SynthesizedProcedure:
             "steps": [step.to_dict() for step in self.steps],
             "expectedOutcomes": list(self.expected_outcomes),
             "evidenceRefs": list(self.evidence_refs),
+            "metadataEvidenceRefs": list(self.metadata_evidence_refs),
             "actionability": self.actionability,
         }
 
@@ -158,6 +163,7 @@ class SynthesizedProcedure:
             steps=tuple(SynthesizedStep.from_dict(s) for s in data.get("steps", [])),
             expected_outcomes=tuple(data.get("expectedOutcomes", [])),
             evidence_refs=tuple(data.get("evidenceRefs", [])),
+            metadata_evidence_refs=tuple(data.get("metadataEvidenceRefs", [])),
             actionability=str(data.get("actionability", "GUIDED")),
         )
 
@@ -224,10 +230,12 @@ class KnowledgeDocument:
         refs: set[str] = set()
         for section in self.sections:
             refs.update(section.evidence_refs)
+            refs.update(section.summary_evidence_refs)
             for claim in section.claims:
                 refs.update(claim.evidence_refs)
         for procedure in self.procedures:
             refs.update(procedure.evidence_refs)
+            refs.update(procedure.metadata_evidence_refs)
             for step in procedure.steps:
                 refs.update(step.evidence_refs)
         return refs
@@ -292,6 +300,18 @@ class KnowledgeDocument:
         payload.pop("documentId", None)
         canonical = json.dumps(payload, sort_keys=True, ensure_ascii=False)
         return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+
+def executive_summary_evidence_refs(document: KnowledgeDocument) -> tuple[str, ...]:
+    for section in document.sections:
+        if section.section_type != "EXECUTIVE_SUMMARY":
+            continue
+        if section.summary and document.executive_summary == section.summary:
+            return section.summary_evidence_refs
+        grounded_claims = [claim.text for claim in section.claims if claim.evidence_refs]
+        if grounded_claims and document.executive_summary == " ".join(grounded_claims):
+            return tuple(dict.fromkeys(ref for claim in section.claims for ref in claim.evidence_refs))
+    return ()
 
 
 def coerce_generated_claim(claim: KnowledgeClaim) -> KnowledgeClaim:

@@ -30,7 +30,7 @@ from reportlab.platypus import (
 
 from transcript_pipeline.documentation.evidence import EvidenceTimeline
 from transcript_pipeline.documentation.evidence_writer import format_timestamp
-from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument
+from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument, executive_summary_evidence_refs
 from transcript_pipeline.documentation.models import DocumentationSource
 from transcript_pipeline.documentation.screenshots import ScreenshotSelection
 
@@ -213,6 +213,9 @@ def write_semantic_manual_pdf(
 
     if document.executive_summary:
         story.append(_summary_box(document.executive_summary, styles))
+        summary_refs = _evidence_refs_line(executive_summary_evidence_refs(document), timeline)
+        if summary_refs:
+            story.append(Paragraph(summary_refs, styles["evidence_ref"]))
         story.append(Spacer(1, 4 * mm))
 
     picks_by_section: dict[str, list[Path]] = {}
@@ -226,6 +229,9 @@ def write_semantic_manual_pdf(
         head_block: list = [Paragraph(heading, styles["heading"])]
         if section.summary:
             head_block.append(Paragraph(escape(section.summary), styles["body"]))
+            refs = _evidence_refs_line(section.summary_evidence_refs, timeline)
+            if refs:
+                head_block.append(Paragraph(refs, styles["evidence_ref"]))
         story.append(KeepTogether(head_block))
         for claim in section.claims:
             refs = _evidence_refs_line(claim.evidence_refs, timeline)
@@ -242,10 +248,19 @@ def write_semantic_manual_pdf(
                 story.append(Spacer(1, 2 * mm))
 
     for procedure in document.procedures:
-        story.append(KeepTogether([
+        procedure_header = [
             Paragraph(f"Procedure: {escape(procedure.title)}", styles["heading"]),
             Paragraph(escape(procedure.purpose), styles["body"]) if procedure.purpose else Spacer(1, 1),
-        ]))
+        ]
+        if procedure.metadata_evidence_refs:
+            procedure_header.append(Paragraph(
+                _evidence_refs_line(procedure.metadata_evidence_refs, timeline), styles["evidence_ref"]
+            ))
+        if procedure.prerequisites:
+            procedure_header.append(Paragraph(
+                "Prerequisites: " + escape("; ".join(procedure.prerequisites)), styles["body"]
+            ))
+        story.append(KeepTogether(procedure_header))
         for step in procedure.steps:
             refs = _evidence_refs_line(step.evidence_refs, timeline)
             story.append(Paragraph(
@@ -254,6 +269,10 @@ def write_semantic_manual_pdf(
                 styles["claim"],
             ))
         story.append(Spacer(1, 3 * mm))
+        if procedure.expected_outcomes:
+            story.append(Paragraph(
+                "Expected outcomes: " + escape("; ".join(procedure.expected_outcomes)), styles["body"]
+            ))
         for path in picks_by_section.get(procedure.id, []):
             image = _make_image(path)
             if image is not None:

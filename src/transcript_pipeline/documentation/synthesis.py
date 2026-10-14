@@ -65,6 +65,7 @@ Return ONLY a JSON object (no Markdown, no code fences) with this exact shape:
       "sectionType": "<one of: {section_types}>",
       "title": "short semantic title",
       "summary": "1-3 sentence synthesis",
+      "evidenceIds": ["E-001"],
       "claims": [
         {{"text": "factual claim grounded in this block", "evidenceIds": ["E-001"], "tags": ["optional"]}}
       ]
@@ -75,6 +76,7 @@ Return ONLY a JSON object (no Markdown, no code fences) with this exact shape:
       "title": "procedure title",
       "purpose": "why/when to perform it",
       "prerequisites": ["..."],
+      "evidenceIds": ["E-002"],
       "steps": [{{"instruction": "one ordered action", "evidenceIds": ["E-002"]}}],
       "expectedOutcomes": ["..."]
     }}
@@ -83,7 +85,7 @@ Return ONLY a JSON object (no Markdown, no code fences) with this exact shape:
 }}
 
 Rules (violations make the output invalid):
-- Every claim and every procedure step MUST cite at least one evidenceId from this block's evidence ids: {block_evidence_ids}.
+- Every non-empty section summary, claim, non-empty procedure purpose/prerequisite/outcome, glossary definition, and procedure step MUST cite evidenceIds from this block's evidence ids: {block_evidence_ids}.
 - Only produce "procedures" when this block contains explicit ORDERED operational actions. Otherwise use an empty list.
 - Preferred section types for mode {mode}: {preferred_sections}.
 - Do NOT invent facts, timestamps, names, or section types.
@@ -311,9 +313,11 @@ class SynthesisService:
                     title=str(raw_section.get("title", "")).strip() or f"Section {section_no}",
                     summary=str(raw_section.get("summary", "")).strip(),
                     claims=claims,
-                    evidence_refs=tuple(
-                        ref for claim in claims for ref in claim.evidence_refs
+                    evidence_refs=_unique_refs(
+                        raw_section.get("evidenceIds", []),
+                        *(claim.evidence_refs for claim in claims),
                     ),
+                    summary_evidence_refs=_unique_refs(raw_section.get("evidenceIds", [])),
                     order=section_no,
                 ))
             for raw_procedure in fragment.get("procedures", []) or []:
@@ -334,7 +338,11 @@ class SynthesisService:
                     prerequisites=tuple(str(p) for p in raw_procedure.get("prerequisites", [])),
                     steps=tuple(steps),
                     expected_outcomes=tuple(str(o) for o in raw_procedure.get("expectedOutcomes", [])),
-                    evidence_refs=tuple(step_evidence for step in steps for step_evidence in step.evidence_refs),
+                    evidence_refs=_unique_refs(
+                        raw_procedure.get("evidenceIds", []),
+                        *(step.evidence_refs for step in steps),
+                    ),
+                    metadata_evidence_refs=_unique_refs(raw_procedure.get("evidenceIds", [])),
                 ))
             for raw_entry in fragment.get("glossary", []) or []:
                 glossary.append(GlossaryEntry(
@@ -401,10 +409,12 @@ def _parse_claims(raw_claims: list[Any], start_no: int) -> tuple[int, tuple[Know
 
 def _executive_summary(sections: list[KnowledgeSection]) -> str:
     for section in sections:
-        if section.section_type == "EXECUTIVE_SUMMARY" and (section.summary or section.claims):
-            if section.summary:
+        if section.section_type == "EXECUTIVE_SUMMARY":
+            if section.summary and section.summary_evidence_refs:
                 return section.summary
-            return " ".join(claim.text for claim in section.claims)
+            grounded_claims = [claim.text for claim in section.claims if claim.evidence_refs]
+            if grounded_claims:
+                return " ".join(grounded_claims)
     return ""
 
 
@@ -435,10 +445,16 @@ def _validate_fragment_shape(
     for section in data.get("sections", []):
         if not isinstance(section, dict) or section.get("sectionType") not in SECTION_TYPES:
             return False, "invalid section", coerced
-        if not set(section).issubset({"sectionType", "title", "summary", "claims"}):
+        if not set(section).issubset({"sectionType", "title", "summary", "evidenceIds", "claims"}):
             return False, "unknown section fields", coerced
         if not isinstance(section.get("claims"), list):
             return False, "section claims must be an array", coerced
+        summary = str(section.get("summary", "")).strip()
+        section_ids = section.get("evidenceIds", [])
+        if summary and not _valid_ids(section_ids):
+            return False, "section summary without evidence ids", coerced
+        if not _valid_optional_ids(section_ids):
+            return False, "invalid section evidence ids", coerced
         for claim in section["claims"]:
             if not isinstance(claim, dict) or not str(claim.get("text", "")).strip() or not _valid_ids(claim.get("evidenceIds")):
                 return False, "invalid claim", coerced
@@ -449,10 +465,20 @@ def _validate_fragment_shape(
     for procedure in data.get("procedures", []):
         if not isinstance(procedure, dict) or not isinstance(procedure.get("steps"), list):
             return False, "invalid procedure", coerced
-        if not set(procedure).issubset({"title", "purpose", "prerequisites", "steps", "expectedOutcomes"}):
+        if not set(procedure).issubset({"title", "purpose", "prerequisites", "evidenceIds", "steps", "expectedOutcomes"}):
             return False, "unknown procedure fields", coerced
         if any(not isinstance(procedure.get(key, []), list) for key in ("prerequisites", "expectedOutcomes")):
             return False, "procedure lists have invalid shape", coerced
+        procedure_ids = procedure.get("evidenceIds", [])
+        metadata_present = bool(str(procedure.get("purpose", "")).strip()) or any(
+            str(value).strip()
+            for key in ("prerequisites", "expectedOutcomes")
+            for value in procedure.get(key, [])
+        )
+        if metadata_present and not _valid_ids(procedure_ids):
+            return False, "procedure metadata without evidence ids", coerced
+        if not _valid_optional_ids(procedure_ids):
+            return False, "invalid procedure evidence ids", coerced
         for step in procedure["steps"]:
             if not isinstance(step, dict) or not str(step.get("instruction", "")).strip() or not _valid_ids(step.get("evidenceIds")):
                 return False, "invalid procedure step", coerced
@@ -496,6 +522,14 @@ def _validate_fragment_shape(
 
 def _valid_ids(value: Any) -> bool:
     return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item.strip() for item in value)
+
+
+def _valid_optional_ids(value: Any) -> bool:
+    return isinstance(value, list) and all(isinstance(item, str) and item.strip() for item in value)
+
+
+def _unique_refs(*groups: Any) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(str(ref) for group in groups for ref in group if str(ref).strip()))
 
 
 def _collect_evidence_ids(value: Any) -> set[str]:
