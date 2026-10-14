@@ -23,6 +23,7 @@ class MediaRoot(str, Enum):
     VIDEOS = "videos"
     VIDEO_COMPRESS = "video_compress"
     TRANSCRIPTIONS = "transcriptions"
+    CAPTURE = "capture"
 
 
 class SafePathResolver:

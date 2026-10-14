@@ -42,6 +42,7 @@ DATA_ROOT = Path(os.getenv("ZMI_DATA_ROOT", "") or PROJECT_ROOT).resolve()
 AUDIO_DIR = DATA_ROOT / "audio"
 VIDEOS_DIR = DATA_ROOT / "Videos"
 TRANSCRIPTIONS_DIR = DATA_ROOT / "CarpetaTranscripciones"
+CAPTURE_ROOT = DATA_ROOT / "live-capture"
 FRAMES_DIR = DATA_ROOT / "Frames"
 VIDEO_COMPRESS_DIR = DATA_ROOT / "Video_compress"
 LOG_DIR = DATA_ROOT / "logs"

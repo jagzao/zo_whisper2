@@ -33,6 +33,7 @@ from werkzeug.utils import secure_filename
 
 from transcript_pipeline.config import (
     AUDIO_DIR,
+    CAPTURE_ROOT,
     DATA_ROOT,
     LOG_DIR,
     PROCESSED_FILES_DB,
@@ -79,6 +80,7 @@ RESOLVER = SafePathResolver(
         MediaRoot.VIDEOS: VIDEOS_BASE,
         MediaRoot.VIDEO_COMPRESS: VIDEO_COMPRESS,
         MediaRoot.TRANSCRIPTIONS: TRANSCRIPTIONS_BASE,
+        MediaRoot.CAPTURE: CAPTURE_ROOT,
     }
 )
 
