@@ -186,3 +186,62 @@ def test_resolve_output_container_absolute_under_allowed_root(tmp_path):
         str(target), data_root, container_mode=True, allowed_roots=(allowed,)
     )
     assert resolved == target.resolve()
+
+
+# Documentation V2 configuration tests
+
+def test_documentation_mode_valid():
+    from transcript_pipeline.projects import validate_project
+    project = {
+        "name": "Test",
+        "documentation": {"mode": "KT_SESSION"}
+    }
+    errors = validate_project(project)
+    assert errors == []
+
+
+def test_documentation_mode_invalid():
+    from transcript_pipeline.projects import validate_project
+    project = {
+        "name": "Test",
+        "documentation": {"mode": "INVALID"}
+    }
+    errors = validate_project(project)
+    assert any("mode" in e for e in errors)
+
+
+def test_documentation_synthesis_enabled_boolean():
+    from transcript_pipeline.projects import validate_project
+    project = {
+        "name": "Test",
+        "documentation": {"synthesis_enabled": "yes"}
+    }
+    errors = validate_project(project)
+    assert any("synthesis_enabled" in e for e in errors)
+
+
+def test_documentation_max_screenshots_positive():
+    from transcript_pipeline.projects import validate_project
+    project = {
+        "name": "Test",
+        "documentation": {"max_screenshots": 0}
+    }
+    errors = validate_project(project)
+    assert any("max_screenshots" in e for e in errors)
+
+
+def test_documentation_max_screenshots_per_section_positive():
+    from transcript_pipeline.projects import validate_project
+    project = {
+        "name": "Test",
+        "documentation": {"max_screenshots_per_section": -1}
+    }
+    errors = validate_project(project)
+    assert any("max_screenshots_per_section" in e for e in errors)
+
+
+def test_documentation_block_optional():
+    from transcript_pipeline.projects import validate_project
+    project = {"name": "Test"}
+    errors = validate_project(project)
+    assert errors == []

@@ -304,3 +304,94 @@ def _format_duration(seconds: float) -> str:
 
 def _format_ts(seconds: float) -> str:
     return _format_duration(seconds)
+
+
+# V2 semantic PDF writer
+
+try:
+    from transcript_pipeline.documentation.synthesis_models import KnowledgeDocument, KnowledgeSection
+except ImportError:
+    KnowledgeDocument = None
+    KnowledgeSection = None
+
+
+def write_semantic_pdf(
+    manual_dir: Path,
+    knowledge_document: KnowledgeDocument,
+    frames_dir: Path,
+    screenshot_map: dict[str, str],  # evidence id -> screenshot path
+) -> Path | None:
+    """Write semantic MANUAL.pdf from KnowledgeDocument.
+    
+    Renders semantic sections, executive summary, evidence references.
+    Screenshots are selected and bounded per section.
+    """
+    if KnowledgeDocument is None:
+        raise ImportError("KnowledgeDocument not available")
+    
+    manual_dir.mkdir(parents=True, exist_ok=True)
+    pdf_path = manual_dir / "MANUAL.pdf"
+    styles = _styles()
+    
+    story = []
+    
+    # Title
+    title = knowledge_document.title or "Semantic Documentation"
+    story.append(Paragraph(escape(title), styles["title"]))
+    
+    # Metadata table (simplified)
+    from transcript_pipeline.documentation.models import DocumentationSource
+    source = DocumentationSource(
+        video_name=knowledge_document.source.get("video_name", "unknown"),
+        duration=knowledge_document.source.get("duration", 0.0),
+        language=knowledge_document.source.get("language", "unknown"),
+        extraction_method=knowledge_document.source.get("extraction_method", "unknown"),
+        generated_at=knowledge_document.source.get("generated_at", ""),
+    )
+    story.append(_metadata_table(source, styles))
+    story.append(Spacer(1, 4 * mm))
+    
+    # Executive summary
+    if knowledge_document.executiveSummary:
+        story.append(Paragraph("Executive Summary", styles["heading"]))
+        story.append(Paragraph(escape(knowledge_document.executiveSummary), styles["body"]))
+        story.append(Spacer(1, 4 * mm))
+    
+    # Sections
+    for section in knowledge_document.sections:
+        story.append(Paragraph(escape(section.title), styles["heading"]))
+        story.append(Paragraph(escape(section.summary), styles["body"]))
+        
+        # Claims
+        for claim in section.claims:
+            refs = ", ".join(f"[{ref}]" for ref in claim.evidenceRefs)
+            story.append(Paragraph(f"• {escape(claim.text)} ({refs})", styles["body"]))
+        
+        # Screenshots (up to 2 per section)
+        screenshot_paths = [
+            frames_dir / screenshot_map[ref] for ref in section.screenshotCandidates
+            if ref in screenshot_map
+        ]
+        for path in screenshot_paths[:2]:
+            if path.exists():
+                img = _resize_image(path)
+                if img:
+                    story.append(Spacer(1, 2 * mm))
+                    story.append(img)
+        
+        story.append(Spacer(1, 5 * mm))
+    
+    # Footer
+    doc = SimpleDocTemplate(
+        str(pdf_path),
+        pagesize=_PAGE_SIZE,
+        leftMargin=_MARGIN,
+        rightMargin=_MARGIN,
+        topMargin=_MARGIN,
+        bottomMargin=16 * mm,
+        title=f"Semantic Manual - {title}",
+        author="Zo Media Intelligence",
+    )
+    footer = _footer_callback(title)
+    doc.build(story, onFirstPage=footer, onLaterPages=footer)
+    return pdf_path

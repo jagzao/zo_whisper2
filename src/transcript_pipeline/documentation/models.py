@@ -8,6 +8,7 @@ contract instead of guessing dict keys.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Literal
 
 Confidence = Literal["high", "medium", "low"]
@@ -15,6 +16,18 @@ Confidence = Literal["high", "medium", "low"]
 # presence of `visual_description` (an unverified AI interpretation, kept
 # strictly separate; see US-001 §4.7).
 EvidenceSource = Literal["transcript", "ocr", "transcript_ocr", "none"]
+
+
+class DocumentationMode(str, Enum):
+    """Documentation mode independent of cross-repo KnowledgeArtifactType."""
+    AUTO = "AUTO"
+    TUTORIAL = "TUTORIAL"
+    KT_SESSION = "KT_SESSION"
+    PROCESS_WALKTHROUGH = "PROCESS_WALKTHROUGH"
+    MEETING = "MEETING"
+    ARCHITECTURE = "ARCHITECTURE"
+    INCIDENT = "INCIDENT"
+    REFERENCE = "REFERENCE"
 
 
 @dataclass(frozen=True)

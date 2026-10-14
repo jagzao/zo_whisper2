@@ -18,6 +18,14 @@ from pathlib import Path
 
 from transcript_pipeline.security.exceptions import PathTraversalError
 
+try:
+    from transcript_pipeline.documentation.models import DocumentationMode
+    DOCUMENTATION_MODES = frozenset(m.value for m in DocumentationMode)
+except ImportError:
+    # fallback if models not available (should not happen)
+    DOCUMENTATION_MODES = frozenset({"AUTO", "TUTORIAL", "KT_SESSION", "PROCESS_WALKTHROUGH",
+                                     "MEETING", "ARCHITECTURE", "INCIDENT", "REFERENCE"})
+
 logger = logging.getLogger(__name__)
 
 VALID_HANDLERS = {"client_meeting", "zo", "meeting_dev"}
@@ -92,6 +100,41 @@ def validate_second_brain(project: dict) -> list[str]:
     return errors
 
 
+def validate_documentation(project: dict) -> list[str]:
+    """Validates the optional `documentation` configuration block.
+    
+    Rules (SPEC-ZMI-DOCS-V2-001 §2):
+    - absent -> defaults apply;
+    - mode must be one of DOCUMENTATION_MODES;
+    - synthesis_enabled must be boolean;
+    - max_screenshots must be positive integer;
+    - max_screenshots_per_section must be positive integer.
+    """
+    doc = project.get("documentation")
+    if doc is None:
+        return []
+    
+    errors: list[str] = []
+    if not isinstance(doc, dict):
+        return ["'documentation' must be an object"]
+    
+    mode = doc.get("mode", "AUTO")
+    if mode not in DOCUMENTATION_MODES:
+        errors.append(f"'documentation.mode' must be one of {sorted(DOCUMENTATION_MODES)}")
+    
+    synthesis_enabled = doc.get("synthesis_enabled", True)
+    if not isinstance(synthesis_enabled, bool):
+        errors.append("'documentation.synthesis_enabled' must be a boolean")
+    
+    for field in ("max_screenshots", "max_screenshots_per_section"):
+        val = doc.get(field)
+        if val is not None:
+            if not isinstance(val, int) or val <= 0:
+                errors.append(f"'{field}' must be a positive integer")
+    
+    return errors
+
+
 def validate_project(project: object) -> list[str]:
     """Returns a list of validation error messages ([] if valid).
 
@@ -148,6 +191,7 @@ def validate_project(project: object) -> list[str]:
         errors.append("'corrections' must be an object of string -> string")
 
     errors.extend(validate_second_brain(project))
+    errors.extend(validate_documentation(project))
 
     return errors
 
