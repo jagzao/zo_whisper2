@@ -98,10 +98,10 @@ def write_semantic_manual(
     return metadata
 
 
-def _copy_assets(assets_dir: Path, selection: ScreenshotSelection) -> dict[str, str]:
+def _copy_assets(assets_dir: Path, selection: ScreenshotSelection) -> dict[tuple[str, str], str]:
     """Copies selected source frames into manual/assets as
     `<evidence_id><ext>`. Originals are never touched."""
-    names: dict[str, str] = {}
+    names: dict[tuple[str, str], str] = {}
     for pick in selection.picks:
         dest_name = f"{pick.evidence_id}{pick.source_path.suffix}"
         try:
@@ -121,7 +121,7 @@ def _evidence_ref_label(evidence_id: str, timeline: EvidenceTimeline) -> str:
 def _render_markdown(
     document: KnowledgeDocument,
     timeline: EvidenceTimeline,
-    asset_names: dict[str, str],
+    asset_names: dict[tuple[str, str], str],
 ) -> str:
     lines: list[str] = [f"# {document.title}\n\n"]
     mode_label = document.documentation_mode.replace("_", " ").title()

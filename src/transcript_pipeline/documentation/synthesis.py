@@ -233,8 +233,11 @@ class SynthesisService:
     ) -> tuple[str, list[str], int, int]:
         """One bounded request + at most ONE schema-repair retry (DV2-45/46).
         Returns (raw_json, errors, invocation_count, coerced_review_flags)."""
+        provider = self._provider
+        if provider is None:
+            return "", ["provider_unavailable"], 0, 0
         try:
-            raw = self._provider.generate_summary(
+            raw = provider.generate_summary(
                 user_payload, system_prompt=system_prompt,
                 max_tokens=_MAX_OUTPUT_TOKENS, temperature=0,
             )
@@ -248,7 +251,7 @@ class SynthesisService:
         # Exactly one bounded repair retry, same provider/model.
         repair_prompt = _REPAIR_PROMPT.format(error=error)
         try:
-            raw = self._provider.generate_summary(
+            raw = provider.generate_summary(
                 repair_prompt, system_prompt=system_prompt,
                 max_tokens=_MAX_OUTPUT_TOKENS, temperature=0,
             )

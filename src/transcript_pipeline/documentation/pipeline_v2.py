@@ -127,6 +127,8 @@ def generate_documentation_v2(
 
     if evidence_only or not doc_config["synthesis_enabled"]:
         status = "EVIDENCE_READY" if not doc_config["synthesis_enabled"] else status
+    elif service is None:
+        status = "SYNTHESIS_NOT_AVAILABLE"
     else:
         timeline_identity_before = timeline.content_hash()
         synthesis_result = service.synthesize(timeline, mode, project_config)

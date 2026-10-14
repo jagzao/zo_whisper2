@@ -76,16 +76,17 @@ def main(argv: list[str] | None = None) -> int:
         "pytest": [sys.executable, "-m", "pytest", *tests, "-q"],
         "compile": [sys.executable, "-m", "compileall", "-q", *SOURCE],
         "ruff": [sys.executable, "-m", "ruff", "check", *SOURCE],
+        "pyright": [sys.executable, "-m", "pyright", "--project", "pyproject.toml", *SOURCE],
     }
     started = time.monotonic()
-    with ThreadPoolExecutor(max_workers=min(3, max(1, len(checks)))) as pool:
+    with ThreadPoolExecutor(max_workers=min(4, max(1, len(checks)))) as pool:
         results = list(pool.map(lambda item: run_check(item[0], item[1], log_dir), checks.items()))
     summary = {
         "status": "PASS" if all(item["status"] == "PASS" for item in results) else "FAIL",
         "slice": label,
         "checks": results,
         "duration_seconds": round(time.monotonic() - started, 2),
-        "workers": min(3, len(checks)),
+        "workers": min(4, len(checks)),
         "llm": False,
         "real_media": False,
     }

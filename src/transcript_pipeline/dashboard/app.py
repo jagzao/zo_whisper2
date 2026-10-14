@@ -737,6 +737,8 @@ def api_projects_update() -> Any:
         if errors or not isinstance(updated, dict):
             return jsonify({"ok": False, "error": "; ".join(errors) or "Invalid project"}), 400
         updated_name = updated.get("name")
+        if not isinstance(updated_name, str):
+            return jsonify({"ok": False, "error": "Invalid project name"}), 400
         if updated_name != name and any(p.get("name") == updated_name for p in projects):
             return jsonify({"ok": False, "error": "Project already exists"}), 400
 

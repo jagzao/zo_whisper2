@@ -76,7 +76,7 @@ def _pillow_ahash(path: Path) -> int | None:
     try:
         with _PILImage.open(path) as img:
             gray = img.convert("L").resize((8, 8))
-            pixels = list(gray.getdata())
+        pixels = list(gray.tobytes())
         average = sum(pixels) / len(pixels)
         bits = 0
         for pixel in pixels:
