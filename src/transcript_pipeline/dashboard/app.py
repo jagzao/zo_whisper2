@@ -31,6 +31,7 @@ from urllib.parse import quote, urlparse
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
+from transcript_pipeline.capture.api import create_capture_blueprint
 from transcript_pipeline.config import (
     AUDIO_DIR,
     CAPTURE_ROOT,
@@ -92,6 +93,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
+app.register_blueprint(create_capture_blueprint())
 
 # This dashboard is explicitly localhost-only (SETTINGS.dashboard_host is
 # enforced loopback-only at Settings.from_env() time; with
