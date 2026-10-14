@@ -108,6 +108,28 @@ a step persists `manual/steps.json` and regenerates both bundles immediately
 (`transcript_pipeline.documentation.engine.update_step`/`remove_step`/
 `regenerate_from_steps`).
 
+## Documentation Synthesis V2
+
+Documentation V2 preserves captured evidence separately from derived knowledge.
+Alongside the compatibility `manual/steps.json`, generated frame folders can
+contain `evidence/evidence.jsonl`, `evidence/EVIDENCE_TIMELINE.md`, and
+`evidence/review-queue.json`, plus a grounded semantic `manual/MANUAL.md` and
+`MANUAL.pdf` and section-oriented AI package. Meeting and KT recordings are
+organized by supported topics; they do not become one manual section or RAG
+chunk per frame. See [the V2 guide](docs/architecture/documentation-synthesis-v2.md)
+for modes, privacy behavior, Knowledge Package mapping, and regeneration.
+
+Regenerate V2 from an already processed frames directory without Whisper,
+FFmpeg extraction, OCR, vision, or recompression:
+
+```bat
+python -m transcript_pipeline.documentation.regenerate_v2 "path\to\recording_Frames"
+```
+
+Use `--mode KT_SESSION` for an explicit local override or `--evidence-only` to
+rebuild evidence without synthesis. Synthesis remains subject to the existing
+provider and project privacy rules.
+
 ## Security & Privacy
 
 - **Local by default.** Media and transcript content stay local for the

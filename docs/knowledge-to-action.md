@@ -46,7 +46,14 @@ and is never reused for this feature.
 
 When documentation completes for a project with `second_brain.enabled`, Zo
 writes `ai-package/knowledge-package.json` (and `ai-package/procedure.json`
-for procedural content) next to the existing v1 package outputs:
+for procedural content) next to the existing v1 package outputs. With
+Documentation Synthesis V2, the package derives its title, summary, and
+semantic sections from `KnowledgeDocument`; it does not turn each captured
+frame into a retrieval chunk. KT sessions, meetings, and reference documents
+can correctly publish with `procedures=[]`. A procedure is bridged only when
+the source supports ordered operational actions.
+
+The package retains:
 
 - deterministic identity: same derived content -> identical `packageId`
   (idempotent reprocessing);
@@ -62,10 +69,9 @@ execute -> postcondition -> receipt (enforced in KAV, not here).
 
 ## Raw transcript/media exclusion
 
-The package contains only bounded evidence excerpts (per-step transcript
-excerpts and OCR text, clipped to 1200 chars). Raw video/audio/VTT and whole
-transcripts are never published. The builder fails closed if a forbidden raw
-field ever appears in a package payload.
+The package contains bounded evidence excerpts with evidence references. Raw
+video/audio/VTT and whole transcripts are never published. The builder fails
+closed if a forbidden raw field ever appears in a package payload.
 
 ## Durable outbox and retries
 
