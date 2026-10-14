@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / "artifacts" / "gates"
 
 TESTS = {
-    "A": ["tests/test_documentation_v2_modes_evidence.py", "tests/test_documentation_v2_compaction.py"],
+    "A": ["tests/test_documentation_v2_modes_evidence.py", "tests/test_documentation_v2_compaction.py", "tests/test_documentation_v2_post_review.py"],
     "B": ["tests/test_documentation_v2_synthesis_grounding.py"],
     "C": ["tests/test_documentation_v2_screenshots.py", "tests/test_documentation_v2_manual_package.py"],
     "D": ["tests/test_documentation_v2_knowledge_bridge.py"],

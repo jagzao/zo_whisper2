@@ -202,6 +202,7 @@ def build_evidence_timeline(
     *,
     steps: list[ProceduralStep] | None = None,
     source_media: str = "",
+    frames_dir: Path | None = None,
 ) -> EvidenceTimeline:
     """Builds the EvidenceTimeline from persisted data only.
 
@@ -234,13 +235,57 @@ def build_evidence_timeline(
     seen_mapped_texts: set[str] = set()
     used_any_timestamped = False
 
+    saved_segments: list[dict[str, Any]] = []
+    media_path = str(video_info.get("path", "") or "")
+    segment_candidates = []
+    if media_path:
+        media = Path(media_path)
+        segment_candidates.append(media.parent / f"{media.stem}_segments.json")
+    if frames_dir is not None:
+        stem = Path(source_media or str(video_info.get("name", ""))).stem
+        filename = f"{stem}_segments.json"
+        segment_candidates.extend((frames_dir / filename, frames_dir.parent / filename, frames_dir.parent.parent / filename))
+        try:
+            from transcript_pipeline.config import TRANSCRIPTIONS_DIR
+            segment_candidates.extend((
+                Path(TRANSCRIPTIONS_DIR) / frames_dir.parent.name / filename,
+                Path(TRANSCRIPTIONS_DIR) / frames_dir.parent.parent.name / filename,
+                Path(TRANSCRIPTIONS_DIR) / filename,
+            ))
+        except ImportError:
+            pass
+    for candidate in dict.fromkeys(segment_candidates):
+        try:
+            payload = json.loads(candidate.read_text(encoding="utf-8"))
+            values = payload.get("segments", []) if isinstance(payload, dict) else []
+            saved_segments = [
+                value for value in values
+                if isinstance(value, dict) and str(value.get("text", "")).strip()
+                and value.get("start") is not None and value.get("end") is not None
+            ]
+            if saved_segments:
+                break
+        except (OSError, ValueError, TypeError):
+            continue
+
+    if saved_segments:
+        for segment in saved_segments:
+            raw_entries.append({
+                "start": float(segment["start"]), "end": float(segment["end"]),
+                "transcript": str(segment["text"]).strip(), "ocr": None, "frame": None,
+                "reviewed": False, "provenance": "saved_timestamped_segments",
+                "segment_ids": [str(segment.get("id", segment.get("segment_id"))) ] if segment.get("id", segment.get("segment_id")) is not None else [],
+            })
+        used_any_timestamped = True
+        seen_segment_keys.update(_segment_key(segment) for segment in saved_segments)
+
     for frame in frames:
         frame_file = frame.get("frame_file", "")
         timestamp = float(frame.get("timestamp", 0.0))
         entry = transcription_mapping.get(frame_file, {}) or {}
         step = steps_by_frame.get(frame_file)
 
-        segments = _frame_has_timestamped_segments(entry)
+        segments = [] if saved_segments else _frame_has_timestamped_segments(entry)
         transcript_text = str(entry.get("full_text", "") or "").strip()
         # OCR evidence only from what a previous run already persisted.
         ocr_text = (step.ocr_text if step else None) or None
@@ -278,7 +323,7 @@ def build_evidence_timeline(
                     "reviewed": reviewed,
                     "provenance": "steps.json.ocr_text",
                 })
-        elif transcript_text:
+        elif transcript_text and not saved_segments:
             # 2. frame-mapped segment text without persisted start/end: the
             # frame PTS is real captured alignment, not a fabricated timestamp.
             # The same segment text mapped to several nearby frames is
@@ -335,8 +380,8 @@ def build_evidence_timeline(
             })
 
     fidelity = FIDELITY_TIMESTAMPED_SEGMENTS if used_any_timestamped else FIDELITY_MAPPED_SEGMENTS
-    has_real_evidence = any(not entry.get("placeholder") for entry in raw_entries)
-    if not has_real_evidence and full_transcription:
+    has_transcript = any(entry.get("transcript") for entry in raw_entries)
+    if not has_transcript and full_transcription:
         # 3. untimed full-transcript fallback: honest 0..duration span, no
         # fabricated per-item timestamps (DV2-09). Placeholder frames stay
         # queued for review; they are not fake facts.
@@ -383,6 +428,7 @@ def build_evidence_timeline(
             evidence_source=source,
             source_provenance=str(entry.get("provenance", "")),
             untimed=bool(entry.get("untimed", False)),
+            source_segment_ids=tuple(entry.get("segment_ids", ())),
         )
         items.append(item)
         if item.is_placeholder():

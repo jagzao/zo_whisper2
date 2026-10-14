@@ -121,7 +121,7 @@ def test_dv2_14_free_form_model_response_rejected(tmp_path):
     assert result.status == STATUS_INVALID
     assert result.document is None
     # Original + exactly one repair retry per block.
-    assert len(provider.calls) == 2 * len([b for b in result.errors]) if False else True
+    assert result.invocation_count == len(provider.calls)
     assert result.errors
 
 
@@ -253,15 +253,17 @@ def test_dv2_19_out_of_duration_reference_fails(tmp_path):
 
 # ── DV2-20 last-good ──────────────────────────────────────────────────────
 
-def test_dv2_20_invalid_synthesis_does_not_overwrite_existing_valid_manual(tmp_path):
+def test_dv2_20_invalid_synthesis_does_not_overwrite_existing_valid_manual(tmp_path, monkeypatch):
+    from transcript_pipeline.documentation import pipeline_v2
+    published = []
+    monkeypatch.setattr(pipeline_v2, "_publish_semantic_knowledge", lambda *args, **kwargs: published.append(args) or {"published": False})
     frames_dir = materialize_frames_dir("kt_session", tmp_path)
     good_service = SynthesisService(MockKTSynthesisProvider(), MockAllowAllGuard(), model_name="m")
     first = generate_documentation_v2(
         frames_dir, "acme_kt_session.mp4", project_config=KT_CONFIG, synthesis_service=good_service
     )
     assert first["status"] in ("MANUAL_READY", "EVIDENCE_READY", "PUBLISH_ENQUEUED")
-    if first["status"] == "EVIDENCE_READY":
-        pytest.skip("semantic manual not produced in this environment")
+    assert first["status"] == "MANUAL_READY"
     good_document = (frames_dir / "manual" / "knowledge-document.json").read_text(encoding="utf-8")
 
     bad_service = SynthesisService(MockAlwaysMalformedProvider(), MockAllowAllGuard(), model_name="m")
@@ -269,8 +271,9 @@ def test_dv2_20_invalid_synthesis_does_not_overwrite_existing_valid_manual(tmp_p
         frames_dir, "acme_kt_session.mp4", project_config=KT_CONFIG, synthesis_service=bad_service
     )
     assert second["status"] == STATUS_INVALID
+    assert len(published) == 1, "invalid synthesis must not publish"
     assert (frames_dir / "manual" / "knowledge-document.json").read_text(encoding="utf-8") == good_document
-    assert json.loads((frames_dir / "manual" / "metadata.json").read_text(encoding="utf-8"))["synthesis_status"] != "MANUAL_READY" or True
+    assert json.loads((frames_dir / "manual" / "metadata.json").read_text(encoding="utf-8"))["synthesis_status"] == "MANUAL_READY"
     # The failure is stored as compact evidence, not as a new manual.
     report_path = frames_dir / "manual" / "synthesis-validation.json"
     assert report_path.exists()

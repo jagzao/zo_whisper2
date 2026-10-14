@@ -37,7 +37,7 @@ from transcript_pipeline.documentation.grounding import (
 )
 from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument
 from transcript_pipeline.documentation.models import DocumentationSource
-from transcript_pipeline.documentation.modes import normalize_documentation_config
+from transcript_pipeline.documentation.modes import DOCUMENTATION_MODES, normalize_documentation_config
 from transcript_pipeline.documentation.screenshots import select_screenshots
 from transcript_pipeline.documentation.semantic_manual_writer import write_semantic_manual
 from transcript_pipeline.documentation.semantic_package import write_semantic_ai_package
@@ -76,6 +76,8 @@ def generate_documentation_v2(
     if not mapping_path.exists():
         raise FileNotFoundError(f"frame_mapping.json not found in {frames_dir}")
     mapping_data = json.loads(mapping_path.read_text(encoding="utf-8"))
+    if mode_override is not None and mode_override not in DOCUMENTATION_MODES:
+        raise ValueError(f"invalid DocumentationMode: {mode_override}")
 
     manual_dir = manual_dir or (frames_dir / "manual")
     ai_package_dir = ai_package_dir or (frames_dir / "ai-package")
@@ -97,7 +99,7 @@ def generate_documentation_v2(
     )
 
     # 1-3. Evidence plane.
-    timeline = build_evidence_timeline(mapping_data, steps=steps, source_media=video_name)
+    timeline = build_evidence_timeline(mapping_data, steps=steps, source_media=video_name, frames_dir=frames_dir)
     evidence_paths = write_evidence_outputs(frames_dir, timeline)
 
     # Compatibility evidence source (SPEC §10: manual/steps.json).
@@ -180,6 +182,12 @@ def generate_documentation_v2(
         # Last-good protection: never overwrite a previously valid semantic
         # document with an invalid synthesis.
         knowledge_result = {"published": False, "reason": "synthesis_invalid"}
+        failure_path = manual_dir / "synthesis-validation.json"
+        failure_path.parent.mkdir(parents=True, exist_ok=True)
+        failure_path.write_text(json.dumps({
+            "status": STATUS_INVALID,
+            "errors": synthesis_result.errors if synthesis_result else ["invalid_synthesis"],
+        }, indent=2, ensure_ascii=False), encoding="utf-8")
     else:
         knowledge_result = {"published": False, "reason": f"synthesis_{status.lower()}"}
 

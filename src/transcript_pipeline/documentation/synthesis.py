@@ -151,6 +151,11 @@ class SynthesisService:
             hard_chars=DEFAULT_HARD_BLOCK_CHARS,
             max_blocks=DEFAULT_MAX_BLOCKS,
         ).build()
+        if not compaction.coverage_complete:
+            return SynthesisResult(
+                status=STATUS_INVALID, errors=["input_coverage_exceeded"],
+                provider_type=_provider_type_name(self._provider),
+            )
         if not compaction.blocks:
             return SynthesisResult(
                 status=STATUS_UNAVAILABLE,
@@ -186,13 +191,17 @@ class SynthesisService:
             invocations += used
             coerced += coerced_count
             if block_errors:
-                errors.extend(block_errors)
+                errors.extend(f"block-{block.index}:{error}" for error in block_errors)
                 continue
             try:
                 fragments.append(json.loads(raw))
             except ValueError as e:
                 errors.append(f"block-{block.index}:unparseable:{type(e).__name__}")
 
+        if errors:
+            return SynthesisResult(status=STATUS_INVALID, errors=errors,
+                invocation_count=invocations, provider_type=_provider_type_name(self._provider),
+                model=self._model_name or _provider_model_name(self._provider), coerced_review_flags=coerced)
         if not fragments:
             return SynthesisResult(
                 status=STATUS_INVALID,
@@ -202,7 +211,19 @@ class SynthesisService:
                 coerced_review_flags=coerced,
             )
 
-        document = self._merge_fragments(fragments, evidence_timeline, mode, invocations)
+        try:
+            document = self._merge_fragments(fragments, evidence_timeline, mode, invocations)
+            semantic_units = sum(len(section.claims) for section in document.document.sections)
+            semantic_units += sum(len(step.instruction.strip()) > 0 for procedure in document.document.procedures for step in procedure.steps)
+            semantic_units += len(document.document.glossary)
+            if not semantic_units:
+                return SynthesisResult(status=STATUS_INVALID, errors=["empty_semantic_output"],
+                    invocation_count=invocations, provider_type=_provider_type_name(self._provider),
+                    model=self._model_name or _provider_model_name(self._provider))
+        except Exception as e:  # noqa: BLE001 - malformed nested data is a typed synthesis failure
+            return SynthesisResult(status=STATUS_INVALID, errors=[f"merge:{type(e).__name__}"],
+                invocation_count=invocations, provider_type=_provider_type_name(self._provider),
+                model=self._model_name or _provider_model_name(self._provider))
         return SynthesisResult(
             status=STATUS_OK,
             document=document.document,
@@ -400,6 +421,50 @@ def _validate_fragment_shape(raw: str) -> tuple[bool, str, int]:
     if not isinstance(data, dict):
         return False, "JSON root is not an object", coerced
 
+    allowed_root = {"sections", "procedures", "glossary"}
+    if not set(data).issubset(allowed_root):
+        return False, "unknown root fields", coerced
+    from transcript_pipeline.documentation.modes import SECTION_TYPES
+    for key in allowed_root:
+        if key in data and not isinstance(data[key], list):
+            return False, f"{key} must be an array", coerced
+    for section in data.get("sections", []):
+        if not isinstance(section, dict) or section.get("sectionType") not in SECTION_TYPES:
+            return False, "invalid section", coerced
+        if not set(section).issubset({"sectionType", "title", "summary", "claims"}):
+            return False, "unknown section fields", coerced
+        if not isinstance(section.get("claims"), list):
+            return False, "section claims must be an array", coerced
+        for claim in section["claims"]:
+            if not isinstance(claim, dict) or not str(claim.get("text", "")).strip() or not _valid_ids(claim.get("evidenceIds")):
+                return False, "invalid claim", coerced
+            if not set(claim).issubset({"text", "evidenceIds", "tags", "evidenceConfidence", "verificationStatus", "reviewed", "humanReviewed"}):
+                return False, "unknown claim fields", coerced
+            if "tags" in claim and not isinstance(claim["tags"], list):
+                return False, "claim tags must be an array", coerced
+    for procedure in data.get("procedures", []):
+        if not isinstance(procedure, dict) or not isinstance(procedure.get("steps"), list):
+            return False, "invalid procedure", coerced
+        if not set(procedure).issubset({"title", "purpose", "prerequisites", "steps", "expectedOutcomes"}):
+            return False, "unknown procedure fields", coerced
+        if any(not isinstance(procedure.get(key, []), list) for key in ("prerequisites", "expectedOutcomes")):
+            return False, "procedure lists have invalid shape", coerced
+        for step in procedure["steps"]:
+            if not isinstance(step, dict) or not str(step.get("instruction", "")).strip() or not _valid_ids(step.get("evidenceIds")):
+                return False, "invalid procedure step", coerced
+            if not set(step).issubset({"instruction", "evidenceIds", "order", "semanticAction", "semanticTarget", "reviewed", "humanReviewed", "verificationStatus"}):
+                return False, "unknown procedure step fields", coerced
+    for entry in data.get("glossary", []):
+        if not isinstance(entry, dict) or not str(entry.get("term", "")).strip() or not str(entry.get("definition", "")).strip() or not _valid_ids(entry.get("evidenceIds")):
+            return False, "invalid glossary entry", coerced
+        if not set(entry).issubset({"term", "definition", "evidenceIds"}):
+            return False, "unknown glossary fields", coerced
+    semantic_units = sum(len(section.get("claims", [])) for section in data.get("sections", []) if isinstance(section, dict))
+    semantic_units += sum(len(procedure.get("steps", [])) for procedure in data.get("procedures", []) if isinstance(procedure, dict))
+    semantic_units += len(data.get("glossary", []))
+    if not semantic_units:
+        return False, "empty semantic output", coerced
+
     def _scan(value: Any) -> None:
         nonlocal coerced
         if isinstance(value, dict):
@@ -414,6 +479,10 @@ def _validate_fragment_shape(raw: str) -> tuple[bool, str, int]:
 
     _scan(data)
     return True, "", coerced
+
+
+def _valid_ids(value: Any) -> bool:
+    return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item.strip() for item in value)
 
 
 def _provider_type_name(provider: Any) -> str:

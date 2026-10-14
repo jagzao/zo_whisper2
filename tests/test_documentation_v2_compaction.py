@@ -33,7 +33,7 @@ def test_dv2_11_blocks_preserve_chronology(tmp_path):
     for block in result.blocks:
         assert list(block.evidence_ids) == sorted(
             block.evidence_ids, key=lambda e: int(e.split("-")[1])
-        ) or True  # ids assigned chronologically; order inside block is input order
+        )
     previous_end = -1.0
     for start, end in ranges:
         assert start >= previous_end - 1e-9
@@ -73,9 +73,8 @@ def test_dv2_13_hard_character_and_block_bounds_respected(tmp_path):
     for block in default_result.blocks:
         assert len(block.transcript_text) + len(block.ocr_text) <= DEFAULT_HARD_BLOCK_CHARS
 
-    # Max block count 1 keeps every evidence id (overflow merge).
+    # Max block count 1 reports overflow instead of claiming full coverage.
     single = build_synthesis_blocks(timeline, target_chars=500, hard_chars=800, max_blocks=1).build()
     assert len(single.blocks) == 1
-    covered = set(single.blocks[0].evidence_ids)
-    fact_ids = {item.evidence_id for item in timeline.facts()}
-    assert fact_ids <= covered
+    assert not single.coverage_complete
+    assert single.omitted_evidence_ids

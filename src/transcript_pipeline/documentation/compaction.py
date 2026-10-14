@@ -53,6 +53,9 @@ class CompactionResult:
     blocks: list[SynthesisBlock] = field(default_factory=list)
     dropped_redundant_ocr: int = 0
     truncated: bool = False
+    coverage_complete: bool = True
+    omitted_evidence_ids: list[str] = field(default_factory=list)
+    truncated_transcript: bool = False
 
 
 def _normalize_ocr(text: str) -> str:
@@ -122,6 +125,8 @@ class CompactionBlockBuilder:
         current: list[dict[str, Any]] = []
         current_chars = 0
         truncated = False
+        truncated_transcript = False
+        omitted_transcript_ids: list[str] = []
 
         def _entry_size(entry: dict[str, Any], with_ocr: bool) -> int:
             return len(entry["transcript"]) + (len(entry["ocr"]) if with_ocr else 0) + len(entry["id"]) + 24
@@ -158,6 +163,8 @@ class CompactionBlockBuilder:
                     if size > self.hard_chars:
                         entry = dict(entry, transcript=entry["transcript"][: self.hard_chars - _OCR_REDUCTION_LIMIT - 32] + " …")
                         truncated = True
+                        truncated_transcript = True
+                        omitted_transcript_ids.append(entry["id"])
                         size = _entry_size(entry, with_ocr=True)
                 current.append(entry)
                 current_chars = size
@@ -179,28 +186,14 @@ class CompactionBlockBuilder:
             current_chars += size
         _flush()
 
+        omitted: list[str] = list(omitted_transcript_ids)
         if len(blocks) > self.max_blocks:
-            # Keep the chronologically first blocks; the tail is merged into
-            # the last kept block as truncated OCR-only summary lines so no
-            # evidence id is silently lost.
-            overflow = blocks[self.max_blocks - 1:]
-            kept = blocks[: self.max_blocks - 1]
-            tail_ids: list[str] = []
-            tail_ocr: list[str] = []
-            for block in overflow:
-                tail_ids.extend(block.evidence_ids)
-                if block.ocr_text:
-                    tail_ocr.append(block.ocr_text[:200])
-            kept.append(SynthesisBlock(
-                index=self.max_blocks,
-                timestamp_start=overflow[0].timestamp_start,
-                timestamp_end=overflow[-1].timestamp_end,
-                evidence_ids=tuple(tail_ids),
-                transcript_text="",
-                ocr_text="… (overflow merged, evidence ids retained) " + " ".join(tail_ocr)[:1000],
-                char_count=sum(b.char_count for b in overflow),
-            ))
-            blocks = kept
+            omitted.extend(eid for block in blocks[self.max_blocks:] for eid in block.evidence_ids)
+            blocks = blocks[:self.max_blocks]
             truncated = True
 
-        return CompactionResult(blocks=blocks, dropped_redundant_ocr=dropped, truncated=truncated)
+        return CompactionResult(
+            blocks=blocks, dropped_redundant_ocr=dropped, truncated=truncated,
+            coverage_complete=not truncated, omitted_evidence_ids=omitted,
+            truncated_transcript=truncated_transcript,
+        )

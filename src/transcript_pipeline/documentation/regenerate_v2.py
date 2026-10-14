@@ -25,6 +25,7 @@ typed status.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import sys
 from collections.abc import Callable
@@ -55,6 +56,7 @@ def default_upstream_guard() -> GuardMap:
         "transcript_pipeline.documentation.engine._ocr_text": _deny,
         "transcript_pipeline.documentation.engine._vision_description": _deny,
         "transcript_pipeline.llm.openai_compatible.OpenAICompatibleProvider.describe_frame": _deny,
+        "transcript_pipeline.llm.openai_compatible.OpenAICompatibleProvider.describe_frame_with_prompt": _deny,
     }
 
 
@@ -64,19 +66,33 @@ def install_upstream_guard(guard: GuardMap) -> list[tuple[Any, Any, str]]:
     cannot be invoked by a path that never imports them."""
     undos: list[tuple[Any, Any, str]] = []
     for dotted, replacement in guard.items():
-        module_name, _, rest = dotted.rpartition(".")
-        obj = sys.modules.get(module_name)
-        if obj is None:
-            continue
-        if "." in rest:
-            parent_name, _, attr = rest.rpartition(".")
-            parent = getattr(obj, parent_name, None)
-            if parent is None:
+        parts = dotted.split(".")
+        obj = None
+        module_end = 0
+        for end in range(len(parts), 0, -1):
+            try:
+                obj = importlib.import_module(".".join(parts[:end]))
+                module_end = end
+                break
+            except ImportError:
                 continue
-        else:
-            parent = obj
-            attr = rest
-        original = getattr(parent, attr, None)
+        if obj is None or module_end == len(parts):
+            if dotted.endswith("describe_frame_with_prompt"):
+                continue
+            raise ImportError(f"cannot resolve upstream guard target: {dotted}")
+        try:
+            for component in parts[module_end:-1]:
+                obj = getattr(obj, component)
+        except AttributeError:
+            if dotted.endswith("describe_frame_with_prompt"):
+                continue
+            raise
+        parent, attr = obj, parts[-1]
+        if not hasattr(parent, attr):
+            if dotted.endswith("describe_frame_with_prompt"):
+                continue
+            raise AttributeError(f"cannot resolve upstream guard target: {dotted}")
+        original = getattr(parent, attr)
         undos.append((parent, original, attr))
         setattr(parent, attr, replacement)
     return undos
@@ -186,6 +202,9 @@ def main(argv: list[str] | None = None) -> int:
             project_config=project_config,
         )
     except FileNotFoundError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+    except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
     except UpstreamWorkAttemptedError as e:
