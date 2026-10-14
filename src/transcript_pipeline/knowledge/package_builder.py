@@ -241,6 +241,220 @@ def procedure_from_package(package: KnowledgePackage) -> Procedure | None:
     )
 
 
+# ── Documentation Synthesis V2 bridge (SPEC §13, PLAN WP-13) ─────────────
+
+def _semantic_source_hash(knowledge_document, evidence_timeline) -> str:
+    """Content identity over the normalized semantic document + the relevant
+    evidence identity. Excludes generatedAt and any produced timestamp:
+    regenerating the same synthesis must NOT mint a new knowledge version
+    (DV2-37); a material semantic/evidence change must (DV2-38)."""
+    from transcript_pipeline.knowledge.identity import canonical_json
+
+    payload = knowledge_document.to_dict()
+    synthesis = dict(payload.get("synthesis", {}))
+    synthesis.pop("generatedAt", None)  # timestamp-independent identity
+    payload["synthesis"] = synthesis
+    payload.pop("documentId", None)
+    payload.pop("evidenceIndex", None)  # derived; identity comes from items below
+    evidence_identity = [
+        {
+            "evidenceId": item.evidence_id,
+            "timestampStart": round(item.timestamp_start, 3),
+            "timestampEnd": round(item.timestamp_end, 3),
+            "evidenceSource": item.evidence_source,
+            "confidence": item.confidence,
+            "frameRef": item.frame_ref,
+            "excerptHash": hashlib.sha256(
+                (item.transcript_excerpt or item.ocr_excerpt or "").encode("utf-8")
+            ).hexdigest()[:16],
+        }
+        for item in evidence_timeline.items
+    ]
+    canonical = canonical_json({"document": payload, "evidence": evidence_identity})
+    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+
+
+def build_knowledge_package_from_document(
+    *,
+    knowledge_document,
+    evidence_timeline,
+    project_config: dict | None,
+    project_match: str = "routing",
+    existing_knowledge: dict[str, Any] | None = None,
+    supersedes_knowledge_id: str | None = None,
+) -> KnowledgePackage | None:
+    """Builds a Knowledge Package v2 from a synthesized KnowledgeDocument.
+
+    Differences vs the legacy all-steps builder (SPEC §13):
+    - title from the synthesized document;
+    - summary from the executive summary;
+    - tags/glossary where applicable;
+    - semantic sections/claims in the knowledge payload;
+    - procedures ONLY from real SynthesizedProcedure objects — there is no
+      all-evidence fake procedure, so KT/meeting/reference content may
+      produce zero procedures (DV2-35);
+    - source identity is timestamp-independent (DV2-37) and increments the
+      knowledge version on material semantic/evidence change (DV2-38).
+
+    Returns None when publishing is disabled (same no-op contract as the
+    legacy builder). PROJECT/GLOBAL/policy/outbox behavior is preserved.
+    """
+    from transcript_pipeline.documentation.modes import ARTIFACT_TYPE_FOR_MODE
+
+    sb = resolve_second_brain(project_config)
+    if sb is None:
+        return None
+
+    scope = sb.get("scope", "PROJECT")
+    project_id = sb.get("project_id")
+    domain = sb.get("domain", "")
+    data_classification = (project_config or {}).get("data_classification", "internal")
+
+    validate_publish_context(
+        scope=scope, project_id=project_id, domain=domain, data_classification=data_classification
+    )
+
+    artifact_type = sb.get("default_artifact_type") or ARTIFACT_TYPE_FOR_MODE.get(
+        knowledge_document.documentation_mode, "REFERENCE"
+    )
+    actionability = sb.get("default_actionability", "REFERENCE")
+    validate_enums(artifact_type=artifact_type, actionability=actionability)
+
+    derived_hash = _semantic_source_hash(knowledge_document, evidence_timeline)
+    source_id = source_id_for(
+        media_name=knowledge_document.source or knowledge_document.title,
+        source_hash=derived_hash,
+        project_match=project_match,
+    )
+
+    knowledge_id = stable_knowledge_id(source_id)
+    version = 1
+    if existing_knowledge:
+        knowledge_id = existing_knowledge.get("knowledgeId", knowledge_id)
+        content_changed = existing_knowledge.get("sourceHash") != derived_hash
+        version = int(existing_knowledge.get("version", 1))
+        if content_changed:
+            version += 1
+
+    by_id = {item.evidence_id: item for item in evidence_timeline.items}
+
+    def _step_evidence(evidence_id: str) -> StepEvidence:
+        item = by_id.get(evidence_id)
+        if item is None:
+            return StepEvidence()
+        return StepEvidence(
+            transcript_excerpt=item.transcript_excerpt,
+            ocr_text=item.ocr_excerpt,
+            frame_ref=item.frame_ref,
+            confidence=item.confidence,
+            reviewed=item.reviewed,
+        )
+
+    # Procedures ONLY from SynthesizedProcedure (no fake all-evidence procedure).
+    procedures = []
+    for procedure in knowledge_document.procedures:
+        steps = [
+            ProcedureStep(
+                id=f"{procedure.id}:step-{step.order:03d}",
+                order=step.order,
+                instruction=step.instruction,
+                timestamp=by_id[step.evidence_refs[0]].timestamp_start
+                if step.evidence_refs and step.evidence_refs[0] in by_id else None,
+                evidence=_step_evidence(step.evidence_refs[0]) if step.evidence_refs else StepEvidence(),
+                semantic_action=step.semantic_action,
+                semantic_target=step.semantic_target,
+            )
+            for step in procedure.steps
+        ]
+        procedures.append(
+            Procedure(
+                procedure_id=f"{knowledge_id}:proc:{procedure.id}",
+                knowledge_id=knowledge_id,
+                version=version,
+                scope=scope,
+                project_id=project_id,
+                actionability=procedure.actionability or actionability,
+                title=procedure.title,
+                steps=steps,
+                preconditions=list(procedure.prerequisites),
+                expected_outcomes=list(procedure.expected_outcomes),
+            ).to_dict()
+        )
+
+    summary = knowledge_document.executive_summary or (
+        f"{len(knowledge_document.sections)} semantic sections synthesized from "
+        f"{knowledge_document.source}."
+    )
+
+    package = KnowledgePackage(
+        package_id="",
+        knowledge_id=knowledge_id,
+        version=version,
+        scope=scope,
+        project_id=project_id,
+        domain=domain,
+        artifact_type=artifact_type,
+        actionability=actionability,
+        data_classification=data_classification,
+        source={
+            "sourceId": source_id,
+            "sourceHash": derived_hash,
+            "mediaName": knowledge_document.source,
+            "mediaType": "video",
+            "durationSeconds": evidence_timeline.duration,
+            "language": evidence_timeline.language,
+            # NOTE: no generatedAt here on purpose — package content identity
+            # is timestamp-independent (DV2-37).
+            "documentationMode": knowledge_document.documentation_mode,
+            "documentId": knowledge_document.document_id,
+            "pipelineVersion": PIPELINE_PRODUCER,
+        },
+        provenance={
+            "producer": PIPELINE_PRODUCER,
+            "projectMatch": project_match,
+            "rawTranscriptPublished": False,
+            "rawMediaPublished": False,
+            "synthesized": True,
+            "reviewStatus": knowledge_document.review_status,
+        },
+        knowledge={
+            "title": knowledge_document.title,
+            "summary": summary,
+            "tags": sorted({tag for section in knowledge_document.sections for claim in section.claims for tag in claim.tags}),
+            "glossary": [
+                {"term": entry.term, "definition": entry.definition}
+                for entry in knowledge_document.glossary
+            ],
+            "sections": [section.to_dict() for section in knowledge_document.sections],
+            "procedures": procedures,
+        },
+        evidence=[
+            {
+                "evidenceId": item.evidence_id,
+                "timestampStart": round(item.timestamp_start, 3),
+                "timestampEnd": round(item.timestamp_end, 3),
+                "evidenceSource": item.evidence_source,
+                "confidence": item.confidence,
+                "reviewed": item.reviewed,
+                "transcriptExcerpt": item.transcript_excerpt,
+                "ocrExcerpt": item.ocr_excerpt,
+                "frameRef": item.frame_ref,
+            }
+            for item in evidence_timeline.facts()
+        ],
+        supersedes_knowledge_id=supersedes_knowledge_id,
+    )
+
+    payload = package.to_dict()
+    payload["packageId"] = package_id_for(payload)
+    package.package_id = payload["packageId"]
+
+    from transcript_pipeline.knowledge.policy import assert_no_forbidden_payload
+
+    assert_no_forbidden_payload(payload)
+    return package
+
+
 def write_package_files(ai_package_dir: Path, package: KnowledgePackage) -> dict[str, Path]:
     """Writes `knowledge-package.json` (+ `procedure.json` when applicable)
     next to the existing v1 package outputs — backward compatible, nothing
