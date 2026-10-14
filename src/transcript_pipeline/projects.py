@@ -149,6 +149,10 @@ def validate_project(project: object) -> list[str]:
 
     errors.extend(validate_second_brain(project))
 
+    from transcript_pipeline.documentation.modes import validate_documentation_block
+
+    errors.extend(validate_documentation_block(project))
+
     return errors
 
 
