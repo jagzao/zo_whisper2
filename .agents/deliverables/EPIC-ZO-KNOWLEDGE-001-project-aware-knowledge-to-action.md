@@ -6,9 +6,9 @@ Turn Zo Media Intelligence output into durable, scoped, provenance-rich Second B
 
 ## Repositories
 
-- Producer: `jagzao/zo_whisper2`
-- Knowledge consumer/storage: `jagzao/zavi`
-- Execution consumer: `jagzao/zavi-kab`
+- Producer: `CONFIDENTIAL_CLIENT/zo_whisper2`
+- Knowledge consumer/storage: `CONFIDENTIAL_CLIENT/zavi`
+- Execution consumer: `CONFIDENTIAL_CLIENT/zavi-kab`
 
 ## Product outcomes
 

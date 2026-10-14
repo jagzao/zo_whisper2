@@ -74,6 +74,11 @@ def test_h05_allowed_run_invokes_configured_heavy_gates():
     data = _read_summary()
     assert data["terminal_state"] == "PASS"
     assert all(g["status"] == "PASS" for g in data["gates"])
+    assert data["required_core_gates"] == {
+        "pytest": "PASS", "security": "PASS", "smoke": "PASS", "e2e": "PASS"
+    }
+    assert data["configured_failures"] == []
+    assert data["not_configured"] == []
 
 
 def test_h06_and_h07_gate_failure_does_not_repair_or_skip_independent_gates():
@@ -113,6 +118,23 @@ def test_all_gates_not_configured_is_blocked_not_pass():
     data = _read_summary()
     assert data["terminal_state"] == "BLOCKED"
     assert all(g["status"] == "NOT_CONFIGURED" for g in data["gates"])
+    assert data["not_configured"] == list(heavy_validation_runner.HEAVY_GATE_ORDER)
+    assert data["required_core_gates"]["pytest"] == "NOT_CONFIGURED"
+
+
+def test_heavy_report_separates_failures_and_not_configured():
+    def gate_result(gate: str) -> int:
+        if gate == "pytest":
+            return 1
+        if gate == "sonar":
+            return 4
+        return 0
+
+    with mock.patch.object(heavy_validation_runner, "_run_gate", side_effect=gate_result):
+        assert heavy_validation_runner.run(available_gib_override=7.5) == 1
+    data = _read_summary()
+    assert data["configured_failures"] == ["pytest"]
+    assert data["not_configured"] == ["sonar"]
 
 
 def test_heavy_order_includes_security_and_smoke():

@@ -261,7 +261,7 @@ Write-RunNote "Codex/OpenAI is not part of this launcher"
 $definitions = @(
     @{
         Name = "zo-media"
-        ExpectedRepo = "jagzao/zo_whisper2"
+        ExpectedRepo = "CONFIDENTIAL_CLIENT/zo_whisper2"
         Preferred = "C:\Dev\Zo\whisper"
         Branch = "feat/zmi-knowledge-to-action-v1"
         Contract = ".agents/deliverables/LOCAL-CODER-ZO-KNOWLEDGE-001.md"
@@ -269,7 +269,7 @@ $definitions = @(
     },
     @{
         Name = "zavi"
-        ExpectedRepo = "jagzao/zavi"
+        ExpectedRepo = "CONFIDENTIAL_CLIENT/zavi"
         Preferred = "C:\Dev\Zo\zavi"
         Branch = "feat/knowledge-scope-publishing-v1"
         Contract = ".agents/delivery/LOCAL-CODER-ZO-KNOWLEDGE-002.md"
@@ -277,7 +277,7 @@ $definitions = @(
     },
     @{
         Name = "zavi-kab"
-        ExpectedRepo = "jagzao/zavi-kab"
+        ExpectedRepo = "CONFIDENTIAL_CLIENT/zavi-kab"
         Preferred = "C:\Dev\Zo\zavi-kab"
         Branch = "feat/knowledge-bound-skills-v1"
         Contract = ".agents/memory/tasks/LOCAL-CODER-ZO-KNOWLEDGE-003.md"

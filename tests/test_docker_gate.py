@@ -853,14 +853,14 @@ def test_source_never_prunes_or_touches_global_state():
         assert forbidden not in code
 
 
-# --- e2e harness env mapping (WP-06, host defaults unchanged) -----------------
+# --- e2e harness env mapping (isolated host fixtures) -------------------------
 
 def test_e2e_defaults_preserve_host_behavior(monkeypatch):
     for var in ("ZMI_BASE_URL", "ZMI_TEST_DATA_ROOT", "ZMI_E2E_EXTERNAL_SERVER"):
         monkeypatch.delenv(var, raising=False)
     mod = importlib.reload(e2e_mod)
     assert mod.DASHBOARD_URL == "http://127.0.0.1:5000"
-    assert mod.TEST_DATA_ROOT == mod.ROOT
+    assert mod.TEST_DATA_ROOT == (mod.ROOT / "artifacts" / "gates" / "e2e-host-data").resolve()
     assert mod.EXTERNAL_SERVER is False
 
 

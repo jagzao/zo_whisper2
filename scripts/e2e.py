@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -21,7 +22,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_URL = os.environ.get("ZMI_BASE_URL", "http://127.0.0.1:5000")
-TEST_DATA_ROOT = Path(os.environ.get("ZMI_TEST_DATA_ROOT", str(ROOT))).resolve()
+HOST_TEST_DATA_ROOT = ROOT / "artifacts" / "gates" / "e2e-host-data"
+TEST_DATA_ROOT = (
+    Path(os.environ.get("ZMI_TEST_DATA_ROOT", str(ROOT))).resolve()
+    if os.environ.get("ZMI_E2E_EXTERNAL_SERVER", "").strip() == "1"
+    else HOST_TEST_DATA_ROOT.resolve()
+)
 REPORT_PATH = TEST_DATA_ROOT / "e2e_report.json"
 EXTERNAL_SERVER = os.environ.get("ZMI_E2E_EXTERNAL_SERVER", "").strip() == "1"
 PYTHON = sys.executable
@@ -29,6 +35,33 @@ PYTHON = sys.executable
 
 def _server_cmd() -> list[str]:
     return [PYTHON, str(ROOT / "dashboard.py")]
+
+
+def prepare_host_data_root(env: dict[str, str]) -> Path:
+    """Reset only the scoped synthetic E2E root and populate it with fixtures."""
+    root = HOST_TEST_DATA_ROOT.resolve()
+    expected = (ROOT / "artifacts" / "gates" / "e2e-host-data").resolve()
+    if HOST_TEST_DATA_ROOT.is_symlink() or root != expected or root == ROOT.resolve():
+        raise RuntimeError("unsafe E2E fixture root")
+    if root.exists():
+        shutil.rmtree(root)
+    root.mkdir(parents=True)
+    fixture_env = dict(env)
+    fixture_env["ZMI_DATA_ROOT"] = str(root)
+    result = subprocess.run(
+        [PYTHON, str(ROOT / "docs" / "assets" / "generate_mock_data.py")],
+        cwd=str(ROOT),
+        env=fixture_env,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=600,
+        check=False,
+    )
+    if result.returncode:
+        raise RuntimeError((result.stderr or result.stdout or "fixture generation failed")[-2000:])
+    return root
 
 
 def _wait_for_server(timeout: float = 30.0) -> bool:
@@ -68,9 +101,21 @@ def _drain_output(stream, sink: list[str]) -> None:
 
 def main() -> int:
     env = os.environ.copy()
-    env["PYTHONPATH"] = str(ROOT / "src")
-    # The spawned dashboard and the smoke test must share one data root;
-    # the default equals the repo root, so host behavior is unchanged.
+    env["PYTHONPATH"] = os.pathsep.join(
+        part for part in (str(ROOT / "src"), env.get("PYTHONPATH", "")) if part
+    )
+    env.update({
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+        "DASHBOARD_HOST": "127.0.0.1",
+        "ZMI_CONTAINER_MODE": "false",
+        "ALLOW_EXTERNAL_LLM": "false",
+        "ZMI_CONFIG_ENV": str(ROOT / "artifacts" / "gates" / "validation-config-does-not-exist.env"),
+    })
+    global TEST_DATA_ROOT, REPORT_PATH
+    if not EXTERNAL_SERVER:
+        TEST_DATA_ROOT = prepare_host_data_root(env)
+    REPORT_PATH = TEST_DATA_ROOT / "e2e_report.json"
     env["ZMI_DATA_ROOT"] = str(TEST_DATA_ROOT)
     env["ZMI_BASE_URL"] = DASHBOARD_URL
     env["ZMI_TEST_DATA_ROOT"] = str(TEST_DATA_ROOT)
@@ -86,6 +131,8 @@ def main() -> int:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             bufsize=1,
         )
         drain_thread = threading.Thread(target=_drain_output, args=(server.stdout, server_output), daemon=True)
@@ -111,6 +158,8 @@ def main() -> int:
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=300,
         )
         ok = result.returncode == 0

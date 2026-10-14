@@ -54,6 +54,15 @@ def _write_summary(payload: dict) -> None:
     SUMMARY_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _gate_summary_fields(results: list[dict]) -> dict[str, object]:
+    statuses = {entry["gate"]: entry["status"] for entry in results}
+    return {
+        "required_core_gates": {name: statuses.get(name, "NOT_RUN") for name in ("pytest", "security", "smoke", "e2e")},
+        "configured_failures": [entry["gate"] for entry in results if entry["status"] == "FAIL"],
+        "not_configured": [entry["gate"] for entry in results if entry["status"] == "NOT_CONFIGURED"],
+    }
+
+
 def _run_gate(gate: str) -> int:
     """Indirection point so tests can stub gate execution without spawning."""
     return gate_runner.run_gate(gate)
@@ -75,6 +84,7 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
                     "terminal_state": "BLOCKED",
                     "ram": {"heavy_validation": ram_gate.MEASUREMENT_ERROR},
                     "gates": [],
+                    **_gate_summary_fields([]),
                     "reason": "RAM measurement failed; cannot authorize heavy validation",
                 }
             )
@@ -93,6 +103,7 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
                 "terminal_state": "DEFERRED_LOW_RAM",
                 "ram": ram_info,
                 "gates": [],
+                **_gate_summary_fields([]),
                 "reason": "available RAM <= 6.0 GiB; deferred to nighttime window",
                 "duration_seconds": round(time.monotonic() - started, 2),
             }
@@ -130,6 +141,7 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
             "terminal_state": terminal_state,
             "ram": ram_info,
             "gates": results,
+            **_gate_summary_fields(results),
             "duration_seconds": round(time.monotonic() - started, 2),
         }
     )

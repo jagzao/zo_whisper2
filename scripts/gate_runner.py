@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -51,11 +52,34 @@ GATES: dict[str, list[str]] = {
     "sonar": ["sonar-scanner"],
     "lint": [sys.executable, "-m", "ruff", "check", "scripts", "tests"],
     "typecheck": [sys.executable, "-m", "compileall", "-q", "src", "scripts"],
-    "docker-build": ["docker", "build", "."],
-    "docker-e2e": ["docker", "compose", "-f", "watcher/docker-compose.yml", "up", "--abort-on-container-exit"],
+    "docker-build": [sys.executable, "scripts/docker_gate.py", "docker-build"],
+    "docker-e2e": [sys.executable, "scripts/docker_gate.py", "docker-e2e"],
     "jenkins": ["jenkins-cli", "build"],
     "soak": ["soak-runner"],
 }
+HOST_VALIDATION_GATES = frozenset({"pytest", "security", "smoke", "e2e"})
+
+
+def validation_environment(gate: str, base: dict[str, str] | None = None) -> dict[str, str]:
+    """Return deterministic host validation settings while preserving private inputs."""
+    env = dict(os.environ if base is None else base)
+    existing_path = env.get("PYTHONPATH", "")
+    source_path = str(ROOT / "src")
+    env["PYTHONPATH"] = os.pathsep.join(part for part in (source_path, existing_path) if part)
+    if gate in HOST_VALIDATION_GATES:
+        env.update({
+            "PYTHONUTF8": "1",
+            "PYTHONIOENCODING": "utf-8",
+            "DASHBOARD_HOST": "127.0.0.1",
+            "ZMI_CONTAINER_MODE": "false",
+            "ALLOW_EXTERNAL_LLM": "false",
+            "ZMI_CONFIG_ENV": str(ROOT / "artifacts" / "gates" / "validation-config-does-not-exist.env"),
+        })
+        if gate == "e2e" and env.get("ZMI_E2E_EXTERNAL_SERVER") != "1":
+            data_root = str(ROOT / "artifacts" / "gates" / "e2e-host-data")
+            env["ZMI_DATA_ROOT"] = data_root
+            env["ZMI_TEST_DATA_ROOT"] = data_root
+    return env
 
 # PLV5 gate categories: implementation/light vs heavy (post-review only).
 LIGHT_GATES: frozenset[str] = frozenset(
@@ -226,6 +250,9 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
             cwd=str(ROOT),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=validation_environment(gate),
             check=False,
         )
         returncode = result.returncode

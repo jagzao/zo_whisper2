@@ -54,6 +54,14 @@ def file_has_frames(media_id: str) -> bool:
         return False
 
 
+def wait_for_folder_cards(page) -> bool:
+    page.wait_for_function(
+        "document.querySelectorAll('#folders .folder').length === 4",
+        timeout=TIMEOUT_MS,
+    )
+    return page.locator("#folders .folder").count() == 4
+
+
 def main() -> int:
     try:
         from playwright.sync_api import sync_playwright
@@ -120,7 +128,7 @@ def main() -> int:
         rows = page.locator("#filesList table tbody tr").count()
         all_ok &= check("files_table", rows > 0 and rows <= 5, f"{rows} rows (page 1)")
         all_ok &= check("dropzone_visible", page.locator("#dropzone").is_visible())
-        all_ok &= check("folders_visible", page.locator("#folders .folder").count() == 4)
+        all_ok &= check("folders_visible", wait_for_folder_cards(page))
         all_ok &= check(
             "pagination_visible",
             page.locator("#filesPaginationTop button").count() > 0

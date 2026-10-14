@@ -111,6 +111,9 @@ def test_named_gate_registry_uses_authoritative_commands():
     assert gate_runner.GATES["security"][-1] == "scripts/security.py"
     assert gate_runner.GATES["smoke"][-1] == "scripts/smoke.py"
     assert gate_runner.GATES["e2e"][-1] == "scripts/e2e.py"
+    for gate in ("docker-build", "docker-e2e"):
+        assert gate_runner.GATES[gate][:2] == [sys.executable, "scripts/docker_gate.py"]
+        assert "watcher/docker-compose.yml" not in gate_runner.GATES[gate]
 
 
 def test_playwright_alias_removed_so_e2e_runs_once():
@@ -197,3 +200,59 @@ def test_duration_seconds_rounded():
 
     assert rc == 0
     assert _read_latest()["duration_seconds"] == 1.23
+
+
+def test_validation_environment_prepends_src_and_sanitizes_host_values(tmp_path):
+    env = gate_runner.validation_environment(
+        "pytest",
+        {
+            "PYTHONPATH": "existing-path",
+            "DASHBOARD_HOST": "0.0.0.0",
+            "ZMI_CONTAINER_MODE": "true",
+            "ALLOW_EXTERNAL_LLM": "true",
+            "SENSITIVE_IDENTIFIERS": "private-value",
+        },
+    )
+
+    assert env["PYTHONPATH"].split(gate_runner.os.pathsep) == [str(ROOT / "src"), "existing-path"]
+    assert env["PYTHONUTF8"] == "1"
+    assert env["PYTHONIOENCODING"] == "utf-8"
+    assert env["DASHBOARD_HOST"] == "127.0.0.1"
+    assert env["ZMI_CONTAINER_MODE"] == "false"
+    assert env["ALLOW_EXTERNAL_LLM"] == "false"
+    assert env["SENSITIVE_IDENTIFIERS"] == "private-value"
+    assert not Path(env["ZMI_CONFIG_ENV"]).exists()
+
+
+def test_gate_environment_imports_transcript_pipeline():
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-c", "import transcript_pipeline; print(transcript_pipeline.__name__)"],
+        cwd=ROOT,
+        env=gate_runner.validation_environment("pytest", {}),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == "transcript_pipeline"
+
+
+def test_subprocess_capture_is_utf8_and_replaces_invalid_output(monkeypatch):
+    monkeypatch.setitem(gate_runner.GATES, "pytest", [sys.executable, "-c", "print('Prueba: café')"])
+    with mock.patch.object(gate_runner, "_command_is_configured", return_value=True):
+        assert gate_runner.run_gate("pytest") == 0
+    log = (ROOT / "artifacts" / "gates" / "logs" / "pytest.log").read_text(encoding="utf-8")
+    assert "café" in log
+
+
+def test_e2e_validation_environment_is_isolated_and_preserves_external_mode():
+    env = gate_runner.validation_environment("e2e", {"ZMI_E2E_EXTERNAL_SERVER": "0"})
+    assert env["ZMI_DATA_ROOT"] == str(ROOT / "artifacts" / "gates" / "e2e-host-data")
+    assert env["ZMI_TEST_DATA_ROOT"] == env["ZMI_DATA_ROOT"]
+    external = gate_runner.validation_environment("e2e", {"ZMI_E2E_EXTERNAL_SERVER": "1"})
+    assert "ZMI_DATA_ROOT" not in external

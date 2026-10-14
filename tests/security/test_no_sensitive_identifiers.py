@@ -9,7 +9,11 @@ never become the leak it exists to prevent.
 
 import json
 
-from scripts.security import check_denylisted_identifiers_in_history, check_no_denylisted_identifiers
+from scripts.security import (
+    check_denylisted_identifiers_in_history,
+    check_history_policy,
+    check_no_denylisted_identifiers,
+)
 
 
 def test_detects_synthetic_denylisted_string(tmp_path, monkeypatch):
@@ -135,6 +139,29 @@ def test_history_check_detects_token_in_commit_message(monkeypatch):
 
     assert any(r["status"] == "FAIL" for r in report)
     assert any("commit message" in r.get("detail", "") for r in report)
+
+
+def test_history_policy_is_advisory_by_default(monkeypatch):
+    monkeypatch.delenv("ZMI_ENFORCE_HISTORY_CLEAN", raising=False)
+    monkeypatch.setattr(
+        "scripts.security.check_denylisted_identifiers_in_history",
+        lambda report: (_ for _ in ()).throw(AssertionError("history audit must be skipped")),
+    )
+    report: list[dict] = []
+    check_history_policy(report)
+    assert report[0]["status"] == "PASS"
+    assert "SKIPPED/ADVISORY" in report[0]["detail"]
+
+
+def test_history_policy_enforces_only_when_explicit(monkeypatch):
+    monkeypatch.setenv("ZMI_ENFORCE_HISTORY_CLEAN", "1")
+    called: list[bool] = []
+    monkeypatch.setattr(
+        "scripts.security.check_denylisted_identifiers_in_history",
+        lambda report: called.append(True),
+    )
+    check_history_policy([])
+    assert called == [True]
 
 
 def test_history_check_passes_when_token_in_neither_diff_nor_message(monkeypatch):

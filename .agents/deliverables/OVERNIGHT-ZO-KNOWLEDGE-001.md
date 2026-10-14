@@ -30,7 +30,7 @@ Required execution properties:
 ## Sequence
 
 ### RUN-01 — Zo Media producer
-Repo: `jagzao/zo_whisper2`
+Repo: `CONFIDENTIAL_CLIENT/zo_whisper2`
 Branch: `feat/zmi-knowledge-to-action-v1`
 Contract:
 `.agents/deliverables/LOCAL-CODER-ZO-KNOWLEDGE-001.md`
@@ -40,7 +40,7 @@ Covers:
 - producer WP-16..19
 
 ### RUN-02 — Zavi Second Brain
-Repo: `jagzao/zavi`
+Repo: `CONFIDENTIAL_CLIENT/zavi`
 Branch: `feat/knowledge-scope-publishing-v1`
 Contract:
 `.agents/delivery/LOCAL-CODER-ZO-KNOWLEDGE-002.md`
@@ -54,7 +54,7 @@ Covers:
 - consumer WP-16..19
 
 ### RUN-03 — KAV execution
-Repo: `jagzao/zavi-kab`
+Repo: `CONFIDENTIAL_CLIENT/zavi-kab`
 Branch: `feat/knowledge-bound-skills-v1`
 Contract:
 `.agents/memory/tasks/LOCAL-CODER-ZO-KNOWLEDGE-003.md`

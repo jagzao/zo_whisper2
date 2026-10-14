@@ -3,9 +3,9 @@
 ## Scope
 
 Cross-repository audit for:
-- `jagzao/zo_whisper2` — knowledge producer;
-- `jagzao/zavi` — Second Brain storage/retrieval;
-- `jagzao/zavi-kab` — KAV/skills execution runtime.
+- `CONFIDENTIAL_CLIENT/zo_whisper2` — knowledge producer;
+- `CONFIDENTIAL_CLIENT/zavi` — Second Brain storage/retrieval;
+- `CONFIDENTIAL_CLIENT/zavi-kab` — KAV/skills execution runtime.
 
 Primary use cases:
 1. P&G tutorial/KT content must become project-private Second Brain knowledge.

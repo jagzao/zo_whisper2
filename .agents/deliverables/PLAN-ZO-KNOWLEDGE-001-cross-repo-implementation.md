@@ -14,19 +14,19 @@ This plan contains the heavy-model design decisions. Local implementation worker
 Use separate branches/worktrees:
 
 ### Zo Media
-Repo: `jagzao/zo_whisper2`
+Repo: `CONFIDENTIAL_CLIENT/zo_whisper2`
 Base: current `feat/kab-local-ingest-v1`
 Implementation branch:
 `feat/zmi-knowledge-to-action-v1`
 
 ### Zavi
-Repo: `jagzao/zavi`
+Repo: `CONFIDENTIAL_CLIENT/zavi`
 Base: current `main`
 Implementation branch:
 `feat/knowledge-scope-publishing-v1`
 
 ### KAV
-Repo: `jagzao/zavi-kab`
+Repo: `CONFIDENTIAL_CLIENT/zavi-kab`
 Base: current `main`
 Implementation branch:
 `feat/knowledge-bound-skills-v1`
