@@ -635,6 +635,7 @@ class SimpleScanProcessor:
     def process_file(self, audio_path: Path) -> bool:
         """Processes a single file end to end"""
         try:
+            logger.info("[PROCESSING] %s", audio_path.name)
             if self.tracker.is_file_processed(audio_path):
                 logger.info(f"[SKIP] Already processed: {audio_path.name}")
                 self.stats["already_processed"] += 1
@@ -658,9 +659,11 @@ class SimpleScanProcessor:
             self.tracker.mark_as_processed(audio_path, "completed")
 
             self.stats["processed"] += 1
+            logger.info("[FILE_DONE] %s", audio_path.name)
             return True
 
         except Exception as e:
+            logger.error("[FILE_ERROR] %s", audio_path.name)
             logger.error(f"[ERROR] Failed processing {audio_path.name}: {str(e)}")
             self.stats["errors"] += 1
             return False
@@ -684,6 +687,17 @@ class SimpleScanProcessor:
         print()
         print(f"[INFO] Files to process: {len(audio_files)}")
         print()
+
+        for audio_path in audio_files:
+            try:
+                rel_path = audio_path.relative_to(self.audio_base)
+                queue_name = f"audio/{rel_path}"
+            except ValueError:
+                try:
+                    queue_name = f"Videos/{audio_path.relative_to(self.videos_base)}"
+                except ValueError:
+                    queue_name = audio_path.name
+            logger.info("[QUEUE] %s", queue_name)
 
         start_time = time.time()
 

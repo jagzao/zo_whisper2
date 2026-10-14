@@ -13,7 +13,7 @@ If implementation reveals a contradiction, stop with `SPEC_CONFLICT`.
 - `python scripts/quality.py` -> PASS
 - `python scripts/smoke.py` -> PASS
 - `python scripts/security.py` -> FAIL
-  - `no_denylisted_identifiers`: `valeris` in tracked `.agents/protocols/deterministic-gates.md` (introduced by this branch; also in history)
+- `no_denylisted_identifiers`: a private identifier in tracked `.agents/protocols/deterministic-gates.md` (introduced by this branch; also in history)
   - `dependency_audit`: venv drift (anyio 4.14.0, soupsieve 2.8.4). Lock already pins anyio==4.14.2, soupsieve==2.9.2.
 - `python scripts/e2e.py` -> FAIL: no synthetic seed data present
 - `.github/workflows/` absent by policy (zero-cost CI). `docs/ops/LOCAL-OPS.md` documents local equivalents.
@@ -29,7 +29,7 @@ If implementation reveals a contradiction, stop with `SPEC_CONFLICT`.
 
 ## Work packages
 
-### WP-01 — Compact deterministic gate runner + no-LLM proof (AC-1, AC-2, AC-6, AC-7)
+### WP-01 — Compact deterministic gate runner + no-LLM proof (AC-1, AC-2, AC-6, AC-7) — COMPLETE
 - New `scripts/gate_runner.py`:
   - registry of named gates: `pytest`, `quality`, `security`, `smoke`, `e2e`
   - each gate is an existing command; no logic duplication
@@ -49,7 +49,7 @@ If implementation reveals a contradiction, stop with `SPEC_CONFLICT`.
     source-level assertion that `scripts/gate_runner.py` imports no provider SDK
 - `.gitignore`: add `artifacts/` (runtime output). Keep specs/PLAN/DELIVERY tracked.
 
-### WP-02 — Jenkins, SonarQube, provider aliases, UI adapter (AC-3, AC-4, AC-5)
+### WP-02 — Jenkins, SonarQube, provider aliases, UI adapter (AC-3, AC-4, AC-5) — IMPLEMENTED
 - New cross-platform `Jenkinsfile` (declarative):
   - stages: targeted -> quality -> security -> Playwright -> SonarQube -> full E2E -> optional soak -> archive
   - Windows/Linux command handling
@@ -69,11 +69,11 @@ If implementation reveals a contradiction, stop with `SPEC_CONFLICT`.
 - `docs/ops/LOCAL-OPS.md`: append UI validation adapter section
   - web -> Playwright Chromium; electron -> Playwright Electron; no Electron runtime here
 
-### WP-03 — Baseline security hygiene (AC-8)
-- Sanitize `.agents/protocols/deterministic-gates.md`: replace real codename
-  `Valeris` in the example failure signature with a synthetic placeholder.
+### WP-03 — Baseline security hygiene (AC-8) — IMPLEMENTED; pushed-history cleanup awaits owner authorization
+- Sanitize `.agents/protocols/deterministic-gates.md`: replace the leaked
+  private identifier in the example failure signature with a synthetic placeholder.
 - Align venv with lock: anyio==4.14.2, soupsieve==2.9.2.
-- Record residual: the token remains in this branch's pushed history (f7f5452).
+- Record residual: the identifier remains in this branch's pushed history (f7f5452).
   History rewrite is owner-only per `docs/GIT_HISTORY_CLEANUP.md`.
 
 ## Deterministic validation mapping

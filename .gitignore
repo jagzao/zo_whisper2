@@ -118,3 +118,5 @@ CLAUDE.md
 
 # ── Artefactos de gates deterministas (runtime) ──
 artifacts/
+.upload_sessions/
+.uploaded_media.json

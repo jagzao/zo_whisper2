@@ -43,7 +43,7 @@ Example:
   "status": "FAIL",
   "gate": "playwright",
   "check": "project_override_persists_after_reload",
-  "error_signature": "expected Zo Interviews, got Valeris",
+  "error_signature": "expected Project A, got Project B",
   "affected_files": ["src/transcript_pipeline/dashboard/app.py"],
   "artifact": "artifacts/playwright/project-override.zip",
   "duration_seconds": 12.4

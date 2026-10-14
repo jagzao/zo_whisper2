@@ -114,10 +114,10 @@ a step persists `manual/steps.json` and regenerates both bundles immediately
   core pipeline — transcription (`faster-whisper`), video/audio processing
   (FFmpeg), OCR (Tesseract), and routing all run on your CPU. Whisper's
   model itself may be downloaded on first use (~3GB, then cached).
-- **Dashboard is localhost-only, fail-closed.** `DASHBOARD_HOST` must be a
-  loopback address — `Settings.from_env()` raises `ConfigurationError`
-  otherwise, no remote mode. Mutating requests (upload/delete/save/run)
-  also require a matching Host/Origin and a per-process token
+- **Dashboard is local-network only.** It binds to loopback by default.
+  Set `DASHBOARD_HOST=0.0.0.0` to allow private LAN devices, such as a phone
+  on the same Wi-Fi. Public hosts and clients are rejected. Mutating requests
+  (upload/delete/save/run) require a matching local Host/Origin and a per-process token
   (`X-Local-Dashboard-Token`, generated fresh at startup, never persisted).
 - **No arbitrary filesystem access.** Every dashboard endpoint that touches
   a file goes through `SafePathResolver`, and every response uses opaque
@@ -273,7 +273,7 @@ JS/CSS, which keeps the project dependency-light and easy to run anywhere.
 - **Handler contract via `typing.Protocol` + typed result**: the pipeline programs against an interface (`handlers/base.py`), and a handler's success/failure/retryability is an explicit `HandlerResult`, not a bool whose return value used to be silently discarded.
 - **Filesystem access through one resolver**: `SafePathResolver` is the only code path allowed to turn user-controlled input into a trusted `Path` — see `docs/adr/0002-safe-filesystem-boundary.md`.
 - **Outbound AI policy through one service**: `AIEnrichmentService` (`llm/enrichment.py`) is the only code path allowed to call an LLM provider — it assembles `PrivacyGuard`, `redact_secrets()` (remote providers only), and the `FRAME_DESCRIPTIONS`/`ALLOW_IMAGE_UPLOAD` image policy in one place (video frames, screenshots, and MarkItDown's document-image path alike), so no handler can accidentally skip a check by calling the provider directly.
-- **Dashboard is fail-closed localhost-only**: a non-loopback `DASHBOARD_HOST` raises `ConfigurationError` at startup rather than logging a warning and binding anyway; mutating requests require a matching Host/Origin plus a per-process token — see `docs/adr/0005-ai-enrichment-and-local-only-dashboard.md`.
+- **Dashboard is private-LAN only when explicitly enabled**: `DASHBOARD_HOST=0.0.0.0` permits private/loopback clients; default remains loopback. Mutating requests require a matching Host/Origin plus a per-process token.
 
 ## Project structure
 

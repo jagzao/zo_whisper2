@@ -156,10 +156,9 @@ class Settings:
             raise ConfigurationError(f"VIDEO_COMPRESS_CRF out of range (0-51): {self.video_compress_crf}")
         if not (1024 <= self.dashboard_port <= 65535):
             raise ConfigurationError(f"DASHBOARD_PORT invalid: {self.dashboard_port}")
-        if self.dashboard_host not in _LOOPBACK_HOSTNAMES:
+        if self.dashboard_host not in _LOOPBACK_HOSTNAMES | {"0.0.0.0"}:
             raise ConfigurationError(
-                f"DASHBOARD_HOST must be a loopback address (127.0.0.1/localhost/::1): "
-                f"{self.dashboard_host!r} — remote binding is not supported."
+                f"DASHBOARD_HOST must be loopback or 0.0.0.0 for LAN access: {self.dashboard_host!r}"
             )
         if self.llm_provider_type not in ("local", "remote"):
             raise ConfigurationError(f"LLM_PROVIDER_TYPE must be 'local' or 'remote': {self.llm_provider_type!r}")

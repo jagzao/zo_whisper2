@@ -26,7 +26,9 @@ GATES: dict[str, list[str]] = {
     "quality": [sys.executable, "scripts/quality.py"],
     "security": [sys.executable, "scripts/security.py"],
     "smoke": [sys.executable, "scripts/smoke.py"],
+    "playwright": [sys.executable, "scripts/e2e.py"],
     "e2e": [sys.executable, "scripts/e2e.py"],
+    "sonar": ["sonar-scanner"],
 }
 
 # Gate scripts that emit a structured JSON report at repo root.
@@ -74,7 +76,7 @@ def _extract_structured_failure(gate: str, combined_output: str) -> tuple[str, s
             except (OSError, ValueError):
                 report = None
             if isinstance(report, dict):
-                if gate == "e2e":
+                if gate in {"e2e", "playwright"}:
                     detail = report.get("detail") or report.get("stdout") or report.get("stderr") or ""
                     return "e2e", _truncate(str(detail)), []
                 checks = report.get("checks")

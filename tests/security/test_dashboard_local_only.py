@@ -6,6 +6,8 @@ token, and the fail-closed non-loopback DASHBOARD_HOST rejection at
 Settings.from_env() time.
 """
 
+from dataclasses import replace
+
 import pytest
 
 from transcript_pipeline.dashboard import app as dashboard_app
@@ -41,6 +43,28 @@ def test_loopback_ip_host_allowed(client):
 def test_non_local_host_rejected(client):
     resp = client.get("/api/status", headers={"Host": "evil.com"})
     assert resp.status_code == 403
+
+
+def test_lan_host_allowed_only_when_lan_binding_enabled(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "SETTINGS", replace(dashboard_app.SETTINGS, dashboard_host="0.0.0.0"))
+    response = client.get("/api/status", headers={"Host": "192.168.1.20:5000"})
+    assert response.status_code == 200
+
+
+def test_public_host_rejected_even_when_lan_binding_enabled(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "SETTINGS", replace(dashboard_app.SETTINGS, dashboard_host="0.0.0.0"))
+    response = client.get("/api/status", headers={"Host": "example.com"})
+    assert response.status_code == 403
+
+
+def test_non_private_client_rejected_even_with_private_host(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "SETTINGS", replace(dashboard_app.SETTINGS, dashboard_host="0.0.0.0"))
+    response = client.get(
+        "/api/status",
+        headers={"Host": "192.168.1.20:5000", "X-Forwarded-For": "8.8.8.8"},
+        environ_overrides={"REMOTE_ADDR": "8.8.8.8"},
+    )
+    assert response.status_code == 403
 
 
 def test_get_endpoints_unaffected_by_missing_token(client):
@@ -119,11 +143,17 @@ def test_transcription_read_error_does_not_leak_exception_text(client, monkeypat
 
 # ── Fail-closed non-loopback bind ────────────────────────────────────────
 
-def test_non_loopback_dashboard_host_rejected(monkeypatch):
+def test_arbitrary_non_loopback_dashboard_host_rejected(monkeypatch):
     monkeypatch.setattr("transcript_pipeline.settings.load_env", lambda: None)
-    monkeypatch.setenv("DASHBOARD_HOST", "0.0.0.0")
+    monkeypatch.setenv("DASHBOARD_HOST", "192.168.1.20")
     with pytest.raises(ConfigurationError):
         Settings.from_env()
+
+
+def test_lan_bind_accepted(monkeypatch):
+    monkeypatch.setattr("transcript_pipeline.settings.load_env", lambda: None)
+    monkeypatch.setenv("DASHBOARD_HOST", "0.0.0.0")
+    assert Settings.from_env().dashboard_host == "0.0.0.0"
 
 
 def test_loopback_dashboard_host_accepted(monkeypatch):

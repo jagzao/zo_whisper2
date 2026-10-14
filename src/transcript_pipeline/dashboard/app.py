@@ -12,6 +12,8 @@ Features:
 
 from __future__ import annotations
 
+import ipaddress
+import hashlib
 import json
 import logging
 import os
@@ -21,6 +23,8 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -58,6 +62,7 @@ VIDEOS_BASE = ROOT / "Videos"
 TRANSCRIPTIONS_BASE = ROOT / "CarpetaTranscripciones"
 PROJECTS_PATH = ROOT / "projects.json"
 PROCESSED_DB = ROOT / "processed_files.json"
+UPLOADED_MEDIA_DB = ROOT / ".uploaded_media.json"
 
 RESOLVER = SafePathResolver(
     {
@@ -70,17 +75,21 @@ RESOLVER = SafePathResolver(
 
 SUPPORTED_MEDIA = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".opus"}
 VIDEO_EXTS = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
+UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024
+_upload_sessions_lock = threading.Lock()
 
 RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
 
+_project_metadata = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+_version_match = re.search(r'(?ms)^\[project\]\s+.*?^version\s*=\s*"([^"]+)"', _project_metadata)
+APP_VERSION = _version_match.group(1) if _version_match else "unknown"
+SERVER_STARTED_AT = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
+
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
 
-# This dashboard is explicitly localhost-only (SETTINGS.dashboard_host is
-# enforced loopback-only at Settings.from_env() time) — no remote mode, no
-# user accounts. The token below is the only thing standing between "any
-# process that can reach this port" and "the browser tab the owner opened".
+# Optional LAN mode binds to 0.0.0.0 and still rejects non-private clients.
 _LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 # Generated fresh per process, never persisted, never logged — the frontend
@@ -104,16 +113,30 @@ def _hostname_only(host_header: str) -> str:
     return host_header
 
 
+def _is_local_address(value: str) -> bool:
+    if value.lower() in _LOCAL_HOSTNAMES:
+        return True
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return address.is_loopback or address.is_private
+
+
 @app.before_request
 def _enforce_local_only() -> Any:
     host = _hostname_only(request.host or "")
-    if host not in _LOCAL_HOSTNAMES:
+    lan_enabled = SETTINGS.dashboard_host == "0.0.0.0"
+    client_is_local = _is_local_address(request.remote_addr or "")
+    host_is_local = host in _LOCAL_HOSTNAMES or (lan_enabled and _is_local_address(host))
+    if not client_is_local or not host_is_local:
         logger.warning("[SECURITY] Rejected request with non-local Host: %s", request.host)
         return jsonify({"ok": False, "error": "Forbidden"}), 403
 
     if request.method in _MUTATING_METHODS:
         origin = request.headers.get("Origin")
-        if origin and (urlparse(origin).hostname or "").lower() not in _LOCAL_HOSTNAMES:
+        origin_host = (urlparse(origin).hostname or "").lower() if origin else ""
+        if origin and not (origin_host in _LOCAL_HOSTNAMES or (lan_enabled and _is_local_address(origin_host))):
             logger.warning("[SECURITY] Rejected %s with non-local Origin: %s", request.method, origin)
             return jsonify({"ok": False, "error": "Forbidden"}), 403
 
@@ -149,6 +172,7 @@ _run_state: dict[str, Any] = {
     "log_tail": "",
     "stage": None,
     "stages": {},
+    "file_progress": {"phase": None, "current": None, "items": []},
 }
 
 
@@ -162,6 +186,87 @@ def _fresh_stages() -> dict[str, dict[str, Any]]:
 # scanning for markers this codebase's own logging already emits — see
 # CLAUDE.md's Architecture section for where each marker comes from.
 PIPELINE_STAGES = ["upload", "analyze", "compress", "transcribe", "vision_ocr", "route", "document", "store"]
+
+
+def _new_file_progress(phase: str | None = None) -> dict[str, Any]:
+    return {"phase": phase, "current": None, "items": []}
+
+
+def _record_file_progress(message: str) -> None:
+    progress = _run_state.setdefault("file_progress", _new_file_progress())
+    if message.startswith("STEP 1:"):
+        _run_state["file_progress"] = progress = _new_file_progress("compression")
+    elif message.startswith("STEP 2:"):
+        _run_state["file_progress"] = progress = _new_file_progress("transcription")
+
+    queue_match = re.search(r"\[QUEUE\]\s+(.+)$", message)
+    if queue_match:
+        name = queue_match.group(1).strip()
+        if name and not any(item["name"] == name for item in progress["items"]):
+            progress["items"].append({"name": name, "state": "waiting"})
+        return
+
+    current_match = re.search(r"\[PROCESSING\]\s+(.+)$", message)
+    if not current_match:
+        current_match = re.search(r"Processing:\s+(.+)$", message)
+    if not current_match:
+        current_match = re.search(r"\[\d+/\d+\]\s+(.+)$", message)
+    if current_match:
+        name = current_match.group(1).strip()
+        item = _find_progress_item(progress, name)
+        if item:
+            item["state"] = "processing"
+            progress["current"] = item["name"]
+        return
+
+    event_match = re.search(r"\[(FILE_DONE|FILE_ERROR)\]\s+(.+)$", message)
+    if event_match:
+        state = "done" if event_match.group(1) == "FILE_DONE" else "error"
+        item = _find_progress_item(progress, event_match.group(2).strip())
+        if item:
+            item["state"] = state
+            if progress["current"] == item["name"]:
+                progress["current"] = None
+        return
+
+    skip_match = re.search(r"\[SKIP\]\s+Already processed:\s+(.+)$", message)
+    if skip_match:
+        item = _find_progress_item(progress, skip_match.group(1).strip())
+        if item:
+            item["state"] = "skipped"
+            if progress["current"] == item["name"]:
+                progress["current"] = None
+        return
+
+    if "[ERROR]" in message and progress.get("current"):
+        item = _find_progress_item(progress, progress["current"])
+        if item:
+            item["state"] = "error"
+            progress["current"] = None
+
+
+def _find_progress_item(progress: dict[str, Any], name: str) -> dict[str, str] | None:
+    basename = Path(name.replace("\\", "/")).name
+    items = progress.get("items", [])
+    for item in reversed(items):
+        item_basename = Path(item["name"].replace("\\", "/")).name
+        if item["state"] in ("waiting", "processing") and item_basename == basename:
+            return item
+    return None
+
+
+def _file_progress_snapshot() -> dict[str, Any]:
+    progress = _run_state.get("file_progress") or _new_file_progress()
+    items = [dict(item) for item in progress.get("items", [])]
+    counts = {state: sum(item["state"] == state for item in items) for state in ("done", "error", "skipped", "processing", "waiting")}
+    return {
+        "phase": progress.get("phase"),
+        "current": progress.get("current"),
+        "items": items,
+        "total": len(items),
+        **counts,
+        "settled": counts["done"] + counts["error"] + counts["skipped"],
+    }
 
 _STAGE_MARKERS: list[tuple[str, str]] = [
     ("STEP 1: Compressing videos", "compress"),
@@ -581,12 +686,17 @@ def _frame_media_url(frames_parent: Path, relative_to_frames_parent: str) -> str
 # ── Endpoints ────────────────────────────────────────────────────────────
 @app.route("/")
 def index() -> str:
-    return render_template("dashboard.html", dashboard_token=_DASHBOARD_TOKEN)
+    return render_template(
+        "dashboard.html",
+        dashboard_token=_DASHBOARD_TOKEN,
+        app_version=APP_VERSION,
+        server_started_at=SERVER_STARTED_AT,
+    )
 
 
 @app.route("/api/status")
 def api_status() -> Any:
-    return jsonify(_run_state)
+    return jsonify({**_run_state, "file_progress": _file_progress_snapshot()})
 
 
 @app.route("/api/folders")
@@ -621,7 +731,11 @@ def api_files() -> Any:
     _ensure_folders()
     media_files: list[dict] = []
 
-    for base, root in ((VIDEOS_BASE, MediaRoot.VIDEOS), (AUDIO_BASE, MediaRoot.AUDIO)):
+    for base, root in (
+        (VIDEOS_BASE, MediaRoot.VIDEOS),
+        (AUDIO_BASE, MediaRoot.AUDIO),
+        (VIDEO_COMPRESS, MediaRoot.VIDEO_COMPRESS),
+    ):
         if not base.exists():
             continue
         for path in base.rglob("*"):
@@ -633,7 +747,7 @@ def api_files() -> Any:
             media_files.append(
                 {
                     "media_id": media_id,
-                    "relative": str(path.relative_to(ROOT)),
+                    "relative": path.relative_to(ROOT).as_posix(),
                     "name": path.name,
                     "size": path.stat().st_size,
                     "status": _file_status(path),
@@ -642,6 +756,7 @@ def api_files() -> Any:
                     "project_source": project_source,
                     "transcription": transcription,
                     "documentation": _resolve_documentation(path, root),
+                    "in_upload_queue": root == MediaRoot.VIDEO_COMPRESS,
                 }
             )
 
@@ -764,6 +879,257 @@ def api_upload() -> Any:
     return jsonify({"ok": True, "name": destination.name})
 
 
+def _upload_session_paths(upload_id: str) -> tuple[Path, Path] | None:
+    if not re.fullmatch(r"[0-9a-f]{32}", upload_id):
+        return None
+    root = ROOT / ".upload_sessions"
+    return root / f"{upload_id}.json", root / f"{upload_id}.part"
+
+
+def _read_upload_session(metadata_path: Path) -> dict | None:
+    try:
+        value = json.loads(metadata_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _write_upload_session(metadata_path: Path, session: dict) -> None:
+    temporary = metadata_path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(session), encoding="utf-8")
+    temporary.replace(metadata_path)
+
+
+def _upload_token_valid() -> bool:
+    return secrets.compare_digest(
+        request.headers.get("X-Local-Dashboard-Token", ""), _DASHBOARD_TOKEN
+    )
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as media:
+        for chunk in iter(lambda: media.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _load_uploaded_media() -> dict[str, dict[str, Any]]:
+    try:
+        value = json.loads(UPLOADED_MEDIA_DB.read_text(encoding="utf-8"))
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_uploaded_media(records: dict[str, dict[str, Any]]) -> None:
+    temporary = UPLOADED_MEDIA_DB.with_suffix(".tmp")
+    temporary.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.replace(UPLOADED_MEDIA_DB)
+
+
+def _existing_upload(filename: str, size: int) -> str | None:
+    for folder in (VIDEO_COMPRESS, VIDEOS_BASE, AUDIO_BASE):
+        if not folder.is_dir():
+            continue
+        for candidate in folder.rglob("*"):
+            if candidate.is_file() and candidate.name.casefold() == filename.casefold() and candidate.stat().st_size == size:
+                return candidate.name
+
+    sessions = ROOT / ".upload_sessions"
+    if sessions.is_dir():
+        for metadata_path in sessions.glob("*.json"):
+            session = _read_upload_session(metadata_path)
+            if session and session.get("complete") and session.get("filename", "").casefold() == filename.casefold() and session.get("size") == size:
+                return session.get("saved_name", filename)
+    return None
+
+
+@app.route("/api/upload-sessions", methods=["POST"])
+def api_create_upload_session() -> Any:
+    payload = request.get_json(silent=True) or {}
+    original_name = payload.get("filename")
+    size = payload.get("size")
+    project_id = payload.get("project", "")
+    if not isinstance(original_name, str) or not original_name.strip():
+        return jsonify({"ok": False, "error": "Filename is required"}), 400
+    if not isinstance(size, int) or isinstance(size, bool) or size <= 0:
+        return jsonify({"ok": False, "error": "Invalid file size"}), 400
+    if size > app.config["MAX_CONTENT_LENGTH"]:
+        return jsonify({"ok": False, "error": "File too large"}), 413
+
+    filename = secure_filename(Path(original_name).name)
+    ext = Path(filename).suffix.lower()
+    if not filename or ext not in SUPPORTED_MEDIA:
+        return jsonify({"ok": False, "error": f"Unsupported format: {ext}"}), 400
+
+    chosen_project = next(
+        (project for project in _load_projects() if project.get("name") == project_id), None
+    ) if project_id else None
+    if chosen_project:
+        prefixes = chosen_project.get("match", {}).get("prefix", [])
+        if prefixes and not _find_matching_project(filename):
+            prefix = prefixes[0]
+            filename = f"{prefix}{filename}" if not filename.lower().startswith(prefix.lower()) else filename
+
+    existing_name = _existing_upload(filename, size)
+    if existing_name:
+        logger.info("[UPLOAD] Duplicate file selection skipped: %s", filename)
+        return jsonify({"ok": True, "duplicate": True, "name": existing_name})
+
+    upload_id = uuid.uuid4().hex
+    paths = _upload_session_paths(upload_id)
+    assert paths is not None
+    metadata_path, data_path = paths
+    metadata_path.parent.mkdir(parents=True, exist_ok=True)
+    cutoff = datetime.now().timestamp() - 7 * 24 * 60 * 60
+    for expired in metadata_path.parent.glob("*.json"):
+        try:
+            if expired.stat().st_mtime < cutoff:
+                expired.with_suffix(".part").unlink(missing_ok=True)
+                expired.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("[UPLOAD] Could not clean stale upload session %s", expired.name)
+    data_path.touch()
+    _write_upload_session(metadata_path, {
+        "filename": filename,
+        "size": size,
+        "project": project_id,
+        "received": 0,
+        "created_at": datetime.now().timestamp(),
+    })
+    logger.info("[UPLOAD] Started resumable upload %s (%s bytes)", upload_id, size)
+    return jsonify({"ok": True, "upload_id": upload_id, "offset": 0, "chunk_size": UPLOAD_CHUNK_BYTES})
+
+
+@app.route("/api/upload-sessions/<upload_id>", methods=["GET"])
+def api_upload_session_status(upload_id: str) -> Any:
+    if not _upload_token_valid():
+        return jsonify({"ok": False, "error": "Forbidden"}), 403
+    paths = _upload_session_paths(upload_id)
+    if not paths:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    metadata_path, _ = paths
+    session = _read_upload_session(metadata_path)
+    if not session:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    return jsonify({
+        "ok": True,
+        "offset": session.get("received", 0),
+        "size": session.get("size", 0),
+        "complete": session.get("complete", False),
+        "duplicate": session.get("duplicate", False),
+        "name": session.get("saved_name"),
+    })
+
+
+@app.route("/api/upload-sessions/<upload_id>", methods=["PUT"])
+def api_upload_session_chunk(upload_id: str) -> Any:
+    paths = _upload_session_paths(upload_id)
+    if not paths:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    metadata_path, data_path = paths
+    content_range = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", request.headers.get("Content-Range", ""))
+    if not content_range:
+        return jsonify({"ok": False, "error": "Content-Range is required"}), 400
+    start, end, total = map(int, content_range.groups())
+    if request.content_length is None or request.content_length > UPLOAD_CHUNK_BYTES:
+        return jsonify({"ok": False, "error": "Invalid upload chunk size"}), 413
+    chunk = request.get_data(cache=False)
+    if not chunk or len(chunk) != end - start + 1:
+        return jsonify({"ok": False, "error": "Incomplete upload chunk"}), 400
+
+    with _upload_sessions_lock:
+        session = _read_upload_session(metadata_path)
+        if not session:
+            return jsonify({"ok": False, "error": "Upload session not found"}), 404
+        received = session.get("received", 0)
+        if total != session.get("size") or end >= total:
+            return jsonify({"ok": False, "error": "Upload range does not match file"}), 400
+        if start < received and end < received:
+            return jsonify({"ok": True, "offset": received})
+        if start != received or end - start + 1 > UPLOAD_CHUNK_BYTES:
+            return jsonify({"ok": False, "error": "Upload offset mismatch", "offset": received}), 409
+        try:
+            with data_path.open("r+b") as output:
+                output.seek(start)
+                output.write(chunk)
+        except OSError:
+            logger.exception("[UPLOAD] Failed writing resumable chunk %s", upload_id)
+            return jsonify({"ok": False, "error": "Could not save upload chunk"}), 500
+        session["received"] = end + 1
+        _write_upload_session(metadata_path, session)
+        return jsonify({"ok": True, "offset": end + 1})
+
+
+@app.route("/api/upload-sessions/<upload_id>/complete", methods=["POST"])
+def api_complete_upload_session(upload_id: str) -> Any:
+    paths = _upload_session_paths(upload_id)
+    if not paths:
+        return jsonify({"ok": False, "error": "Upload session not found"}), 404
+    metadata_path, data_path = paths
+    snapshot = _read_upload_session(metadata_path)
+    source_hash = None
+    if snapshot and snapshot.get("received") == snapshot.get("size") and data_path.is_file():
+        source_hash = _sha256_file(data_path)
+
+    with _upload_sessions_lock:
+        session = _read_upload_session(metadata_path)
+        if not session:
+            return jsonify({"ok": False, "error": "Upload session not found"}), 404
+        if session.get("complete"):
+            return jsonify({"ok": True, "duplicate": session.get("duplicate", False), "name": session["saved_name"]})
+        if session.get("received") != session.get("size") or not data_path.is_file():
+            return jsonify({"ok": False, "error": "Upload is incomplete", "offset": session.get("received", 0)}), 409
+        if data_path.stat().st_size != session["size"] or not _is_valid_media_file(data_path):
+            data_path.unlink(missing_ok=True)
+            metadata_path.unlink(missing_ok=True)
+            return jsonify({"ok": False, "error": "Uploaded file is not a valid media file"}), 400
+
+        if source_hash is None:
+            source_hash = _sha256_file(data_path)
+        records = _load_uploaded_media()
+        prior_upload = records.get(source_hash)
+        if prior_upload:
+            data_path.unlink(missing_ok=True)
+            metadata_path.unlink(missing_ok=True)
+            logger.info("[UPLOAD] Duplicate content skipped: %s", session["filename"])
+            prior_name = prior_upload.get("saved_name", prior_upload.get("name", session["filename"]))
+            return jsonify({"ok": True, "duplicate": True, "name": prior_name})
+
+        VIDEO_COMPRESS.mkdir(parents=True, exist_ok=True)
+        destination = VIDEO_COMPRESS / session["filename"]
+        counter = 1
+        while destination.exists():
+            destination = VIDEO_COMPRESS / f"{Path(session['filename']).stem}_{counter:02d}{Path(session['filename']).suffix}"
+            counter += 1
+        for attempt in range(3):
+            try:
+                data_path.replace(destination)
+                break
+            except PermissionError:
+                if attempt == 2:
+                    logger.warning("[UPLOAD] File is locked while finalizing session %s", upload_id)
+                    return jsonify({
+                        "ok": False,
+                        "error": "Upload received; file is temporarily locked. Select the same file again to finish.",
+                    }), 409
+                time.sleep(0.5)
+        session["complete"] = True
+        session["saved_name"] = destination.name
+        session["source_sha256"] = source_hash
+        _write_upload_session(metadata_path, session)
+        records[source_hash] = {
+            "name": session["filename"],
+            "saved_name": destination.name,
+            "size": session["size"],
+            "uploaded_at": datetime.now().isoformat(),
+        }
+        _save_uploaded_media(records)
+        logger.info("[UPLOAD] Completed resumable upload %s → %s", upload_id, destination)
+        return jsonify({"ok": True, "name": destination.name})
+
+
 @app.route("/api/run/<mode>", methods=["POST"])
 def api_run(mode: str) -> Any:
     if mode not in ("full", "compress", "transcribe"):
@@ -782,6 +1148,7 @@ def api_run(mode: str) -> Any:
                 "log_tail": "",
                 "stage": "upload",
                 "stages": _fresh_stages(),
+                "file_progress": _new_file_progress(),
             }
         )
     threading.Thread(target=_run_pipeline, args=(mode,), daemon=True).start()
@@ -1217,6 +1584,7 @@ def _run_pipeline(mode: str) -> None:
 
     def append_log(msg: str) -> None:
         _run_state["log_tail"] += f"{msg}\n"
+        _record_file_progress(msg)
         stage = _infer_stage(_run_state["log_tail"])
         if stage:
             _run_state["stage"] = stage
@@ -1239,13 +1607,13 @@ def _run_pipeline(mode: str) -> None:
     try:
         if mode in ("full", "compress"):
             append_log("STEP 1: Compressing videos...")
-            returncode = run_streaming([PYTHON_EXE, "compress_and_move.py"])
+            returncode = run_streaming([PYTHON_EXE, "-u", "compress_and_move.py"])
             if returncode != 0:
                 append_log(f"compress_and_move.py exited with code {returncode}")
 
         if mode in ("full", "transcribe"):
             append_log("STEP 2: Organization + transcription...")
-            returncode = run_streaming([PYTHON_EXE, "master_processor.py"])
+            returncode = run_streaming([PYTHON_EXE, "-u", "master_processor.py"])
             if returncode != 0:
                 raise RuntimeError(f"master_processor.py failed (exit code {returncode})")
 

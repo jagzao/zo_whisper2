@@ -105,6 +105,14 @@ def test_targeted_gate_requires_paths():
     assert gate_runner.run_gate("targeted") == 2
 
 
+def test_named_gate_registry_uses_authoritative_commands():
+    assert {"quality", "security", "smoke", "playwright", "e2e", "sonar"} <= gate_runner.GATES.keys()
+    assert gate_runner.GATES["quality"][-1] == "scripts/quality.py"
+    assert gate_runner.GATES["security"][-1] == "scripts/security.py"
+    assert gate_runner.GATES["smoke"][-1] == "scripts/smoke.py"
+    assert gate_runner.GATES["playwright"][-1] == "scripts/e2e.py"
+
+
 def test_gate_runner_imports_no_provider_sdk():
     source = (ROOT / "scripts" / "gate_runner.py").read_text(encoding="utf-8")
     for forbidden in ("import openai", "import anthropic", "import requests", "import httpx", "import litellm"):

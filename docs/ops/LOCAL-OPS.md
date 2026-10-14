@@ -20,3 +20,17 @@ python -m compileall src/transcript_pipeline dashboard.py master_processor.py si
 
 ## Politica
 GitHub Actions: DISABLED. No agregar .github/workflows.
+
+## Validación de interfaz
+
+- Zo Media Intelligence web UI: Playwright Chromium (`python scripts/e2e.py`).
+- Proyectos Electron: Playwright Electron.
+- Este repositorio no agrega Electron como dependencia de runtime.
+
+El runner local compacto usa `python scripts/gate_runner.py <pytest|quality|security|smoke|playwright|e2e>`.
+SonarQube se configura en el entorno o almacén de credenciales local con
+`SONAR_HOST_URL` y `SONAR_TOKEN`; no guardar tokens en Git.
+
+La subida desde móvil usa bloques reanudables de 4 MiB. Si se corta la red,
+vuelve a abrir el dashboard y selecciona el mismo archivo para continuar; las
+sesiones incompletas se conservan hasta 7 días en `.upload_sessions/`.

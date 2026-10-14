@@ -368,6 +368,68 @@ def test_upload_duplicate_filename_does_not_overwrite(client, env):
     assert (env["video_compress"] / resp2.get_json()["name"]).read_bytes() == b"second"
 
 
+def test_resumable_upload_commits_chunks_and_is_idempotent(client, env):
+    payload = b"sample media bytes"
+    created = client.post(
+        "/api/upload-sessions",
+        json={"filename": "pg_meeting.mp4", "size": len(payload), "project": ""},
+        headers=AUTH_HEADERS,
+    )
+    assert created.status_code == 200
+    upload_id = created.get_json()["upload_id"]
+
+    chunk = client.put(
+        f"/api/upload-sessions/{upload_id}",
+        data=payload,
+        headers={**AUTH_HEADERS, "Content-Range": f"bytes 0-{len(payload) - 1}/{len(payload)}"},
+    )
+    assert chunk.status_code == 200
+    assert chunk.get_json()["offset"] == len(payload)
+
+    retry = client.put(
+        f"/api/upload-sessions/{upload_id}",
+        data=payload,
+        headers={**AUTH_HEADERS, "Content-Range": f"bytes 0-{len(payload) - 1}/{len(payload)}"},
+    )
+    assert retry.status_code == 200
+    assert retry.get_json()["offset"] == len(payload)
+
+    status = client.get(f"/api/upload-sessions/{upload_id}", headers=AUTH_HEADERS)
+    assert status.get_json()["offset"] == len(payload)
+
+    completed = client.post(f"/api/upload-sessions/{upload_id}/complete", json={}, headers=AUTH_HEADERS)
+    assert completed.status_code == 200
+    assert (env["video_compress"] / "pg_meeting.mp4").read_bytes() == payload
+    assert client.get(f"/api/upload-sessions/{upload_id}", headers=AUTH_HEADERS).get_json()["complete"] is True
+
+
+def test_resumable_upload_rejects_out_of_order_chunks(client):
+    created = client.post(
+        "/api/upload-sessions",
+        json={"filename": "meeting.mp4", "size": 4},
+        headers=AUTH_HEADERS,
+    )
+    upload_id = created.get_json()["upload_id"]
+    response = client.put(
+        f"/api/upload-sessions/{upload_id}",
+        data=b"xx",
+        headers={**AUTH_HEADERS, "Content-Range": "bytes 2-3/4"},
+    )
+    assert response.status_code == 409
+    assert response.get_json()["offset"] == 0
+
+
+def test_resumable_upload_status_requires_dashboard_token(client):
+    created = client.post(
+        "/api/upload-sessions",
+        json={"filename": "meeting.mp4", "size": 4},
+        headers=AUTH_HEADERS,
+    )
+    upload_id = created.get_json()["upload_id"]
+    response = client.get(f"/api/upload-sessions/{upload_id}")
+    assert response.status_code == 403
+
+
 def test_upload_oversize_rejected(client, monkeypatch):
     monkeypatch.setitem(dashboard_app.app.config, "MAX_CONTENT_LENGTH", 1024)
     oversize = b"x" * 2048

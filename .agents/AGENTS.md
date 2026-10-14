@@ -49,6 +49,17 @@ EPIC -> FEATURE -> US/ADR -> PLAN -> CODE -> DELIVERY
 - If implementation reveals a genuine contradiction in frozen requirements, stop with `SPEC_CONFLICT`.
 - Runtime state never belongs in tracked files.
 
+## Deployed source and UI parity
+
+- Before rebuilding or restarting a deployed service, identify the Compose build
+  context and the exact checkout that supplies the running image. Parallel
+  checkouts do not share edits; compare and port every in-scope change explicitly.
+- Validate the artifact served by the running service after deployment. For UI
+  changes, include phone and desktop viewport checks; confirm the mobile layout,
+  touch controls, and absence of page-level horizontal overflow.
+- Do not treat a successful image build or a localhost response as proof that the
+  deployed UI contains the intended responsive changes.
+
 ## Project-lead V4
 
 Project-lead is an autonomous delivery orchestrator, not a product owner and not the primary coder.

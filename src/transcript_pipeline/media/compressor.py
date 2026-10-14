@@ -164,6 +164,9 @@ def process_video_compress_folder(base_path: Path = PROJECT_ROOT) -> int:
     print(f"[INFO] Found {len(video_files)} video(s) to compress")
     print()
 
+    for video_file in video_files:
+        print(f"[QUEUE] {video_file.name}")
+
     processed_count = 0
 
     for video_file in video_files:
@@ -189,14 +192,17 @@ def process_video_compress_folder(base_path: Path = PROJECT_ROOT) -> int:
                 video_file.unlink()
 
                 print(f"[OK] Moved to: {final_path}")
+                print(f"[FILE_DONE] {video_file.name}")
                 processed_count += 1
             else:
                 if temp_compressed.exists():
                     temp_compressed.unlink()
                 print(f"[ERROR] Could not compress {video_file.name}")
+                print(f"[FILE_ERROR] {video_file.name}")
 
         except Exception as e:
             print(f"[ERROR] Processing {video_file.name}: {e}")
+            print(f"[FILE_ERROR] {video_file.name}")
             if temp_compressed.exists():
                 temp_compressed.unlink()
 
