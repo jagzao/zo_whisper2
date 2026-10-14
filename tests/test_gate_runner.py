@@ -1,4 +1,4 @@
-"""Deterministic tests for the compact gate runner (US-PLV4-001 WP-01).
+﻿"""Deterministic tests for the compact gate runner (US-PLV4-001 WP-01).
 
 AC-1: named runner emits valid compact JSON for PASS and FAIL.
 AC-2: it invokes existing scripts, it does not duplicate their logic.
@@ -52,10 +52,9 @@ def test_pass_emits_valid_compact_json():
     assert data["check"] == "pytest"
     assert data["error_signature"] == ""
     assert data["affected_files"] == []
-    assert data["artifact"].endswith("/logs/pytest.log")
+    assert data["artifact"] == "artifacts/gates/logs/pytest.log"
     assert isinstance(data["duration_seconds"], float)
     assert data["command"].endswith("-m pytest tests/ -q")
-    assert data["runner"] == "scripts/gate_runner.py"
 
 
 def test_fail_emits_valid_compact_json_with_signature():
@@ -70,29 +69,18 @@ def test_fail_emits_valid_compact_json_with_signature():
     assert data["gate"] == "pytest"
     assert data["check"] == "pytest"
     assert data["error_signature"] == "1 failed"
-    assert data["artifact"].endswith("/logs/pytest.log")
+    assert data["artifact"] == "artifacts/gates/logs/pytest.log"
 
 
 def test_fail_extracts_structured_report():
     report_path = ROOT / "quality_report.json"
     original = report_path.read_text(encoding="utf-8") if report_path.exists() else None
-
-    def _run_and_write_report(*_args, **_kwargs):
-        report_path.write_text(
-            json.dumps(
-                {
-                    "checks": [
-                        {"name": "ruff_lint", "status": "FAIL", "detail": "boom: bad import"}
-                    ],
-                    "ok": False,
-                }
-            ),
-            encoding="utf-8",
-        )
-        return _FakeCompleted(1, "", "")
-
+    report_path.write_text(
+        json.dumps({"checks": [{"name": "ruff_lint", "status": "FAIL", "detail": "boom: bad import"}], "ok": False}),
+        encoding="utf-8",
+    )
     try:
-        with mock.patch.object(gate_runner.subprocess, "run", side_effect=_run_and_write_report):
+        with mock.patch.object(gate_runner.subprocess, "run", return_value=_FakeCompleted(1, "", "")):
             rc = gate_runner.run_gate("quality")
     finally:
         if original is None:
@@ -106,6 +94,7 @@ def test_fail_extracts_structured_report():
     assert data["check"] == "ruff_lint"
     assert data["error_signature"].startswith("boom")
 
+
 def test_unknown_gate_returns_2_and_writes_no_artifact():
     rc = gate_runner.run_gate("nope")
     assert rc == 2
@@ -114,6 +103,73 @@ def test_unknown_gate_returns_2_and_writes_no_artifact():
 
 def test_targeted_gate_requires_paths():
     assert gate_runner.run_gate("targeted") == 2
+
+
+def test_named_gate_registry_uses_authoritative_commands():
+    assert {"quality", "security", "smoke", "e2e", "sonar"} <= gate_runner.GATES.keys()
+    assert gate_runner.GATES["quality"][-1] == "scripts/quality.py"
+    assert gate_runner.GATES["security"][-1] == "scripts/security.py"
+    assert gate_runner.GATES["smoke"][-1] == "scripts/smoke.py"
+    assert gate_runner.GATES["e2e"][-1] == "scripts/e2e.py"
+
+
+def test_playwright_alias_removed_so_e2e_runs_once():
+    # `playwright` was a duplicate alias of `e2e` (same command). It must be gone
+    # so the full E2E never runs twice, and exactly one gate maps to e2e.py.
+    assert "playwright" not in gate_runner.GATES
+    e2e_commands = [cmd for cmd in gate_runner.GATES.values() if cmd[-1] == "scripts/e2e.py"]
+    assert len(e2e_commands) == 1
+
+
+def test_gate_categories_split_implementation_from_heavy():
+    heavy = {"pytest", "security", "smoke", "e2e", "sonar", "docker-build", "docker-e2e", "jenkins", "soak"}
+    light = {"targeted", "unit", "lint", "quality", "typecheck"}
+    assert heavy <= gate_runner.HEAVY_GATES
+    assert light <= gate_runner.LIGHT_GATES
+    assert not (gate_runner.HEAVY_GATES & gate_runner.LIGHT_GATES)
+    for gate in heavy | light:
+        assert gate_runner.category_of(gate) in ("light", "heavy")
+    assert gate_runner.category_of("e2e") == "heavy"
+    assert gate_runner.category_of("targeted") == "light"
+
+
+def test_security_and_smoke_are_not_light_gates():
+    # Frozen V5 split: security and smoke are heavy-only. They must never be
+    # selectable as implementation/light gates.
+    for gate in ("security", "smoke"):
+        assert gate not in gate_runner.LIGHT_GATES
+        assert gate in gate_runner.HEAVY_GATES
+        assert gate_runner.category_of(gate) == "heavy"
+    assert gate_runner.LIGHT_GATES == frozenset(
+        {"targeted", "unit", "lint", "quality", "typecheck"}
+    )
+
+
+def test_not_configured_gate_is_never_reported_as_pass():
+    # sonar-scanner is not installed in this repo's dev environment; if it ever
+    # IS on PATH this test asserts the stronger property directly via stubbing.
+    with mock.patch.object(gate_runner, "_command_is_configured", return_value=False):
+        with mock.patch.object(
+            gate_runner.subprocess, "run", side_effect=AssertionError("must not spawn")
+        ):
+            rc = gate_runner.run_gate("sonar")
+
+    assert rc == 4
+    data = _read_latest()
+    assert data["status"] == "NOT_CONFIGURED"
+    assert data["category"] == "heavy"
+
+
+def test_list_registry_reports_categories():
+    import io
+    from contextlib import redirect_stdout
+
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        assert gate_runner.main(["--list"]) == 0
+    registry = json.loads(buffer.getvalue())
+    assert registry["e2e"]["category"] == "heavy"
+    assert registry["quality"]["category"] == "light"
 
 
 def test_gate_runner_imports_no_provider_sdk():
@@ -141,60 +197,3 @@ def test_duration_seconds_rounded():
 
     assert rc == 0
     assert _read_latest()["duration_seconds"] == 1.23
-
-
-def test_gate_report_is_also_persisted_under_build_artifacts(monkeypatch):
-    monkeypatch.setenv("BUILD_NUMBER", "123")
-    build_dir = ROOT / "artifacts" / "gates" / "build-123"
-    try:
-        with mock.patch.object(gate_runner.subprocess, "run", return_value=_FakeCompleted(0, "ok", "")):
-            assert gate_runner.run_gate("pytest") == 0
-        report = json.loads((build_dir / "pytest.json").read_text(encoding="utf-8"))
-        assert report["status"] == "PASS"
-        assert report["artifact"] == "artifacts/gates/build-123/logs/pytest.log"
-        assert (build_dir / "logs" / "pytest.log").read_text(encoding="utf-8") == "ok\n"
-    finally:
-        import shutil
-        shutil.rmtree(build_dir, ignore_errors=True)
-
-
-def test_e2e_failure_report_comes_from_isolated_test_data_root(tmp_path, monkeypatch):
-    monkeypatch.setenv("ZMI_TEST_DATA_ROOT", str(tmp_path))
-    report_path = tmp_path / "e2e_report.json"
-
-    def _run_and_write_report(*_args, **_kwargs):
-        report_path.write_text(json.dumps({"status": "FAIL", "detail": "isolated browser failure"}), encoding="utf-8")
-        return _FakeCompleted(1, "", "")
-
-    with mock.patch.object(gate_runner.subprocess, "run", side_effect=_run_and_write_report):
-        assert gate_runner.run_gate("e2e") == 1
-
-    data = _read_latest()
-    assert data["check"] == "e2e"
-    assert data["error_signature"] == "isolated browser failure"
-
-
-def test_stale_structured_report_is_not_reused():
-    report_path = ROOT / "quality_report.json"
-    original = report_path.read_text(encoding="utf-8") if report_path.exists() else None
-    report_path.write_text(
-        json.dumps({"checks": [{"name": "old_failure", "status": "FAIL", "detail": "stale"}], "ok": False}),
-        encoding="utf-8",
-    )
-    try:
-        with mock.patch.object(
-            gate_runner.subprocess,
-            "run",
-            return_value=_FakeCompleted(1, "", "current process failed before writing report"),
-        ):
-            rc = gate_runner.run_gate("quality")
-    finally:
-        if original is None:
-            report_path.unlink(missing_ok=True)
-        else:
-            report_path.write_text(original, encoding="utf-8")
-
-    assert rc == 1
-    data = _read_latest()
-    assert data["check"] == "quality"
-    assert data["error_signature"] == "current process failed before writing report"

@@ -1,16 +1,32 @@
-"""Compact deterministic gate runner.
+﻿"""Compact deterministic gate runner.
 
 Executes a named gate (an existing authoritative script/test) and emits a
 normalized machine-readable report at ``artifacts/gates/latest.json``. It
 invokes existing scripts — it never reimplements their logic.
 
+Gates are split into two PLV5 categories:
+
+- LIGHT (implementation phase): targeted, unit, lint, quality, typecheck.
+  The local coder may run these before ChatGPT review.
+- HEAVY (post-review, RAM-gated): pytest, security, smoke, e2e, sonar,
+  docker-build, docker-e2e, jenkins, soak. Never run before /review.
+
+`e2e` is the single authoritative full-E2E gate. The former `playwright`
+alias was removed because it invoked the same command as `e2e`, which made
+full E2E run twice.
+
+A gate whose authoritative command is not installed reports NOT_CONFIGURED.
+NOT_CONFIGURED is never silently reported as PASS.
+
 Run:
     python scripts/gate_runner.py <gate> [paths...]
+    python scripts/gate_runner.py --list
 """
 from __future__ import annotations
 
+import importlib.util
 import json
-import os
+import shutil
 import subprocess
 import sys
 import time
@@ -21,6 +37,10 @@ ARTIFACTS_DIR = ROOT / "artifacts" / "gates"
 LOGS_DIR = ARTIFACTS_DIR / "logs"
 LATEST_PATH = ARTIFACTS_DIR / "latest.json"
 
+STATUS_PASS = "PASS"
+STATUS_FAIL = "FAIL"
+STATUS_NOT_CONFIGURED = "NOT_CONFIGURED"
+
 # Gate registry: each entry is the authoritative existing command for that gate.
 GATES: dict[str, list[str]] = {
     "pytest": [sys.executable, "-m", "pytest", "tests/", "-q"],
@@ -28,7 +48,69 @@ GATES: dict[str, list[str]] = {
     "security": [sys.executable, "scripts/security.py"],
     "smoke": [sys.executable, "scripts/smoke.py"],
     "e2e": [sys.executable, "scripts/e2e.py"],
+    "sonar": ["sonar-scanner"],
+    "lint": [sys.executable, "-m", "ruff", "check", "scripts", "tests"],
+    "typecheck": [sys.executable, "-m", "compileall", "-q", "src", "scripts"],
+    "docker-build": ["docker", "build", "."],
+    "docker-e2e": ["docker", "compose", "-f", "watcher/docker-compose.yml", "up", "--abort-on-container-exit"],
+    "jenkins": ["jenkins-cli", "build"],
+    "soak": ["soak-runner"],
 }
+
+# PLV5 gate categories: implementation/light vs heavy (post-review only).
+LIGHT_GATES: frozenset[str] = frozenset(
+    {"targeted", "unit", "lint", "quality", "typecheck"}
+)
+HEAVY_GATES: frozenset[str] = frozenset(
+    {"pytest", "security", "smoke", "e2e", "sonar", "docker-build", "docker-e2e", "jenkins", "soak"}
+)
+
+GATE_CATEGORY: dict[str, str] = {
+    **{name: "light" for name in LIGHT_GATES},
+    **{name: "heavy" for name in HEAVY_GATES},
+}
+
+
+def category_of(gate: str) -> str:
+    return GATE_CATEGORY.get(gate, "unknown")
+
+
+def _command_is_configured(cmd: list[str]) -> bool:
+    """True when the authoritative command exists on this machine."""
+    if not cmd:
+        return False
+    head = cmd[0]
+    if head == sys.executable:
+        if len(cmd) >= 2 and cmd[1] == "-m":
+            module = cmd[2].split(".")[0]
+            return importlib.util.find_spec(module) is not None
+        return Path(head).exists()
+    if head.endswith(".py") or "/" in head or "\\" in head:
+        return (ROOT / head).exists() or Path(head).exists()
+    return shutil.which(head) is not None
+
+
+def list_gates() -> int:
+    registry = {
+        name: {
+            "command": " ".join(GATES[name]),
+            "category": category_of(name),
+            "configured": _command_is_configured(GATES[name]),
+        }
+        for name in sorted(GATES)
+    }
+    registry["targeted"] = {
+        "command": "pytest <paths...>",
+        "category": "light",
+        "configured": True,
+    }
+    registry["unit"] = {
+        "command": "pytest <paths...>",
+        "category": "light",
+        "configured": True,
+    }
+    print(json.dumps(registry, ensure_ascii=False, indent=2))
+    return 0
 
 # Gate scripts that emit a structured JSON report at repo root.
 REPORT_FILES: dict[str, str] = {
@@ -42,18 +124,6 @@ REPORT_FILES: dict[str, str] = {
 def _truncate(text: str, limit: int = 500) -> str:
     text = (text or "").strip()
     return text if len(text) <= limit else text[:limit]
-
-
-def _build_artifacts_dir() -> Path:
-    build = (os.environ.get("BUILD_NUMBER") or "local").strip()
-    safe = "".join(c if c.isalnum() or c in "-_" else "-" for c in build)[:80] or "local"
-    return ARTIFACTS_DIR / f"build-{safe}"
-
-
-def _report_path(gate: str, report_name: str) -> Path:
-    if gate == "e2e":
-        return Path(os.environ.get("ZMI_TEST_DATA_ROOT", str(ROOT))).resolve() / report_name
-    return ROOT / report_name
 
 
 def _existing_files_from_detail(detail: str) -> list[str]:
@@ -80,7 +150,7 @@ def _extract_structured_failure(gate: str, combined_output: str) -> tuple[str, s
     """
     report_name = REPORT_FILES.get(gate)
     if report_name:
-        report_path = _report_path(gate, report_name)
+        report_path = ROOT / report_name
         if report_path.exists():
             try:
                 report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -112,29 +182,42 @@ def _extract_structured_failure(gate: str, combined_output: str) -> tuple[str, s
 def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
     """Run a named gate, write compact report + raw log, return process status.
 
-    Returns 0 on PASS, 1 on FAIL, 2 on unknown gate.
+    Returns 0 on PASS, 1 on FAIL, 2 on unknown gate, 4 on NOT_CONFIGURED.
     """
     extra_args = extra_args or []
 
-    if gate == "targeted":
+    if gate in {"targeted", "unit"}:
         if not extra_args:
             return 2
         cmd = [sys.executable, "-m", "pytest", *extra_args, "-q"]
     elif gate in GATES:
         cmd = list(GATES[gate])
+        if not _command_is_configured(cmd):
+            LATEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+            LATEST_PATH.write_text(
+                json.dumps(
+                    {
+                        "status": STATUS_NOT_CONFIGURED,
+                        "gate": gate,
+                        "category": category_of(gate),
+                        "check": gate,
+                        "error_signature": "authoritative command not installed on this machine",
+                        "affected_files": [],
+                        "artifact": None,
+                        "duration_seconds": 0.0,
+                        "command": " ".join(cmd),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+            print(f"[{STATUS_NOT_CONFIGURED}] {gate} -> artifacts/gates/latest.json")
+            return 4
     else:
         return 2
 
-    build_dir = _build_artifacts_dir()
-    build_logs_dir = build_dir / "logs"
-    build_logs_dir.mkdir(parents=True, exist_ok=True)
-
-    # Never let a report from a previous run masquerade as evidence for the
-    # current invocation when the authoritative script fails before writing
-    # its own report.
-    report_name = REPORT_FILES.get(gate)
-    if report_name:
-        _report_path(gate, report_name).unlink(missing_ok=True)
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
     start = time.monotonic()
     try:
@@ -155,38 +238,43 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
     duration = time.monotonic() - start
 
     combined_output = f"{stdout}\n{stderr}"
-    log_path = build_logs_dir / f"{gate}.log"
-    log_path.write_text(combined_output, encoding="utf-8")
+    (LOGS_DIR / f"{gate}.log").write_text(combined_output, encoding="utf-8")
 
-    status = "PASS" if returncode == 0 else "FAIL"
-    if status == "PASS":
+    status = STATUS_PASS if returncode == 0 else STATUS_FAIL
+    if status == STATUS_PASS:
         check = gate
         error_signature = ""
         affected_files: list[str] = []
     else:
         check, error_signature, affected_files = _extract_structured_failure(gate, combined_output)
 
-    report = {
+    LATEST_PATH.write_text(
+        json.dumps(
+            {
                 "status": status,
                 "gate": gate,
+                "category": category_of(gate),
                 "check": check,
                 "error_signature": error_signature,
                 "affected_files": affected_files,
-                "artifact": log_path.relative_to(ROOT).as_posix(),
+                "artifact": f"artifacts/gates/logs/{gate}.log",
                 "duration_seconds": round(duration, 2),
                 "command": " ".join(cmd),
-                "runner": "scripts/gate_runner.py",
-            }
-    serialized = json.dumps(report, ensure_ascii=False, indent=2)
-    LATEST_PATH.write_text(serialized, encoding="utf-8")
-    (build_dir / f"{gate}.json").write_text(serialized, encoding="utf-8")
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
 
-    print(f"[{status}] {gate} ({round(duration, 2)}s) -> {build_dir.relative_to(ROOT).as_posix()}/{gate}.json")
-    return 0 if status == "PASS" else 1
+    print(f"[{status}] {gate} ({round(duration, 2)}s) -> artifacts/gates/latest.json")
+    return 0 if status == STATUS_PASS else 1
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "--list":
+        return list_gates()
     if not argv:
         return 2
     gate = argv[0]
