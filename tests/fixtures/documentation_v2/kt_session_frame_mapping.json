@@ -1,0 +1,674 @@
+{
+  "video_info": {
+    "name": "acme_kt_session.mp4",
+    "duration": 4500.0,
+    "extraction_method": "smart_scene",
+    "total_frames": 45
+  },
+  "transcription_summary": {
+    "total_segments": 23,
+    "mapped_frames": 23,
+    "full_transcription": "Welcome to the NimbusDesk support onboarding knowledge transfer for Acme Corp. Today we cover the GadgetPlus application support model end to end. Our scope includes ticket triage, escalation and reporting for GadgetPlus. First, the core concepts behind the GadgetPlus service catalog. GadgetPlus exposes three modules: orders, billing and returns. The FlowDesk ITSM tool is the single system of record for tickets. Compliance requires every ticket to carry the customer consent flag. Now the daily process. Start by opening the NimbusDesk dashboard. Triage new tickets before ten in the morning using the queue view. Priority one incidents follow the fifteen minute acknowledgement rule. Escalate to level two when the knowledge base has no matching article. The escalation matrix lives in the FlowDesk configuration module. Weekly we reconcile the returns queue against the billing report. Monthly compliance sampling pulls twenty random consent flags. Roles and responsibilities. Level one owns triage and first response. Level two owns deep diagnostics and vendor coordination for GadgetPlus. The knowledge owner curates the shared article repository. Shadowing happens in the first two weeks of the transition. Reverse shadow starts in week three with the new owner driving. Decisions. We agreed tickets keep the Acme Corp standard naming scheme. The backup owner for billing queries is the returns specialist. Reporting cadence moves to a single weekly digest every Friday. Risks. Peak season load may double the returns queue volume. Welcome again to the Acme Corp knowledge transfer program closing remarks.",
+    "language": "en"
+  },
+  "frames": [
+    {
+      "frame_file": "frame_0000.png",
+      "timestamp": 100.0,
+      "timestamp_formatted": "00:01:40"
+    },
+    {
+      "frame_file": "frame_0001.png",
+      "timestamp": 150.0,
+      "timestamp_formatted": "00:02:30"
+    },
+    {
+      "frame_file": "frame_0002.png",
+      "timestamp": 200.0,
+      "timestamp_formatted": "00:03:20"
+    },
+    {
+      "frame_file": "frame_0003.png",
+      "timestamp": 250.0,
+      "timestamp_formatted": "00:04:10"
+    },
+    {
+      "frame_file": "frame_0004.png",
+      "timestamp": 300.0,
+      "timestamp_formatted": "00:05:00"
+    },
+    {
+      "frame_file": "frame_0005.png",
+      "timestamp": 350.0,
+      "timestamp_formatted": "00:05:50"
+    },
+    {
+      "frame_file": "frame_0006.png",
+      "timestamp": 400.0,
+      "timestamp_formatted": "00:06:40"
+    },
+    {
+      "frame_file": "frame_0007.png",
+      "timestamp": 450.0,
+      "timestamp_formatted": "00:07:30"
+    },
+    {
+      "frame_file": "frame_0008.png",
+      "timestamp": 500.0,
+      "timestamp_formatted": "00:08:20"
+    },
+    {
+      "frame_file": "frame_0009.png",
+      "timestamp": 550.0,
+      "timestamp_formatted": "00:09:10"
+    },
+    {
+      "frame_file": "frame_0010.png",
+      "timestamp": 600.0,
+      "timestamp_formatted": "00:10:00"
+    },
+    {
+      "frame_file": "frame_0011.png",
+      "timestamp": 650.0,
+      "timestamp_formatted": "00:10:50"
+    },
+    {
+      "frame_file": "frame_0012.png",
+      "timestamp": 700.0,
+      "timestamp_formatted": "00:11:40"
+    },
+    {
+      "frame_file": "frame_0013.png",
+      "timestamp": 750.0,
+      "timestamp_formatted": "00:12:30"
+    },
+    {
+      "frame_file": "frame_0014.png",
+      "timestamp": 800.0,
+      "timestamp_formatted": "00:13:20"
+    },
+    {
+      "frame_file": "frame_0015.png",
+      "timestamp": 850.0,
+      "timestamp_formatted": "00:14:10"
+    },
+    {
+      "frame_file": "frame_0016.png",
+      "timestamp": 900.0,
+      "timestamp_formatted": "00:15:00"
+    },
+    {
+      "frame_file": "frame_0017.png",
+      "timestamp": 950.0,
+      "timestamp_formatted": "00:15:50"
+    },
+    {
+      "frame_file": "frame_0018.png",
+      "timestamp": 1000.0,
+      "timestamp_formatted": "00:16:40"
+    },
+    {
+      "frame_file": "frame_0019.png",
+      "timestamp": 1050.0,
+      "timestamp_formatted": "00:17:30"
+    },
+    {
+      "frame_file": "frame_0020.png",
+      "timestamp": 1100.0,
+      "timestamp_formatted": "00:18:20"
+    },
+    {
+      "frame_file": "frame_0021.png",
+      "timestamp": 1150.0,
+      "timestamp_formatted": "00:19:10"
+    },
+    {
+      "frame_file": "frame_0022.png",
+      "timestamp": 1200.0,
+      "timestamp_formatted": "00:20:00"
+    },
+    {
+      "frame_file": "frame_0023.png",
+      "timestamp": 1250.0,
+      "timestamp_formatted": "00:20:50"
+    },
+    {
+      "frame_file": "frame_0024.png",
+      "timestamp": 1300.0,
+      "timestamp_formatted": "00:21:40"
+    },
+    {
+      "frame_file": "frame_0025.png",
+      "timestamp": 1350.0,
+      "timestamp_formatted": "00:22:30"
+    },
+    {
+      "frame_file": "frame_0026.png",
+      "timestamp": 1400.0,
+      "timestamp_formatted": "00:23:20"
+    },
+    {
+      "frame_file": "frame_0027.png",
+      "timestamp": 1450.0,
+      "timestamp_formatted": "00:24:10"
+    },
+    {
+      "frame_file": "frame_0028.png",
+      "timestamp": 1500.0,
+      "timestamp_formatted": "00:25:00"
+    },
+    {
+      "frame_file": "frame_0029.png",
+      "timestamp": 1550.0,
+      "timestamp_formatted": "00:25:50"
+    },
+    {
+      "frame_file": "frame_0030.png",
+      "timestamp": 1600.0,
+      "timestamp_formatted": "00:26:40"
+    },
+    {
+      "frame_file": "frame_0031.png",
+      "timestamp": 1650.0,
+      "timestamp_formatted": "00:27:30"
+    },
+    {
+      "frame_file": "frame_0032.png",
+      "timestamp": 1700.0,
+      "timestamp_formatted": "00:28:20"
+    },
+    {
+      "frame_file": "frame_0033.png",
+      "timestamp": 1750.0,
+      "timestamp_formatted": "00:29:10"
+    },
+    {
+      "frame_file": "frame_0034.png",
+      "timestamp": 1800.0,
+      "timestamp_formatted": "00:30:00"
+    },
+    {
+      "frame_file": "frame_0035.png",
+      "timestamp": 1850.0,
+      "timestamp_formatted": "00:30:50"
+    },
+    {
+      "frame_file": "frame_0036.png",
+      "timestamp": 1900.0,
+      "timestamp_formatted": "00:31:40"
+    },
+    {
+      "frame_file": "frame_0037.png",
+      "timestamp": 1950.0,
+      "timestamp_formatted": "00:32:30"
+    },
+    {
+      "frame_file": "frame_0038.png",
+      "timestamp": 2000.0,
+      "timestamp_formatted": "00:33:20"
+    },
+    {
+      "frame_file": "frame_0039.png",
+      "timestamp": 2050.0,
+      "timestamp_formatted": "00:34:10"
+    },
+    {
+      "frame_file": "frame_0040.png",
+      "timestamp": 2100.0,
+      "timestamp_formatted": "00:35:00"
+    },
+    {
+      "frame_file": "frame_0041.png",
+      "timestamp": 2150.0,
+      "timestamp_formatted": "00:35:50"
+    },
+    {
+      "frame_file": "frame_0042.png",
+      "timestamp": 2200.0,
+      "timestamp_formatted": "00:36:40"
+    },
+    {
+      "frame_file": "frame_0043.png",
+      "timestamp": 2250.0,
+      "timestamp_formatted": "00:37:30"
+    },
+    {
+      "frame_file": "frame_0044.png",
+      "timestamp": 2300.0,
+      "timestamp_formatted": "00:38:20"
+    }
+  ],
+  "transcription_mapping": {
+    "frame_0000.png": {
+      "timestamp": 100.0,
+      "formatted_timestamp": "01:40",
+      "transcription_segments": [
+        {
+          "start": 97.0,
+          "end": 107.0,
+          "text": "Welcome to the NimbusDesk support onboarding knowledge transfer for Acme Corp.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Welcome to the NimbusDesk support onboarding knowledge transfer for Acme Corp."
+    },
+    "frame_0001.png": {
+      "timestamp": 150.0,
+      "formatted_timestamp": "02:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0002.png": {
+      "timestamp": 200.0,
+      "formatted_timestamp": "03:20",
+      "transcription_segments": [
+        {
+          "start": 197.0,
+          "end": 207.0,
+          "text": "Today we cover the GadgetPlus application support model end to end.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Today we cover the GadgetPlus application support model end to end."
+    },
+    "frame_0003.png": {
+      "timestamp": 250.0,
+      "formatted_timestamp": "04:10",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0004.png": {
+      "timestamp": 300.0,
+      "formatted_timestamp": "05:00",
+      "transcription_segments": [
+        {
+          "start": 297.0,
+          "end": 307.0,
+          "text": "Our scope includes ticket triage, escalation and reporting for GadgetPlus.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Our scope includes ticket triage, escalation and reporting for GadgetPlus."
+    },
+    "frame_0005.png": {
+      "timestamp": 350.0,
+      "formatted_timestamp": "05:50",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0006.png": {
+      "timestamp": 400.0,
+      "formatted_timestamp": "06:40",
+      "transcription_segments": [
+        {
+          "start": 397.0,
+          "end": 407.0,
+          "text": "First, the core concepts behind the GadgetPlus service catalog.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "First, the core concepts behind the GadgetPlus service catalog."
+    },
+    "frame_0007.png": {
+      "timestamp": 450.0,
+      "formatted_timestamp": "07:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0008.png": {
+      "timestamp": 500.0,
+      "formatted_timestamp": "08:20",
+      "transcription_segments": [
+        {
+          "start": 497.0,
+          "end": 507.0,
+          "text": "GadgetPlus exposes three modules: orders, billing and returns.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "GadgetPlus exposes three modules: orders, billing and returns."
+    },
+    "frame_0009.png": {
+      "timestamp": 550.0,
+      "formatted_timestamp": "09:10",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0010.png": {
+      "timestamp": 600.0,
+      "formatted_timestamp": "10:00",
+      "transcription_segments": [
+        {
+          "start": 597.0,
+          "end": 607.0,
+          "text": "The FlowDesk ITSM tool is the single system of record for tickets.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "The FlowDesk ITSM tool is the single system of record for tickets."
+    },
+    "frame_0011.png": {
+      "timestamp": 650.0,
+      "formatted_timestamp": "10:50",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0012.png": {
+      "timestamp": 700.0,
+      "formatted_timestamp": "11:40",
+      "transcription_segments": [
+        {
+          "start": 697.0,
+          "end": 707.0,
+          "text": "Compliance requires every ticket to carry the customer consent flag.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Compliance requires every ticket to carry the customer consent flag."
+    },
+    "frame_0013.png": {
+      "timestamp": 750.0,
+      "formatted_timestamp": "12:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0014.png": {
+      "timestamp": 800.0,
+      "formatted_timestamp": "13:20",
+      "transcription_segments": [
+        {
+          "start": 797.0,
+          "end": 807.0,
+          "text": "Now the daily process. Start by opening the NimbusDesk dashboard.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Now the daily process. Start by opening the NimbusDesk dashboard."
+    },
+    "frame_0015.png": {
+      "timestamp": 850.0,
+      "formatted_timestamp": "14:10",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0016.png": {
+      "timestamp": 900.0,
+      "formatted_timestamp": "15:00",
+      "transcription_segments": [
+        {
+          "start": 897.0,
+          "end": 907.0,
+          "text": "Triage new tickets before ten in the morning using the queue view.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Triage new tickets before ten in the morning using the queue view."
+    },
+    "frame_0017.png": {
+      "timestamp": 950.0,
+      "formatted_timestamp": "15:50",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0018.png": {
+      "timestamp": 1000.0,
+      "formatted_timestamp": "16:40",
+      "transcription_segments": [
+        {
+          "start": 997.0,
+          "end": 1007.0,
+          "text": "Priority one incidents follow the fifteen minute acknowledgement rule.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Priority one incidents follow the fifteen minute acknowledgement rule."
+    },
+    "frame_0019.png": {
+      "timestamp": 1050.0,
+      "formatted_timestamp": "17:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0020.png": {
+      "timestamp": 1100.0,
+      "formatted_timestamp": "18:20",
+      "transcription_segments": [
+        {
+          "start": 1097.0,
+          "end": 1107.0,
+          "text": "Escalate to level two when the knowledge base has no matching article.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Escalate to level two when the knowledge base has no matching article."
+    },
+    "frame_0021.png": {
+      "timestamp": 1150.0,
+      "formatted_timestamp": "19:10",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0022.png": {
+      "timestamp": 1200.0,
+      "formatted_timestamp": "20:00",
+      "transcription_segments": [
+        {
+          "start": 1197.0,
+          "end": 1207.0,
+          "text": "The escalation matrix lives in the FlowDesk configuration module.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "The escalation matrix lives in the FlowDesk configuration module."
+    },
+    "frame_0023.png": {
+      "timestamp": 1250.0,
+      "formatted_timestamp": "20:50",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0024.png": {
+      "timestamp": 1300.0,
+      "formatted_timestamp": "21:40",
+      "transcription_segments": [
+        {
+          "start": 1297.0,
+          "end": 1307.0,
+          "text": "Weekly we reconcile the returns queue against the billing report.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Weekly we reconcile the returns queue against the billing report."
+    },
+    "frame_0025.png": {
+      "timestamp": 1350.0,
+      "formatted_timestamp": "22:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0026.png": {
+      "timestamp": 1400.0,
+      "formatted_timestamp": "23:20",
+      "transcription_segments": [
+        {
+          "start": 1397.0,
+          "end": 1407.0,
+          "text": "Monthly compliance sampling pulls twenty random consent flags.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Monthly compliance sampling pulls twenty random consent flags."
+    },
+    "frame_0027.png": {
+      "timestamp": 1450.0,
+      "formatted_timestamp": "24:10",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0028.png": {
+      "timestamp": 1500.0,
+      "formatted_timestamp": "25:00",
+      "transcription_segments": [
+        {
+          "start": 1497.0,
+          "end": 1507.0,
+          "text": "Roles and responsibilities. Level one owns triage and first response.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Roles and responsibilities. Level one owns triage and first response."
+    },
+    "frame_0029.png": {
+      "timestamp": 1550.0,
+      "formatted_timestamp": "25:50",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0030.png": {
+      "timestamp": 1600.0,
+      "formatted_timestamp": "26:40",
+      "transcription_segments": [
+        {
+          "start": 1597.0,
+          "end": 1607.0,
+          "text": "Level two owns deep diagnostics and vendor coordination for GadgetPlus.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Level two owns deep diagnostics and vendor coordination for GadgetPlus."
+    },
+    "frame_0031.png": {
+      "timestamp": 1650.0,
+      "formatted_timestamp": "27:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0032.png": {
+      "timestamp": 1700.0,
+      "formatted_timestamp": "28:20",
+      "transcription_segments": [
+        {
+          "start": 1697.0,
+          "end": 1707.0,
+          "text": "The knowledge owner curates the shared article repository.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "The knowledge owner curates the shared article repository."
+    },
+    "frame_0033.png": {
+      "timestamp": 1750.0,
+      "formatted_timestamp": "29:10",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0034.png": {
+      "timestamp": 1800.0,
+      "formatted_timestamp": "30:00",
+      "transcription_segments": [
+        {
+          "start": 1797.0,
+          "end": 1807.0,
+          "text": "Shadowing happens in the first two weeks of the transition.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Shadowing happens in the first two weeks of the transition."
+    },
+    "frame_0035.png": {
+      "timestamp": 1850.0,
+      "formatted_timestamp": "30:50",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0036.png": {
+      "timestamp": 1900.0,
+      "formatted_timestamp": "31:40",
+      "transcription_segments": [
+        {
+          "start": 1897.0,
+          "end": 1907.0,
+          "text": "Reverse shadow starts in week three with the new owner driving.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Reverse shadow starts in week three with the new owner driving."
+    },
+    "frame_0037.png": {
+      "timestamp": 1950.0,
+      "formatted_timestamp": "32:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0038.png": {
+      "timestamp": 2000.0,
+      "formatted_timestamp": "33:20",
+      "transcription_segments": [
+        {
+          "start": 1997.0,
+          "end": 2007.0,
+          "text": "Decisions. We agreed tickets keep the Acme Corp standard naming scheme.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Decisions. We agreed tickets keep the Acme Corp standard naming scheme."
+    },
+    "frame_0039.png": {
+      "timestamp": 2050.0,
+      "formatted_timestamp": "34:10",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0040.png": {
+      "timestamp": 2100.0,
+      "formatted_timestamp": "35:00",
+      "transcription_segments": [
+        {
+          "start": 2097.0,
+          "end": 2107.0,
+          "text": "The backup owner for billing queries is the returns specialist.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "The backup owner for billing queries is the returns specialist."
+    },
+    "frame_0041.png": {
+      "timestamp": 2150.0,
+      "formatted_timestamp": "35:50",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0042.png": {
+      "timestamp": 2200.0,
+      "formatted_timestamp": "36:40",
+      "transcription_segments": [
+        {
+          "start": 2197.0,
+          "end": 2207.0,
+          "text": "Reporting cadence moves to a single weekly digest every Friday.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Reporting cadence moves to a single weekly digest every Friday."
+    },
+    "frame_0043.png": {
+      "timestamp": 2250.0,
+      "formatted_timestamp": "37:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0044.png": {
+      "timestamp": 2300.0,
+      "formatted_timestamp": "38:20",
+      "transcription_segments": [
+        {
+          "start": 2297.0,
+          "end": 2307.0,
+          "text": "Risks. Peak season load may double the returns queue volume.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Risks. Peak season load may double the returns queue volume."
+    }
+  }
+}

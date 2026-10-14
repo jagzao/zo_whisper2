@@ -35,8 +35,8 @@ from transcript_pipeline.config import (
     AUDIO_DIR,
     DATA_ROOT,
     LOG_DIR,
-    PROJECTS_CONFIG_PATH,
     PROCESSED_FILES_DB,
+    PROJECTS_CONFIG_PATH,
     TRANSCRIPTIONS_DIR,
     VIDEO_COMPRESS_DIR,
     VIDEOS_DIR,
@@ -588,7 +588,14 @@ def _documentation_dirs(media_path: Path) -> Path | None:
 def _resolve_documentation(media_path: Path, root: MediaRoot) -> dict | None:
     """Reports whether the video-to-documentation engine already produced a
     manual/AI package for this source video, without loading their content
-    (kept cheap since this runs once per row in `/api/files`)."""
+    (kept cheap since this runs once per row in `/api/files`).
+
+    V2 surfacing (PLAN WP-17): distinguishes evidence-only output from a
+    semantic-manual-ready result so the UI can label the documentation state
+    without a redesign — the existing "Open generated documentation" action
+    already opens MANUAL.md, which IS the semantic manual whenever synthesis
+    succeeded, and the Evidence Timeline stays separately discoverable under
+    the frames directory."""
     frames_parent = _documentation_dirs(media_path)
     if frames_parent is None:
         return None
@@ -598,9 +605,20 @@ def _resolve_documentation(media_path: Path, root: MediaRoot) -> dict | None:
     has_ai_package = ai_manifest.exists()
     if not has_manual and not has_ai_package:
         return None
+    has_semantic_manual = (frames_parent / "manual" / "knowledge-document.json").exists()
+    has_evidence = (frames_parent / "evidence" / "evidence.jsonl").exists()
+    if has_semantic_manual:
+        documentation_status = "semantic_manual_ready"
+    elif has_evidence:
+        documentation_status = "evidence_only"
+    else:
+        documentation_status = "legacy_manual"
     return {
         "has_manual": has_manual,
         "has_ai_package": has_ai_package,
+        "has_semantic_manual": has_semantic_manual,
+        "has_evidence_timeline": has_evidence,
+        "documentation_status": documentation_status,
         "media_id": _to_media_id(root, media_path),
     }
 

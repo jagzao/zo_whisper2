@@ -216,49 +216,41 @@ def generate_documentation(
     ai_package_dir: Path | None = None,
     project_config: dict | None = None,
 ) -> dict:
-    """Reads `frames_dir/frame_mapping.json` and writes MANUAL.md + the
-    AI-ready package next to it. Returns a small summary dict.
+    """Reads `frames_dir/frame_mapping.json` and writes the documentation
+    bundles next to it. Returns a small summary dict.
+
+    V2 (PLAN WP-14): this now runs the staged Documentation Synthesis V2
+    pipeline — Evidence Plane first, then privacy-guarded semantic synthesis
+    when a provider is available. When synthesis is unavailable/blocked or
+    its output fails grounding validation, the Evidence Plane still succeeds
+    and the legacy frame-by-frame compatibility bundles are written instead
+    (same MANUAL.md/steps.json/metadata contract as before, DV2-47). The
+    returned dict keeps the historical keys (manual_dir, ai_package_dir,
+    step_count, low_confidence_count, knowledge) and adds the staged V2
+    fields (status, evidence, mode, synthesis, semantic).
 
     Safe to call again later purely from the persisted `steps.json` via
-    `regenerate_from_steps` — this function is the only one that re-derives
-    steps from frame_mapping.json (i.e. it's the only path that would need
-    re-transcription-adjacent data or re-run OCR/vision evidence gathering).
+    `regenerate_from_steps` — the V2 evidence gathering here (build_steps
+    with frames_dir) is the only path that runs OCR; the V2 regeneration
+    entry point never does.
     """
+    from transcript_pipeline.documentation.pipeline_v2 import generate_documentation_v2
+
     mapping_path = frames_dir / "frame_mapping.json"
     if not mapping_path.exists():
         raise FileNotFoundError(f"frame_mapping.json not found in {frames_dir}")
 
     mapping_data = json.loads(mapping_path.read_text(encoding="utf-8"))
-    video_info = mapping_data.get("video_info", {})
-    transcription_summary = mapping_data.get("transcription_summary", {})
-
     steps = build_steps(mapping_data, frames_dir, project_config)
 
-    source = DocumentationSource(
-        video_name=video_name,
-        duration=video_info.get("duration", 0.0),
-        language=transcription_summary.get("language", "unknown"),
-        extraction_method=video_info.get("extraction_method", "unknown"),
-        generated_at=datetime.now(timezone.utc).isoformat(),
+    return generate_documentation_v2(
+        frames_dir,
+        video_name,
+        manual_dir=manual_dir,
+        ai_package_dir=ai_package_dir,
+        project_config=project_config,
+        steps=steps,
     )
-
-    manual_dir = manual_dir or (frames_dir / "manual")
-    ai_package_dir = ai_package_dir or (frames_dir / "ai-package")
-
-    _write_steps_json(manual_dir, source, steps)  # editable source of truth for regeneration
-    write_manual(manual_dir, source, steps, frames_dir, write_steps_json=False)
-    write_ai_package(ai_package_dir, source, steps, frames_dir)
-    knowledge_result = publish_knowledge_from_documentation(
-        ai_package_dir, source, steps, project_config, frames_dir=frames_dir
-    )
-
-    return {
-        "manual_dir": str(manual_dir),
-        "ai_package_dir": str(ai_package_dir),
-        "step_count": len(steps),
-        "low_confidence_count": sum(1 for s in steps if s.confidence == "low"),
-        "knowledge": knowledge_result,
-    }
 
 
 def publish_knowledge_from_documentation(
