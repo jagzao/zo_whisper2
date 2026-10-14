@@ -46,6 +46,22 @@ def _bound_excerpt(text: str | None, limit: int = MAX_EXCERPT_CHARS) -> str | No
     return text if len(text) <= limit else text[:limit]
 
 
+def _split_transcript(text: str, limit: int = MAX_EXCERPT_CHARS) -> list[str]:
+    normalized = " ".join(text.split())
+    chunks: list[str] = []
+    start = 0
+    while len(normalized) - start > limit:
+        end = start + limit
+        boundary = normalized.rfind(" ", start, end)
+        if boundary > start:
+            end = boundary + 1
+        chunks.append(normalized[start:end])
+        start = end
+    if start < len(normalized):
+        chunks.append(normalized[start:])
+    return chunks
+
+
 @dataclass(frozen=True)
 class EvidenceItem:
     """One captured evidence moment (SPEC §3 EvidenceItem)."""
@@ -398,6 +414,22 @@ def build_evidence_timeline(
         })
         fidelity = FIDELITY_UNTIMED_FULL_TRANSCRIPT
 
+    expanded_entries: list[dict[str, Any]] = []
+    for entry in raw_entries:
+        transcript = entry.get("transcript")
+        if not transcript or len(transcript) <= MAX_EXCERPT_CHARS:
+            expanded_entries.append(entry)
+            continue
+        for index, chunk in enumerate(_split_transcript(str(transcript))):
+            expanded_entries.append({
+                **entry,
+                "transcript": chunk,
+                "ocr": entry.get("ocr") if index == 0 else None,
+                "frame": entry.get("frame") if index == 0 else None,
+                "preserve_transcript_boundary": True,
+            })
+    raw_entries = expanded_entries
+
     # Deterministic chronological order -> deterministic E-### ids.
     raw_entries.sort(key=lambda e: (e["start"], e["end"], e["frame"] or ""))
 
@@ -420,7 +452,10 @@ def build_evidence_timeline(
             ordinal=ordinal,
             timestamp_start=float(entry["start"]),
             timestamp_end=float(entry["end"]),
-            transcript_excerpt=_bound_excerpt(entry.get("transcript")),
+            transcript_excerpt=(
+                entry.get("transcript") if entry.get("preserve_transcript_boundary")
+                else _bound_excerpt(entry.get("transcript"))
+            ),
             ocr_excerpt=_bound_excerpt(entry.get("ocr")),
             frame_ref=entry.get("frame"),
             confidence=_confidence_for(source) if not entry.get("placeholder") else "low",

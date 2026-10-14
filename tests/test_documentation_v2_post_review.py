@@ -7,18 +7,18 @@ from pathlib import Path
 import pytest
 
 from transcript_pipeline.documentation.compaction import build_synthesis_blocks
-from transcript_pipeline.documentation.evidence import build_evidence_timeline
+from transcript_pipeline.documentation.evidence import EvidenceItem, EvidenceTimeline, build_evidence_timeline
 from transcript_pipeline.documentation.pipeline_v2 import generate_documentation_v2
 from transcript_pipeline.documentation.regenerate_v2 import (
     UpstreamWorkAttemptedError,
     default_upstream_guard,
     install_upstream_guard,
-    main as regenerate_main,
     undo_guard,
 )
-from transcript_pipeline.documentation.synthesis import _validate_fragment_shape
-from transcript_pipeline.documentation.synthesis import SynthesisService
-from transcript_pipeline.documentation.evidence import EvidenceTimeline, EvidenceItem
+from transcript_pipeline.documentation.regenerate_v2 import (
+    main as regenerate_main,
+)
+from transcript_pipeline.documentation.synthesis import SynthesisService, _validate_fragment_shape
 
 
 def test_saved_segments_are_authoritative_over_sparse_frames(tmp_path):
@@ -44,6 +44,43 @@ def test_saved_segment_absence_uses_mapping_fallback():
         "transcription_mapping": {"f.png": {"full_text": "mapped speech"}},
     })
     assert [item.transcript_excerpt for item in timeline.facts()] == ["mapped speech"]
+
+
+def test_long_fallback_and_saved_segment_split_without_content_loss(tmp_path):
+    from transcript_pipeline.documentation.evidence import MAX_EXCERPT_CHARS
+
+    normalized = " ".join("spoken transcript phrase" for _ in range(180))
+    fallback = build_evidence_timeline({
+        "video_info": {"name": "fallback.mp4", "duration": 900},
+        "transcription_summary": {"full_transcription": normalized},
+        "frames": [],
+    })
+    chunks = [item for item in fallback.facts() if item.transcript_excerpt]
+    assert len(chunks) > 3
+    assert "".join(item.transcript_excerpt for item in chunks) == normalized
+    assert all(len(item.transcript_excerpt) <= MAX_EXCERPT_CHARS and item.untimed for item in chunks)
+    assert {(item.timestamp_start, item.timestamp_end) for item in chunks} == {(0.0, 900.0)}
+
+    frames_dir = tmp_path / "frames"
+    frames_dir.mkdir()
+    (tmp_path / "long_segment_segments.json").write_text(json.dumps({
+        "segments": [{"id": "segment-1", "start": 12, "end": 25, "text": normalized}]
+    }), encoding="utf-8")
+    saved = build_evidence_timeline({
+        "video_info": {"name": "long_segment.mp4", "duration": 100}, "frames": [],
+    }, source_media="long_segment.mp4", frames_dir=frames_dir)
+    saved_chunks = saved.facts()
+    assert "".join(item.transcript_excerpt for item in saved_chunks) == normalized
+    assert all(len(item.transcript_excerpt) <= MAX_EXCERPT_CHARS for item in saved_chunks)
+    assert {(item.timestamp_start, item.timestamp_end) for item in saved_chunks} == {(12.0, 25.0)}
+
+    oversized = build_evidence_timeline({
+        "video_info": {"name": "oversized.mp4", "duration": 10},
+        "transcription_summary": {"full_transcription": "word " * 70_000}, "frames": [],
+    })
+    compacted = build_synthesis_blocks(oversized).build()
+    assert not compacted.coverage_complete
+    assert compacted.omitted_evidence_ids
 
 
 def test_builtin_upstream_guard_intercepts_and_restores_targets():
@@ -155,6 +192,55 @@ def test_any_failed_block_invalidates_synthesis(monkeypatch):
     assert result.status == "SYNTHESIS_INVALID"
     assert result.document is None
     assert any(error.startswith("block-2:") for error in result.errors)
+
+
+def test_block_local_grounding_rejects_globally_known_cross_block_id(monkeypatch):
+    from transcript_pipeline.documentation import synthesis as module
+    from transcript_pipeline.documentation.compaction import CompactionResult, SynthesisBlock
+
+    timeline = EvidenceTimeline(items=[EvidenceItem(
+        evidence_id=f"E-00{i}", ordinal=i, timestamp_start=i, timestamp_end=i,
+        confidence="high", reviewed=False, evidence_source="transcript", transcript_excerpt=f"speech {i}",
+    ) for i in (1, 2)])
+    blocks = [
+        SynthesisBlock(1, 1, 1, ("E-001",), "speech 1", "", 10),
+        SynthesisBlock(2, 2, 2, ("E-002",), "speech 2", "", 10),
+    ]
+    class Builder:
+        def build(self):
+            return CompactionResult(blocks=blocks)
+    monkeypatch.setattr(module, "build_synthesis_blocks", lambda *a, **k: Builder())
+
+    class Provider:
+        provider_type = "local"
+        calls = 0
+        repair_block_one = False
+        def generate_summary(self, text, **kwargs):
+            self.calls += 1
+            if self.repair_block_one and not text.startswith("{"):
+                return json.dumps({"sections": [{"sectionType": "REFERENCE", "claims": [
+                    {"text": "cross block fact", "evidenceIds": ["E-002"]}
+                ]}], "procedures": [], "glossary": []})
+            payload = json.loads(text) if text.startswith("{") else {}
+            idx = payload.get("block", {}).get("blockIndex")
+            cited = "E-002" if idx == 1 else "E-002"
+            if idx == 1:
+                self.repair_block_one = True
+            else:
+                self.repair_block_one = False
+            return json.dumps({"sections": [{"sectionType": "REFERENCE", "claims": [
+                {"text": f"fact {idx}", "evidenceIds": [cited]}
+            ]}], "procedures": [], "glossary": []})
+    class Guard:
+        def check(self, *args):
+            return None
+
+    provider = Provider()
+    result = SynthesisService(provider, Guard()).synthesize(timeline, "REFERENCE", {})
+    assert result.status == "SYNTHESIS_INVALID"
+    assert result.document is None
+    assert result.invocation_count == 3
+    assert any(error.startswith("block-1:malformed_after_repair") for error in result.errors)
 
 
 def test_mode_override_rejected_even_evidence_only(tmp_path):

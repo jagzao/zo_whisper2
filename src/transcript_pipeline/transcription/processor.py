@@ -651,9 +651,11 @@ class SimpleScanProcessor:
             frame_info = result.get("frame_info")
             if frame_info:
                 self._integrate_transcription_with_frames(result, frame_info)
-                self._generate_documentation_bundle(audio_path, frame_info, result.get("project"))
 
             self.save_transcription(audio_path, result)
+
+            if frame_info:
+                self._generate_documentation_bundle(audio_path, frame_info, result.get("project"))
 
             self.tracker.mark_as_processed(audio_path, "completed")
 

@@ -187,7 +187,9 @@ class SynthesisService:
                 ensure_ascii=False,
             )
 
-            raw, block_errors, used, coerced_count = self._request_block(system_prompt, user_payload)
+            raw, block_errors, used, coerced_count = self._request_block(
+                system_prompt, user_payload, allowed_evidence_ids=set(block.evidence_ids)
+            )
             invocations += used
             coerced += coerced_count
             if block_errors:
@@ -250,7 +252,7 @@ class SynthesisService:
         )
 
     def _request_block(
-        self, system_prompt: str, user_payload: str
+        self, system_prompt: str, user_payload: str, *, allowed_evidence_ids: set[str]
     ) -> tuple[str, list[str], int, int]:
         """One bounded request + at most ONE schema-repair retry (DV2-45/46).
         Returns (raw_json, errors, invocation_count, coerced_review_flags)."""
@@ -265,7 +267,7 @@ class SynthesisService:
         except Exception as e:  # noqa: BLE001 - transport failure => typed unavailable signal
             return "", [f"provider:{type(e).__name__}"], 1, 0
 
-        valid, error, coerced = _validate_fragment_shape(raw)
+        valid, error, coerced = _validate_fragment_shape(raw, allowed_evidence_ids)
         if valid:
             return raw, [], 1, coerced
 
@@ -278,7 +280,7 @@ class SynthesisService:
             )
         except Exception as e:  # noqa: BLE001
             return "", [f"provider:{type(e).__name__}", "repair_failed"], 2, coerced
-        valid, error, coerced2 = _validate_fragment_shape(raw)
+        valid, error, coerced2 = _validate_fragment_shape(raw, allowed_evidence_ids)
         if valid:
             return raw, [], 2, coerced + coerced2
         return "", [f"malformed_after_repair:{error}"], 2, coerced + coerced2
@@ -406,7 +408,9 @@ def _executive_summary(sections: list[KnowledgeSection]) -> str:
     return ""
 
 
-def _validate_fragment_shape(raw: str) -> tuple[bool, str, int]:
+def _validate_fragment_shape(
+    raw: str, allowed_evidence_ids: set[str] | None = None
+) -> tuple[bool, str, int]:
     """Structural pre-check of one provider response: must be a JSON object
     (no free-form prose). Counts coerced review flags. Returns
     (valid, error, coerced_review_flags)."""
@@ -465,6 +469,15 @@ def _validate_fragment_shape(raw: str) -> tuple[bool, str, int]:
     if not semantic_units:
         return False, "empty semantic output", coerced
 
+    if allowed_evidence_ids is not None:
+        cited_ids = {
+            evidence_id
+            for value in data.values()
+            for evidence_id in _collect_evidence_ids(value)
+        }
+        if not cited_ids.issubset(allowed_evidence_ids):
+            return False, "evidence id outside current block", coerced
+
     def _scan(value: Any) -> None:
         nonlocal coerced
         if isinstance(value, dict):
@@ -483,6 +496,18 @@ def _validate_fragment_shape(raw: str) -> tuple[bool, str, int]:
 
 def _valid_ids(value: Any) -> bool:
     return isinstance(value, list) and bool(value) and all(isinstance(item, str) and item.strip() for item in value)
+
+
+def _collect_evidence_ids(value: Any) -> set[str]:
+    if isinstance(value, dict):
+        found = set(value.get("evidenceIds", [])) if isinstance(value.get("evidenceIds"), list) else set()
+        for key, child in value.items():
+            if key != "evidenceIds":
+                found.update(_collect_evidence_ids(child))
+        return found
+    if isinstance(value, list):
+        return set().union(*(_collect_evidence_ids(child) for child in value)) if value else set()
+    return set()
 
 
 def _provider_type_name(provider: Any) -> str:

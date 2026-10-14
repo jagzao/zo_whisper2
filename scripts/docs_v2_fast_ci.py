@@ -18,7 +18,7 @@ TESTS = {
     "B": ["tests/test_documentation_v2_synthesis_grounding.py"],
     "C": ["tests/test_documentation_v2_screenshots.py", "tests/test_documentation_v2_manual_package.py"],
     "D": ["tests/test_documentation_v2_knowledge_bridge.py"],
-    "E": ["tests/test_documentation_v2_regenerate_review.py", "tests/test_documentation_v2_fixtures.py"],
+    "E": ["tests/test_documentation_v2_regenerate_review.py", "tests/test_documentation_v2_fixtures.py", "tests/test_documentation_v2_real_flow.py", "tests/integration/test_handler_routing.py"],
 }
 SOURCE = [
     "src/transcript_pipeline/documentation",

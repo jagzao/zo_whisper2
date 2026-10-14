@@ -22,7 +22,6 @@ from transcript_pipeline.documentation.evidence_writer import write_evidence_out
 from transcript_pipeline.documentation.pipeline_v2 import generate_documentation_v2
 from transcript_pipeline.projects import validate_project
 
-
 # ── DV2-01 mode explicit ──────────────────────────────────────────────────
 
 def test_dv2_01_explicit_mode_wins_over_filename_hint(tmp_path):
@@ -158,9 +157,13 @@ def test_dv2_09_full_transcript_only_yields_lower_fidelity_no_fake_timestamps():
     timeline = build_evidence_timeline(mapping)
     assert timeline.fidelity == FIDELITY_UNTIMED_FULL_TRANSCRIPT
     facts = timeline.facts()
-    assert len(facts) == 1, "only the untimed full-transcript item is a fact"
+    assert len(facts) > 1, "long transcript must split into bounded untimed facts"
+    assert all(item.untimed is True for item in facts)
+    assert "".join(item.transcript_excerpt for item in facts) == " ".join(
+        f"word{i}" for i in range(300)
+    )
+    assert all(len(item.transcript_excerpt) <= 1200 for item in facts)
     item = facts[0]
-    assert item.untimed is True
     # Honest full-span bounds, no fabricated per-segment timestamps.
     assert item.timestamp_start == 0.0
     assert item.timestamp_end == pytest.approx(500.0)
