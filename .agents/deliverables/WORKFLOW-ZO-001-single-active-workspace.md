@@ -31,15 +31,38 @@ Instead:
 - commit coherent active-task changes early;
 - push checkpoints frequently.
 
-If unrelated owner changes coexist and cannot safely be separated mechanically:
-- STOP with REVIEW_REQUIRED and report exact files;
-- do not stash/reset/clean/discard automatically.
+If unrelated owner changes coexist and prevent a safe branch switch, use ONE temporary preservation branch in the SAME workspace:
+
+1. inspect all modified/untracked files;
+2. verify no secrets/private runtime data will be committed;
+3. create a clearly named temporary branch, e.g. `wip/zo-whisper-preserve-YYYYMMDD-HHMM`;
+4. commit the unrelated local changes there with a WIP/preservation message;
+5. push that branch immediately;
+6. return the same workspace to the active feature branch;
+7. finish the active feature;
+8. reconcile/delete the preservation branch later with owner review.
+
+This is a preservation mechanism, not a parallel implementation stream.
+
+Do not create another worktree to park changes.
 
 Never:
 - git reset --hard owner work;
 - git clean -fd owner work;
 - auto-stash unrelated work;
+- discard untracked owner files;
 - spawn additional worktrees to avoid understanding current state.
+
+If a temporary preservation branch would include secrets, credentials, private media, raw client data, or unsafe generated artifacts:
+- do not commit them;
+- stop with REVIEW_REQUIRED and report the exact blocker.
+
+## Result semantics
+If work is blocked before implementation/tests run, report:
+- NOT_RUN / BLOCKED_PRECONDITION
+instead of falsely reporting implementation FAIL.
+
+A feature/test is FAIL only after the relevant implementation/test actually ran and failed.
 
 ## Concurrency
 Analysis/specification for the NEXT feature may be frozen in Git while current work is still being finished.
@@ -64,6 +87,8 @@ not from parallel worktrees.
 4. One real non-sensitive Documentation V2 quality benchmark.
 5. Owner acceptance / merge decision.
 6. Only then switch the same normal workspace to `feat/zmi-live-capture-v1`.
-7. Implement Live Capture from the already-frozen EPIC/SPEC/PLAN/TEST-MATRIX.
+7. Review the already-pushed Live Capture Slice A/B checkpoints.
+8. Resume from Slice C.
+9. Continue from the frozen EPIC/SPEC/PLAN/TEST-MATRIX.
 
-Live Capture analysis may remain parked remotely until step 6.
+Live Capture implementation stays parked remotely until step 6.
