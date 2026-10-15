@@ -25,6 +25,7 @@ from transcript_pipeline.live_capture.errors import (
 
 SCHEMA_VERSION = 1
 FRAGMENT_MANIFEST_SCHEMA_VERSION = 1
+PROCESSING_MAP_SCHEMA_VERSION = 1
 DEFAULT_CHUNK_DURATION_SEC = 600
 
 # An upload fragment is an immutable, idempotently-ACKed unit of browser
@@ -32,6 +33,19 @@ DEFAULT_CHUNK_DURATION_SEC = 600
 # server stored its media and manifest entry, so there is no recipient-side
 # "recording"/"partial" state to model.
 FRAGMENT_STATE_ACKED = "ACKED"
+
+# Processing-chunk mapping states (W6). A mapping entry reserves one
+# processing-chunk index for an ordered run of ACKed fragments, based on the
+# recorded fragment timeline. PENDING/RETRYABLE entries are durable and
+# retryable; FINALIZED means the assembled chunk media landed and the reused
+# `models.Chunk` is playable. Assembly replays a PENDING/RETRYABLE entry from
+# the surviving source fragments without any browser re-upload.
+PROCESSING_STATE_PENDING = "PENDING"
+PROCESSING_STATE_FINALIZED = "FINALIZED"
+PROCESSING_STATE_RETRYABLE = "RETRYABLE"
+PROCESSING_STATES = frozenset(
+    {PROCESSING_STATE_PENDING, PROCESSING_STATE_FINALIZED, PROCESSING_STATE_RETRYABLE}
+)
 
 # A late-supplied transcript is always stored as one opaque text block with
 # only its arrival time. No per-second segment sync is ever invented, so the
@@ -270,6 +284,12 @@ class Fragment:
     same ID with identical bytes is idempotent and replaying it with different
     bytes is rejected before anything is overwritten. A persisted Fragment is
     always ACKED — it cannot exist before its media and manifest entry landed.
+
+    W6 extends the fragment with its *recorded timeline*: `duration_ms` and
+    `recorded_offset_ms` (offset from capture start) let the server aggregate
+    ordered fragments into processing chunks around a configured duration,
+    while `recorded_at` keeps the wall-clock start of the fragment. All three
+    are optional so W5 manifests (which lack them) still load.
     """
 
     fragment_id: str
@@ -279,6 +299,9 @@ class Fragment:
     media_size_bytes: int
     media_sha256: str
     state: str = FRAGMENT_STATE_ACKED
+    duration_ms: int | None = None
+    recorded_offset_ms: int | None = None
+    recorded_at: str | None = None
 
     def __post_init__(self) -> None:
         validate_fragment_id(self.fragment_id)
@@ -298,6 +321,12 @@ class Fragment:
             raise ValidationError("fragment mediaSha256 must be a non-empty string")
         if self.state != FRAGMENT_STATE_ACKED:
             raise ValidationError("upload fragment state must be ACKED")
+        _validate_optional_nonnegative_int(self.duration_ms, "fragment durationMs")
+        _validate_optional_nonnegative_int(self.recorded_offset_ms, "fragment recordedOffsetMs")
+        if self.recorded_at is not None and (
+            not isinstance(self.recorded_at, str) or not self.recorded_at.strip()
+        ):
+            raise ValidationError("fragment recordedAt must be a non-empty string or null")
 
     def to_manifest(self) -> dict[str, Any]:
         return {
@@ -308,6 +337,9 @@ class Fragment:
             "mediaExtension": self.media_extension,
             "mediaSizeBytes": self.media_size_bytes,
             "mediaSha256": self.media_sha256,
+            "durationMs": self.duration_ms,
+            "recordedOffsetMs": self.recorded_offset_ms,
+            "recordedAt": self.recorded_at,
         }
 
     @classmethod
@@ -323,9 +355,103 @@ class Fragment:
                 media_size_bytes=_require_nonnegative_int(data, "mediaSizeBytes"),
                 media_sha256=_require_nonempty_str(data, "mediaSha256"),
                 state=str(data.get("state") or FRAGMENT_STATE_ACKED),
+                duration_ms=_optional_nonnegative_int(data.get("durationMs")),
+                recorded_offset_ms=_optional_nonnegative_int(data.get("recordedOffsetMs")),
+                recorded_at=_optional_nonempty_str(data.get("recordedAt")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("fragment manifest is malformed") from exc
+
+
+@dataclass(frozen=True)
+class ProcessingChunkMapping:
+    """Durable fragment->processing-chunk mapping (W6).
+
+    One entry reserves a single processing-chunk index for an ordered run of
+    ACKed fragment IDs, with the recorded time range the boundary decision was
+    based on. It is stored in `processing_chunks.json`, *separately* from
+    `models.Chunk`, so a fragment is never overloaded as a processable chunk.
+    """
+
+    chunk_index: int
+    fragment_ids: tuple[str, ...]
+    start_offset_ms: int
+    duration_ms: int
+    state: str
+    created_at: str
+    recorded_at: str | None = None
+    finalized_at: str | None = None
+    last_error: str | None = None
+    chunk_extension: str | None = None
+
+    def __post_init__(self) -> None:
+        if isinstance(self.chunk_index, bool) or not isinstance(self.chunk_index, int) or self.chunk_index < 0:
+            raise ValidationError("processing chunk index must be a nonnegative integer")
+        if not isinstance(self.fragment_ids, tuple) or not self.fragment_ids:
+            raise ValidationError("processing chunk must reference at least one fragment")
+        for fid in self.fragment_ids:
+            validate_fragment_id(fid)
+        if len(set(self.fragment_ids)) != len(self.fragment_ids):
+            raise ValidationError("processing chunk fragment IDs must be unique")
+        _validate_optional_nonnegative_int(self.start_offset_ms, "processing startOffsetMs")
+        _validate_optional_nonnegative_int(self.duration_ms, "processing durationMs")
+        if not isinstance(self.state, str) or self.state not in PROCESSING_STATES:
+            raise ValidationError("processing chunk state is invalid")
+        if not isinstance(self.created_at, str) or not self.created_at.strip():
+            raise ValidationError("processing chunk createdAt must be a non-empty string")
+        if self.finalized_at is not None and (
+            not isinstance(self.finalized_at, str) or not self.finalized_at.strip()
+        ):
+            raise ValidationError("processing finalizedAt must be a non-empty string or null")
+        if self.chunk_extension is not None and (
+            not isinstance(self.chunk_extension, str) or not self.chunk_extension.startswith(".")
+        ):
+            raise ValidationError("processing chunkExtension must be a dotted extension or null")
+
+    @property
+    def finalized(self) -> bool:
+        return self.state == PROCESSING_STATE_FINALIZED
+
+    @property
+    def retryable(self) -> bool:
+        return self.state in (PROCESSING_STATE_PENDING, PROCESSING_STATE_RETRYABLE)
+
+    def to_manifest(self) -> dict[str, Any]:
+        return {
+            "chunkIndex": self.chunk_index,
+            "fragmentIds": list(self.fragment_ids),
+            "startOffsetMs": self.start_offset_ms,
+            "durationMs": self.duration_ms,
+            "state": self.state,
+            "createdAt": self.created_at,
+            "recordedAt": self.recorded_at,
+            "finalizedAt": self.finalized_at,
+            "lastError": self.last_error,
+            "chunkExtension": self.chunk_extension,
+        }
+
+    @classmethod
+    def from_manifest(cls, data: object) -> ProcessingChunkMapping:
+        if not isinstance(data, dict):
+            raise ValidationError("processing chunk manifest must be a mapping")
+        raw_ids = data.get("fragmentIds")
+        if not isinstance(raw_ids, list):
+            raise ValidationError("processing chunk fragmentIds must be a list")
+        try:
+            return cls(
+                chunk_index=_require_nonnegative_int(data, "chunkIndex"),
+                fragment_ids=tuple(str(fid) for fid in raw_ids),
+                start_offset_ms=_require_nonnegative_int(data, "startOffsetMs"),
+                duration_ms=_require_nonnegative_int(data, "durationMs"),
+                state=str(data["state"]),
+                created_at=_require_nonempty_str(data, "createdAt"),
+                recorded_at=_optional_nonempty_str(data.get("recordedAt")),
+                finalized_at=_optional_nonempty_str(data.get("finalizedAt")),
+                last_error=_optional_nonempty_str(data.get("lastError")),
+                chunk_extension=_optional_nonempty_str(data.get("chunkExtension")),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValidationError("processing chunk manifest is malformed") from exc
 
 
 @dataclass(frozen=True)
@@ -520,6 +646,13 @@ def _optional_nonnegative_int(value: object) -> int | None:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValidationError("optional integer field must be a nonnegative integer or null")
     return value
+
+
+def _validate_optional_nonnegative_int(value: object, label: str) -> None:
+    if value is None:
+        return
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValidationError(f"{label} must be a nonnegative integer or null")
 
 
 def _require_nonnegative_int(data: dict[str, Any], key: str) -> int:

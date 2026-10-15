@@ -6,6 +6,7 @@ API that W4 (browser UI) and W5 (chunking/upload) call.
 """
 
 from transcript_pipeline.live_capture.errors import (
+    AssemblyError,
     ChunkNotFoundError,
     ChunkTooLargeError,
     FragmentConflictError,
@@ -30,6 +31,10 @@ from transcript_pipeline.live_capture.models import (
     CropRegion,
     Fragment,
     FRAGMENT_STATE_ACKED,
+    PROCESSING_STATE_FINALIZED,
+    PROCESSING_STATE_PENDING,
+    PROCESSING_STATE_RETRYABLE,
+    ProcessingChunkMapping,
     Session,
     SessionStatus,
     TRANSCRIPT_ALIGNMENT_LOOSE,
@@ -41,6 +46,7 @@ from transcript_pipeline.live_capture.service import CaptureService
 from transcript_pipeline.live_capture.store import ManifestStore
 
 __all__ = [
+    "AssemblyError",
     "AudioAvailability",
     "CaptureService",
     "Chunk",
@@ -56,6 +62,10 @@ __all__ = [
     "LiveCaptureError",
     "ManifestCorruptError",
     "ManifestStore",
+    "PROCESSING_STATE_FINALIZED",
+    "PROCESSING_STATE_PENDING",
+    "PROCESSING_STATE_RETRYABLE",
+    "ProcessingChunkMapping",
     "Session",
     "SessionConflictError",
     "SessionNotFoundError",

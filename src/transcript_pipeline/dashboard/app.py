@@ -195,6 +195,7 @@ def _handle_capture_error(e: capture_errors.LiveCaptureError) -> Any:
         capture_errors.SessionConflictError: 409,
         capture_errors.InvalidTransitionError: 409,
         capture_errors.FragmentConflictError: 409,
+        capture_errors.AssemblyError: 409,
         capture_errors.ChunkTooLargeError: 413,
         capture_errors.FragmentTooLargeError: 413,
     }.get(type(e), 500)
@@ -1445,6 +1446,20 @@ def _fragment_payload(fragment: capture_models.Fragment) -> dict[str, Any]:
     return fragment.to_manifest()
 
 
+def _optional_upload_int(raw: object) -> int | None:
+    """Parses optional integer upload metadata; blank/absent -> None.
+
+    A non-integer value raises `ValidationError` (-> 400); a negative value is
+    left to the service's domain validation.
+    """
+    if raw is None or str(raw).strip() == "":
+        return None
+    try:
+        return int(str(raw))
+    except (TypeError, ValueError) as exc:
+        raise capture_errors.ValidationError("numeric upload metadata must be an integer") from exc
+
+
 @app.route("/api/capture/sessions/<session_id>/fragments", methods=["POST"])
 def api_capture_upload_fragment(session_id: str) -> Any:
     fragment_id = str(request.form.get("fragment_id") or "").strip()
@@ -1464,6 +1479,14 @@ def api_capture_upload_fragment(session_id: str) -> Any:
         or ".webm"
     )
     max_bytes = app.config.get("MAX_CONTENT_LENGTH") or (SETTINGS.upload_max_mb * 1024 * 1024)
+    # W6 recorded-timeline metadata (optional): the fragment's own duration
+    # and offset from the capture start drive server-side chunk aggregation.
+    try:
+        duration_ms = _optional_upload_int(request.form.get("duration_ms"))
+        recorded_offset_ms = _optional_upload_int(request.form.get("recorded_offset_ms"))
+    except capture_errors.ValidationError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    recorded_at = request.form.get("recorded_at") or None
     # Stream straight from the multipart part; the service reads it in bounded
     # blocks and writes atomically — the whole fragment is never buffered.
     fragment = _get_capture_service().upload_fragment(
@@ -1473,6 +1496,9 @@ def api_capture_upload_fragment(session_id: str) -> Any:
         media.stream,
         media_extension=extension,
         max_bytes=max_bytes,
+        duration_ms=duration_ms,
+        recorded_offset_ms=recorded_offset_ms,
+        recorded_at=recorded_at,
     )
     return jsonify({"ok": True, "fragment": _fragment_payload(fragment)})
 
@@ -1508,6 +1534,42 @@ def api_capture_finalize_session(session_id: str) -> Any:
         reason=payload.get("reason") or None,
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/sessions/<session_id>/drain", methods=["POST"])
+def api_capture_drain_session(session_id: str) -> Any:
+    """W6 stop: force-finalize the partial tail, then finalize the session.
+
+    Drains every remaining ACKed fragment into processing chunks (complete
+    chunks first, then one partial tail), persists the fragment->chunk map,
+    and only then closes the session. An assembly failure never drops
+    fragments: the chunk stays retryable and the session still finalizes.
+    """
+    payload = request.get_json(silent=True) or {}
+    service = _get_capture_service()
+    service.drain_processing_chunks(session_id)
+    session = service.finalize_session(
+        session_id,
+        recorded_at=payload.get("recorded_at") or None,
+        ended_at=payload.get("ended_at") or None,
+        reason=payload.get("reason") or None,
+    )
+    return jsonify(
+        {
+            "ok": True,
+            "session": _session_payload(session),
+            "processingChunks": [
+                entry.to_manifest() for entry in service.list_processing_chunks(session_id)
+            ],
+        }
+    )
+
+
+@app.route("/api/capture/sessions/<session_id>/processing-chunks", methods=["GET"])
+def api_capture_list_processing_chunks(session_id: str) -> Any:
+    """Observability read: durable fragment->processing-chunk map, in order."""
+    entries = _get_capture_service().list_processing_chunks(session_id)
+    return jsonify({"ok": True, "processingChunks": [e.to_manifest() for e in entries]})
 
 
 @app.route("/api/capture/sessions/<session_id>/chunks/start", methods=["POST"])

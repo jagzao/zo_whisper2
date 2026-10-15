@@ -113,7 +113,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: retain unACKed local blob; retry same identity; never mark unACKed data uploaded.
 
 ### W6 - Server processing chunks
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: map short fragments to server-side ~10-15 minute processing chunks.
 - Dependencies: W5 PASS.
 - Implementation tasks: configurable aggregation/finalization, duration/size thresholds, server-side concat/remux where required, boundary/final-chunk handling and mapping persistence.
@@ -123,6 +123,19 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: unit/API integration; synthetic ffmpeg media test.
 - Expected artifacts: processing-chunk fixture and fragment map.
 - Recovery/fallback: retain individually ACKed fragments on assembly failure; retry assembly without re-upload.
+- Evidence: W6 unit/API/FFmpeg tests 25 passed; broad `pytest -q -k "capture or dashboard or live_capture"` 352 passed, 684 deselected. Synthetic Playwright `capture_processing_chunks.py` 17/17 PASS; chunk 0 finalized while recording, stop drained/finalized the tail, all 7 ACKed fragments mapped once, media present. W5 Playwright regressions `capture_new_recording`, `capture_chunking`, `capture_dashboard`, `capture_crop`, `capture_cancellation` passed. `py_compile` and inline JS syntax check passed. An added assertion verifies `recorded_at` is preserved from the first fragment through mapping and assembled chunk. Source fragments remain available.
+
+### W25 - MOBILE/LAN ACCESS
+- Status: IN_PROGRESS
+- Objective: make Whisper reachable from a phone on the same Wi-Fi over HTTPS, with API, camera, capture, and fragment upload working from the LAN origin.
+- Dependencies: W3, W4, W5, W6 PASS.
+- Implementation tasks: bind the server to `0.0.0.0`; remove loopback-only settings validation; use same-origin relative API requests; configure HTTPS certificate whose SAN includes the LAN host; expose a clear phone URL and trust/setup instructions; tie capture status to server health; verify camera permission and fragment upload over HTTPS.
+- Relevant files/modules: `dashboard.py`, `src/transcript_pipeline/settings.py`, dashboard health/capture UI, HTTPS launch/config scripts and docs, Playwright mobile-origin tests.
+- Acceptance criteria: a second LAN client can load dashboard and API; UI reports ONLINE from backend health; HTTPS origin has camera permission; capture starts and uploads fragments; no application URL is hardcoded to loopback; server listens on all interfaces.
+- Required tests: settings/bind unit tests; health and fragment API over advertised origin; synthetic Playwright HTTPS journey for ONLINE, camera preview, start/timer, fragment ACK, and stop.
+- Validation commands: focused settings/API tests; inspect listening address; start HTTPS server on `0.0.0.0`; Playwright Chromium with synthetic camera/media over HTTPS; open advertised LAN endpoint from another local process.
+- Expected artifacts: HTTPS certificate/config (private key excluded from Git), LAN setup guide, `mobile_lan_access_report.json`.
+- Recovery/fallback: accept an explicit certificate path and host/SAN configuration; if a trusted device certificate cannot be provisioned here, validate HTTPS using a test CA and document the device trust installation step.
 
 ### W7 - Upload resilience and local buffer
 - Status: PENDING
@@ -343,7 +356,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 
 ## Global Definition of Done
 
-Live Capture is usable via Videos -> New Recording; mobile capture sends 10-30 second acknowledged fragments and bounded offline retry; server creates ~10-15 minute processing chunks; playlist detection confirms titles across frames and creates reviewable logical videos independent of physical boundaries; logical videos use existing Videos/Date/Docs pipeline; cancellation, crop, audio-missing, late transcript and advisory GC work. Every user-facing feature has a passing main-journal Playwright report. Required unit/integration/host gates pass; Docker/heavy gates pass or have a justified environment-only blocker. Plan, implementation and tests are committed and remote-synchronized; worktree clean. No deployment.
+Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access works over HTTPS with camera and upload; mobile capture sends 10-30 second acknowledged fragments and bounded offline retry; server creates ~10-15 minute processing chunks; playlist detection confirms titles across frames and creates reviewable logical videos independent of physical boundaries; logical videos use existing Videos/Date/Docs pipeline; cancellation, crop, audio-missing, late transcript and advisory GC work. Every user-facing feature has a passing main-journal Playwright report. Required unit/integration/host gates pass; Docker/heavy gates pass or have a justified environment-only blocker. Plan, implementation and tests are committed and remote-synchronized; worktree clean. No deployment.
 
 ## Test Matrix
 
@@ -354,6 +367,7 @@ Live Capture is usable via Videos -> New Recording; mobile capture sends 10-30 s
 | INTEGRATION/API | session, fragment upload/duplicate/interrupted retry, processing chunks, fragment/chunk/logical mappings, inside-chunk boundary | W5-W14/W20 | PENDING |
 | INTEGRATION/API | cancellation, no-audio, late transcript, Docs V2, GC, videos sorting | W8/W16-W20 | prior domain/API reports; user-journey revalidation pending |
 | PLAYWRIGHT | Videos -> New Recording, preview, modes, timer, fragment ACK/progress, stop | W3-W5/W21 | PENDING; prior modal tests do not cover expected entry/journey |
+| MOBILE/LAN E2E | same-Wi-Fi HTTPS origin, ONLINE health, camera preview, recording, fragment upload | W25 | PENDING |
 | PLAYWRIGHT | offline retry/buffer warning, local-copy OFF default, cancellation controls | W7-W8/W21 | PENDING |
 | PLAYWRIGHT | crop, playlist Session1->Session2, low confidence, review rename/date/split/merge/confirm | W9-W15/W21 | PENDING |
 | PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PENDING |
@@ -369,6 +383,7 @@ Live Capture is usable via Videos -> New Recording; mobile capture sends 10-30 s
 - Phone may be locked/backgrounded for hours; browser suspension is not guaranteed. Surface interrupted/recoverable status and never claim continuous capture while suspended.
 - RAM heavy gate last measured 5.62 GiB (<6 GiB). Docker build/E2E remain gated; independent host/UI implementation continues.
 - Existing capture modal controls are not proof of required Videos entry or playlist usability.
+- LAN camera capture requires HTTPS and a phone-trusted certificate; untrusted self-signed TLS will not grant camera access.
 
 ## Model / Executor Policy
 
@@ -380,10 +395,12 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W3 PASS. Added Videos -> New Recording entry and responsive capture shell with modes, crop, default-off Save local copy, timer, status, logical-video placeholder, and distinct actions. Synthetic Playwright journey passed 23/23; existing capture and cancellation journeys passed 16/16 and 9/9; Date unit tests 5/5. This verifies only W3 shell; mobile fragment capture and playlist features remain pending.
 - 2026-10-15: W4 PASS for browser capture generation. MediaRecorder now emits 10-30s bounded units with 15s default, stable sequence IDs, MIME feature detection, bounded pending queue, stop/error cleanup and synthetic mobile Playwright coverage. 31/31 new checks plus existing capture/crop/chunking/cancellation regressions pass. W5 is IN_PROGRESS to add distinct fragment ACK/idempotency endpoints and remove the legacy coupling where each emitted short unit is treated as a processable chunk; W6 remains required for ~10-15-minute server aggregation.
 - 2026-10-15: W5 PASS. Added separate durable fragment manifest/media and idempotent upload/list endpoints; browser releases bytes only on real ACK, retries stable IDs, and keeps session processing duration at 600s without creating a processing chunk per fragment. API/unit/browser verification passed (33 focused fragment tests, 326 dashboard/live-capture tests selected, synthetic Playwright capture/chunking/cancellation). W6 now IN_PROGRESS to assemble/map these fragments into server processing chunks.
+- 2026-10-15: W6 PASS. Backend assembles ACKed short fragments into ~600-second playable chunks during capture and drains a partial tail on stop. Fragment-to-chunk mapping is durable and retryable. Focused W6 unit/API/FFmpeg tests 25 passed; broad capture/dashboard/live-capture selection 352 passed; W6 synthetic Playwright 17/17 and all W5 UI regressions passed. Added W25 MOBILE/LAN ACCESS as the next stage and marked IN_PROGRESS before implementation.
 
 ## Final Delivery Checklist
 
-- [ ] W0-W24 statuses and evidence current
+- [ ] W0-W25 statuses and evidence current
+- [ ] Same-Wi-Fi phone opens HTTPS, reports ONLINE, completes camera capture and fragment upload
 - [ ] Videos -> New Recording UI and main journeys pass Playwright
 - [ ] Short upload fragments, ACK/idempotency, IndexedDB recovery and buffer warning pass
 - [ ] Server processing chunks and four-way mapping pass

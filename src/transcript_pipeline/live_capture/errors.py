@@ -47,5 +47,14 @@ class UploadCancelledError(LiveCaptureError):
     """A streamed upload was cancelled before atomic finalization."""
 
 
+class AssemblyError(LiveCaptureError):
+    """Ordered ACKed fragments could not be assembled into playable media.
+
+    Already-durable source fragments are never destroyed by a failed
+    assembly; the processing chunk is left retryable so assembly can rerun
+    without any re-upload.
+    """
+
+
 class ManifestCorruptError(LiveCaptureError):
     """A persisted manifest is malformed and cannot be trusted as playable."""

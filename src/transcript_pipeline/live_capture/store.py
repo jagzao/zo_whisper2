@@ -41,6 +41,7 @@ SESSION_FILE = "session.json"
 CHUNKS_DIR = "chunks"
 FRAGMENTS_DIR = "fragments"
 FRAGMENT_MANIFEST_FILE = "fragments.json"
+PROCESSING_MAP_FILE = "processing_chunks.json"
 TRANSCRIPT_FILE = "transcript.txt"
 
 _ALLOWED_EXTENSIONS = frozenset({".webm", ".mp4", ".mkv", ".mov", ".m4a", ".wav", ".mp3", ".ogg", ".opus", ".flac"})
@@ -218,3 +219,58 @@ class ManifestStore:
 
     def fragment_media_exists(self, session_id: str, fragment_id: str, extension: str) -> bool:
         return self.fragment_media_path(session_id, fragment_id, extension).is_file()
+
+    # ── processing-chunk mapping persistence (W6) ───────────────────
+
+    def processing_map_file(self, session_id: str) -> Path:
+        return self.session_dir(session_id) / PROCESSING_MAP_FILE
+
+    def assembly_staging_path(self, session_id: str, chunk_index: int, extension: str) -> Path:
+        """Hidden staging path for a processing chunk's assembled media.
+
+        Lives beside the session manifest (never under `chunks/`), uses the
+        real extension so the assembler can pick the container, and is
+        removed after the chunk is finalized. A crash leaves only a dot-file
+        that never resolves as playable media.
+        """
+        ext = normalize_extension(extension)
+        return self.session_dir(session_id) / f".{models.chunk_id(chunk_index)}.assembling{ext}"
+
+    def load_processing_map(self, session_id: str) -> list[models.ProcessingChunkMapping]:
+        """Durable fragment->processing-chunk map, ordered by chunk index.
+
+        Missing file means no processing chunk has been planned yet. A
+        present-but-malformed file is reported, never silently rewritten into
+        a partial history.
+        """
+        session_id = models.validate_session_id(session_id)
+        path = self.processing_map_file(session_id)
+        if not path.exists():
+            return []
+        raw = read_json(path)
+        if not isinstance(raw, dict):
+            raise ManifestCorruptError(f"processing map {path} is not valid JSON")
+        if raw.get("schemaVersion") != models.PROCESSING_MAP_SCHEMA_VERSION:
+            raise ManifestCorruptError(
+                f"unsupported processing map schemaVersion {raw.get('schemaVersion')!r}"
+            )
+        entries_raw = raw.get("processingChunks", [])
+        if not isinstance(entries_raw, list):
+            raise ManifestCorruptError(f"processing map {path} has no processing chunk list")
+        try:
+            entries = [models.ProcessingChunkMapping.from_manifest(item) for item in entries_raw]
+        except ValidationError as exc:
+            raise ManifestCorruptError(f"processing map {path} is malformed: {exc}") from exc
+        entries.sort(key=lambda e: e.chunk_index)
+        return entries
+
+    def save_processing_map(
+        self, session_id: str, entries: list[models.ProcessingChunkMapping]
+    ) -> None:
+        payload = {
+            "schemaVersion": models.PROCESSING_MAP_SCHEMA_VERSION,
+            "sessionId": models.validate_session_id(session_id),
+            "processingChunks": [e.to_manifest() for e in sorted(entries, key=lambda e: e.chunk_index)],
+        }
+        self.session_dir(session_id).mkdir(parents=True, exist_ok=True)
+        atomic_write_json(self.processing_map_file(session_id), payload)

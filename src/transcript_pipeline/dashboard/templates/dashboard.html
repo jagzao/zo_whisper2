@@ -2091,6 +2091,9 @@
             finalizedIndexes: [],   // ACKed fragment sequences (ordered)
             fragmentSeq: 0,         // stable monotonically increasing fragment sequence source
             fragmentIds: [],        // ordered fragment IDs created this session
+            recordedOffsetMs: 0,    // W6: accumulated recorded duration before the next fragment
+            fragmentStartedAtMs: null, // W6: Date.now() when the current fragment started
+            requestedChunkDurationSec: null, // W6: server processing chunk duration override
             queueFull: false,       // recording paused because the pending queue is full
             uploading: false,
             stalled: false,
@@ -2376,6 +2379,8 @@
                 audioAvailability: capture.audioAvailability,
                 mode: capture.mode,
                 timerSeconds: capture.timerSeconds,
+                recordedOffsetMs: capture.recordedOffsetMs,
+                processingChunkSeconds: capture.requestedChunkDurationSec,
                 saveLocal: !!(document.getElementById('captureSaveLocal') || {}).checked,
                 logicalVideos: (capture.logicalVideos || []).length,
             };
@@ -2400,6 +2405,15 @@
             const monotonic = ids.every((value, idx) => idx === 0 || value > ids[idx - 1]);
             return { ids, monotonic };
         };
+        // W6 test hook: accelerate (or restore) the server processing-chunk
+        // duration used when this session is created. It only changes the
+        // aggregation threshold; the server still records the regular
+        // fragment->chunk mapping. Not persisted across modal opens.
+        window.__captureSetProcessingChunkSeconds = function (seconds) {
+            const n = Number(seconds);
+            capture.requestedChunkDurationSec = (Number.isFinite(n) && n > 0) ? Math.floor(n) : null;
+            return capture.requestedChunkDurationSec;
+        };
 
         async function openCaptureModal() {
             document.getElementById('captureModal').classList.remove('hidden');
@@ -2408,6 +2422,9 @@
             capture.sessionId = null;
             capture.pendingCrop = null;
             capture.audioAvailability = 'UNKNOWN';
+            capture.requestedChunkDurationSec = null;
+            capture.recordedOffsetMs = 0;
+            capture.fragmentStartedAtMs = null;
             setCaptureMode('normal');
             resetCaptureTimer();
             const saveLocal = document.getElementById('captureSaveLocal');
@@ -2690,6 +2707,8 @@
             capture.uploadQueue = [];
             capture.ackedFragmentIds = [];
             capture.finalizedIndexes = [];
+            capture.recordedOffsetMs = 0;
+            capture.fragmentStartedAtMs = null;
             capture.stalled = false;
             capture.stopRequested = false;
             capture.closed = false;
@@ -2710,7 +2729,15 @@
             try {
                 const createRes = await captureFetch('/api/capture/sessions', {
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), crop: capture.pendingCrop, audio_availability: capture.audioAvailability }),
+                    body: JSON.stringify({
+                        title,
+                        recorded_at: new Date().toISOString(),
+                        crop: capture.pendingCrop,
+                        audio_availability: capture.audioAvailability,
+                        // W6: aggregation threshold. Defaults to the server's
+                        // 600s; only a test hook overrides it.
+                        chunk_duration_sec: capture.requestedChunkDurationSec || CAPTURE_DEFAULT_CHUNK_DURATION_SEC,
+                    }),
                 });
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
@@ -2747,6 +2774,7 @@
                     setCaptureState('error', 'Recorder error: ' + ((e.error && e.error.name) || 'unknown'));
                 };
                 capture.recorder = recorder;
+                capture.fragmentStartedAtMs = Date.now();
                 recorder.start(CAPTURE_FRAGMENT_TIMESLICE_MS);
                 setCaptureState('recording');
                 scheduleRotation();
@@ -2783,10 +2811,26 @@
             capture.fragmentIds.push(id);
             const blob = new Blob(capture.pendingParts, { type: capture.mimeType || 'video/webm' });
             clearFragmentBuffers();
+            // W6: attach the recorded timeline (duration + offset) so the
+            // server can aggregate fragments into processing chunks on the
+            // recorded timeline rather than counting fragments.
+            const startedAtMs = capture.fragmentStartedAtMs;
+            const durationMs = startedAtMs ? Math.max(0, Date.now() - startedAtMs) : null;
+            const offsetMs = capture.recordedOffsetMs;
+            capture.fragmentStartedAtMs = null;
+            if (durationMs !== null) capture.recordedOffsetMs = offsetMs + durationMs;
             // An empty fragment is dropped locally; it is never sent and never
             // counted as an upload.
             if (blob.size > 0) {
-                capture.uploadQueue.push({ id, sequence, blob, extension: capture.extension });
+                capture.uploadQueue.push({
+                    id,
+                    sequence,
+                    blob,
+                    extension: capture.extension,
+                    durationMs,
+                    offsetMs,
+                    recordedAt: startedAtMs ? new Date(startedAtMs).toISOString() : null,
+                });
             }
             updateChunkInfo();
             beginUpload();
@@ -2824,6 +2868,13 @@
                             form.append('fragment_id', item.id);
                             form.append('sequence', String(item.sequence));
                             form.append('media_extension', item.extension);
+                            if (item.durationMs !== null && item.durationMs !== undefined) {
+                                form.append('duration_ms', String(item.durationMs));
+                            }
+                            if (item.offsetMs !== null && item.offsetMs !== undefined) {
+                                form.append('recorded_offset_ms', String(item.offsetMs));
+                            }
+                            if (item.recordedAt) form.append('recorded_at', item.recordedAt);
                             form.append('media', item.blob, item.id + item.extension);
                             const finRes = await fetch(`/api/capture/sessions/${capture.sessionId}/fragments`, {
                                 method: 'POST',
@@ -2900,7 +2951,9 @@
 
         async function finishSession() {
             try {
-                const sessRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/finalize`, {
+                // W6 stop: /drain force-finalizes the partial processing-chunk
+                // tail from the durable fragments, then closes the session.
+                const sessRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/drain`, {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ended_at: new Date().toISOString() }),
                 });
