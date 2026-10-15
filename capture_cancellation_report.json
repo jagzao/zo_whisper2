@@ -1,0 +1,49 @@
+{
+  "checks": [
+    {
+      "name": "cancel_upload_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "upload_aborted_no_durable_fragment",
+      "status": "PASS",
+      "detail": "fragments=0 pending=2 stalled=True"
+    },
+    {
+      "name": "upload_retry_available",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "queued_cancel_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cancelled_retry_and_delete_visible",
+      "status": "PASS",
+      "detail": "cancel queued synthetic a6b699f6 \u00b7 chunk-000000 \u00b7 CANCELLED\nProcesar de nuevo\nEliminar :: ['Procesar de nuevo', 'Eliminar']"
+    },
+    {
+      "name": "queued_job_cancelled",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "active_cancel_shows_cancelando",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "active_cancel_reaches_cancelled",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

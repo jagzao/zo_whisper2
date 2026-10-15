@@ -152,7 +152,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: focused API/LAN tests 54 passed, 1 host TLS interception skip; offline/reconnect Playwright report 22/22 PASS with synthetic media, stable IDs, ACK cleanup, reload restore, 64 MiB default, user-configurable cap, visible near/full warning, and Save local copy default OFF. Browser report: `artifacts/gates/capture_offline_retry_report.json`.
 
 ### W8 - Cancellation
-- Status: PENDING
+- Status: PASS
 - Objective: expose independent stop, cancel-upload, and cancel-processing behavior in the new UI.
 - Dependencies: W3, W5, W6 PASS.
 - Implementation tasks: idempotent fragment abort/rescind and cleanup; PROCESSING -> CANCEL_REQUESTED -> CANCELLED worker checks; preserve originals; retry/process again.
@@ -160,11 +160,12 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Acceptance criteria: each operation has distinct UI/state and does not delete acknowledged originals.
 - Required tests: repeated cancel, upload vs ACK race, queued/active processing, cancel vs complete race, retry.
 - Validation commands: unit/API tests and Playwright for all three controls.
-- Expected artifacts: cancellation state report.
+- Expected artifacts: `artifacts/gates/capture_cancellation_report.json`.
 - Recovery/fallback: leave confirmed media intact; reconcile stale upload state; retry only by explicit action.
+- Evidence: cancellation unit/API suite 41 passed. Synthetic cancellation Playwright 9/9 PASS: upload button, AbortController abort with no durable fragment, retry availability, queued cancel/retry/delete, active `Cancelando` and final `CANCELLED`, no browser errors. Upload cancel status is retained while stalled so UI repaints cannot hide `UPLOAD_CANCELLED`. Original acknowledged media remains intact.
 
 ### W9 - Crop/mask
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: make crop configuration reachable from New Recording and apply it to evidence.
 - Dependencies: W3 PASS.
 - Implementation tasks: responsive normalized selection, persistence, edit/clear and processor mapping.
@@ -401,6 +402,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W6 PASS. Backend assembles ACKed short fragments into ~600-second playable chunks during capture and drains a partial tail on stop. Fragment-to-chunk mapping is durable and retryable. Focused W6 unit/API/FFmpeg tests 25 passed; broad capture/dashboard/live-capture selection 352 passed; W6 synthetic Playwright 17/17 and all W5 UI regressions passed. Added W25 MOBILE/LAN ACCESS as the next stage and marked IN_PROGRESS before implementation.
 - 2026-10-15: W25 PASS. Added explicit LAN opt-in, `0.0.0.0` bind, local CA/server certificate with detected IP SANs, backend ONLINE indicator, LAN URL help, same-origin HTTPS health/capture/upload and phone trust guide. Focused suite 55 passed/2 skipped; synthetic mobile HTTPS Playwright 16/16; security/API regressions green. Norton Web/Mail Shield intercepts local TLS, so direct trust assertions skip with evidence; device CA install remains required. Active Wi-Fi URL is `https://192.168.50.67:5001/`. W7 is IN_PROGRESS.
 - 2026-10-15: W7 PASS. IndexedDB persists each fragment before upload, retries the same stable ID after reconnect/reload, and removes it only after server ACK. Added configurable 0.05–4096 MB local pending limit (64 MB default), near/full warnings, capture backpressure, and verified Save local copy stays off by default without gallery/download writes. API/LAN tests: 54 passed, 1 host interception skip. Synthetic offline Playwright: 22/22 PASS. Initial test failures traced to duplicate synthetic test IDs, test helper cap overshoot, and unstable buffer-warning setup; corrected those root causes and reran the full browser journey successfully. W8 is next.
+- 2026-10-15: W8 PASS. Kept upload cancellation visibly `UPLOAD_CANCELLED` through stalled-state repaints. Unit/API cancellation suite 41 passed; synthetic Playwright 9/9 passed for real browser abort/no durable partial, retry, queued cancel/retry/delete, active Cancelando/CANCELLED, and no browser errors. The first browser run found the upload cancellation message was cleared during a state repaint; fixed and reran the complete scenario. W9 is next.
 
 ## Final Delivery Checklist
 

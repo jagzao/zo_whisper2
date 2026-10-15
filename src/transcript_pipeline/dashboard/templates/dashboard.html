@@ -2210,6 +2210,8 @@
 
         function setCaptureState(state, error) {
             capture.state = state;
+            if (error) capture.lastError = error;
+            else if (state !== 'stalled') capture.lastError = '';
             const badge = document.getElementById('captureState');
             badge.textContent = CAPTURE_STATE_LABELS[state] || state;
             badge.className = 'status ' + (
@@ -2219,7 +2221,7 @@
                 : 'pending'
             );
             const errEl = document.getElementById('captureError');
-            if (error) { errEl.textContent = error; errEl.classList.remove('hidden'); }
+            if (capture.lastError) { errEl.textContent = capture.lastError; errEl.classList.remove('hidden'); }
             else { errEl.textContent = ''; errEl.classList.add('hidden'); }
             const recording = state === 'recording';
             const busy = state === 'requesting' || state === 'finalizing';
