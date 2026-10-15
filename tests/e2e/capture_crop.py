@@ -105,6 +105,11 @@ def main() -> int:
             page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
             page.locator('button[aria-label="Capture"]').click()
             page.wait_for_selector("#captureModal:not(.hidden)", timeout=TIMEOUT_MS)
+            page.locator("#captureStartBtn").click()
+            page.wait_for_function(
+                "document.getElementById('captureState').textContent === 'Recording' && document.getElementById('capturePreview').videoWidth > 0",
+                timeout=TIMEOUT_MS,
+            )
 
             # 1. Draw a crop region over the preview overlay.
             _drag_crop(page)
@@ -119,10 +124,6 @@ def main() -> int:
             # 3. Re-select and start capture so the crop persists with the session.
             _drag_crop(page)
             crop = _snapshot_crop(page)
-            page.locator("#captureStartBtn").click()
-            page.wait_for_function(
-                "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS
-            )
             page.locator("#captureStopBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Saved'", timeout=TIMEOUT_MS

@@ -165,7 +165,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: cancellation unit/API suite 41 passed. Synthetic cancellation Playwright 9/9 PASS: upload button, AbortController abort with no durable fragment, retry availability, queued cancel/retry/delete, active `Cancelando` and final `CANCELLED`, no browser errors. Upload cancel status is retained while stalled so UI repaints cannot hide `UPLOAD_CANCELLED`. Original acknowledged media remains intact.
 
 ### W9 - Crop/mask
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: make crop configuration reachable from New Recording and apply it to evidence.
 - Dependencies: W3 PASS.
 - Implementation tasks: responsive normalized selection, persistence, edit/clear and processor mapping.
@@ -173,11 +173,12 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Acceptance criteria: region round-trips and is visible/editable in the expected flow; original stays intact.
 - Required tests: normalized bounds, persisted selection, cropped synthetic frame Playwright.
 - Validation commands: crop unit/API tests and Playwright.
-- Expected artifacts: crop mapping/report.
+- Expected artifacts: `artifacts/gates/capture_crop_report.json`.
 - Recovery/fallback: full frame on invalid region with explicit warning.
+- Evidence: crop model/API/integration tests 54 passed; synthetic UI Playwright passes selection, clear, persisted metadata round-trip, and no browser errors. The initial test tried crop selection before camera preview was live and missed the first gesture; it now waits for the synthetic camera to be ready, then validates the full UI journey: `capture_crop_report.json`.
 
 ### W10 - Continuous Playlist capture
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: record sequential external source videos with one continuous camera session.
 - Dependencies: W3, W4, W5 PASS.
 - Implementation tasks: mode selection; no manual stop/start between sources; distinct physical capture, processing and logical boundaries.
@@ -403,6 +404,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W25 PASS. Added explicit LAN opt-in, `0.0.0.0` bind, local CA/server certificate with detected IP SANs, backend ONLINE indicator, LAN URL help, same-origin HTTPS health/capture/upload and phone trust guide. Focused suite 55 passed/2 skipped; synthetic mobile HTTPS Playwright 16/16; security/API regressions green. Norton Web/Mail Shield intercepts local TLS, so direct trust assertions skip with evidence; device CA install remains required. Active Wi-Fi URL is `https://192.168.50.67:5001/`. W7 is IN_PROGRESS.
 - 2026-10-15: W7 PASS. IndexedDB persists each fragment before upload, retries the same stable ID after reconnect/reload, and removes it only after server ACK. Added configurable 0.05–4096 MB local pending limit (64 MB default), near/full warnings, capture backpressure, and verified Save local copy stays off by default without gallery/download writes. API/LAN tests: 54 passed, 1 host interception skip. Synthetic offline Playwright: 22/22 PASS. Initial test failures traced to duplicate synthetic test IDs, test helper cap overshoot, and unstable buffer-warning setup; corrected those root causes and reran the full browser journey successfully. W8 is next.
 - 2026-10-15: W8 PASS. Kept upload cancellation visibly `UPLOAD_CANCELLED` through stalled-state repaints. Unit/API cancellation suite 41 passed; synthetic Playwright 9/9 passed for real browser abort/no durable partial, retry, queued cancel/retry/delete, active Cancelando/CANCELLED, and no browser errors. The first browser run found the upload cancellation message was cleared during a state repaint; fixed and reran the complete scenario. W9 is next.
+- 2026-10-15: W9 PASS. Crop/mask is selectable over the live camera preview, can be cleared, persists in capture metadata, and passes into existing processing integration. Focused crop/API/pipeline tests 54 passed; synthetic Playwright 5/5. Updated the E2E to wait for an active synthetic preview before using the crop surface; rerun passed. W10 is next.
 
 ## Final Delivery Checklist
 
