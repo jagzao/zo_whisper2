@@ -28,21 +28,10 @@ vision = [
     "pytesseract>=0.3.10",
     "imagehash>=4.3.1",
 ]
-# MarkItDown document scanning (meeting_dev_handler's PDF/Word/Excel/image
-# attachment summaries). Pinned exactly, no `[all]` — verified via
-# `pip show markitdown` that this version (0.0.2) declares NO optional
-# extras at all (Provides-Extra: none): every one of its dependencies,
-# including azure-ai-documentintelligence/azure-identity, is an
-# unconditional hard requirement of the package itself, not something an
-# extra can narrow. Extras this fine-grained (`markitdown[pdf,docx,...]`)
-# only exist starting at 0.1.0+, which also changed the MarkItDown()
-# constructor signature used by meeting_dev_handler.py's
-# llm_client/llm_model wiring — a behavior-risking upgrade, tracked
-# separately, out of scope for this pin. Keeping this out of core
-# `dependencies` is still the real win: a plain `pip install .` never
-# drags in the Azure SDKs unless this extra is explicitly requested.
+# Narrow document formats used by meeting attachment scanning. Avoiding the
+# `all` extra keeps unused cloud and media integrations out of the dev graph.
 documents = [
-    "markitdown==0.0.2",
+    "markitdown[docx,pptx,xls,xlsx,pdf]==0.1.8",
 ]
 # Human-readable MANUAL.pdf next to MANUAL.md (US-002 A). reportlab is pure
 # Python and cross-platform with no native Windows deps, so the PDF writer
