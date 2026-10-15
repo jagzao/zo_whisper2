@@ -664,6 +664,9 @@
             <button id="btnRunFull" onclick="run('full')">RUN Full</button>
             <button id="btnRunCompress" onclick="run('compress')">Compress Only</button>
             <button id="btnRunTranscribe" onclick="run('transcribe')">Transcribe Only</button>
+            <button class="icon-btn tooltip" data-tip="Capture" onclick="openCaptureModal()" aria-label="Capture">
+                <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+            </button>
             <button class="icon-btn tooltip" data-tip="Projects" onclick="openProjectsModal()" aria-label="Projects">
                 <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
             </button>
@@ -870,6 +873,29 @@
             <button class="close-x" onclick="closeFrameModal()" aria-label="Close">×</button>
             <img id="frameModalImg" alt="Frame" style="max-width:90vw; max-height:78vh; object-fit:contain; border-radius:0.5rem;">
             <div id="frameModalCaption" style="color:var(--muted); margin-top:0.5rem; font-size:0.9rem;"></div>
+        </div>
+    </div>
+
+    <div id="captureModal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 720px;">
+            <div class="modal-header">
+                <h2>Live Capture</h2>
+                <button class="close-x" onclick="closeCaptureModal()" aria-label="Close capture">&times;</button>
+            </div>
+            <div class="row" style="align-items:center; margin-top:0;">
+                <label for="captureTitle">Title:</label>
+                <input type="text" id="captureTitle" value="Live capture" style="flex:1;">
+            </div>
+            <div id="captureNotice" class="ai-package-summary hidden"></div>
+            <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
+            <div style="position:relative; margin:0.75rem 0;">
+                <video id="capturePreview" autoplay playsinline muted style="width:100%; max-height:320px; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
+                <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem;">Idle</span>
+            </div>
+            <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
+                <button id="captureStartBtn" class="ok" onclick="startCapture()">Start capture</button>
+                <button id="captureStopBtn" class="danger hidden" onclick="stopCapture()">Stop & finalize</button>
+            </div>
         </div>
     </div>
 
@@ -1861,8 +1887,217 @@
             document.getElementById('helpModal').classList.add('hidden');
         }
 
+        // ── Live Capture (W4) ─────────────────────────────────────────────
+        const capture = {
+            stream: null,
+            recorder: null,
+            sessionId: null,
+            chunkIndex: null,
+            state: 'idle',
+            mimeType: '',
+            extension: '.webm',
+            chunks: [],
+        };
+
+        const CAPTURE_STATE_LABELS = {
+            idle: 'Idle',
+            requesting: 'Requesting camera…',
+            previewing: 'Preview',
+            recording: 'Recording',
+            finalizing: 'Finalizing…',
+            done: 'Saved',
+            unsupported: 'Unsupported',
+            error: 'Error',
+        };
+
+        function captureFetch(path, { method = 'POST', headers = {}, body = undefined } = {}) {
+            return fetch(path, {
+                method,
+                headers: Object.assign({ 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, headers),
+                body,
+            }).then(r => r.json());
+        }
+
+        function setCaptureState(state, error) {
+            capture.state = state;
+            const badge = document.getElementById('captureState');
+            badge.textContent = CAPTURE_STATE_LABELS[state] || state;
+            badge.className = 'status ' + (
+                state === 'recording' ? 'error' : state === 'done' ? 'processed' : state === 'error' || state === 'unsupported' ? 'error' : 'pending'
+            );
+            const errEl = document.getElementById('captureError');
+            if (error) { errEl.textContent = error; errEl.classList.remove('hidden'); }
+            else { errEl.textContent = ''; errEl.classList.add('hidden'); }
+            const recording = state === 'recording';
+            const busy = state === 'requesting' || state === 'finalizing';
+            document.getElementById('captureStartBtn').classList.toggle('hidden', recording || busy);
+            document.getElementById('captureStopBtn').classList.toggle('hidden', !recording);
+            document.getElementById('captureStartBtn').disabled = busy;
+        }
+
+        function captureSupported() {
+            return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof window.MediaRecorder !== 'undefined');
+        }
+
+        function stopCaptureTracks() {
+            if (capture.stream) {
+                capture.stream.getTracks().forEach(t => t.stop());
+                capture.stream = null;
+            }
+            const video = document.getElementById('capturePreview');
+            if (video) video.srcObject = null;
+        }
+
+        function emergencyStopCapture() {
+            if (capture.recorder && capture.recorder.state !== 'inactive') {
+                try { capture.recorder.stop(); } catch (e) {}
+            }
+            stopCaptureTracks();
+        }
+
+        async function openCaptureModal() {
+            document.getElementById('captureModal').classList.remove('hidden');
+            document.getElementById('captureTitle').value = 'Live capture';
+            if (!captureSupported()) {
+                setCaptureState('unsupported', 'MediaRecorder or getUserMedia is not supported in this browser.');
+                return;
+            }
+            setCaptureState('idle');
+            loadCaptureSessions();
+        }
+
+        function closeCaptureModal() {
+            emergencyStopCapture();
+            setCaptureState('idle');
+            document.getElementById('captureModal').classList.add('hidden');
+        }
+
+        async function loadCaptureSessions() {
+            const notice = document.getElementById('captureNotice');
+            let res;
+            try { res = await api('/api/capture/sessions'); }
+            catch (e) { notice.classList.add('hidden'); return; }
+            const interrupted = (res.sessions || []).filter(s => s.status === 'FAILED');
+            if (interrupted.length) {
+                notice.textContent = `Recovered: ${interrupted.length} interrupted session(s). Metadata is preserved.`;
+                notice.classList.remove('hidden');
+            } else {
+                notice.classList.add('hidden');
+            }
+        }
+
+        function pickCaptureMimeType() {
+            const candidates = ['video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm', 'video/mp4'];
+            for (const mime of candidates) {
+                if (window.MediaRecorder.isTypeSupported(mime)) return mime;
+            }
+            return '';
+        }
+
+        function extensionForMime(mime) {
+            return (mime && mime.indexOf('mp4') !== -1) ? '.mp4' : '.webm';
+        }
+
+        async function startCapture() {
+            if (!captureSupported()) {
+                setCaptureState('unsupported', 'MediaRecorder or getUserMedia is not supported in this browser.');
+                return;
+            }
+            setCaptureState('requesting');
+            let stream;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            } catch (err) {
+                const name = err && err.name;
+                if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+                    setCaptureState('error', 'Camera permission denied. Allow camera access in your browser and try again.');
+                } else if (name === 'NotFoundError') {
+                    setCaptureState('error', 'No camera found on this device.');
+                } else if (name === 'NotReadableError') {
+                    setCaptureState('error', 'Camera is in use by another application.');
+                } else {
+                    setCaptureState('error', 'Could not access the camera: ' + (err && err.message ? err.message : String(err)));
+                }
+                return;
+            }
+            capture.stream = stream;
+            capture.mimeType = pickCaptureMimeType() || 'video/webm';
+            capture.extension = extensionForMime(capture.mimeType);
+            capture.chunks = [];
+
+            const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
+            try {
+                const createRes = await captureFetch('/api/capture/sessions', {
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, recorded_at: new Date().toISOString() }),
+                });
+                if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
+                capture.sessionId = createRes.session.sessionId;
+                const startRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/start`);
+                if (!startRes.ok) throw new Error(startRes.error || 'Could not start recording');
+                capture.chunkIndex = startRes.chunk.index;
+            } catch (err) {
+                stopCaptureTracks();
+                setCaptureState('error', err.message);
+                return;
+            }
+
+            const video = document.getElementById('capturePreview');
+            video.srcObject = stream;
+            try { await video.play(); } catch (e) {}
+
+            let recorder;
+            try {
+                recorder = new MediaRecorder(stream, capture.mimeType ? { mimeType: capture.mimeType } : undefined);
+            } catch (err) {
+                recorder = new MediaRecorder(stream);
+            }
+            capture.recorder = recorder;
+            recorder.ondataavailable = e => { if (e.data && e.data.size > 0) capture.chunks.push(e.data); };
+            recorder.onerror = e => {
+                capture.recorder = null;
+                stopCaptureTracks();
+                setCaptureState('error', 'Recorder error: ' + ((e.error && e.error.name) || 'unknown'));
+            };
+            recorder.start();
+            setCaptureState('recording');
+        }
+
+        async function stopCapture() {
+            if (capture.state !== 'recording' || !capture.recorder) return;
+            setCaptureState('finalizing');
+            const blob = await new Promise((resolve) => {
+                const rec = capture.recorder;
+                rec.onstop = () => resolve(new Blob(capture.chunks, { type: capture.mimeType || 'video/webm' }));
+                rec.stop();
+            });
+            capture.recorder = null;
+            stopCaptureTracks();
+            try {
+                const buffer = await blob.arrayBuffer();
+                const finRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${capture.chunkIndex}/finalize`, {
+                    headers: { 'Content-Type': 'application/octet-stream', 'X-Media-Extension': capture.extension },
+                    body: buffer,
+                });
+                if (!finRes.ok) throw new Error(finRes.error || 'Could not save recording');
+                const sessRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/finalize`, {
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ended_at: new Date().toISOString() }),
+                });
+                if (!sessRes.ok) throw new Error(sessRes.error || 'Could not finalize session');
+                setCaptureState('done');
+                showToast('Capture saved');
+                loadCaptureSessions();
+            } catch (err) {
+                setCaptureState('error', err.message);
+            }
+        }
+
+        window.addEventListener('pagehide', emergencyStopCapture);
+        window.addEventListener('beforeunload', emergencyStopCapture);
+
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') { closePreview(); closeEdit(); closeProjectsModal(); closeLogsModal(); closeHelpModal(); closeFrameModal(); }
+            if (e.key === 'Escape') { closePreview(); closeEdit(); closeProjectsModal(); closeLogsModal(); closeHelpModal(); closeFrameModal(); closeCaptureModal(); }
         });
 
         setInterval(() => { updateRunStatus(); loadLogs(); }, 3000);

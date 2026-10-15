@@ -49,6 +49,9 @@ from transcript_pipeline.documentation.engine import (
     remove_step,
     update_step,
 )
+from transcript_pipeline.live_capture import CaptureService
+from transcript_pipeline.live_capture import errors as capture_errors
+from transcript_pipeline.live_capture import models as capture_models
 from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.media.utils import run_ffprobe
 from transcript_pipeline.projects import validate_project
@@ -112,6 +115,27 @@ _DASHBOARD_TOKEN = secrets.token_urlsafe(32)
 _doc_generation_lock = threading.Lock()
 _doc_generation_inflight: set[str] = set()
 
+# CaptureService is bound to the *current* VIDEOS_BASE (monkeypatchable in
+# tests) — recreated only when the resolved root changes, so per-session locks
+# stay shared for the lifetime of a given data root.
+_capture_service: CaptureService | None = None
+_capture_service_root: Path | None = None
+_capture_service_lock = threading.Lock()
+
+
+def _get_capture_service() -> CaptureService:
+    global _capture_service, _capture_service_root
+    root = VIDEOS_BASE.resolve()
+    with _capture_service_lock:
+        if _capture_service is None or _capture_service_root != root:
+            service = CaptureService(videos_root=root)
+            for session in service.list_sessions():
+                if session.status is capture_models.SessionStatus.ACTIVE:
+                    service.reconcile(session.session_id)
+            _capture_service = service
+            _capture_service_root = root
+        return _capture_service
+
 
 def _hostname_only(host_header: str) -> str:
     """Strips the port from a Host/Origin-style host, IPv6-bracket aware."""
@@ -155,6 +179,23 @@ def _handle_security_error(e: SecurityError) -> Any:
 @app.errorhandler(413)
 def _handle_too_large(e: Any) -> Any:
     return jsonify({"ok": False, "error": "File too large"}), 413
+
+
+@app.errorhandler(capture_errors.LiveCaptureError)
+def _handle_capture_error(e: capture_errors.LiveCaptureError) -> Any:
+    # A corrupt-manifest message embeds the resolved filesystem path — never
+    # echo that back to the client; log it server-side and return a generic body.
+    if isinstance(e, capture_errors.ManifestCorruptError):
+        logger.warning("[CAPTURE] %s", e)
+        return jsonify({"ok": False, "error": "Capture data is corrupted"}), 500
+    status = {
+        capture_errors.ValidationError: 400,
+        capture_errors.SessionNotFoundError: 404,
+        capture_errors.ChunkNotFoundError: 404,
+        capture_errors.SessionConflictError: 409,
+        capture_errors.InvalidTransitionError: 409,
+    }.get(type(e), 500)
+    return jsonify({"ok": False, "error": str(e)}), status
 
 
 # ── Global run state ─────────────────────────────────────────────────────
@@ -1259,6 +1300,82 @@ def serve_doc_asset() -> Any:
     """Serves manual/ai-package assets (step screenshots) under CarpetaTranscripciones/."""
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
     return send_from_directory(str(target.parent), target.name)
+
+
+# ── Live Capture (W4) ────────────────────────────────────────────────────
+# Browser camera capture surfaces the W3 `CaptureService` over the local
+# dashboard API. Session IDs are validated against the strict generated-ID
+# pattern inside the service; media bytes are accepted only as a raw request
+# body for an existing RECORDING chunk, bounded by MAX_CONTENT_LENGTH.
+
+def _session_payload(session: capture_models.Session) -> dict[str, Any]:
+    return session.to_manifest()
+
+
+@app.route("/api/capture/sessions", methods=["GET"])
+def api_capture_list_sessions() -> Any:
+    sessions = _get_capture_service().list_sessions()
+    return jsonify({"ok": True, "sessions": [_session_payload(s) for s in sessions]})
+
+
+@app.route("/api/capture/sessions", methods=["POST"])
+def api_capture_create_session() -> Any:
+    payload = request.get_json(silent=True) or {}
+    title = str(payload.get("title") or "").strip()
+    if not title:
+        return jsonify({"ok": False, "error": "title required"}), 400
+    recorded_at = payload.get("recorded_at")
+    if not isinstance(recorded_at, str) or not recorded_at.strip():
+        recorded_at = None
+    raw_duration = payload.get("chunk_duration_sec")
+    try:
+        chunk_duration_sec = int(raw_duration) if raw_duration is not None else capture_models.DEFAULT_CHUNK_DURATION_SEC
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "chunk_duration_sec must be an integer"}), 400
+    session = _get_capture_service().create_session(
+        title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at
+    )
+    return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/sessions/<session_id>", methods=["GET"])
+def api_capture_get_session(session_id: str) -> Any:
+    session = _get_capture_service().get_session(session_id)
+    return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/sessions/<session_id>/finalize", methods=["POST"])
+def api_capture_finalize_session(session_id: str) -> Any:
+    payload = request.get_json(silent=True) or {}
+    session = _get_capture_service().finalize_session(
+        session_id,
+        recorded_at=payload.get("recorded_at") or None,
+        ended_at=payload.get("ended_at") or None,
+        reason=payload.get("reason") or None,
+    )
+    return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/sessions/<session_id>/chunks/start", methods=["POST"])
+def api_capture_start_chunk(session_id: str) -> Any:
+    chunk = _get_capture_service().start_chunk(session_id)
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
+
+
+@app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/finalize", methods=["POST"])
+def api_capture_finalize_chunk(session_id: str, index: int) -> Any:
+    data = request.get_data(cache=True)
+    if not data:
+        return jsonify({"ok": False, "error": "empty media payload"}), 400
+    max_bytes = SETTINGS.upload_max_mb * 1024 * 1024
+    if len(data) > max_bytes:
+        return jsonify({"ok": False, "error": "File too large"}), 413
+    extension = request.headers.get("X-Media-Extension", ".webm")
+    chunk = _get_capture_service().finalize_chunk(
+        session_id, index, data, media_extension=extension,
+        recorded_at=request.args.get("recorded_at") or None,
+    )
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
 
 
 @app.route("/api/metrics")
