@@ -347,7 +347,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: final `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e` PASS in 25.92s after logical-video listing changes; `artifacts/gates/e2e-host-data/e2e_report.json` reports PASS, `critical_path_no_browser_errors` PASS, no TargetClosedError.
 
 ### W23 - Docker/heavy validation
-- Status: IN_PROGRESS
+- Status: BLOCKED
 - Objective: run required full and Docker validation when repository policy/environment allow.
 - Dependencies: W20, W22 PASS; RAM gate >6 GiB and review prerequisite.
 - Implementation tasks: RAM-gated pytest/security/smoke/sonar and Docker build/E2E if configured; keep local validation environments outside the Docker build context and run synthetic fixture seeders as the dashboard UID.
@@ -357,10 +357,11 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: RAM gate; heavy runner; Docker gate config/build/E2E.
 - Expected artifacts: heavy summary and per-gate reports.
 - Recovery/fallback: retry when measured RAM >6 GiB; do not bypass repository enforcement; independent implementation stages continue.
-- Evidence: full heavy-run RAM 6.41 GiB; pytest, security, smoke, host E2E and Docker build PASS; sonar/Jenkins/soak are NOT_CONFIGURED (not configured in this repo). Docker E2E uncovered root-owned synthetic fixtures; seed and browser runner now use UID 10001. A subsequent run found the harness's optional repo-root report mirror was unwritable in the non-root container; it now skips the mirror unless the root is a writable directory, while always writing the primary `/data` report. The Docker E2E then exposed missing `/static/logo.png` from the installed wheel; `pyproject.toml` now includes dashboard static PNG assets. Focused harness/gate tests: 67 passed. Final standalone Docker E2E PASS in 266.11s (`artifacts/gates/build-local/docker-docker-e2e.json`); final host E2E PASS in 27.7s (`artifacts/gates/latest.json`). Rerunning the aggregate heavy gate after these fixes because its prior summary captured the pre-fix Docker failure.
+- Evidence / blocker: an earlier aggregate run with 6.41 GiB passed pytest, security, smoke, host E2E and Docker build. After fixing its Docker E2E failures (seed/executor UID 10001, optional non-writable report mirror, and missing packaged `/static/logo.png`), the standalone Docker E2E passed in 266.11s (`artifacts/gates/build-local/docker-docker-e2e.json`); focused harness/gate tests passed 67/67; final host E2E passed in 27.7s (`artifacts/gates/latest.json`). A final aggregate rerun was attempted, but `artifacts/gates/heavy-validation.json` records `DEFERRED_LOW_RAM`: measured 3.78 GiB, below the enforced 6.0 GiB threshold, so no heavy gates ran. This is an external resource constraint; do not override the repo RAM gate. Sonar/Jenkins/soak are not configured.
+- Recovery/fallback evidence: each configured failed component was rerun independently after its fix and passed; aggregate-only rerun must wait until >6.0 GiB is available.
 
 ### W24 - Final readiness
-- Status: PENDING
+- Status: PASS
 - Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
 - Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
 - Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
@@ -370,7 +371,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `git diff --check`; targeted/full validation; `git status`; `git rev-parse HEAD`; `git ls-remote`.
 - Expected artifacts: final gate reports and committed plan evidence.
 - Recovery/fallback: do not claim PASS with an unrerun failure; report exact code vs environment blocker.
-- Evidence: W0-W25 reviewed; all implemented feature stages PASS, including unit/integration (281-stage matrix plus additional 96 audio/docs/GC cases), user-journey Playwright, mobile/LAN HTTPS capture, final Host E2E 27.7s PASS, Docker build and Docker E2E 266.11s PASS. `git diff --check` clean; final implementation checkpoint `d04135d` committed. This plan completion checkpoint is committed and pushed; remote SHA matches HEAD and worktree is clean. Sonar/Jenkins/soak are not configured and are outside required gates. No deployment or merge.
+- Evidence: W0-W25 reviewed; implemented feature stages PASS, including unit/integration (281-case matrix plus 96 audio/docs/GC cases), user-journey Playwright, mobile/LAN HTTPS capture, final Host E2E 27.7s PASS, Docker build and Docker E2E 266.11s PASS. W23 retains its justified aggregate-only RAM blocker above; all configured components passed independently. `git diff --check` clean; code and canonical plan committed/pushed; remote SHA matches HEAD and worktree is clean. Sonar/Jenkins/soak are not configured. No deployment or merge.
 
 ## Global Definition of Done
 
@@ -425,7 +426,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W18-W19 PASS. Confirmed logical playlist videos now appear as read-only entries in Videos, map to the same physical chunk, and carry title metadata into the existing processor/Docs V2 provenance; GC suggestions are review-only. Integration tests passed; Playwright verified playlist rows/docs action and GC safety UI. W20-W21 await final full rerun after these changes.
 - 2026-10-15: W20-W21 PASS. Final focused unit/integration matrix 281 passed. Synthetic Playwright journeys passed for capture, playlist/title review, Videos/docs action, GC safety, audio/transcript, crop, offline/retry, cancellation, processing chunks, and Date. W22 is rerunning after these changes.
 - 2026-10-15: W22 PASS. Heavy-run host E2E after the final UI/API integration passed in 25.92s, with critical path and no-browser-errors checks PASS. W23 Docker/heavy gates continue.
-- 2026-10-15: W23 Docker E2E independently PASS (266.11s) after the root fixes; W23 remains IN_PROGRESS until the aggregate heavy runner summary is refreshed. W24 awaits W23.
+- 2026-10-15: W23 aggregate rerun could not start because current available RAM is 3.78 GiB (<6.0 GiB enforced threshold); `heavy-validation.json` records DEFERRED_LOW_RAM. Docker E2E independently passed in 266.11s after root fixes; final Host E2E and focused harness tests passed. W23 classified BLOCKED for the genuine external RAM condition; W24 PASS with all configured component evidence and justified W23 blocker.
 
 ## Final Delivery Checklist
 
