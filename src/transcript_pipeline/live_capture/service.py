@@ -276,9 +276,18 @@ class CaptureService:
     def mark_processing(self, session_id: str, index: int) -> models.Chunk:
         return self._transition_chunk(session_id, index, models.ChunkState.PROCESSING)
 
-    def mark_processed(self, session_id: str, index: int) -> models.Chunk:
+    def mark_processed(
+        self, session_id: str, index: int, *, transcript_available: bool = True
+    ) -> models.Chunk:
+        session = self.store.load_session(session_id)
+        chunk = session.get_chunk(index)
+        available = transcript_available or chunk.transcript_available
         return self._transition_chunk(
-            session_id, index, models.ChunkState.PROCESSED, transcript_available=True, transcript_required=False
+            session_id,
+            index,
+            models.ChunkState.PROCESSED,
+            transcript_available=available,
+            transcript_required=not available and chunk.audio_availability is models.AudioAvailability.MISSING,
         )
 
     def mark_failed(self, session_id: str, index: int) -> models.Chunk:

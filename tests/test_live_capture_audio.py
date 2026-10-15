@@ -160,17 +160,27 @@ def test_finalize_chunk_with_audio_is_not_transcript_required(service):
     assert finalized.transcript_required is False
 
 
-def test_mark_processed_clears_transcript_required(service):
+def test_mark_processed_without_transcript_keeps_transcript_required(service):
     session = service.create_session("late-transcript")
     service.start_chunk(session.session_id)
     service.finalize_chunk(session.session_id, 0, b"bytes", audio_availability=A.MISSING)
     assert service.get_session(session.session_id).chunks[0].transcript_required is True
 
     service.mark_processing(session.session_id, 0)
-    processed = service.mark_processed(session.session_id, 0)
+    processed = service.mark_processed(session.session_id, 0, transcript_available=False)
+    assert processed.transcript_available is False
+    assert processed.transcript_required is True
+    assert service.get_session(session.session_id).transcript_required is True
+
+
+def test_mark_processed_with_late_transcript_clears_requirement(service):
+    session = service.create_session("late-transcript-present")
+    service.start_chunk(session.session_id)
+    service.finalize_chunk(session.session_id, 0, b"bytes", audio_availability=A.MISSING)
+    service.mark_processing(session.session_id, 0)
+    processed = service.mark_processed(session.session_id, 0, transcript_available=True)
     assert processed.transcript_available is True
     assert processed.transcript_required is False
-    assert service.get_session(session.session_id).transcript_required is False
 
 
 # ── server-side ffprobe probe (injected fake) ───────────────────────

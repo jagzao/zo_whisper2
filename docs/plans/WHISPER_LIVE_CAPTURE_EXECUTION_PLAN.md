@@ -162,16 +162,18 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: `Transcript` value object (fixed `alignment="loose"`, no start/end/segment fields), session-level `transcript` in the manifest plus a `transcript.txt` sidecar, and `CaptureService.associate_transcript` implemented. Association marks every chunk transcript-available and clears TRANSCRIPT_REQUIRED while leaving each chunk's processing `state` untouched (FINALIZED/PROCESSING never forced to PROCESSED); retries are idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` plus a later-session selector and transcript supply UI. Fixed loose alignment, no per-second fields. 37 new tests pass; full repo suite 927 passed / 3 skipped; synthetic Playwright late-session association/loose alignment 17 checks pass; compileall clean.
 
 ### W9 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Documentation pipeline integration
-- Status: PENDING
-- Objective: send finalized capture through existing Whisper documentation flow.
-- Dependencies: W5, W6, W7 PASS; W8 PASS for transcript-aware docs.
-- Implementation tasks: discover finalized capture in existing processor; preserve metadata/crop provenance; video-first and later-transcript regeneration; no duplicate pipeline.
-- Relevant files/modules: `transcription/processor.py`, `documentation/`, dashboard app.
-- Acceptance criteria: synthetic capture yields existing evidence/manual/AI package; no-audio video retained; late transcript enriches docs without false second-level alignment.
-- Required tests: video-to-docs integration, no-audio, late-transcript regeneration.
-- Validation commands: targeted docs/processor pytest.
-- Expected artifacts: synthetic documentation bundle only.
-- Recovery/fallback: evidence-only output remains available when synthesis lacks transcript; never fabricate instructions.
+- Status: PASS
+ - Objective: send finalized capture through existing Whisper documentation flow.
+ - Dependencies: W5, W6, W7 PASS; W8 PASS for transcript-aware docs.
+ - Implementation tasks: discover finalized capture in existing processor; preserve metadata/crop provenance; video-first and later-transcript regeneration; no duplicate pipeline.
+ - Relevant files/modules: `transcription/processor.py`, `documentation/`, dashboard app.
+ - Acceptance criteria: synthetic capture yields existing evidence/manual/AI package; no-audio video retained; late transcript enriches docs without false second-level alignment.
+ - Required tests: video-to-docs integration, no-audio, late-transcript regeneration.
+ - Validation commands: targeted docs/processor pytest.
+ - Expected artifacts: synthetic documentation bundle only.
+ - Recovery/fallback: evidence-only output remains available when synthesis lacks transcript; never fabricate instructions.
+ - Evidence: `live_capture/pipeline.py` bridge (`resolve_capture_context`) resolves a finalized capture chunk to its session context (crop/transcript/audio) without a second pipeline; `SimpleScanProcessor` threads the manifest crop into `KeyframeExtractor`, skips Whisper for video-only media (`transcript_status="no_audio"`, no invented transcript, record still completes), and attaches the late session transcript as `frame_mapping.json.transcription_summary.session_transcript`; `documentation/evidence.py` consumes it as an untimed `session_transcript.loose` evidence item (never per-frame alignment). New tests: 13 unit + 3 integration (crop mapping, late-transcript provenance, normal audio path). Targeted suite 157 passed; docs V2/processor/regenerate/handler regressions green.
+
 
 ### W10 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Advisory media GC candidates
 - Status: PENDING
@@ -289,7 +291,8 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
-- 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.
+- 2026-10-15: W9 PASS. Finalized Live Capture chunks now flow through `SimpleScanProcessor -> KeyframeExtractor -> Documentation V2`. `live_capture/pipeline.py` `resolve_capture_context` resolves a finalized chunk to its session crop/transcript/audio; the processor threads the manifest crop into keyframe extraction, skips Whisper for video-only media (`transcript_status="no_audio"`, never invents a transcript, record still completes), and persists the late session transcript into `frame_mapping.json.transcription_summary.session_transcript`; `documentation/evidence.py` consumes it as an untimed `session_transcript.loose` evidence item with no per-frame sync. 13 unit + 3 integration tests (crop mapping, late-transcript provenance, normal audio path); targeted 157 passed; docs V2/processor/regenerate/handler regressions green. W10 PENDING.
+ - 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.
 - 2026-10-15: W7 PASS. Added optional audio capture, ffprobe detection, persisted AUDIO_MISSING/TRANSCRIPT_REQUIRED and UI warning. 890 tests passed, 3 skipped; fake-device Playwright 14 checks passed. W8 IN_PROGRESS.
 - 2026-10-15: W6 PASS. Added normalized crop selection, session persistence, clear/update API and source-preserving frame crop with mapping metadata. 77 targeted tests and 2 keyframe integration tests passed; browser crop report deferred to W13. W7 IN_PROGRESS.
 - 2026-10-15: W5 PASS. Implemented bounded streamed uploads and browser chunk rotation with concurrent upload, FIFO order, retry and backpressure. 58 unit/API tests, 10/10 chunk Playwright checks, 12/12 camera regression checks; security 107 passed/3 skipped. W6 IN_PROGRESS.

@@ -45,6 +45,8 @@ from transcript_pipeline.llm.enrichment import AIEnrichmentService
 from transcript_pipeline.llm.guard import ExternalLLMBlockedError, PrivacyGuard
 from transcript_pipeline.llm.openai_compatible import OpenAICompatibleProvider
 from transcript_pipeline.logging_setup import configure_logging
+from transcript_pipeline.media.utils import media_has_audio_stream
+from transcript_pipeline.live_capture.models import ChunkState
 from transcript_pipeline.projects import load_projects, match_project
 from transcript_pipeline.settings import SETTINGS
 
@@ -248,8 +250,13 @@ class SimpleScanProcessor:
             return self._has_video_stream(file_path)
         return True
 
-    def _ensure_keyframes(self, video_path: Path):
-        """Extracts and validates keyframes for a video, with method fallback."""
+    def _ensure_keyframes(self, video_path: Path, crop=None):
+        """Extracts and validates keyframes for a video, with method fallback.
+
+        `crop` (a normalized Live Capture `CropRegion`, or None) is forwarded
+        to the extractor so capture-frame provenance is preserved; the
+        extractor's own crop primitive is the single crop implementation.
+        """
         if not self._is_video_file(video_path):
             return None
 
@@ -271,7 +278,8 @@ class SimpleScanProcessor:
             result_frames = self.keyframe_extractor.extract_keyframes(
                 video_path,
                 method=method,
-                max_frames=None
+                max_frames=None,
+                crop=crop,
             )
 
             if not result_frames.get("success"):
@@ -310,11 +318,24 @@ class SimpleScanProcessor:
         return None
 
     def transcribe_file(self, audio_path: Path) -> dict:
-        """Transcribes an audio file at MAXIMUM QUALITY"""
+        """Transcribes an audio file at MAXIMUM QUALITY.
+
+        Live Capture chunks are resolved from their session manifest. A
+        video-only chunk (manifest audio MISSING) skips Whisper entirely but
+        still extracts frames; a chunk with audio, or a legacy file, runs the
+        normal Whisper path. The resolved capture context travels with the
+        result so `process_file` can attach provenance to the docs bundle.
+        """
+        capture = self._capture_context(audio_path)
+        if capture is not None and self._has_audio(audio_path, capture) is False:
+            return self._transcribe_capture_without_audio(audio_path, capture)
+
         try:
             self._ensure_model()
             assert self.model is not None  # guaranteed by _ensure_model() above
-            frame_info = self._ensure_keyframes(audio_path)
+            frame_info = self._ensure_keyframes(
+                audio_path, crop=capture.crop if capture is not None else None
+            )
 
             # Detect language: prefix > lang.txt > projects.json > auto-detect
             detected_lang = self._language_detector.detect(audio_path.name, audio_path.parent)
@@ -417,6 +438,8 @@ class SimpleScanProcessor:
 
             if frame_info:
                 result["frame_info"] = frame_info
+            if capture is not None:
+                result["capture"] = capture
 
             logger.info(f"[OK] {audio_path.name} - {elapsed:.1f}s | {len(segments_list)} segments")
 
@@ -425,6 +448,126 @@ class SimpleScanProcessor:
         except Exception as e:
             logger.error(f"[ERROR] {audio_path.name}: {str(e)}")
             raise
+
+    # ── Live Capture bridge (W9) ─────────────────────────────────────
+
+    def _capture_context(self, media_path: Path):
+        """Resolved Live Capture context for `media_path`, or None.
+
+        Never raises: a legacy (non-capture) path, a malformed/missing
+        manifest or an uninitialized instance all yield None so the caller
+        falls back to the default (non-capture) behavior.
+        """
+        try:
+            from transcript_pipeline.live_capture.pipeline import resolve_capture_context
+
+            return resolve_capture_context(
+                Path(media_path), videos_root=getattr(self, "videos_base", None)
+            )
+        except Exception:
+            return None
+
+    def _has_audio(self, media_path: Path, capture) -> bool | None:
+        """Whether a capture chunk carries audio.
+
+        The manifest's explicit availability is authoritative (MISSING ->
+        False, AVAILABLE -> True); UNKNOWN delegates to a real ffprobe probe,
+        which returns None when it cannot decide (never raises).
+        """
+        from transcript_pipeline.live_capture import models as live_models
+
+        availability = getattr(capture, "audio_availability", None)
+        if availability is live_models.AudioAvailability.MISSING:
+            return False
+        if availability is live_models.AudioAvailability.AVAILABLE:
+            return True
+        return media_has_audio_stream(str(media_path))
+
+    def _transcribe_capture_without_audio(self, audio_path: Path, capture) -> dict:
+        """Video-only capture chunk: extract frames, never load Whisper.
+
+        No transcript is invented — the late session transcript, when it
+        exists, is attached later as loose untimed documentation context.
+        """
+        logger.info(
+            "[CAPTURE] %s has no audio (manifest); extracting frames without Whisper",
+            audio_path.name,
+        )
+        frame_info = self._ensure_keyframes(audio_path, crop=capture.crop)
+        result = {
+            "text": "",
+            "segments": [],
+            "language": None,
+            "duration": float(frame_info.get("video_duration", 0.0)) if frame_info else 0.0,
+            "processing_time": 0.0,
+            "project": None,
+            "capture": capture,
+        }
+        if frame_info:
+            result["frame_info"] = frame_info
+        return result
+
+    def _read_frame_mapping(self, frame_info: dict) -> tuple[Path | None, dict | None]:
+        try:
+            mapping_file = Path(frame_info["frames_dir"]) / "frame_mapping.json"
+            if not mapping_file.exists():
+                return None, None
+            return mapping_file, json.loads(mapping_file.read_text(encoding="utf-8"))
+        except Exception as e:
+            logger.error(f"[CAPTURE] Could not read frame mapping: {e}")
+            return None, None
+
+    def _apply_capture_context(self, frame_info: dict, capture) -> dict | None:
+        """Attaches a capture transcript as the untimed `full_transcription`.
+
+        Runs only for a fresh processing pass, so the existing untimed
+        full-transcript evidence fallback consumes it (never per-frame).
+        """
+        if capture is None:
+            return None
+        try:
+            from transcript_pipeline.live_capture.integration import apply_capture_context
+
+            mapping_file, mapping = self._read_frame_mapping(frame_info)
+            if mapping_file is None or mapping is None:
+                return None
+            status = apply_capture_context(mapping, capture)
+            mapping_file.write_text(
+                json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            return status
+        except Exception as e:
+            logger.error(f"[CAPTURE] Could not attach capture context: {e}")
+            return None
+
+    def _integrate_capture_context(self, frame_info: dict, capture) -> None:
+        """Persists capture provenance + the loose session transcript.
+
+        Stores the late session transcript under
+        `transcription_summary.session_transcript` (one untimed block) so the
+        Docs V2 evidence plane can consume it as explicitly loose evidence.
+        """
+        if capture is None:
+            return
+        try:
+            mapping_file, mapping = self._read_frame_mapping(frame_info)
+            if mapping_file is None or mapping is None:
+                return
+            mapping.setdefault("video_info", {})["capture"] = capture.provenance()
+            transcript = getattr(capture, "transcript", None)
+            summary = mapping.setdefault("transcription_summary", {})
+            if transcript is not None and not str(summary.get("full_transcription") or "").strip():
+                summary["session_transcript"] = {
+                    "text": transcript.text,
+                    "language": transcript.language,
+                    "alignment": transcript.alignment,
+                    "source": "live_capture_session",
+                }
+            mapping_file.write_text(
+                json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+        except Exception as e:
+            logger.error(f"[CAPTURE] Could not persist capture provenance: {e}")
 
     def _integrate_transcription_with_frames(self, transcription_result: dict, frame_info: dict):
         """Merges the transcription into the frame map."""
@@ -634,11 +777,16 @@ class SimpleScanProcessor:
 
     def process_file(self, audio_path: Path) -> bool:
         """Processes a single file end to end"""
+        capture = self._capture_context(audio_path)
+        capture_started = False
         try:
             if self.tracker.is_file_processed(audio_path):
                 logger.info(f"[SKIP] Already processed: {audio_path.name}")
                 self.stats["already_processed"] += 1
                 return True
+
+            if capture is not None:
+                capture_started = self._set_capture_processing(capture)
 
             is_tutorial = TUTORIAL_FEATURES_AVAILABLE and is_tutorial_video(audio_path)
 
@@ -649,13 +797,19 @@ class SimpleScanProcessor:
             result = self.transcribe_file(audio_path)
 
             frame_info = result.get("frame_info")
+            capture = result.get("capture") or capture
             if frame_info:
                 self._integrate_transcription_with_frames(result, frame_info)
+                if capture is not None:
+                    self._integrate_capture_context(frame_info, capture)
 
             self.save_transcription(audio_path, result)
 
             if frame_info:
                 self._generate_documentation_bundle(audio_path, frame_info, result.get("project"))
+
+            if capture is not None:
+                self._set_capture_processed(capture, transcript_available=bool(result.get("text")) or capture.transcript is not None)
 
             self.tracker.mark_as_processed(audio_path, "completed")
 
@@ -663,9 +817,55 @@ class SimpleScanProcessor:
             return True
 
         except Exception as e:
+            if capture is not None and capture_started:
+                self._set_capture_failed(capture)
             logger.error(f"[ERROR] Failed processing {audio_path.name}: {str(e)}")
             self.stats["errors"] += 1
             return False
+
+    def _capture_service_and_chunk(self, capture):
+        if capture is None or capture.chunk_index is None:
+            return None, None
+        from transcript_pipeline.live_capture.service import CaptureService
+
+        return CaptureService(self.videos_base), (capture.session_id, capture.chunk_index)
+
+    def _set_capture_processing(self, capture) -> bool:
+        try:
+            service, key = self._capture_service_and_chunk(capture)
+            if service is None:
+                return False
+            session = service.store.load_session(key[0])
+            chunk = session.get_chunk(key[1])
+            if chunk.state in (ChunkState.FINALIZED, ChunkState.FAILED):
+                service.mark_processing(*key)
+                return True
+        except Exception as exc:
+            logger.warning("[CAPTURE] Could not persist processing state: %s", exc)
+        return False
+
+    def _set_capture_processed(self, capture, *, transcript_available: bool) -> None:
+        try:
+            service, key = self._capture_service_and_chunk(capture)
+            if service is None:
+                return
+            session = service.store.load_session(key[0])
+            chunk = session.get_chunk(key[1])
+            if chunk.state is ChunkState.PROCESSING:
+                service.mark_processed(*key, transcript_available=transcript_available)
+        except Exception as exc:
+            logger.warning("[CAPTURE] Could not persist processed state: %s", exc)
+
+    def _set_capture_failed(self, capture) -> None:
+        try:
+            service, key = self._capture_service_and_chunk(capture)
+            if service is None:
+                return
+            session = service.store.load_session(key[0])
+            if session.get_chunk(key[1]).state is ChunkState.PROCESSING:
+                service.mark_failed(*key)
+        except Exception as exc:
+            logger.warning("[CAPTURE] Could not persist failed state: %s", exc)
 
     def run(self):
         """Runs the full processing pass"""

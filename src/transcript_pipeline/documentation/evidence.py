@@ -414,6 +414,26 @@ def build_evidence_timeline(
         })
         fidelity = FIDELITY_UNTIMED_FULL_TRANSCRIPT
 
+    # W9: a late session transcript (loose, no-sync) is consumed as an
+    # untimed fallback evidence item only when no per-frame transcript
+    # exists. It is never aligned to a frame or given a fabricated
+    # per-second timestamp — provenance is explicitly "loose".
+    session_transcript = transcription_summary.get("session_transcript") or {}
+    session_text = str(session_transcript.get("text", "") or "").strip()
+    if session_text and not has_transcript:
+        raw_entries.append({
+            "start": 0.0,
+            "end": duration,
+            "transcript": session_text,
+            "ocr": None,
+            "frame": None,
+            "timestamp": None,
+            "reviewed": False,
+            "provenance": "session_transcript.loose",
+            "untimed": True,
+        })
+        fidelity = FIDELITY_UNTIMED_FULL_TRANSCRIPT
+
     expanded_entries: list[dict[str, Any]] = []
     for entry in raw_entries:
         transcript = entry.get("transcript")
