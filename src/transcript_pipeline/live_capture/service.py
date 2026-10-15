@@ -10,18 +10,23 @@ media atomically and flips the chunk RECORDING -> FINALIZED. Incomplete
 from __future__ import annotations
 
 import io
+import logging
 import threading
 from dataclasses import replace
 from pathlib import Path
 
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
+from transcript_pipeline.live_capture.audio import transcript_required
 from transcript_pipeline.live_capture.errors import ChunkTooLargeError, InvalidTransitionError, ValidationError
 from transcript_pipeline.live_capture.store import ManifestStore, normalize_extension
+from transcript_pipeline.media.utils import media_has_audio_stream
 
 # Bounded read size for streamed uploads: the server never holds more than
 # this many bytes of a chunk body in memory at once.
 STREAM_BLOCK_SIZE = 64 * 1024
+
+logger = logging.getLogger(__name__)
 
 
 def _stream_blocks(source, max_bytes: int | None):
@@ -46,8 +51,12 @@ def _stream_blocks(source, max_bytes: int | None):
 
 
 class CaptureService:
-    def __init__(self, videos_root: Path | None = None):
+    def __init__(self, videos_root: Path | None = None, audio_probe=None):
         self.store = ManifestStore(videos_root if videos_root is not None else VIDEOS_DIR)
+        # Injectable ffprobe-based audio-stream detector (path -> bool | None).
+        # Defaults to the real ffprobe helper; tests inject a fake so no
+        # ffprobe binary or real media is required.
+        self._audio_probe = audio_probe if audio_probe is not None else media_has_audio_stream
         self._session_locks: dict[str, threading.Lock] = {}
         self._locks_guard = threading.Lock()
 
@@ -207,6 +216,10 @@ class CaptureService:
                 finalized_at=models.now_iso(),
                 recorded_at=recorded_at if recorded_at else updated.recorded_at,
                 audio_availability=audio_availability if audio_availability else updated.audio_availability,
+                transcript_required=transcript_required(
+                    audio_availability if audio_availability else updated.audio_availability,
+                    updated.transcript_available,
+                ),
                 media_extension=extension,
                 media_size_bytes=size,
                 media_sha256=sha256,
@@ -227,10 +240,56 @@ class CaptureService:
         return self._transition_chunk(session_id, index, models.ChunkState.PROCESSING)
 
     def mark_processed(self, session_id: str, index: int) -> models.Chunk:
-        return self._transition_chunk(session_id, index, models.ChunkState.PROCESSED, transcript_available=True)
+        return self._transition_chunk(
+            session_id, index, models.ChunkState.PROCESSED, transcript_available=True, transcript_required=False
+        )
 
     def mark_failed(self, session_id: str, index: int) -> models.Chunk:
         return self._transition_chunk(session_id, index, models.ChunkState.FAILED)
+
+    # ── audio detection (W7) ─────────────────────────────────────────
+
+    def detect_chunk_audio(self, session_id: str, index: int) -> models.Chunk:
+        """Probes finalized chunk media for an audio stream and persists it.
+
+        Uses the injected `_audio_probe` (the ffprobe helper by default). A
+        probe that cannot decide — unreadable media, missing ffprobe, a
+        transient crash — yields UNKNOWN and never raises, so an absent audio
+        track is a valid state that cannot fail a caller. A confirmed absence
+        marks the chunk MISSING and transcript-required; a confirmed presence
+        marks it AVAILABLE. A RECORDING chunk has no media to probe and is
+        rejected.
+        """
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            chunk = session.get_chunk(index)
+            if chunk.state is models.ChunkState.RECORDING:
+                raise InvalidTransitionError(
+                    f"chunk {models.chunk_id(index)} has no finalized media to probe"
+                )
+            if chunk.media_extension is None:
+                return chunk
+
+            path = self.store.chunk_media_path(session_id, index, chunk.media_extension)
+            try:
+                stream_present = self._audio_probe(str(path))
+            except Exception:
+                logger.warning("[CAPTURE] audio probe failed for chunk %s", models.chunk_id(index), exc_info=True)
+                stream_present = None
+
+            availability = models.AudioAvailability.UNKNOWN
+            if stream_present is True:
+                availability = models.AudioAvailability.AVAILABLE
+            elif stream_present is False:
+                availability = models.AudioAvailability.MISSING
+
+            updated = replace(
+                chunk,
+                audio_availability=availability,
+                transcript_required=transcript_required(availability, chunk.transcript_available),
+            )
+            self.store.save_session(session.with_chunk(updated))
+            return updated
 
     # ── recovery / read model ───────────────────────────────────────
 

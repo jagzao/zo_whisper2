@@ -342,3 +342,68 @@ def test_set_crop_requires_dashboard_token(client):
         content_type="application/json",
     )
     assert resp.status_code == 403
+
+
+# ── W7 audio availability / transcript-required ─────────────────────────
+
+def test_create_session_persists_audio_availability(client, env):
+    resp = _create_session(client, "Sin audio", audio_availability="MISSING")
+    assert resp.status_code == 200
+    session = resp.get_json()["session"]
+    assert session["audioAvailability"] == "MISSING"
+
+    got = client.get(f"/api/capture/sessions/{session['sessionId']}").get_json()["session"]
+    assert got["audioAvailability"] == "MISSING"
+
+
+def test_create_session_defaults_audio_unknown(client):
+    session = _create_session(client).get_json()["session"]
+    assert session["audioAvailability"] == "UNKNOWN"
+
+
+def test_create_session_rejects_invalid_audio_availability(client):
+    resp = _create_session(client, "malo", audio_availability="SOMETIMES")
+    assert resp.status_code == 400
+
+
+def test_finalize_chunk_with_missing_audio_marks_transcript_required(client, env):
+    session_id = _create_session(client, "video-only", audio_availability="MISSING").get_json()["session"]["sessionId"]
+    _start_chunk(client, session_id)
+    resp = _finalize_chunk(client, session_id, 0, b"bytes", headers={"X-Audio-Availability": "MISSING"})
+    assert resp.status_code == 200
+    chunk = resp.get_json()["chunk"]
+    assert chunk["audioAvailability"] == "MISSING"
+    assert chunk["transcriptRequired"] is True
+
+    session = client.get(f"/api/capture/sessions/{session_id}").get_json()["session"]
+    assert session["audioAvailability"] == "MISSING"
+    assert session["transcriptRequired"] is True
+
+
+def test_finalize_chunk_rejects_invalid_audio_availability(client):
+    session_id = _create_session(client).get_json()["session"]["sessionId"]
+    _start_chunk(client, session_id)
+    resp = _finalize_chunk(client, session_id, 0, b"bytes", headers={"X-Audio-Availability": "NOPE"})
+    assert resp.status_code == 400
+
+
+def test_detect_chunk_audio_endpoint_marks_missing(client, env):
+    session_id = _create_session(client).get_json()["session"]["sessionId"]
+    _start_chunk(client, session_id)
+    _finalize_chunk(client, session_id, 0, b"bytes")
+
+    service = dashboard_app._get_capture_service()
+    service._audio_probe = lambda path: False
+
+    resp = client.post(f"/api/capture/sessions/{session_id}/chunks/0/detect-audio", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    chunk = resp.get_json()["chunk"]
+    assert chunk["audioAvailability"] == "MISSING"
+    assert chunk["transcriptRequired"] is True
+
+
+def test_detect_chunk_audio_endpoint_requires_finalized_chunk(client):
+    session_id = _create_session(client).get_json()["session"]["sessionId"]
+    _start_chunk(client, session_id)  # still RECORDING, no media
+    resp = client.post(f"/api/capture/sessions/{session_id}/chunks/0/detect-audio", headers=AUTH_HEADERS)
+    assert resp.status_code == 409

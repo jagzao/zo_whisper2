@@ -133,7 +133,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: normalized selection API, session metadata persistence, source-preserving frame crop and mapping metadata implemented. 77 unit/API tests passed; compileall and diff check clean; 2 extraction integration tests passed. Browser crop script was authored but did not produce a report because the Playwright child remained blocked; rerun in W13.
 
 ### W7 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Audio detection and missing-audio state
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: make video-only capture a valid flow.
 - Dependencies: W3, W5 PASS.
 - Implementation tasks: detect usable audio; persist availability; expose `AUDIO_MISSING` and `TRANSCRIPT_REQUIRED`; UI warning; permit later transcript/audio.
@@ -145,8 +145,10 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Recovery/fallback: probe failure becomes `AUDIO_UNKNOWN`/retryable, not fatal; document state.
 
 
+- Evidence: pure audio logic, ffprobe stream detector (non-fatal), durable session/chunk state and UI warnings implemented. 890 unit/API tests passed, 3 skipped; synthetic browser capture passed 14 checks including persisted MISSING/TRANSCRIPT_REQUIRED and visible warning; compileall passed.
+
 ### W8 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Late transcript/audio association
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: attach transcript/audio after video processing without tight-sync assumptions.
 - Dependencies: W3, W7 PASS.
 - Implementation tasks: safe association endpoint/UI; persist provenance/arrival time; session/chunk association; update availability without overwriting visual timeline.
@@ -285,6 +287,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
+- 2026-10-15: W7 PASS. Added optional audio capture, ffprobe detection, persisted AUDIO_MISSING/TRANSCRIPT_REQUIRED and UI warning. 890 tests passed, 3 skipped; fake-device Playwright 14 checks passed. W8 IN_PROGRESS.
 - 2026-10-15: W6 PASS. Added normalized crop selection, session persistence, clear/update API and source-preserving frame crop with mapping metadata. 77 targeted tests and 2 keyframe integration tests passed; browser crop report deferred to W13. W7 IN_PROGRESS.
 - 2026-10-15: W5 PASS. Implemented bounded streamed uploads and browser chunk rotation with concurrent upload, FIFO order, retry and backpressure. 58 unit/API tests, 10/10 chunk Playwright checks, 12/12 camera regression checks; security 107 passed/3 skipped. W6 IN_PROGRESS.
 - 2026-10-15: W4 PASS. Dashboard camera modal, explicit permission/error states, recording indicator, session/chunk API, bounded body size, stop/error track cleanup and restart reconciliation. Added fake-device Playwright scenario; 94 targeted tests and 12/12 capture browser checks pass. W5 IN_PROGRESS.

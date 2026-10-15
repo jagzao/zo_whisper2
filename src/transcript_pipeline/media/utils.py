@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import subprocess
@@ -47,6 +48,27 @@ def run_ffprobe(
             time.sleep(delay)
             delay *= 2
             attempt += 1
+
+
+def media_has_audio_stream(path: str | Path) -> bool | None:
+    """Reports whether a media file contains an audio stream (W7).
+
+    Returns ``True`` when ffprobe finds an audio stream, ``False`` when it
+    finds streams but none of them is audio, and ``None`` when probing fails
+    (unreadable file, ffprobe missing, transient crash, or a probe with no
+    streams at all). It never raises — a missing audio track is a valid,
+    non-fatal state and must never fail a caller such as the documentation
+    flow. ``None`` therefore means "unknown", not "missing".
+    """
+    cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", str(path)]
+    try:
+        result = run_ffprobe(cmd, retry_on_timeout=False)
+        streams = json.loads(result.stdout).get("streams", [])
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
+        return None
+    if not streams:
+        return None
+    return any(s.get("codec_type") == "audio" for s in streams)
 
 
 def convert_video_to_wav(video_path: str, wav_path: str) -> str | None:

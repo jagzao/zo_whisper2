@@ -111,6 +111,17 @@ def main() -> int:
                 page.locator("#captureState").inner_text() == "Saved",
                 page.locator("#captureState").inner_text(),
             )
+            audio_warning = page.locator("#captureAudioWarning")
+            all_ok &= check(
+                "capture_missing_audio_warning",
+                audio_warning.is_visible() and "AUDIO_MISSING" in audio_warning.inner_text(),
+                audio_warning.inner_text(),
+            )
+            all_ok &= check(
+                "capture_transcript_required_warning",
+                "TRANSCRIPT_REQUIRED" in audio_warning.inner_text(),
+                audio_warning.inner_text(),
+            )
 
             # Server-side: a new FINALIZED session with finalized media exists.
             sessions_after = _sessions()
@@ -119,6 +130,11 @@ def main() -> int:
             if new_sessions:
                 session = new_sessions[0]
                 all_ok &= check("capture_session_finalized", session["status"] == "FINALIZED", session["status"])
+                all_ok &= check(
+                    "capture_missing_audio_persisted",
+                    session.get("audioAvailability") == "MISSING" and session.get("transcriptRequired") is True,
+                    f"{session.get('audioAvailability')} / {session.get('transcriptRequired')}",
+                )
                 chunks = session.get("chunks", [])
                 finalized = [c for c in chunks if c.get("state") == "FINALIZED" and c.get("mediaSizeBytes", 0) > 0]
                 all_ok &= check("capture_media_persisted", len(finalized) == 1, f"{chunks}")

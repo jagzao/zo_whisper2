@@ -1326,6 +1326,25 @@ def _parse_crop(value: object) -> capture_models.CropRegion | None:
     return capture_models.CropRegion.from_manifest(value)
 
 
+def _parse_audio_availability(value: object) -> capture_models.AudioAvailability:
+    """Parses a client audio-availability payload (W7).
+
+    Accepts the enum value names (AVAILABLE / MISSING / UNKNOWN) or a
+    missing/blank value (which means UNKNOWN). Any other value raises
+    `capture_errors.ValidationError` -> 400.
+    """
+    if value is None or value == "":
+        return capture_models.AudioAvailability.UNKNOWN
+    if not isinstance(value, str):
+        raise capture_errors.ValidationError("audio_availability must be a string")
+    try:
+        return capture_models.AudioAvailability(value)
+    except ValueError as exc:
+        raise capture_errors.ValidationError(
+            "audio_availability must be AVAILABLE, MISSING, or UNKNOWN"
+        ) from exc
+
+
 @app.route("/api/capture/sessions", methods=["GET"])
 def api_capture_list_sessions() -> Any:
     sessions = _get_capture_service().list_sessions()
@@ -1350,8 +1369,13 @@ def api_capture_create_session() -> Any:
         crop = _parse_crop(payload.get("crop"))
     except capture_errors.ValidationError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
+    try:
+        audio_availability = _parse_audio_availability(payload.get("audio_availability"))
+    except capture_errors.ValidationError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
     session = _get_capture_service().create_session(
-        title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop
+        title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop,
+        audio_availability=audio_availability,
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
 
@@ -1402,11 +1426,29 @@ def api_capture_finalize_chunk(session_id: str, index: int) -> Any:
     # applies automatically once the body is read from request.stream).
     max_bytes = app.config.get("MAX_CONTENT_LENGTH") or (SETTINGS.upload_max_mb * 1024 * 1024)
     extension = request.headers.get("X-Media-Extension", ".webm")
+    try:
+        audio_availability = _parse_audio_availability(request.headers.get("X-Audio-Availability"))
+    except capture_errors.ValidationError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
     chunk = _get_capture_service().finalize_chunk_stream(
         session_id, index, request.stream, media_extension=extension,
+        audio_availability=audio_availability,
         recorded_at=request.args.get("recorded_at") or None,
         max_bytes=max_bytes,
     )
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
+
+
+@app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/detect-audio", methods=["POST"])
+def api_capture_detect_chunk_audio(session_id: str, index: int) -> Any:
+    """W7: server-side ffprobe detection of a finalized chunk's audio stream.
+
+    Re-probes the persisted media and records AUDIO_MISSING / TRANSCRIPT_REQUIRED
+    (or AVAILABLE) on the chunk. Probe failure is non-fatal — it leaves the
+    state UNKNOWN and still returns 200 — so documentation never fails because
+    audio is absent.
+    """
+    chunk = _get_capture_service().detect_chunk_audio(session_id, index)
     return jsonify({"ok": True, "chunk": chunk.to_manifest()})
 
 

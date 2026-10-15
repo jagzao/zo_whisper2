@@ -157,6 +157,7 @@ class Chunk:
     finalized_at: str | None = None
     audio_availability: AudioAvailability = AudioAvailability.UNKNOWN
     transcript_available: bool = False
+    transcript_required: bool = False
     media_extension: str | None = None
     media_size_bytes: int | None = None
     media_sha256: str | None = None
@@ -196,6 +197,7 @@ class Chunk:
             "finalizedAt": self.finalized_at,
             "audioAvailability": self.audio_availability.value,
             "transcriptAvailable": self.transcript_available,
+            "transcriptRequired": self.transcript_required,
             "mediaExtension": self.media_extension,
             "mediaSizeBytes": self.media_size_bytes,
             "mediaSha256": self.media_sha256,
@@ -217,6 +219,7 @@ class Chunk:
                 finalized_at=_optional_nonempty_str(data.get("finalizedAt")),
                 audio_availability=AudioAvailability(str(data.get("audioAvailability") or "UNKNOWN")),
                 transcript_available=bool(data.get("transcriptAvailable", False)),
+                transcript_required=bool(data.get("transcriptRequired", False)),
                 media_extension=_optional_nonempty_str(data.get("mediaExtension")),
                 media_size_bytes=_optional_nonnegative_int(data.get("mediaSizeBytes")),
                 media_sha256=_optional_nonempty_str(data.get("mediaSha256")),
@@ -254,6 +257,18 @@ class Session:
     def next_chunk_index(self) -> int:
         return self.chunks[-1].index + 1 if self.chunks else 0
 
+    @property
+    def transcript_required(self) -> bool:
+        """Derived, durable read: any chunk still awaiting a transcript.
+
+        Never persisted on the session manifest directly — it is recomputed
+        from each chunk's own persisted `transcript_required` flag on every
+        load, so it cannot drift from the chunks. Included in `to_manifest`
+        only so the dashboard API/UI can surface TRANSCRIPT_REQUIRED without
+        an extra derivation step.
+        """
+        return any(chunk.transcript_required for chunk in self.chunks)
+
     def transition_to(self, target: SessionStatus) -> Session:
         validate_session_transition(self.status, target)
         return replace(self, status=target)
@@ -282,6 +297,7 @@ class Session:
             "endedAt": self.ended_at,
             "chunkDurationSec": self.chunk_duration_sec,
             "audioAvailability": self.audio_availability.value,
+            "transcriptRequired": self.transcript_required,
             "crop": self.crop.to_manifest() if self.crop else None,
             "chunks": [c.to_manifest() for c in self.chunks],
             "reason": self.reason,

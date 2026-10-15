@@ -891,7 +891,13 @@
                 <input type="number" id="captureChunkDuration" value="600" min="1" step="1" style="width:6rem;">
                 <span id="captureChunkInfo" style="color:var(--muted); font-size:0.8rem; margin-left:auto;"></span>
             </div>
+            <div class="row" style="align-items:center; margin-top:0;">
+                <label for="captureAudio" style="display:flex; align-items:center; gap:0.35rem;">
+                    <input type="checkbox" id="captureAudio"> Record audio (microphone)
+                </label>
+            </div>
             <div id="captureNotice" class="ai-package-summary hidden"></div>
+            <div id="captureAudioWarning" class="ai-package-summary hidden" style="color:var(--danger);"></div>
             <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
             <div style="position:relative; margin:0.75rem 0;">
                 <video id="capturePreview" autoplay playsinline muted style="width:100%; max-height:320px; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
@@ -1925,6 +1931,7 @@
             starting: false,
             rotateTimer: null,
             pendingCrop: null,      // W6: normalized {x,y,width,height} crop, or null
+            audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
         };
 
         const CAPTURE_MAX_PENDING_UPLOADS = 4;
@@ -2000,6 +2007,23 @@
             el.textContent = `${recording} · finalized [${capture.finalizedIndexes.join(', ')}] · pending ${capture.uploadQueue.length}`;
         }
 
+        // W7: surface the missing-audio / transcript-required state clearly.
+        function updateAudioWarning(audioAvailability, transcriptRequired) {
+            const el = document.getElementById('captureAudioWarning');
+            if (!el) return;
+            const missing = audioAvailability === 'MISSING';
+            if (!missing && !transcriptRequired) {
+                el.textContent = '';
+                el.classList.add('hidden');
+                return;
+            }
+            const parts = [];
+            if (missing) parts.push('AUDIO_MISSING: this capture has no audio track.');
+            if (transcriptRequired) parts.push('TRANSCRIPT_REQUIRED: a transcript must be supplied separately.');
+            el.textContent = parts.join(' ');
+            el.classList.remove('hidden');
+        }
+
         // Test-only introspection: mirrors capture state for the deterministic
         // Playwright chunk-flow checks without parsing UI text.
         window.__captureSnapshot = function () {
@@ -2013,6 +2037,7 @@
                 stopRequested: capture.stopRequested,
                 chunkDurationSec: capture.chunkDurationSec,
                 crop: capture.pendingCrop,
+                audioAvailability: capture.audioAvailability,
             };
         };
 
@@ -2021,8 +2046,10 @@
             document.getElementById('captureTitle').value = 'Live capture';
             capture.closed = false;
             capture.pendingCrop = null;
+            capture.audioAvailability = 'UNKNOWN';
             renderCropRegion();
             updateChunkInfo();
+            updateAudioWarning(null, false);
             if (!captureSupported()) {
                 setCaptureState('unsupported', 'MediaRecorder or getUserMedia is not supported in this browser.');
                 return;
@@ -2181,23 +2208,35 @@
             }
             if (capture.state === 'recording' || capture.state === 'stalled') return;
             setCaptureState('requesting');
+            const requestAudio = document.getElementById('captureAudio').checked === true;
             let stream;
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: requestAudio });
             } catch (err) {
                 const name = err && err.name;
                 if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-                    setCaptureState('error', 'Camera permission denied. Allow camera access in your browser and try again.');
+                    setCaptureState('error', requestAudio
+                        ? 'Camera or microphone permission denied. Allow access in your browser and try again.'
+                        : 'Camera permission denied. Allow camera access in your browser and try again.');
                 } else if (name === 'NotFoundError') {
-                    setCaptureState('error', 'No camera found on this device.');
+                    setCaptureState('error', requestAudio
+                        ? 'No camera or microphone found on this device.'
+                        : 'No camera found on this device.');
                 } else if (name === 'NotReadableError') {
-                    setCaptureState('error', 'Camera is in use by another application.');
+                    setCaptureState('error', 'Camera or microphone is in use by another application.');
                 } else {
                     setCaptureState('error', 'Could not access the camera: ' + (err && err.message ? err.message : String(err)));
                 }
                 return;
             }
             capture.stream = stream;
+            // W7: persist audio availability from the observed audio-track
+            // presence. Video-only (audio not requested) is MISSING, not
+            // UNKNOWN — the absence is intentional and transcript-required.
+            const audioTrackCount = stream.getAudioTracks().length;
+            capture.audioAvailability = requestAudio
+                ? (audioTrackCount > 0 ? 'AVAILABLE' : 'MISSING')
+                : 'MISSING';
             capture.mimeType = pickCaptureMimeType() || 'video/webm';
             capture.extension = extensionForMime(capture.mimeType);
             capture.pendingParts = [];
@@ -2217,7 +2256,7 @@
             try {
                 const createRes = await captureFetch('/api/capture/sessions', {
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), chunk_duration_sec: chunkDurationSec, crop: capture.pendingCrop }),
+                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), chunk_duration_sec: chunkDurationSec, crop: capture.pendingCrop, audio_availability: capture.audioAvailability }),
                 });
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
@@ -2317,7 +2356,7 @@
                         const item = capture.uploadQueue[0];
                         try {
                             const finRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/finalize`, {
-                                headers: { 'Content-Type': 'application/octet-stream', 'X-Media-Extension': item.extension },
+                                headers: { 'Content-Type': 'application/octet-stream', 'X-Media-Extension': item.extension, 'X-Audio-Availability': capture.audioAvailability },
                                 body: item.blob,
                             });
                             if (!finRes.ok) throw new Error(finRes.error || 'Could not save chunk');
@@ -2374,6 +2413,9 @@
                 if (!sessRes.ok) throw new Error(sessRes.error || 'Could not finalize session');
                 stopCaptureTracks();
                 setCaptureState('done');
+                if (sessRes.session) {
+                    updateAudioWarning(sessRes.session.audioAvailability, sessRes.session.transcriptRequired);
+                }
                 showToast('Capture saved');
                 loadCaptureSessions();
             } catch (err) {
