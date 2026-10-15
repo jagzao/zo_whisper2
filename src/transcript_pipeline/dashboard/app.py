@@ -1351,6 +1351,23 @@ def api_capture_list_sessions() -> Any:
     return jsonify({"ok": True, "sessions": [_session_payload(s) for s in sessions]})
 
 
+@app.route("/api/capture/gc-candidates", methods=["GET"])
+def api_capture_gc_candidates() -> Any:
+    """Lists stale processed media with generated docs; never deletes media."""
+    from transcript_pipeline.live_capture.gc import deletion_candidates
+
+    try:
+        days = max(1, min(3650, int(request.args.get("retention_days", "90"))))
+    except ValueError:
+        return jsonify({"ok": False, "error": "retention_days must be an integer"}), 400
+    candidates = deletion_candidates(
+        VIDEOS_BASE,
+        retention_days=days,
+        documentation_exists=lambda path: _resolve_documentation(path, MediaRoot.VIDEOS) is not None,
+    )
+    return jsonify({"ok": True, "candidates": candidates, "deletes_media": False})
+
+
 @app.route("/api/capture/sessions", methods=["POST"])
 def api_capture_create_session() -> Any:
     payload = request.get_json(silent=True) or {}

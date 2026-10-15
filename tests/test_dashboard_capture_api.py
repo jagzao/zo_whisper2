@@ -120,6 +120,14 @@ def test_create_session_requires_title(client):
     assert resp.status_code == 400
 
 
+def test_gc_suggestions_are_read_only(client):
+    response = client.get("/api/capture/gc-candidates")
+    assert response.status_code == 200
+    assert response.json["ok"] is True
+    assert response.json["deletes_media"] is False
+    assert response.json["candidates"] == []
+
+
 def test_create_session_rejects_invalid_duration(client):
     resp = _create_session(client, "X", chunk_duration_sec="not-a-number")
     assert resp.status_code == 400

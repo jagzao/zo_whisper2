@@ -176,7 +176,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 
 
 ### W10 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Advisory media GC candidates
-- Status: PENDING
+- Status: PASS
 - Objective: surface stale, processed, documented media as deletion suggestions only.
 - Dependencies: W3, W9 PASS.
 - Implementation tasks: deterministic age/status/reference logic; explain reasons; require confirmation; safe-path deletion of selected item only.
@@ -187,7 +187,44 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic candidate fixtures/report; no real deletion.
 - Recovery/fallback: uncertain reference state excludes candidate.
 
-### W11 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Videos Date API and server sorting
+
+### W11 ? Upload cancellation and resumable cleanup
+- Status: PENDING
+- Objective: cancel in-flight chunk uploads from browser through server and leave retryable durable state.
+- Dependencies: W5 PASS.
+- Implementation tasks: define upload cancellation state; abort browser request with AbortController; cancel backend upload session if one exists; remove only partial temp files; make repeated cancel safe; recover stale UPLOADING records; permit retry.
+- Relevant files/modules: live_capture models/store/service/API, dashboard capture JavaScript, upload tests.
+- Acceptance criteria: aborted upload yields UPLOAD_CANCELLED; no partial finalized chunk or stale UPLOADING record; original finalized media untouched; retry can upload same chunk.
+- Required tests: unit transitions and cleanup decisions; API cancellation/idempotency/retry; Playwright cancel button and actual abort.
+- Validation commands: targeted capture API/unit tests and fake-media Playwright upload cancellation.
+- Expected artifacts: synthetic cancellation report and clean temp-state fixture.
+- Recovery/fallback: if storage lacks multipart sessions, cancel the request stream and atomically remove only the server-owned partial file.
+
+### W12 ? Processing job cancellation
+- Status: PENDING
+- Objective: persist cancellable processing jobs and stop work safely between long pipeline stages.
+- Dependencies: W3, W9 PASS.
+- Implementation tasks: PROCESSING ? CANCEL_REQUESTED ? CANCELLED state machine; idempotent API; optimistic state validation preventing completion after accepted cancellation; cancellation checks between extraction, transcription, visual analysis, docs, embeddings; clean only temporary/partial artifacts; retain original media; retry cancelled work.
+- Relevant files/modules: live_capture models/service, processor/keyframe/docs/embedding boundaries, dashboard API, job state tests.
+- Acceptance criteria: active/queued jobs cancel predictably, duplicate cancel is safe, completed jobs reject/no-op safely, workers do not kill shared processes, retry starts a new valid attempt.
+- Required tests: state transitions, queued/active/double cancel, cancel-vs-complete race, cleanup decision, retry.
+- Validation commands: targeted unit/API/integration tests with controllable stage barriers.
+- Expected artifacts: synthetic job cancellation traces; no original media deletion.
+- Recovery/fallback: cancellation is cooperative at stage boundaries; if a dependency is non-interruptible, finish that call then stop before next stage and document the bounded delay.
+
+### W13 ? Cancellation controls and browser regression
+- Status: PENDING
+- Objective: expose state-appropriate cancellation and retry actions.
+- Dependencies: W11, W12 PASS.
+- Implementation tasks: show Cancelar subida while uploading; Cancelar procesamiento for queued/processing; disable during CANCEL_REQUESTED with Cancelando; expose Procesar de nuevo/Eliminar for CANCELLED only with confirmation for destructive removal; preserve normal/failed actions.
+- Relevant files/modules: dashboard capture/video UI, API client, Playwright scenarios.
+- Acceptance criteria: visible actions match state; upload actually stops; processing reaches CANCELLED; retry appears; original video remains.
+- Required tests: Playwright upload cancel, processing cancel, Cancelando, eventual CANCELLED, retry and destructive confirmation.
+- Validation commands: targeted fake-media Playwright cancellation suite.
+- Expected artifacts: browser report and synthetic upload/job fixtures.
+- Recovery/fallback: retain safe status display and retry path when browser disconnects; reconcile stale requests on next load.
+
+### W14 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Videos Date API and server sorting
 - Status: PENDING
 - Objective: complete canonical Date and backend sorting while preserving UI.
 - Dependencies: W3 PASS.
@@ -199,7 +236,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: targeted test report.
 - Recovery/fallback: filesystem fallback for legacy media; unknown sort fields use stable default.
 
-### W12 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Full unit/integration acceptance matrix
+### W15 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Full unit/integration acceptance matrix
 - Status: PENDING
 - Objective: validate all required domain/API flows before broad browser regressions.
 - Dependencies: W3, W5ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W11 PASS.
@@ -211,7 +248,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: gate reports in `artifacts/gates/`.
 - Recovery/fallback: two distinct fixes per failure, classify/document and continue independent stages.
 
-### W13 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Playwright/E2E regression
+### W16 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Playwright/E2E regression
 - Status: PENDING
 - Objective: verify dashboard, projects, Date and Live Capture end-to-end.
 - Dependencies: W2, W4ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W11 PASS.
@@ -223,10 +260,10 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: reports/screenshots/logs.
 - Recovery/fallback: no sleeps; after two distinct fixes classify actual external/browser issue and continue others.
 
-### W14 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Docker/heavy validation
+### W17 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Docker/heavy validation
 - Status: PENDING
 - Objective: verify applicable container and full repository gates.
-- Dependencies: W12, W13 PASS and repository review policy permits heavy gates.
+- Dependencies: W15, W16 PASS and repository review policy permits heavy gates.
 - Implementation tasks: RAM gate; full pytest/security/smoke; Docker build/E2E if configured; distinguish unavailable infrastructure.
 - Relevant files/modules: `scripts/gate_runner.py`, `scripts/ram_gate.py`, `scripts/docker_gate.py`, Docker config.
 - Acceptance criteria: gates pass or reproducible environment-only blocker documented.
@@ -235,10 +272,10 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: `artifacts/gates/latest.json`, logs/reports.
 - Recovery/fallback: defer low RAM; classify missing Docker/daemon/credentials as environment blocker; never bypass policy.
 
-### W15 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Documentation/readiness/final delivery
+### W18 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Documentation/readiness/final delivery
 - Status: PENDING
 - Objective: document user flows and prove committed/synchronized clean delivery.
-- Dependencies: W12, W13 PASS; W14 PASS or justified environment-only BLOCKED.
+- Dependencies: W14?W16 PASS; W17 PASS or justified environment-only BLOCKED.
 - Implementation tasks: document permissions, chunk recovery/retry, crop, missing/late audio, metadata, manual deletion; update plan; commit final checkpoint; sync current branch.
 - Relevant files/modules: project docs, plan, implementation/tests.
 - Acceptance criteria: DoD met; statuses explicit; commits on current branch; remote SHA=HEAD; clean tree; no merge/deploy.
@@ -255,18 +292,21 @@ Implementation complete; Date green with recorded/created preference and backend
 
 | Layer | Required coverage | Stage | Evidence |
 |---|---|---|---|
-| UNIT | date selection / recorded_at / created_at fallback | W11 | pending |
-| UNIT | newest default, asc/desc sorting, filter/page preservation | W11 | pending |
+| UNIT | date selection / recorded_at / created_at fallback | W14 | pending |
+| UNIT | newest default, asc/desc sorting, filter/page preservation | W14 | pending |
 | UNIT | chunk state transitions | W3/W5 | W3 PASS: covered in 31 new tests |
 | UNIT | audio-state logic | W7 | pending |
 | UNIT | GC candidate logic | W10 | pending |
+| UNIT | upload cancellation transitions/retry/cleanup; processing cancellation races/idempotency | W11/W12 | pending |
 | INTEGRATION/API | create session; persist recording and recorded_at | W3 | W3 PASS: store/service roundtrip tests; W4 PASS: 19 Flask API tests |
 | INTEGRATION/API | chunk finalization/order; processing state | W5 | pending |
 | INTEGRATION/API | no-audio flow | W7 | pending |
 | INTEGRATION/API | late transcript association | W8 | W8 PASS: 37 model/service/API tests; synthetic browser late association and loose alignment pass |
-| INTEGRATION/API | video listing sorting | W11 | pending |
+| INTEGRATION/API | video listing sorting | W14 | pending |
+| INTEGRATION/API | upload cancel; queued/active processing cancel; double cancel; retry | W11/W12 | pending |
 | PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13 | W2 PASS: 56 checks pass, 0 fail; gate E2E PASS |
-| PLAYWRIGHT/E2E | Date display and asc/desc | W11/W13 | pending |
+| PLAYWRIGHT/E2E | Date display and asc/desc | W14/W16 | pending |
+| PLAYWRIGHT/E2E | upload cancel; processing cancel/Cancelando/CANCELLED/retry | W13 | pending |
 | PLAYWRIGHT/E2E | capture start, state, stop, cleanup | W4/W13 | W4 PASS: 12/12 fake-camera checks, 0 browser errors |
 | PLAYWRIGHT/E2E | chunk flow where testable | W5/W13 | pending |
 | PLAYWRIGHT/E2E | missing-audio warning / transcript-required | W7/W13 | pending |
@@ -291,7 +331,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
-- 2026-10-15: W9 PASS. Finalized Live Capture chunks now flow through `SimpleScanProcessor -> KeyframeExtractor -> Documentation V2`. `live_capture/pipeline.py` `resolve_capture_context` resolves a finalized chunk to its session crop/transcript/audio; the processor threads the manifest crop into keyframe extraction, skips Whisper for video-only media (`transcript_status="no_audio"`, never invents a transcript, record still completes), and persists the late session transcript into `frame_mapping.json.transcription_summary.session_transcript`; `documentation/evidence.py` consumes it as an untimed `session_transcript.loose` evidence item with no per-frame sync. 13 unit + 3 integration tests (crop mapping, late-transcript provenance, normal audio path); targeted 157 passed; docs V2/processor/regenerate/handler regressions green. W10 PENDING.
+- 2026-10-15: W9 PASS (commit `5f04593`). Existing processor routes finalized chunks through crop-aware extraction and Docs V2; no-audio avoids Whisper; late transcript is one untimed `session_transcript.loose` evidence item. Processing state is persisted, and duplicate timed/loose evidence is avoided. Targeted regression: 82 passed. W10 PASS; W11?W13 cancellation stages added by user scope.
  - 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.
 - 2026-10-15: W7 PASS. Added optional audio capture, ffprobe detection, persisted AUDIO_MISSING/TRANSCRIPT_REQUIRED and UI warning. 890 tests passed, 3 skipped; fake-device Playwright 14 checks passed. W8 IN_PROGRESS.
 - 2026-10-15: W6 PASS. Added normalized crop selection, session persistence, clear/update API and source-preserving frame crop with mapping metadata. 77 targeted tests and 2 keyframe integration tests passed; browser crop report deferred to W13. W7 IN_PROGRESS.
@@ -305,7 +345,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 - [ ] W0ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W15 evidence and statuses current
 - [ ] Date API/UI and fallback tests pass
-- [ ] Live Capture, chunking, crop, missing-audio, late transcript, Docs V2 and GC complete
+- [ ] Live Capture, cancellation, chunking, crop, missing-audio, late transcript, Docs V2 and GC complete
 - [ ] Unit and integration/API matrix passes
 - [ ] Playwright matrix and host E2E pass
 - [ ] Docker/heavy pass or environment blocker documented

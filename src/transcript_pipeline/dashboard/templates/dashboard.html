@@ -739,6 +739,11 @@
                 <div id="filesPaginationTop" class="pagination top"></div>
             </div>
             <div id="filesList"></div>
+            <details style="margin-top:0.75rem;">
+                <summary>Media cleanup suggestions</summary>
+                <button type="button" onclick="loadCaptureGcCandidates()">Review stale processed captures</button>
+                <div id="captureGcCandidates" class="muted" style="margin-top:0.5rem;">No media is deleted automatically.</div>
+            </details>
         </div>
     </div>
 
@@ -996,6 +1001,19 @@
             window._allFiles = data.files || [];
             populateProjectFilter(window._allFiles);
             applyFileFilters();
+        }
+
+        async function loadCaptureGcCandidates() {
+            const target = document.getElementById('captureGcCandidates');
+            try {
+                const data = await api('/api/capture/gc-candidates');
+                const items = data.candidates || [];
+                target.innerHTML = items.length
+                    ? `<p>${items.length} suggestion(s). Review each file before deleting:</p><ul>${items.map(item => `<li>${escapeHtml(item.chunk_id)} · ${escapeHtml(item.reasons.join(', '))} · ${Number(item.size_bytes).toLocaleString()} bytes</li>`).join('')}</ul>`
+                    : 'No stale processed captures with generated documentation.';
+            } catch (error) {
+                target.textContent = `Could not load suggestions: ${error.message}`;
+            }
         }
 
         function populateProjectFilter(files) {
