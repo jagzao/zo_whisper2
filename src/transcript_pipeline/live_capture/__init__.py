@@ -28,6 +28,8 @@ from transcript_pipeline.live_capture.models import (
     CropRegion,
     Session,
     SessionStatus,
+    TRANSCRIPT_ALIGNMENT_LOOSE,
+    Transcript,
 )
 from transcript_pipeline.live_capture.service import CaptureService
 from transcript_pipeline.live_capture.store import ManifestStore
@@ -48,6 +50,8 @@ __all__ = [
     "SessionConflictError",
     "SessionNotFoundError",
     "SessionStatus",
+    "TRANSCRIPT_ALIGNMENT_LOOSE",
+    "Transcript",
     "ValidationError",
     "apply_crop_to_frames",
     "audio_availability_from_track_count",

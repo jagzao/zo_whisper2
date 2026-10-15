@@ -148,7 +148,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: pure audio logic, ffprobe stream detector (non-fatal), durable session/chunk state and UI warnings implemented. 890 unit/API tests passed, 3 skipped; synthetic browser capture passed 14 checks including persisted MISSING/TRANSCRIPT_REQUIRED and visible warning; compileall passed.
 
 ### W8 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Late transcript/audio association
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: attach transcript/audio after video processing without tight-sync assumptions.
 - Dependencies: W3, W7 PASS.
 - Implementation tasks: safe association endpoint/UI; persist provenance/arrival time; session/chunk association; update availability without overwriting visual timeline.
@@ -158,6 +158,8 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Validation commands: targeted pytest/API integration.
 - Expected artifacts: synthetic manifest/transcript fixture.
 - Recovery/fallback: retain unattached transcript as pending; user may retry association.
+
+- Evidence: `Transcript` value object (fixed `alignment="loose"`, no start/end/segment fields), session-level `transcript` in the manifest plus a `transcript.txt` sidecar, and `CaptureService.associate_transcript` implemented. Association marks every chunk transcript-available and clears TRANSCRIPT_REQUIRED while leaving each chunk's processing `state` untouched (FINALIZED/PROCESSING never forced to PROCESSED); retries are idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` plus a later-session selector and transcript supply UI. Fixed loose alignment, no per-second fields. 37 new tests pass; full repo suite 927 passed / 3 skipped; synthetic Playwright late-session association/loose alignment 17 checks pass; compileall clean.
 
 ### W9 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Documentation pipeline integration
 - Status: PENDING
@@ -259,7 +261,7 @@ Implementation complete; Date green with recorded/created preference and backend
 | INTEGRATION/API | create session; persist recording and recorded_at | W3 | W3 PASS: store/service roundtrip tests; W4 PASS: 19 Flask API tests |
 | INTEGRATION/API | chunk finalization/order; processing state | W5 | pending |
 | INTEGRATION/API | no-audio flow | W7 | pending |
-| INTEGRATION/API | late transcript association | W8 | pending |
+| INTEGRATION/API | late transcript association | W8 | W8 PASS: 37 model/service/API tests; synthetic browser late association and loose alignment pass |
 | INTEGRATION/API | video listing sorting | W11 | pending |
 | PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13 | W2 PASS: 56 checks pass, 0 fail; gate E2E PASS |
 | PLAYWRIGHT/E2E | Date display and asc/desc | W11/W13 | pending |
@@ -287,6 +289,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
+- 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.
 - 2026-10-15: W7 PASS. Added optional audio capture, ffprobe detection, persisted AUDIO_MISSING/TRANSCRIPT_REQUIRED and UI warning. 890 tests passed, 3 skipped; fake-device Playwright 14 checks passed. W8 IN_PROGRESS.
 - 2026-10-15: W6 PASS. Added normalized crop selection, session persistence, clear/update API and source-preserving frame crop with mapping metadata. 77 targeted tests and 2 keyframe integration tests passed; browser crop report deferred to W13. W7 IN_PROGRESS.
 - 2026-10-15: W5 PASS. Implemented bounded streamed uploads and browser chunk rotation with concurrent upload, FIFO order, retry and backpressure. 58 unit/API tests, 10/10 chunk Playwright checks, 12/12 camera regression checks; security 107 passed/3 skipped. W6 IN_PROGRESS.

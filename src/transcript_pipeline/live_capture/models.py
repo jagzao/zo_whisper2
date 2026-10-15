@@ -26,6 +26,11 @@ from transcript_pipeline.live_capture.errors import (
 SCHEMA_VERSION = 1
 DEFAULT_CHUNK_DURATION_SEC = 600
 
+# A late-supplied transcript is always stored as one opaque text block with
+# only its arrival time. No per-second segment sync is ever invented, so the
+# alignment marker is a fixed constant, not user- or model-derived data.
+TRANSCRIPT_ALIGNMENT_LOOSE = "loose"
+
 SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 
 
@@ -229,6 +234,55 @@ class Chunk:
 
 
 @dataclass(frozen=True)
+class Transcript:
+    """A late-supplied transcript associated with a whole session (W8).
+
+    Deliberately not timestamped per segment: the text is one opaque block
+    with only its arrival time (`supplied_at`) and optional language. The
+    `alignment` marker is a fixed constant (`TRANSCRIPT_ALIGNMENT_LOOSE`) —
+    it can never be fabricated into second-level sync because no start/end
+    fields exist on this model.
+    """
+
+    text: str
+    supplied_at: str
+    language: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.text, str) or not self.text.strip():
+            raise ValidationError("transcript text must be a non-empty string")
+        if not isinstance(self.supplied_at, str) or not self.supplied_at.strip():
+            raise ValidationError("transcript suppliedAt must be a non-empty string")
+        if self.language is not None and (not isinstance(self.language, str) or not self.language.strip()):
+            raise ValidationError("transcript language must be a non-empty string or null")
+
+    @property
+    def alignment(self) -> str:
+        return TRANSCRIPT_ALIGNMENT_LOOSE
+
+    def to_manifest(self) -> dict[str, Any]:
+        return {
+            "text": self.text,
+            "suppliedAt": self.supplied_at,
+            "language": self.language,
+            "alignment": self.alignment,
+        }
+
+    @classmethod
+    def from_manifest(cls, data: object) -> Transcript:
+        if not isinstance(data, dict):
+            raise ValidationError("transcript manifest must be a mapping")
+        try:
+            return cls(
+                text=_require_nonempty_str(data, "text"),
+                supplied_at=_require_nonempty_str(data, "suppliedAt"),
+                language=_optional_nonempty_str(data.get("language")),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValidationError("transcript manifest is malformed") from exc
+
+
+@dataclass(frozen=True)
 class Session:
     session_id: str
     title: str
@@ -239,6 +293,7 @@ class Session:
     ended_at: str | None = None
     audio_availability: AudioAvailability = AudioAvailability.UNKNOWN
     crop: CropRegion | None = None
+    transcript: Transcript | None = None
     chunks: tuple[Chunk, ...] = ()
     reason: str | None = None
 
@@ -269,6 +324,19 @@ class Session:
         """
         return any(chunk.transcript_required for chunk in self.chunks)
 
+    @property
+    def transcript_available(self) -> bool:
+        """Derived, durable read: a session-level transcript exists, or any
+        chunk already carries one.
+
+        Like `transcript_required`, this is never persisted directly — it is
+        recomputed from `self.transcript` and each chunk's own
+        `transcript_available` flag on every load. Included in `to_manifest`
+        only so the dashboard API/UI can surface availability without an
+        extra derivation step.
+        """
+        return self.transcript is not None or any(chunk.transcript_available for chunk in self.chunks)
+
     def transition_to(self, target: SessionStatus) -> Session:
         validate_session_transition(self.status, target)
         return replace(self, status=target)
@@ -298,6 +366,8 @@ class Session:
             "chunkDurationSec": self.chunk_duration_sec,
             "audioAvailability": self.audio_availability.value,
             "transcriptRequired": self.transcript_required,
+            "transcriptAvailable": self.transcript_available,
+            "transcript": self.transcript.to_manifest() if self.transcript else None,
             "crop": self.crop.to_manifest() if self.crop else None,
             "chunks": [c.to_manifest() for c in self.chunks],
             "reason": self.reason,
@@ -313,6 +383,8 @@ class Session:
         if not isinstance(chunks_raw, list):
             raise ValidationError("chunks must be a list")
         chunks = tuple(Chunk.from_manifest(c) for c in chunks_raw)
+        transcript_raw = data.get("transcript")
+        transcript = Transcript.from_manifest(transcript_raw) if transcript_raw is not None else None
         try:
             return cls(
                 session_id=str(data["sessionId"]),
@@ -324,6 +396,7 @@ class Session:
                 ended_at=_optional_nonempty_str(data.get("endedAt")),
                 audio_availability=AudioAvailability(str(data.get("audioAvailability") or "UNKNOWN")),
                 crop=CropRegion.from_manifest(data.get("crop")),
+                transcript=transcript,
                 chunks=chunks,
                 reason=_optional_nonempty_str(data.get("reason")),
             )

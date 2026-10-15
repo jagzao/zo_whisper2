@@ -1452,6 +1452,29 @@ def api_capture_detect_chunk_audio(session_id: str, index: int) -> Any:
     return jsonify({"ok": True, "chunk": chunk.to_manifest()})
 
 
+@app.route("/api/capture/sessions/<session_id>/transcript", methods=["POST"])
+def api_capture_associate_transcript(session_id: str) -> Any:
+    """W8: associate a late, loosely-aligned transcript with a session.
+
+    The transcript is stored as one opaque text block (with only its arrival
+    time) — no per-second alignment is ever fabricated. Supplying it marks the
+    session/chunks transcript-available and clears TRANSCRIPT_REQUIRED without
+    changing any chunk's processing state. Mutating, so the local dashboard
+    token is required by `_enforce_local_only`.
+    """
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text")
+    if not isinstance(text, str) or not text.strip():
+        return jsonify({"ok": False, "error": "text required"}), 400
+    language = payload.get("language")
+    if language is not None and (not isinstance(language, str) or not language.strip()):
+        return jsonify({"ok": False, "error": "language must be a non-empty string or omitted"}), 400
+    session = _get_capture_service().associate_transcript(
+        session_id, text, language=language or None
+    )
+    return jsonify({"ok": True, "session": _session_payload(session)})
+
+
 @app.route("/api/metrics")
 def api_metrics() -> Any:
     """Operational summary metrics (US-001 §3.3) — replaces implementation-

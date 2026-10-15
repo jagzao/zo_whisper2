@@ -138,6 +138,43 @@ class CaptureService:
             self.store.save_session(updated)
             return updated
 
+    # ── late transcript association (W8) ─────────────────────────────
+
+    def associate_transcript(
+        self,
+        session_id: str,
+        text: str,
+        *,
+        language: str | None = None,
+        supplied_at: str | None = None,
+    ) -> models.Session:
+        """Associates a late, loosely-aligned transcript with a session.
+
+        The transcript is persisted as one opaque text block (in the manifest
+        plus a `transcript.txt` sidecar) with only its arrival time — no
+        per-second sync is ever invented. Every chunk is marked
+        transcript-available and has `transcript_required` cleared, but its
+        processing `state` is left untouched: a FINALIZED/PROCESSING chunk is
+        *not* forced to PROCESSED merely because a transcript arrived.
+        Re-supplying the same (or an updated) transcript is idempotent — it
+        overwrites the previous value rather than accumulating.
+        """
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            transcript = models.Transcript(
+                text=text,
+                supplied_at=supplied_at or models.now_iso(),
+                language=language,
+            )
+            updated_chunks = tuple(
+                replace(c, transcript_available=True, transcript_required=False)
+                for c in session.chunks
+            )
+            updated = replace(session, transcript=transcript, chunks=updated_chunks)
+            self.store.write_transcript(session_id, transcript.text)
+            self.store.save_session(updated)
+            return updated
+
     # ── chunks ──────────────────────────────────────────────────────
 
     def start_chunk(

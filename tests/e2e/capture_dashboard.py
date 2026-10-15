@@ -141,6 +141,29 @@ def main() -> int:
                 all_ok &= check(
                     "capture_recorded_at_persisted", bool(session.get("recordedAt")), str(session.get("recordedAt"))
                 )
+                page.locator("#captureModal .close-x").click()
+                page.locator('button[aria-label="Capture"]').click()
+                page.wait_for_function(
+                    "!document.getElementById('captureTranscriptSupply').classList.contains('hidden')",
+                    timeout=TIMEOUT_MS,
+                )
+                page.locator("#captureTranscriptText").fill("Synthetic late transcript without timestamps.")
+                page.locator("#captureTranscriptSaveBtn").click()
+                page.wait_for_function(
+                    "() => { const el = document.getElementById('captureAudioWarning'); return el.textContent.includes('transcript is attached'); }",
+                    timeout=TIMEOUT_MS,
+                )
+                reloaded = next(s for s in _sessions() if s["sessionId"] == session["sessionId"])
+                all_ok &= check(
+                    "capture_late_transcript_associated",
+                    reloaded.get("transcriptAvailable") is True and reloaded.get("transcriptRequired") is False,
+                    str(reloaded.get("transcript")),
+                )
+                all_ok &= check(
+                    "capture_late_transcript_loose_alignment",
+                    reloaded.get("transcript", {}).get("alignment") == "loose",
+                    str(reloaded.get("transcript", {}).get("alignment")),
+                )
         finally:
             all_ok &= check(
                 "capture_no_browser_errors", not browser_errors, "; ".join(browser_errors)[:1000]

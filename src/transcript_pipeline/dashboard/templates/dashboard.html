@@ -898,6 +898,14 @@
             </div>
             <div id="captureNotice" class="ai-package-summary hidden"></div>
             <div id="captureAudioWarning" class="ai-package-summary hidden" style="color:var(--danger);"></div>
+            <div id="captureTranscriptSupply" class="hidden" style="margin:0.5rem 0;">
+                <label for="captureTranscriptText" style="font-size:0.85rem; color:var(--muted);">Supply transcript later (loose timing — no per-second sync):</label>
+                <select id="captureTranscriptSession" onchange="selectTranscriptSession()" style="width:100%; margin-top:0.25rem;"></select>
+                <textarea id="captureTranscriptText" rows="4" style="width:100%; margin-top:0.25rem; box-sizing:border-box;" placeholder="Paste or type the session transcript here…"></textarea>
+                <div class="row" style="justify-content:flex-end; margin-top:0.5rem;">
+                    <button id="captureTranscriptSaveBtn" class="secondary" onclick="saveTranscript()">Save transcript</button>
+                </div>
+            </div>
             <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
             <div style="position:relative; margin:0.75rem 0;">
                 <video id="capturePreview" autoplay playsinline muted style="width:100%; max-height:320px; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
@@ -1931,7 +1939,8 @@
             starting: false,
             rotateTimer: null,
             pendingCrop: null,      // W6: normalized {x,y,width,height} crop, or null
-            audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
+    audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
+    transcriptSessions: [],
         };
 
         const CAPTURE_MAX_PENDING_UPLOADS = 4;
@@ -2007,21 +2016,50 @@
             el.textContent = `${recording} · finalized [${capture.finalizedIndexes.join(', ')}] · pending ${capture.uploadQueue.length}`;
         }
 
-        // W7: surface the missing-audio / transcript-required state clearly.
-        function updateAudioWarning(audioAvailability, transcriptRequired) {
+        // W7/W8: surface the missing-audio / transcript-required / supplied
+        // state clearly, and reveal the late-transcript supply UI while a
+        // transcript is still required.
+        function updateAudioWarning(audioAvailability, transcriptRequired, transcriptAvailable) {
             const el = document.getElementById('captureAudioWarning');
-            if (!el) return;
+            const supply = document.getElementById('captureTranscriptSupply');
             const missing = audioAvailability === 'MISSING';
-            if (!missing && !transcriptRequired) {
+            if (!missing && !transcriptRequired && !transcriptAvailable) {
                 el.textContent = '';
                 el.classList.add('hidden');
+                if (supply) supply.classList.add('hidden');
                 return;
             }
             const parts = [];
             if (missing) parts.push('AUDIO_MISSING: this capture has no audio track.');
             if (transcriptRequired) parts.push('TRANSCRIPT_REQUIRED: a transcript must be supplied separately.');
+            if (transcriptAvailable) parts.push('A transcript is attached (loose timing, no per-second sync).');
             el.textContent = parts.join(' ');
             el.classList.remove('hidden');
+            if (supply) supply.classList.toggle('hidden', !transcriptRequired);
+        }
+
+        // W8: send a late, loosely-aligned transcript for the current session.
+        async function saveTranscript() {
+            const box = document.getElementById('captureTranscriptText');
+            const text = (box && box.value ? box.value : '').trim();
+            if (!text) { showToast('Transcript is empty'); return; }
+            const sessionId = document.getElementById('captureTranscriptSession')?.value || capture.sessionId;
+            if (!sessionId) { showToast('No session to attach to'); return; }
+            try {
+                const res = await captureFetch(`/api/capture/sessions/${sessionId}/transcript`, {
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text }),
+                });
+                if (!res.ok) throw new Error(res.error || 'Could not save transcript');
+                if (box) box.value = '';
+                showToast('Transcript saved');
+                await loadCaptureSessions();
+                if (res.session) {
+                    updateAudioWarning(res.session.audioAvailability, res.session.transcriptRequired, res.session.transcriptAvailable);
+                }
+            } catch (err) {
+                showToast(err.message);
+            }
         }
 
         // Test-only introspection: mirrors capture state for the deterministic
@@ -2045,8 +2083,11 @@
             document.getElementById('captureModal').classList.remove('hidden');
             document.getElementById('captureTitle').value = 'Live capture';
             capture.closed = false;
+            capture.sessionId = null;
             capture.pendingCrop = null;
             capture.audioAvailability = 'UNKNOWN';
+            const txBox = document.getElementById('captureTranscriptText');
+            if (txBox) txBox.value = '';
             renderCropRegion();
             updateChunkInfo();
             updateAudioWarning(null, false);
@@ -2070,6 +2111,22 @@
             let res;
             try { res = await api('/api/capture/sessions'); }
             catch (e) { notice.classList.add('hidden'); return; }
+            const transcriptSelect = document.getElementById('captureTranscriptSession');
+            if (transcriptSelect) {
+                const eligible = (res.sessions || []).filter(s => s.transcriptRequired && s.status !== 'ACTIVE');
+                capture.transcriptSessions = eligible;
+                transcriptSelect.replaceChildren();
+                for (const session of eligible) {
+                    const option = document.createElement('option');
+                    option.value = session.sessionId;
+                    option.textContent = `${session.title} · ${session.recordedAt || session.createdAt}`;
+                    transcriptSelect.appendChild(option);
+                }
+                if (eligible.length) {
+                    transcriptSelect.value = eligible[0].sessionId;
+                    updateAudioWarning(eligible[0].audioAvailability, true, eligible[0].transcriptAvailable);
+                }
+            }
             const interrupted = (res.sessions || []).filter(s => s.status === 'FAILED');
             if (interrupted.length) {
                 notice.textContent = `Recovered: ${interrupted.length} interrupted session(s). Metadata is preserved.`;
@@ -2077,6 +2134,12 @@
             } else {
                 notice.classList.add('hidden');
             }
+        }
+
+        function selectTranscriptSession() {
+            const id = document.getElementById('captureTranscriptSession')?.value;
+            const session = id && capture.transcriptSessions?.find(s => s.sessionId === id);
+            if (session) updateAudioWarning(session.audioAvailability, session.transcriptRequired, session.transcriptAvailable);
         }
 
         function pickCaptureMimeType() {
@@ -2414,7 +2477,7 @@
                 stopCaptureTracks();
                 setCaptureState('done');
                 if (sessRes.session) {
-                    updateAudioWarning(sessRes.session.audioAvailability, sessRes.session.transcriptRequired);
+                    updateAudioWarning(sessRes.session.audioAvailability, sessRes.session.transcriptRequired, sessRes.session.transcriptAvailable);
                 }
                 showToast('Capture saved');
                 loadCaptureSessions();

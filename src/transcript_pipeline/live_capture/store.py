@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 LIVE_CAPTURE_DIR = "live_capture"
 SESSION_FILE = "session.json"
 CHUNKS_DIR = "chunks"
+TRANSCRIPT_FILE = "transcript.txt"
 
 _ALLOWED_EXTENSIONS = frozenset({".webm", ".mp4", ".mkv", ".mov", ".m4a", ".wav", ".mp3", ".ogg", ".opus", ".flac"})
 
@@ -65,6 +66,15 @@ class ManifestStore:
 
     def chunk_media_path(self, session_id: str, index: int, extension: str) -> Path:
         return self.chunks_dir(session_id) / f"{models.chunk_id(index)}{normalize_extension(extension)}"
+
+    def transcript_path(self, session_id: str) -> Path:
+        """Plain-text sidecar for a late-supplied transcript (W8).
+
+        Mirrors the existing `.txt` transcription convention so the future
+        Docs V2 integration (W9) can consume a session transcript through the
+        same file-based flow — no duplicate processor is built here.
+        """
+        return self.session_dir(session_id) / TRANSCRIPT_FILE
 
     # ── session manifest persistence ────────────────────────────────
 
@@ -126,3 +136,10 @@ class ManifestStore:
 
     def chunk_media_exists(self, session_id: str, index: int, extension: str) -> bool:
         return self.chunk_media_path(session_id, index, extension).is_file()
+
+    def write_transcript(self, session_id: str, text: str) -> None:
+        """Atomically writes the supplied transcript sidecar text file."""
+        session_id = models.validate_session_id(session_id)
+        path = self.transcript_path(session_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_bytes(path, text.encode("utf-8"))
