@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from contextlib import ExitStack
 from pathlib import Path
 
 import requests
@@ -62,6 +63,13 @@ def wait_for_folder_cards(page) -> bool:
     return page.locator("#folders .folder").count() == 4
 
 
+def _close_safely(handle) -> None:
+    try:
+        handle.close()
+    except Exception:
+        pass
+
+
 def main() -> int:
     try:
         from playwright.sync_api import sync_playwright
@@ -89,9 +97,13 @@ def main() -> int:
     print(f"Test file: {target['name']}")
     all_ok = True
 
-    with sync_playwright() as p:
+    with sync_playwright() as p, ExitStack() as cleanup:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1600, "height": 1000})
+        cleanup.callback(_close_safely, browser)
+        context = browser.new_context(viewport={"width": 1600, "height": 1000})
+        cleanup.callback(_close_safely, context)
+        page = context.new_page()
+        cleanup.callback(_close_safely, page)
         browser_errors: list[str] = []
 
         # Registered globally, from the very start: an unhandled native
@@ -826,8 +838,6 @@ def main() -> int:
             not browser_errors,
             "; ".join(browser_errors)[:1000],
         )
-        browser.close()
-
     # Report
     Path("dashboard_report.json").write_text(
         json.dumps({"checks": REPORT, "screenshots": SCREENSHOTS}, indent=2),

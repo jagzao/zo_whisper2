@@ -55,6 +55,7 @@ MOCK_FILES: list[tuple[str, str, str, float]] = [
     ("Videos/py_fabrikam/fabrikam_status_260806.webm", "es", FAKE_TRANSCRIPT_ES, 1897.0),
     ("Videos/mi_tutorial_deploy_pipeline.mp4", "es", FAKE_TRANSCRIPT_ES, 980.0),
 ]
+MOCK_MEDIA_FILENAMES = frozenset(Path(relative_path).name for relative_path, *_ in MOCK_FILES)
 
 
 def make_media(path: Path, duration: float) -> None:
@@ -62,13 +63,13 @@ def make_media(path: Path, duration: float) -> None:
     clip_len = 6  # actual seconds of the test clip (no need to loop, just needs to load)
     if path.suffix.lower() == ".mp3":
         cmd = [
-            "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
+            "ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
             "-t", str(clip_len), str(path),
         ]
     else:
         vcodec = "libvpx-vp9" if path.suffix.lower() == ".webm" else "libx264"
         cmd = [
-            "ffmpeg", "-y", "-f", "lavfi", "-i", f"testsrc=size=640x360:rate=15",
+            "ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=size=640x360:rate=15",
             "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
             "-t", str(clip_len), "-c:v", vcodec, "-pix_fmt", "yuv420p", str(path),
         ]

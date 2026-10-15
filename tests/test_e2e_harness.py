@@ -5,6 +5,8 @@ import subprocess
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from scripts import e2e
 
 _SMOKE_SPEC = importlib.util.spec_from_file_location(
@@ -64,3 +66,67 @@ def test_folder_visibility_wait_is_bounded_and_checks_four_cards():
     assert page.timeout == 30000
     assert page.expression is not None
     assert "length === 4" in page.expression
+
+
+def test_host_e2e_uses_dynamic_loopback_url_not_port_5000(monkeypatch):
+    monkeypatch.setattr(e2e, "_available_loopback_port", lambda: 52173)
+    env, url = e2e.configure_host_environment({"ZMI_BASE_URL": "http://127.0.0.1:5000"})
+
+    assert url == "http://127.0.0.1:52173"
+    assert env["DASHBOARD_HOST"] == "127.0.0.1"
+    assert env["DASHBOARD_PORT"] == "52173"
+    assert env["ZMI_BASE_URL"] == url
+    assert env["ZMI_E2E_EXTERNAL_SERVER"] == "0"
+    assert ":5000" not in url
+    response = mock.MagicMock()
+    response.__enter__.return_value = response
+    with mock.patch.object(e2e.urllib.request, "urlopen", return_value=response) as urlopen:
+        assert e2e._wait_for_server(url, timeout=0.1)
+    assert urlopen.call_args.args[0] == url
+
+
+def test_external_e2e_keeps_supplied_base_url(monkeypatch):
+    monkeypatch.setenv("ZMI_BASE_URL", "http://127.0.0.1:5311")
+    monkeypatch.setenv("ZMI_TEST_DATA_ROOT", str(e2e.ROOT / "external-test-root"))
+    monkeypatch.setenv("ZMI_E2E_EXTERNAL_SERVER", "1")
+    try:
+        mod = importlib.reload(e2e)
+        assert mod.DASHBOARD_URL == "http://127.0.0.1:5311"
+    finally:
+        monkeypatch.delenv("ZMI_BASE_URL", raising=False)
+        monkeypatch.delenv("ZMI_TEST_DATA_ROOT", raising=False)
+        monkeypatch.delenv("ZMI_E2E_EXTERNAL_SERVER", raising=False)
+        importlib.reload(e2e)
+
+
+def test_exited_host_child_cannot_satisfy_readiness():
+    child = mock.Mock()
+    child.poll.return_value = 1
+    with mock.patch.object(e2e.urllib.request, "urlopen", side_effect=AssertionError("must not probe")):
+        with pytest.raises(e2e.HostE2EFailure) as exc:
+            e2e._wait_for_server("http://127.0.0.1:52173", process=child, output=[])
+    assert exc.value.check == "host_e2e_server_startup"
+
+
+def test_synthetic_preflight_accepts_mock_fixture_names():
+    e2e.validate_synthetic_files([{"name": name} for name in e2e.MOCK_MEDIA_FILENAMES])
+
+
+def test_synthetic_preflight_rejects_unexpected_filename_without_path():
+    with pytest.raises(e2e.HostE2EFailure) as exc:
+        e2e.validate_synthetic_files([{"name": "gravity_ai_medical.mp4", "path": "C:\\private\\Videos"}])
+    assert exc.value.check == "host_e2e_data_isolation"
+    assert "C:\\private" not in str(exc.value)
+
+
+def test_browser_cleanup_does_not_replace_primary_failure():
+    class ClosedHandle:
+        def close(self):
+            raise RuntimeError("TargetClosedError")
+
+    with pytest.raises(ValueError, match="folders_visible"):
+        with mock.patch.object(_SMOKE, "_close_safely", wraps=_SMOKE._close_safely):
+            from contextlib import ExitStack
+            with ExitStack() as cleanup:
+                cleanup.callback(_SMOKE._close_safely, ClosedHandle())
+                raise ValueError("folders_visible")

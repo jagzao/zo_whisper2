@@ -250,9 +250,8 @@ def test_subprocess_capture_is_utf8_and_replaces_invalid_output(monkeypatch):
     assert "café" in log
 
 
-def test_e2e_validation_environment_is_isolated_and_preserves_external_mode():
-    env = gate_runner.validation_environment("e2e", {"ZMI_E2E_EXTERNAL_SERVER": "0"})
+def test_e2e_validation_environment_forces_host_mode_and_isolated_roots():
+    env = gate_runner.validation_environment("e2e", {"ZMI_E2E_EXTERNAL_SERVER": "1"})
+    assert env["ZMI_E2E_EXTERNAL_SERVER"] == "0"
     assert env["ZMI_DATA_ROOT"] == str(ROOT / "artifacts" / "gates" / "e2e-host-data")
     assert env["ZMI_TEST_DATA_ROOT"] == env["ZMI_DATA_ROOT"]
-    external = gate_runner.validation_environment("e2e", {"ZMI_E2E_EXTERNAL_SERVER": "1"})
-    assert "ZMI_DATA_ROOT" not in external

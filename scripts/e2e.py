@@ -13,12 +13,18 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
+import socket
 import subprocess
 import sys
 import threading
 import time
+import urllib.request
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from docs.assets.generate_mock_data import MOCK_MEDIA_FILENAMES
 
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_URL = os.environ.get("ZMI_BASE_URL", "http://127.0.0.1:5000")
@@ -64,16 +70,84 @@ def prepare_host_data_root(env: dict[str, str]) -> Path:
     return root
 
 
-def _wait_for_server(timeout: float = 30.0) -> bool:
-    import urllib.request
+class HostE2EFailure(RuntimeError):
+    def __init__(self, check: str, detail: str) -> None:
+        super().__init__(detail)
+        self.check = check
+
+
+def _available_loopback_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as reservation:
+        reservation.bind(("127.0.0.1", 0))
+        return int(reservation.getsockname()[1])
+
+
+def configure_host_environment(env: dict[str, str]) -> tuple[dict[str, str], str]:
+    child_env = dict(env)
+    port = _available_loopback_port()
+    base_url = f"http://127.0.0.1:{port}"
+    child_env.update({
+        "DASHBOARD_HOST": "127.0.0.1",
+        "DASHBOARD_PORT": str(port),
+        "ZMI_BASE_URL": base_url,
+        "ZMI_E2E_EXTERNAL_SERVER": "0",
+    })
+    return child_env, base_url
+
+
+def _safe_child_output(output: str, limit: int = 2000) -> str:
+    text = (output or "")[-limit:]
+    text = text.replace(str(ROOT), "<repo>").replace(str(Path.home()), "<user>")
+    text = re.sub(r"(?i)\b[A-Z]:\\[^\s\"']+", "<path>", text)
+    return text
+
+
+def _wait_for_server(url: str, process=None, output: list[str] | None = None, timeout: float = 30.0) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
+        if process is not None and process.poll() is not None:
+            detail = _safe_child_output("".join(output or []))
+            raise HostE2EFailure("host_e2e_server_startup", detail or "spawned dashboard exited before readiness")
         try:
-            with urllib.request.urlopen(DASHBOARD_URL, timeout=1.0) as _:
+            with urllib.request.urlopen(url, timeout=1.0) as _:
+                if process is not None and process.poll() is not None:
+                    detail = _safe_child_output("".join(output or []))
+                    raise HostE2EFailure("host_e2e_server_startup", detail or "spawned dashboard exited before readiness")
                 return True
+        except HostE2EFailure:
+            raise
         except Exception:
             time.sleep(0.5)
     return False
+
+
+def validate_synthetic_files(files: list[dict], expected: set[str] | frozenset[str] = MOCK_MEDIA_FILENAMES) -> None:
+    unexpected = sorted(
+        str(item.get("name", "<missing filename>"))
+        for item in files
+        if not isinstance(item, dict) or item.get("name") not in expected
+    )
+    if unexpected:
+        raise HostE2EFailure("host_e2e_data_isolation", "unexpected media filename detected")
+
+
+def _preflight_synthetic_data(url: str) -> None:
+    with urllib.request.urlopen(f"{url}/api/files", timeout=10) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    validate_synthetic_files(payload.get("files", []))
+
+
+def _write_failure(report_path: Path, check: str, detail: str, server_output: str = "") -> int:
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps({
+        "status": "FAIL",
+        "check": check,
+        "detail": _safe_child_output(detail),
+        "server_output": _safe_child_output(server_output),
+        "ok": False,
+    }, indent=2), encoding="utf-8")
+    print(f"[FAIL] {check}: {_safe_child_output(detail)}")
+    return 1
 
 
 def _drain_output(stream, sink: list[str]) -> None:
@@ -112,7 +186,9 @@ def main() -> int:
         "ALLOW_EXTERNAL_LLM": "false",
         "ZMI_CONFIG_ENV": str(ROOT / "artifacts" / "gates" / "validation-config-does-not-exist.env"),
     })
-    global TEST_DATA_ROOT, REPORT_PATH
+    global TEST_DATA_ROOT, REPORT_PATH, DASHBOARD_URL
+    if not EXTERNAL_SERVER:
+        env, DASHBOARD_URL = configure_host_environment(env)
     if not EXTERNAL_SERVER:
         TEST_DATA_ROOT = prepare_host_data_root(env)
     REPORT_PATH = TEST_DATA_ROOT / "e2e_report.json"
@@ -139,17 +215,18 @@ def main() -> int:
         drain_thread.start()
 
     try:
-        if not _wait_for_server():
-            report = {
-                "status": "FAIL",
-                "detail": f"dashboard not reachable at {DASHBOARD_URL}",
-                "base_url": DASHBOARD_URL,
-                "data_root": str(TEST_DATA_ROOT),
-                "server_output": "".join(server_output)[-4000:],
-                "ok": False,
-            }
-            REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
-            return 1
+        try:
+            if not _wait_for_server(DASHBOARD_URL, process=server, output=server_output):
+                raise HostE2EFailure("host_e2e_server_startup", "dashboard did not become ready")
+            if server is not None and server.poll() is not None:
+                raise HostE2EFailure("host_e2e_server_startup", "spawned dashboard exited before Playwright")
+            if not EXTERNAL_SERVER:
+                _preflight_synthetic_data(DASHBOARD_URL)
+        except HostE2EFailure as exc:
+            return _write_failure(REPORT_PATH, exc.check, str(exc), "".join(server_output))
+        except Exception as exc:  # noqa: BLE001
+            check = "host_e2e_data_isolation" if not EXTERNAL_SERVER else "e2e_preflight"
+            return _write_failure(REPORT_PATH, check, f"preflight failed: {type(exc).__name__}", "".join(server_output))
 
         print(f"Running E2E smoke test against {DASHBOARD_URL}...")
         result = subprocess.run(
@@ -167,7 +244,6 @@ def main() -> int:
             "status": "PASS" if ok else "FAIL",
             "returncode": result.returncode,
             "base_url": DASHBOARD_URL,
-            "data_root": str(TEST_DATA_ROOT),
             "stdout": result.stdout,
             "stderr": result.stderr,
             "server_output": "".join(server_output)[-4000:],
@@ -179,13 +255,14 @@ def main() -> int:
             try:
                 server.wait(timeout=10)
             except Exception:
-                server.kill()
+                if server.poll() is None:
+                    server.kill()
 
     REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(report["stdout"][-2000:])
     if report["stderr"]:
         print(report["stderr"][-1000:])
-    print(f"Report saved: {REPORT_PATH}")
+    print("Report saved: e2e_report.json")
     return 0 if ok else 1
 
 

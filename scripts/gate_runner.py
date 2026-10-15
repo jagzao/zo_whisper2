@@ -80,7 +80,8 @@ def validation_environment(gate: str, base: dict[str, str] | None = None) -> dic
             "ALLOW_EXTERNAL_LLM": "false",
             "ZMI_CONFIG_ENV": str(ROOT / "artifacts" / "gates" / "validation-config-does-not-exist.env"),
         })
-        if gate == "e2e" and env.get("ZMI_E2E_EXTERNAL_SERVER") != "1":
+        if gate == "e2e":
+            env["ZMI_E2E_EXTERNAL_SERVER"] = "0"
             data_root = str(ROOT / "artifacts" / "gates" / "e2e-host-data")
             env["ZMI_DATA_ROOT"] = data_root
             env["ZMI_TEST_DATA_ROOT"] = data_root
