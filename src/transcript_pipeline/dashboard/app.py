@@ -54,6 +54,7 @@ from transcript_pipeline import lan_access
 from transcript_pipeline.live_capture import CaptureService
 from transcript_pipeline.live_capture import errors as capture_errors
 from transcript_pipeline.live_capture import models as capture_models
+from transcript_pipeline.live_capture.playlist import PlaylistService, ocr_title_image
 from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.media.utils import run_ffprobe
 from transcript_pipeline.projects import validate_project
@@ -145,6 +146,10 @@ def _get_capture_service() -> CaptureService:
             _capture_service = service
             _capture_service_root = root
         return _capture_service
+
+
+def _get_playlist_service() -> PlaylistService:
+    return PlaylistService(_get_capture_service())
 
 
 def _hostname_only(host_header: str) -> str:
@@ -1591,6 +1596,50 @@ def api_capture_list_fragments(session_id: str) -> Any:
     """Observability read: durable fragments for a session, in order."""
     fragments = _get_capture_service().list_fragments(session_id)
     return jsonify({"ok": True, "fragments": [_fragment_payload(f) for f in fragments]})
+
+
+@app.route("/api/capture/sessions/<session_id>/title-samples", methods=["POST"])
+def api_capture_title_sample(session_id: str) -> Any:
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        text = str(payload.get("ocr_text") or "")
+        confidence = payload.get("confidence", 1.0)
+        image_available = False
+    else:
+        payload = request.form
+        frame = request.files.get("frame")
+        if frame is None:
+            return jsonify({"ok": False, "error": "frame required"}), 400
+        image = frame.read(2 * 1024 * 1024 + 1)
+        if len(image) > 2 * 1024 * 1024:
+            return jsonify({"ok": False, "error": "frame exceeds 2 MiB"}), 413
+        text, confidence = ocr_title_image(image)
+        image_available = bool(text)
+    try:
+        offset_ms = int(payload.get("offset_ms", 0))
+        fragment_sequence = int(payload.get("fragment_sequence", 0))
+        result = _get_playlist_service().observe(session_id, text, confidence, offset_ms, fragment_sequence)
+    except (TypeError, ValueError, capture_errors.ValidationError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    result["ocrAvailable"] = image_available or app.testing
+    return jsonify({"ok": True, **result})
+
+
+@app.route("/api/capture/sessions/<session_id>/logical-videos", methods=["GET"])
+def api_capture_logical_videos(session_id: str) -> Any:
+    result = _get_playlist_service().list(session_id)
+    return jsonify({"ok": True, **result})
+
+
+@app.route("/api/capture/sessions/<session_id>/logical-videos/<logical_id>/<action>", methods=["POST"])
+def api_capture_review_logical_video(session_id: str, logical_id: str, action: str) -> Any:
+    payload = request.get_json(silent=True) or {}
+    service = _get_playlist_service()
+    if action == "confirm" and logical_id.startswith("review-"):
+        result = service.confirm_candidate(session_id, logical_id)
+    else:
+        result = service.review(session_id, logical_id, action, payload)
+    return jsonify({"ok": True, **result})
 
 
 @app.route("/api/capture/sessions/<session_id>/crop", methods=["PUT"])

@@ -1,0 +1,59 @@
+{
+  "checks": [
+    {
+      "name": "chunk_capture_button",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fragment_rotation_ordered",
+      "status": "PASS",
+      "detail": "[\"fragment-000001\", \"fragment-000002\", \"fragment-000003\"]"
+    },
+    {
+      "name": "fragment_capture_continues",
+      "status": "PASS",
+      "detail": "state=recording acked=3"
+    },
+    {
+      "name": "fragment_server_order",
+      "status": "PASS",
+      "detail": "[1, 2, 3]"
+    },
+    {
+      "name": "fragment_server_durable",
+      "status": "PASS",
+      "detail": "[\"fragment-000001\", \"fragment-000002\", \"fragment-000003\"]"
+    },
+    {
+      "name": "chunk_saved_state",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fragment_no_pending_after_stop",
+      "status": "PASS",
+      "detail": "pending=0 stalled=False"
+    },
+    {
+      "name": "chunk_no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "chunk_capture_button",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "chunk_stalled_state",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "chunk_retry_recovered",
+      "status": "PASS",
+      "detail": "['fragment-000001']"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "checks": [
+    {
+      "name": "processing_chunk_seconds_hook",
+      "status": "PASS",
+      "detail": "resolved=4"
+    },
+    {
+      "name": "capture_session_started",
+      "status": "PASS",
+      "detail": "sess-c11e69e221e5"
+    },
+    {
+      "name": "session_uses_accelerated_chunk_duration",
+      "status": "PASS",
+      "detail": "4"
+    },
+    {
+      "name": "chunk_finalized_while_recording",
+      "status": "PASS",
+      "detail": "auto={'chunkExtension': '.webm', 'chunkIndex': 0, 'createdAt': '2026-10-15T22:36:36.700798+00:00', 'durationMs': 4038, 'finalizedAt': '2026-10-15T22:36:37.252912+00:00', 'fragmentIds': ['fragment-000001', 'fragment-000002', 'fragment-000003', 'fragment-000004'], 'lastError': None, 'recordedAt': '2026-10-15T22:36:32.631Z', 'startOffsetMs': 0, 'state': 'FINALIZED'} state=recording"
+    },
+    {
+      "name": "auto_chunk_index_zero_has_fragments",
+      "status": "PASS",
+      "detail": "{\"chunkIndex\": 0, \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"durationMs\": 4038}"
+    },
+    {
+      "name": "capture_saved_state",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "stop_calls_drain_endpoint",
+      "status": "PASS",
+      "detail": "drain=['http://127.0.0.1:5117/api/capture/sessions/sess-c11e69e221e5/drain']"
+    },
+    {
+      "name": "no_legacy_chunk_finalize_from_browser",
+      "status": "PASS",
+      "detail": "[]"
+    },
+    {
+      "name": "processing_chunks_nonempty",
+      "status": "PASS",
+      "detail": "[{\"chunkExtension\": \".webm\", \"chunkIndex\": 0, \"createdAt\": \"2026-10-15T22:36:36.700798+00:00\", \"durationMs\": 4038, \"finalizedAt\": \"2026-10-15T22:36:37.252912+00:00\", \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"lastError\": null, \"recordedAt\": \"2026-10-15T22:36:32.631Z\", \"startOffsetMs\": 0, \"state\": \"FINALIZED\"}, {\"chunkExtension\": \".webm\", \"chunkIndex\": 1, \"createdAt\": \"2026-10-15T22:36:38.865572+00:00\", \"durationMs\": 2141, \"finalizedAt\": \"2026-10-15T22:36:39.429326+00:00\", \"fragmentIds\": [\"fragment-000005\", \"fragment-000006\", \"fragment-000007\"], \"lastError\": null, \"recordedAt\": \"2026-10-15T22:36:36.682Z\", \"startOffsetMs\": 4038, \"state\": \"FINALIZED\"}]"
+    },
+    {
+      "name": "all_processing_chunks_finalized",
+      "status": "PASS",
+      "detail": "[\"FINALIZED\", \"FINALIZED\"]"
+    },
+    {
+      "name": "processing_indices_ordered_unique",
+      "status": "PASS",
+      "detail": "[0, 1]"
+    },
+    {
+      "name": "no_fragment_double_mapped",
+      "status": "PASS",
+      "detail": "mapped=['fragment-000001', 'fragment-000002', 'fragment-000003', 'fragment-000004', 'fragment-000005', 'fragment-000006', 'fragment-000007']"
+    },
+    {
+      "name": "acked_fragments_all_mapped",
+      "status": "PASS",
+      "detail": "acked=['fragment-000001', 'fragment-000002', 'fragment-000003', 'fragment-000004', 'fragment-000005', 'fragment-000006', 'fragment-000007'] mapped=['fragment-000001', 'fragment-000002', 'fragment-000003', 'fragment-000004', 'fragment-000005', 'fragment-000006', 'fragment-000007']"
+    },
+    {
+      "name": "finalized_session_matches_map",
+      "status": "PASS",
+      "detail": "status=FINALIZED chunks=2 map=2"
+    },
+    {
+      "name": "finalized_chunks_have_media",
+      "status": "PASS",
+      "detail": "[{\"index\": 0, \"state\": \"FINALIZED\", \"mediaSizeBytes\": 156384}, {\"index\": 1, \"state\": \"FINALIZED\", \"mediaSizeBytes\": 88045}]"
+    },
+    {
+      "name": "fragments_use_distinct_endpoint",
+      "status": "PASS",
+      "detail": "fragments=7"
+    },
+    {
+      "name": "capture_no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

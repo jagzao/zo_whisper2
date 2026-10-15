@@ -1026,6 +1026,7 @@
                 <div id="captureLogicalVideos" class="capture-logical-videos" aria-label="Detected titles and logical videos">
                     <p class="capture-empty">No detected titles yet. Logical videos appear here as source titles are recognised and confirmed.</p>
                 </div>
+                <div id="captureTitleStatus" class="capture-empty" role="status" aria-live="polite"></div>
             </div>
         </div>
     </div>
@@ -2183,6 +2184,9 @@
             mode: 'normal',         // W3: 'normal' | 'playlist'
             timerSeconds: 0,        // W3: visible recording timer
             timerInterval: null,
+            titleSampleTimer: null,
+            titleSampleBusy: false,
+            sessionStartedAtMs: null,
             sessions: [],           // W3: latest session list (for status/cancel controls)
             logicalVideos: [],      // W3: detected-title/logical-video shell
         };
@@ -2448,6 +2452,8 @@
         }
 
         function stopCaptureTracks() {
+            clearInterval(capture.titleSampleTimer);
+            capture.titleSampleTimer = null;
             if (capture.stream) {
                 capture.stream.getTracks().forEach(t => t.stop());
                 capture.stream = null;
@@ -2544,21 +2550,97 @@
             el.textContent = `Upload: ${uploadState} · pending ${capture.uploadQueue.length} · processing ${processing}`;
         }
 
-        function renderLogicalVideos(items) {
+        function renderLogicalVideos(data) {
             const el = document.getElementById('captureLogicalVideos');
-            const list = items || [];
+            const payload = Array.isArray(data) ? {logicalVideos: data, reviewCandidates: []} : (data || {});
+            const list = payload.logicalVideos || [];
+            const reviews = payload.reviewCandidates || [];
             capture.logicalVideos = list;
             if (!el) return;
-            if (!list.length) {
+            if (!list.length && !reviews.length) {
                 el.innerHTML = '<p class="capture-empty">No detected titles yet. Logical videos appear here as source titles are recognised and confirmed.</p>';
                 return;
             }
-            el.innerHTML = list.map(item => `<div class="capture-logical-row"><span>${escapeHtml(item.title || 'Untitled')}</span><span class="status ${item.confirmed ? 'processed' : 'pending'}">${item.confirmed ? 'confirmed' : 'needs review'}</span></div>`).join('');
+            const render = (item, review = false) => `<div class="capture-logical-row" data-logical-id="${escapeHtml(item.id)}">
+                <span>${escapeHtml(item.title || 'Unknown / Needs review')} · ${Math.round((item.confidence || 0) * 100)}%</span>
+                <span class="status ${item.status === 'CONFIRMED' ? 'processed' : 'pending'}">${escapeHtml(item.status || 'NEEDS_TITLE_REVIEW')}</span>
+                <input class="playlist-title-edit" aria-label="Rename logical video" value="${escapeHtml(item.title || '')}" style="width:12rem;">
+                <button type="button" onclick="reviewLogicalVideo('${escapeHtml(item.id)}','rename',this)">Rename</button>
+                <input class="playlist-date-edit" aria-label="Correct recorded date" type="text" value="${escapeHtml(item.recordedAt || item.displayedAt || '')}" placeholder="Recorded date" style="width:11rem;">
+                <button type="button" onclick="reviewLogicalVideo('${escapeHtml(item.id)}','recorded-date',this)">Set date</button>
+                ${review ? `<button type="button" onclick="reviewLogicalVideo('${escapeHtml(item.id)}','confirm',this)">Confirm title</button>` : ''}
+                ${!review && list.length > 1 ? `<button type="button" onclick="reviewLogicalVideo('${escapeHtml(item.id)}','merge',this)">Merge next</button>` : ''}
+                <button type="button" onclick="splitLogicalVideo('${escapeHtml(item.id)}',this)">Split here</button>
+            </div>`;
+            el.innerHTML = list.map(item => render(item)).concat(reviews.map(item => render(item, true))).join('');
         }
 
-        function renderLogicalVideosForSession() {
+        async function reviewLogicalVideo(id, action, button) {
+            const row = button.closest('.capture-logical-row');
+            const payload = action === 'rename' ? {title: row.querySelector('.playlist-title-edit').value}
+                : action === 'recorded-date' ? {recordedAt: row.querySelector('.playlist-date-edit').value} : {};
+            const result = await captureFetch(`/api/capture/sessions/${capture.sessionId}/logical-videos/${encodeURIComponent(id)}/${action}`, {
+                headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload),
+            });
+            if (result.ok) renderLogicalVideos(result);
+        }
+
+        async function splitLogicalVideo(id) {
+            const offsetMs = capture.sessionStartedAtMs ? Math.max(1, Date.now() - capture.sessionStartedAtMs) : 0;
+            const result = await captureFetch(`/api/capture/sessions/${capture.sessionId}/logical-videos/${encodeURIComponent(id)}/split`, {
+                headers: {'Content-Type': 'application/json'}, body: JSON.stringify({offsetMs, fragmentSequence: Math.max(1, capture.fragmentSeq)}),
+            });
+            if (result.ok) renderLogicalVideos(result);
+        }
+
+        function startPlaylistTitleSampling() {
+            clearInterval(capture.titleSampleTimer);
+            capture.titleSampleTimer = setInterval(async () => {
+                if (capture.mode !== 'playlist' || capture.titleSampleBusy || !capture.sessionId) return;
+                const video = document.getElementById('capturePreview');
+                if (!video || !video.videoWidth || !video.videoHeight) return;
+                capture.titleSampleBusy = true;
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 640;
+                    const crop = capture.pendingCrop;
+                    const sx = crop ? Math.round(crop.x * video.videoWidth) : 0;
+                    const sy = crop ? Math.round(crop.y * video.videoHeight) : 0;
+                    const sw = crop ? Math.max(1, Math.round(crop.width * video.videoWidth)) : video.videoWidth;
+                    const sh = crop ? Math.max(1, Math.round(crop.height * video.videoHeight)) : video.videoHeight;
+                    canvas.height = Math.max(1, Math.round(canvas.width * sh / sw));
+                    canvas.getContext('2d').drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.62));
+                    if (!blob) return;
+                    const form = new FormData();
+                    form.append('frame', blob, 'title-frame.jpg');
+                    form.append('offset_ms', String(Date.now() - capture.sessionStartedAtMs));
+                    form.append('fragment_sequence', String(Math.max(1, capture.fragmentSeq)));
+                    const response = await fetch(`/api/capture/sessions/${capture.sessionId}/title-samples`, {
+                        method: 'POST', headers: {'X-Local-Dashboard-Token': DASHBOARD_TOKEN}, body: form,
+                    }).then(r => r.json());
+                    if (response.ok) {
+                        renderLogicalVideos(response);
+                        const status = document.getElementById('captureTitleStatus');
+                        if (status) status.textContent = response.ocrAvailable ? 'Sampling source titles; boundaries require repeated matching frames.' : 'Title OCR unavailable. Capture continues; titles can be reviewed later.';
+                    }
+                } catch (e) {
+                    const status = document.getElementById('captureTitleStatus');
+                    if (status) status.textContent = 'Title detection unavailable. Capture continues.';
+                } finally {
+                    capture.titleSampleBusy = false;
+                }
+            }, 5000);
+        }
+
+        async function renderLogicalVideosForSession() {
             const session = currentSession();
-            renderLogicalVideos((session && session.logicalVideos) || []);
+            if (session && (capture.mode === 'playlist' || session.captureMode === 'playlist')) {
+                const result = await api(`/api/capture/sessions/${session.sessionId}/logical-videos`);
+                if (result.ok) renderLogicalVideos(result);
+                return;
+            }
+            renderLogicalVideos({logicalVideos: [], reviewCandidates: []});
         }
 
         // W7/W8: surface the missing-audio / transcript-required / supplied
@@ -3085,6 +3167,8 @@
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
                 if (createRes.session.chunkDurationSec) capture.chunkDurationSec = createRes.session.chunkDurationSec;
+                capture.sessionStartedAtMs = Date.now();
+                if (capture.mode === 'playlist') startPlaylistTitleSampling();
             } catch (err) {
                 stopCaptureTracks();
                 setCaptureState('error', err.message);

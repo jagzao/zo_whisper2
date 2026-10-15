@@ -1,0 +1,89 @@
+{
+  "checks": [
+    {
+      "name": "capture_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "capture_modal_opens",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "capture_recording_state",
+      "status": "PASS",
+      "detail": "Recording"
+    },
+    {
+      "name": "capture_stop_btn_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "capture_start_btn_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "capture_preview_has_stream",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "capture_saved_state",
+      "status": "PASS",
+      "detail": "Saved"
+    },
+    {
+      "name": "capture_missing_audio_warning",
+      "status": "PASS",
+      "detail": "AUDIO_MISSING: this capture has no audio track. TRANSCRIPT_REQUIRED: a transcript must be supplied separately."
+    },
+    {
+      "name": "capture_transcript_required_warning",
+      "status": "PASS",
+      "detail": "AUDIO_MISSING: this capture has no audio track. TRANSCRIPT_REQUIRED: a transcript must be supplied separately."
+    },
+    {
+      "name": "capture_session_created",
+      "status": "PASS",
+      "detail": "1 new sessions"
+    },
+    {
+      "name": "capture_session_finalized",
+      "status": "PASS",
+      "detail": "FINALIZED"
+    },
+    {
+      "name": "capture_missing_audio_persisted",
+      "status": "PASS",
+      "detail": "MISSING / True"
+    },
+    {
+      "name": "capture_media_persisted",
+      "status": "PASS",
+      "detail": "[{'audioAvailability': 'MISSING', 'chunkId': 'chunk-000000', 'createdAt': '2026-10-15T22:36:14.923695+00:00', 'finalizedAt': '2026-10-15T22:36:14.929612+00:00', 'index': 0, 'mediaExtension': '.webm', 'mediaSha256': '9bdfc8ec8c4c740bdab1e08852b797aad9b9b212ba3d935c7493554b6fdddb96', 'mediaSizeBytes': 3704, 'recordedAt': '2026-10-15T22:36:14.242Z', 'state': 'FINALIZED', 'transcriptAvailable': False, 'transcriptRequired': True}]"
+    },
+    {
+      "name": "capture_recorded_at_persisted",
+      "status": "PASS",
+      "detail": "2026-10-15T22:36:14.215Z"
+    },
+    {
+      "name": "capture_late_transcript_associated",
+      "status": "PASS",
+      "detail": "{'alignment': 'loose', 'language': None, 'suppliedAt': '2026-10-15T22:36:15.161476+00:00', 'text': 'Synthetic late transcript without timestamps.'}"
+    },
+    {
+      "name": "capture_late_transcript_loose_alignment",
+      "status": "PASS",
+      "detail": "loose"
+    },
+    {
+      "name": "capture_no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "checks": [
+    {
+      "name": "playlist_capture_started_once",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "session1_automatically_detected_and_confirmed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "session2_automatically_detected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "stable_boundary_within_same_processing_chunk",
+      "status": "PASS",
+      "detail": "[{\"category\": \"Compliance\", \"confidence\": 0.95875, \"endFragmentSequence\": 1, \"endOffsetMs\": 15018, \"fragmentIds\": [\"fragment-000001\"], \"id\": \"logical-000001\", \"processingChunkIds\": [\"chunk-000000\"], \"recordedAt\": \"2026-08-05 12:29 UTC\", \"sessionNumber\": 1, \"signature\": \"ams kap compliance session 1\", \"startFragmentSequence\": 1, \"startOffsetMs\": 5018, \"status\": \"CONFIRMED\", \"title\": \"AMS KAP Compliance Session 1\"}, {\"category\": \"Compliance\", \"confidence\": 0.9562499999999999, \"endFragmentSequence\": null, \"endOffsetMs\": null, \"fragmentIds\": [\"fragment-000001\"], \"id\": \"logical-000002\", \"processingChunkIds\": [\"chunk-000000\"], \"recordedAt\": \"2026-08-05 12:44 UTC\", \"sessionNumber\": 2, \"signature\": \"ams kap compliance session 2\", \"startFragmentSequence\": 1, \"startOffsetMs\": 15018, \"status\": \"CONFIRMED\", \"title\": \"AMS KAP Compliance Session 2\"}]"
+    },
+    {
+      "name": "same_camera_session_kept_recording",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "low_confidence_title_marked_for_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rename_and_recorded_date_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "split_and_merge_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "confirm_low_confidence_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "playlist_stop_works",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

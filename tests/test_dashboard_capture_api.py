@@ -122,6 +122,32 @@ def test_create_session_rejects_invalid_capture_mode(client):
     assert response.status_code == 400
 
 
+def test_playlist_title_samples_confirm_boundary_and_persist_review_actions(client):
+    session_id = _create_session(client, "Playlist title sample", capture_mode="playlist").get_json()["session"]["sessionId"]
+    url = f"/api/capture/sessions/{session_id}/title-samples"
+    headers = {**AUTH_HEADERS, "Content-Type": "application/json"}
+    one = "AMS KAP\nCompliance\nSession 1\n2026-08-05 12:29 UTC"
+    two = "AMS KAP\nCompliance\nSession 2\n2026-08-05 12:44 UTC"
+    client.post(url, data=json.dumps({"ocr_text": one, "confidence": 0.98, "offset_ms": 1000, "fragment_sequence": 1}), headers=headers)
+    first = client.post(url, data=json.dumps({"ocr_text": one, "confidence": 0.98, "offset_ms": 5000, "fragment_sequence": 1}), headers=headers).get_json()
+    assert len(first["logicalVideos"]) == 1
+    client.post(url, data=json.dumps({"ocr_text": two, "confidence": 0.98, "offset_ms": 12000, "fragment_sequence": 2}), headers=headers)
+    boundary = client.post(url, data=json.dumps({"ocr_text": two, "confidence": 0.98, "offset_ms": 14000, "fragment_sequence": 2}), headers=headers).get_json()
+    assert len(boundary["logicalVideos"]) == 2
+    assert boundary["logicalVideos"][0]["endOffsetMs"] == 12000
+    assert boundary["logicalVideos"][1]["processingChunkIds"] == ["chunk-000000"]
+    client.post(url, data=json.dumps({"ocr_text": "unclear slide", "confidence": 0.4, "offset_ms": 18000, "fragment_sequence": 2}), headers=headers)
+    low = client.post(url, data=json.dumps({"ocr_text": "unclear slide", "confidence": 0.4, "offset_ms": 22000, "fragment_sequence": 2}), headers=headers).get_json()
+    candidate = low["reviewCandidates"][0]
+    assert candidate["status"] == "NEEDS_TITLE_REVIEW"
+    confirmed = client.post(
+        f"/api/capture/sessions/{session_id}/logical-videos/{candidate['id']}/confirm",
+        data="{}", headers=headers,
+    ).get_json()
+    assert len(confirmed["logicalVideos"]) == 3
+    assert confirmed["logicalVideos"][2]["manuallyReviewed"] is True
+
+
 def test_create_session_requires_dashboard_token(client):
     resp = client.post(
         "/api/capture/sessions",
