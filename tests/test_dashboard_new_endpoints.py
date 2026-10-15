@@ -6,9 +6,11 @@ tests/security/test_dashboard_endpoints.py.
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import urllib.parse
+from datetime import datetime
 
 import pytest
 
@@ -365,6 +367,22 @@ def test_files_response_includes_documentation_flags(client, env):
     files = resp.get_json()["files"]
     assert files[0]["documentation"]["has_manual"] is True
     assert files[0]["documentation"]["has_ai_package"] is False
+
+
+def test_files_response_date_uses_media_mtime_as_timezone_aware_iso(client, env):
+    video = env["videos"] / "synthetic-date.mp4"
+    video.write_bytes(b"synthetic")
+    expected_mtime = 1_760_471_280.5
+    os.utime(video, (expected_mtime, expected_mtime))
+
+    files = client.get("/api/files").get_json()["files"]
+    media = next(item for item in files if item["name"] == video.name)
+    parsed = datetime.fromisoformat(media["date"])
+
+    assert parsed.tzinfo is not None
+    assert abs(parsed.timestamp() - video.stat().st_mtime) <= 1.0
+    assert media["date_epoch"] == video.stat().st_mtime
+    assert str(env["root"]) not in json.dumps(media)
 
 
 # ── stage inference (pure function, no Flask needed) ────────────────────

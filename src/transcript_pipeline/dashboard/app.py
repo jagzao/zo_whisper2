@@ -680,6 +680,7 @@ def api_files() -> Any:
         for path in base.rglob("*"):
             if not path.is_file() or path.suffix.lower() not in SUPPORTED_MEDIA:
                 continue
+            media_stat = path.stat()
             transcription = _resolve_transcription(path)
             media_id = _to_media_id(root, path)
             project, project_source = _effective_project(media_id, path.name)
@@ -688,7 +689,9 @@ def api_files() -> Any:
                     "media_id": media_id,
                     "relative": str(path.relative_to(ROOT)),
                     "name": path.name,
-                    "size": path.stat().st_size,
+                    "size": media_stat.st_size,
+                    "date": datetime.fromtimestamp(media_stat.st_mtime).astimezone().isoformat(timespec="seconds"),
+                    "date_epoch": media_stat.st_mtime,
                     "status": _file_status(path),
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,

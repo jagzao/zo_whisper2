@@ -991,6 +991,10 @@
                 else if (col === 'language') { va = (a.language || 'auto').toLowerCase(); vb = (b.language || 'auto').toLowerCase(); }
                 else if (col === 'status') { va = a.status.toLowerCase(); vb = b.status.toLowerCase(); }
                 else if (col === 'size') { va = (a.transcription ? a.transcription.size : 0); vb = (b.transcription ? b.transcription.size : 0); }
+                else if (col === 'date') {
+                    va = Number.isFinite(Number(a.date_epoch)) ? Number(a.date_epoch) : (Date.parse(a.date) || 0);
+                    vb = Number.isFinite(Number(b.date_epoch)) ? Number(b.date_epoch) : (Date.parse(b.date) || 0);
+                }
                 else { va = a.name.toLowerCase(); vb = b.name.toLowerCase(); }
                 if (va < vb) return dir === 'asc' ? -1 : 1;
                 if (va > vb) return dir === 'asc' ? 1 : -1;
@@ -1038,6 +1042,13 @@
         function statusLabel(status) {
             return STATUS_LABELS[status] || status;
         }
+        function formatMediaDate(value) {
+            if (!value || !Number.isFinite(Date.parse(value))) return '-';
+            return new Date(value).toLocaleString('es-MX', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', hour12: false
+            });
+        }
 
         function renderFileRows(files, start, total) {
             const el = document.getElementById('filesList');
@@ -1054,6 +1065,7 @@
                     <th class="sortable" data-sort="language" onclick="sortFiles('language')">Language <span class="sort-icon">⇅</span></th>
                     <th class="sortable" data-sort="status" onclick="sortFiles('status')">Status <span class="sort-icon">⇅</span></th>
                     <th class="sortable" data-sort="size" onclick="sortFiles('size')">Transcription <span class="sort-icon">⇅</span></th>
+                    <th class="sortable" data-sort="date" onclick="sortFiles('date')">Date <span class="sort-icon">⇅</span></th>
                     <th>Actions</th>
                 </tr></thead>
                 <tbody>
@@ -1078,6 +1090,7 @@
                         <td><span class="status ${lang === 'auto' ? 'pending' : 'processed'}">${lang}</span></td>
                         <td><span class="status ${statusClass}">${statusLabel(f.status)}</span></td>
                         <td>${tx ? `<span class="status processed">Yes</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
+                        <td>${formatMediaDate(f.date)}</td>
                         <td>
                             <div class="action-btns">
                                 <button class="btn-view tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="View" title="View">
