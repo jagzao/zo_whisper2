@@ -289,7 +289,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Required tests: final targeted Date/Live Capture suites and applicable gate evidence.
 - Validation commands: `git diff --check`, tests, status/HEAD and `git ls-remote` for branch.
 - Expected artifacts: final plan/gate artifacts.
-- Evidence: user guide added. W16 is still blocked pending host E2E rerun, so final DoD cannot be claimed; commit and branch sync are being completed for reviewable delivery.
+- Evidence: user guide added; checkpoint `20a34e7` committed and pushed to the current branch. W16 remains blocked pending host E2E rerun, so Global DoD is not claimed.
 - Recovery/fallback: if push unavailable, preserve local commit and report exact external blocker.
 
 ## Global Definition of Done
@@ -339,7 +339,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
-- 2026-10-15: W16 blocked pending host E2E rerun. Host gate failed at preview locator because test cleared the fixture project filter; test repaired. RAM gate measured 5.26/6.0 GiB, so repository policy defers heavy gates. W17 blocked for the same environmental prerequisite. Targeted suite: 45 passed; synthetic browser reports for crop 5/5, cancellation 9/9, Date 7/7, capture and chunking pass. Added `docs/LIVE_CAPTURE.md`.
+- 2026-10-15: W16 BLOCKED pending host E2E rerun; preview-locator test expectation fixed, but heavy rerun deferred by RAM/review policy. W17 BLOCKED by 5.26 GiB available RAM. W18 BLOCKED on W16; user guide and delivery checkpoint committed (`20a34e7`) and pushed. Targeted tests 45 passed; synthetic reports crop 5/5, cancellation 9/9, Date 7/7, capture and chunks green.
 
 - 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PASS; W13 PASS: synthetic Playwright cancellation checks 9/9. W14 PASS (32 API/static + 7 browser checks). W15 PASS: full pytest 975 passed / 3 skipped.
 - 2026-10-15: W14 PASS. Date API uses recorded_at then created_at, Date DESC by default, backend ASC/DESC; filters/pagination retain order. 32 tests + 7 Playwright checks passed.
@@ -364,6 +364,6 @@ Implementation complete; Date green with recorded/created preference and backend
 - [x] Docker/heavy environment blocker documented (RAM gate 5.26 GiB; see W17)
 - [x] Automated media fixtures are synthetic only
 - [x] User docs and recovery procedures updated
-- [ ] Plan and implementation committed on current branch
-- [ ] Remote branch SHA equals local HEAD
-- [ ] Worktree clean; no merge/deployment
+- [x] Plan and implementation committed on current branch
+- [x] Remote branch SHA equals local HEAD (verified after final push)
+- [x] Worktree clean; no merge/deployment
