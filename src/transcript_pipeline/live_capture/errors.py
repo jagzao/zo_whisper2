@@ -35,5 +35,9 @@ class ChunkTooLargeError(LiveCaptureError):
     """Streamed chunk media exceeded the configured upload size limit."""
 
 
+class UploadCancelledError(LiveCaptureError):
+    """A streamed upload was cancelled before atomic finalization."""
+
+
 class ManifestCorruptError(LiveCaptureError):
     """A persisted manifest is malformed and cannot be trusted as playable."""

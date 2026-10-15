@@ -18,7 +18,7 @@ from pathlib import Path
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
 from transcript_pipeline.live_capture.audio import transcript_required
-from transcript_pipeline.live_capture.errors import ChunkTooLargeError, InvalidTransitionError, ValidationError
+from transcript_pipeline.live_capture.errors import ChunkTooLargeError, InvalidTransitionError, UploadCancelledError, ValidationError
 from transcript_pipeline.live_capture.store import ManifestStore, normalize_extension
 from transcript_pipeline.media.utils import media_has_audio_stream
 
@@ -29,7 +29,7 @@ STREAM_BLOCK_SIZE = 64 * 1024
 logger = logging.getLogger(__name__)
 
 
-def _stream_blocks(source, max_bytes: int | None):
+def _stream_blocks(source, max_bytes: int | None, cancelled=None):
     """Reads `source` (a `.read(n)` file-like) in bounded blocks.
 
     Enforces the empty-body and size-limit invariants lazily, before any byte
@@ -39,6 +39,8 @@ def _stream_blocks(source, max_bytes: int | None):
     """
     total = 0
     while True:
+        if cancelled is not None and cancelled.is_set():
+            raise UploadCancelledError("upload cancelled")
         block = source.read(STREAM_BLOCK_SIZE)
         if not block:
             if total == 0:
@@ -59,6 +61,8 @@ class CaptureService:
         self._audio_probe = audio_probe if audio_probe is not None else media_has_audio_stream
         self._session_locks: dict[str, threading.Lock] = {}
         self._locks_guard = threading.Lock()
+        self._upload_events: dict[tuple[str, int], threading.Event] = {}
+        self._upload_events_lock = threading.Lock()
 
     def _lock_for(self, session_id: str) -> threading.Lock:
         models.validate_session_id(session_id)
@@ -241,28 +245,56 @@ class CaptureService:
         leaves the chunk RECORDING and writes nothing.
         """
         extension = normalize_extension(media_extension)
+        key = (session_id, index)
+        event = threading.Event()
+        with self._upload_events_lock:
+            self._upload_events[key] = event
+        with self._lock_for(session_id):
+            try:
+                session = self.store.load_session(session_id)
+                chunk = session.get_chunk(index)
+                updated = chunk.transition_to(models.ChunkState.FINALIZED)
+                sha256, size = self.store.write_chunk_media_stream(
+                    session_id, index, extension, _stream_blocks(source, max_bytes, event)
+                )
+                finalized = replace(
+                    updated,
+                    finalized_at=models.now_iso(),
+                    recorded_at=recorded_at if recorded_at else updated.recorded_at,
+                    audio_availability=audio_availability if audio_availability else updated.audio_availability,
+                    transcript_required=transcript_required(
+                        audio_availability if audio_availability else updated.audio_availability,
+                        updated.transcript_available,
+                    ),
+                    media_extension=extension,
+                    media_size_bytes=size,
+                    media_sha256=sha256,
+                )
+                self.store.save_session(session.with_chunk(finalized))
+                return finalized
+            finally:
+                with self._upload_events_lock:
+                    self._upload_events.pop(key, None)
+
+    def cancel_upload(self, session_id: str, index: int) -> models.Chunk:
+        key = (session_id, index)
+        with self._upload_events_lock:
+            event = self._upload_events.get(key)
+            if event is not None:
+                event.set()
         with self._lock_for(session_id):
             session = self.store.load_session(session_id)
             chunk = session.get_chunk(index)
-            updated = chunk.transition_to(models.ChunkState.FINALIZED)
-            sha256, size = self.store.write_chunk_media_stream(
-                session_id, index, extension, _stream_blocks(source, max_bytes)
-            )
-            finalized = replace(
-                updated,
-                finalized_at=models.now_iso(),
-                recorded_at=recorded_at if recorded_at else updated.recorded_at,
-                audio_availability=audio_availability if audio_availability else updated.audio_availability,
-                transcript_required=transcript_required(
-                    audio_availability if audio_availability else updated.audio_availability,
-                    updated.transcript_available,
-                ),
-                media_extension=extension,
-                media_size_bytes=size,
-                media_sha256=sha256,
-            )
-            self.store.save_session(session.with_chunk(finalized))
-            return finalized
+            if chunk.state is models.ChunkState.UPLOAD_CANCELLED:
+                return chunk
+            if chunk.state is models.ChunkState.RECORDING:
+                cancelled = chunk.transition_to(models.ChunkState.UPLOAD_CANCELLED)
+                self.store.save_session(session.with_chunk(cancelled))
+                return cancelled
+            return chunk
+
+    def retry_cancelled_upload(self, session_id: str, index: int) -> models.Chunk:
+        return self._transition_chunk(session_id, index, models.ChunkState.RECORDING)
 
     def _transition_chunk(self, session_id: str, index: int, target: models.ChunkState, **updates) -> models.Chunk:
         with self._lock_for(session_id):
@@ -352,7 +384,7 @@ class CaptureService:
             corrected: list[models.Chunk] = []
             for chunk in session.chunks:
                 if chunk.state is models.ChunkState.RECORDING:
-                    corrected.append(replace(chunk, state=models.ChunkState.FAILED))
+                    corrected.append(replace(chunk, state=models.ChunkState.UPLOAD_CANCELLED))
                 elif (
                     chunk.playable
                     and chunk.media_extension is not None

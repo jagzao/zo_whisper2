@@ -925,6 +925,7 @@
             <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
                 <button id="captureStartBtn" class="ok" onclick="startCapture()">Start capture</button>
                 <button id="captureStopBtn" class="danger hidden" onclick="stopCapture()">Stop & finalize</button>
+                <button id="captureCancelUploadBtn" class="danger hidden" onclick="cancelCaptureUpload()">Cancelar subida</button>
                 <button id="captureRetryBtn" class="secondary hidden" onclick="retryUpload()">Retry upload</button>
             </div>
         </div>
@@ -1833,12 +1834,32 @@
             const queue = document.getElementById('uploadQueue');
             queue.innerHTML = '';
             for (const file of files) {
+                const row = document.createElement('div');
+                const status = document.createElement('span');
+                const controller = new AbortController();
+                row.append(status);
+                const cancel = document.createElement('button');
+                cancel.textContent = 'Cancelar subida';
+                cancel.onclick = () => controller.abort();
+                row.append(cancel);
+                queue.append(row);
                 const form = new FormData();
                 form.append('file', file);
                 form.append('project', document.getElementById('uploadProject').value);
-                const res = await fetch('/api/upload', { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: form }).then(r => r.json());
-                const msg = res.ok ? `OK ${res.name}` : `Error ${file.name}: ${res.error}`;
-                queue.innerHTML += `<div>${msg}</div>`;
+                try {
+                    const res = await fetch('/api/upload', { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: form, signal: controller.signal }).then(r => r.json());
+                    status.textContent = res.ok ? `OK ${res.name}` : `Error ${file.name}: ${res.error}`;
+                    cancel.remove();
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        status.textContent = `UPLOAD_CANCELLED: ${file.name}`;
+                        cancel.textContent = 'Retry';
+                        cancel.onclick = () => handleFiles([file]);
+                    } else {
+                        status.textContent = `Error ${file.name}: ${error.message}`;
+                        cancel.remove();
+                    }
+                }
             }
             loadFolders();
             loadMetrics();
@@ -1959,6 +1980,7 @@
             pendingCrop: null,      // W6: normalized {x,y,width,height} crop, or null
     audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
     transcriptSessions: [],
+            uploadController: null,
         };
 
         const CAPTURE_MAX_PENDING_UPLOADS = 4;
@@ -1976,11 +1998,12 @@
             stalled: 'Stalled',
         };
 
-        function captureFetch(path, { method = 'POST', headers = {}, body = undefined } = {}) {
+        function captureFetch(path, { method = 'POST', headers = {}, body = undefined, signal = undefined } = {}) {
             return fetch(path, {
                 method,
                 headers: Object.assign({ 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, headers),
                 body,
+                signal,
             }).then(r => r.json());
         }
 
@@ -2002,6 +2025,7 @@
             const stalled = state === 'stalled';
             document.getElementById('captureStartBtn').classList.toggle('hidden', recording || busy || stalled);
             document.getElementById('captureStopBtn').classList.toggle('hidden', !(recording || stalled));
+            document.getElementById('captureCancelUploadBtn').classList.toggle('hidden', !capture.uploading);
             document.getElementById('captureRetryBtn').classList.toggle('hidden', !stalled);
             document.getElementById('captureStartBtn').disabled = busy;
         }
@@ -2429,21 +2453,27 @@
         function beginUpload() {
             if (capture.uploading) return;
             capture.uploading = true;
+            setCaptureState(capture.state);
             (async () => {
                 let drained = false;
                 try {
                     while (capture.uploadQueue.length) {
                         if (capture.stalled) return;
                         const item = capture.uploadQueue[0];
+                        capture.uploadController = new AbortController();
                         try {
                             const finRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/finalize`, {
                                 headers: { 'Content-Type': 'application/octet-stream', 'X-Media-Extension': item.extension, 'X-Audio-Availability': capture.audioAvailability },
                                 body: item.blob,
+                                signal: capture.uploadController.signal,
                             });
                             if (!finRes.ok) throw new Error(finRes.error || 'Could not save chunk');
                         } catch (err) {
+                            if (err.name === 'AbortError') return;
                             setStalled(true, 'Upload failed: ' + err.message);
                             return;
+                        } finally {
+                            capture.uploadController = null;
                         }
                         capture.uploadQueue.shift();
                         capture.finalizedIndexes.push(item.index);
@@ -2453,11 +2483,31 @@
                     drained = true;
                 } finally {
                     capture.uploading = false;
+                    setCaptureState(capture.state);
                 }
                 if (drained && capture.stopRequested && !capture.stalled) {
                     finishSession();
                 }
             })();
+        }
+
+        async function cancelCaptureUpload() {
+            const item = capture.uploadQueue[0];
+            if (!item || !capture.uploadController) return;
+            capture.uploadController.abort();
+            try {
+                const result = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/cancel-upload`);
+                if (result.chunk && result.chunk.state === 'FINALIZED') {
+                    capture.uploadQueue.shift();
+                    capture.finalizedIndexes.push(item.index);
+                    updateChunkInfo();
+                    maybeResume();
+                    return;
+                }
+                setCaptureState('stalled', 'UPLOAD_CANCELLED');
+            } catch (error) {
+                setCaptureState('error', 'Upload cancellation failed: ' + error.message);
+            }
         }
 
         function setStalled(stalled, reason) {
@@ -2480,9 +2530,15 @@
 
         function retryUpload() {
             if (!capture.stalled) return;
-            setStalled(false);
-            beginUpload();
-            maybeResume();
+            (async () => {
+                const item = capture.uploadQueue[0];
+                if (item) {
+                    await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/retry-upload`);
+                }
+                setStalled(false);
+                beginUpload();
+                maybeResume();
+            })();
         }
 
         async function finishSession() {

@@ -145,7 +145,7 @@ def test_reconcile_marks_interrupted_recording_not_playable(service):
     assert reconciled.status is SessionStatus.FAILED
     assert reconciled.reason == "interrupted"
     assert reconciled.get_chunk(0).state is ChunkState.FINALIZED
-    assert reconciled.get_chunk(1).state is ChunkState.FAILED
+    assert reconciled.get_chunk(1).state is ChunkState.UPLOAD_CANCELLED
     assert service.finalized_chunks(session.session_id) == [reconciled.get_chunk(0)]
 
 

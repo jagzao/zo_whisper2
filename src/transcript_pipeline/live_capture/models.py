@@ -61,6 +61,7 @@ class SessionStatus(str, Enum):
 
 class ChunkState(str, Enum):
     RECORDING = "RECORDING"
+    UPLOAD_CANCELLED = "UPLOAD_CANCELLED"
     FINALIZED = "FINALIZED"
     PROCESSING = "PROCESSING"
     PROCESSED = "PROCESSED"
@@ -80,7 +81,8 @@ _SESSION_TRANSITIONS: dict[SessionStatus, frozenset[SessionStatus]] = {
 }
 
 _CHUNK_TRANSITIONS: dict[ChunkState, frozenset[ChunkState]] = {
-    ChunkState.RECORDING: frozenset({ChunkState.FINALIZED, ChunkState.FAILED}),
+    ChunkState.RECORDING: frozenset({ChunkState.FINALIZED, ChunkState.FAILED, ChunkState.UPLOAD_CANCELLED}),
+    ChunkState.UPLOAD_CANCELLED: frozenset({ChunkState.RECORDING}),
     ChunkState.FINALIZED: frozenset({ChunkState.PROCESSING, ChunkState.FAILED}),
     ChunkState.PROCESSING: frozenset({ChunkState.PROCESSED, ChunkState.FAILED}),
     ChunkState.PROCESSED: frozenset(),

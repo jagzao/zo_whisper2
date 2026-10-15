@@ -189,7 +189,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 
 
 ### W11 ? Upload cancellation and resumable cleanup
-- Status: PENDING
+- Status: PASS
 - Objective: cancel in-flight chunk uploads from browser through server and leave retryable durable state.
 - Dependencies: W5 PASS.
 - Implementation tasks: define upload cancellation state; abort browser request with AbortController; cancel backend upload session if one exists; remove only partial temp files; make repeated cancel safe; recover stale UPLOADING records; permit retry.
@@ -199,6 +199,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Validation commands: targeted capture API/unit tests and fake-media Playwright upload cancellation.
 - Expected artifacts: synthetic cancellation report and clean temp-state fixture.
 - Recovery/fallback: if storage lacks multipart sessions, cancel the request stream and atomically remove only the server-owned partial file.
+
 
 ### W12 ? Processing job cancellation
 - Status: PENDING
@@ -331,6 +332,8 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
+- 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PENDING.
+- 2026-10-15: W10 PASS (commit `46cd486`). Advisory cleanup API/UI; requires old + processed + documented; no deletion; 37 tests passed. W11 PENDING.
 - 2026-10-15: W9 PASS (commit `5f04593`). Existing processor routes finalized chunks through crop-aware extraction and Docs V2; no-audio avoids Whisper; late transcript is one untimed `session_transcript.loose` evidence item. Processing state is persisted, and duplicate timed/loose evidence is avoided. Targeted regression: 82 passed. W10 PASS; W11?W13 cancellation stages added by user scope.
  - 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.
 - 2026-10-15: W7 PASS. Added optional audio capture, ffprobe detection, persisted AUDIO_MISSING/TRANSCRIPT_REQUIRED and UI warning. 890 tests passed, 3 skipped; fake-device Playwright 14 checks passed. W8 IN_PROGRESS.

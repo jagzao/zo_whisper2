@@ -50,6 +50,13 @@ def test_chunk_processing_can_fail_and_retry():
     assert failed.transition_to(ChunkState.PROCESSING).state is ChunkState.PROCESSING
 
 
+def test_cancelled_upload_can_retry_but_is_not_playable():
+    cancelled = _chunk().transition_to(ChunkState.UPLOAD_CANCELLED)
+    assert cancelled.state is ChunkState.UPLOAD_CANCELLED
+    assert cancelled.transition_to(ChunkState.RECORDING).state is ChunkState.RECORDING
+    assert cancelled.playable is False
+
+
 def test_chunk_invalid_transition_is_rejected():
     with pytest.raises(InvalidTransitionError):
         _chunk().transition_to(ChunkState.PROCESSING)  # RECORDING -> PROCESSING is invalid

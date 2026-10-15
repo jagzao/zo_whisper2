@@ -1456,6 +1456,18 @@ def api_capture_finalize_chunk(session_id: str, index: int) -> Any:
     return jsonify({"ok": True, "chunk": chunk.to_manifest()})
 
 
+@app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/cancel-upload", methods=["POST"])
+def api_capture_cancel_upload(session_id: str, index: int) -> Any:
+    chunk = _get_capture_service().cancel_upload(session_id, index)
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
+
+
+@app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/retry-upload", methods=["POST"])
+def api_capture_retry_upload(session_id: str, index: int) -> Any:
+    chunk = _get_capture_service().retry_cancelled_upload(session_id, index)
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
+
+
 @app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/detect-audio", methods=["POST"])
 def api_capture_detect_chunk_audio(session_id: str, index: int) -> Any:
     """W7: server-side ffprobe detection of a finalized chunk's audio stream.

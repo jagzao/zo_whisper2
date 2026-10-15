@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import hashlib
 import io
+import threading
 
 import pytest
 
-from transcript_pipeline.live_capture.errors import ChunkTooLargeError, ValidationError
+from transcript_pipeline.live_capture.errors import ChunkTooLargeError, UploadCancelledError, ValidationError
 from transcript_pipeline.live_capture.models import ChunkState
 from transcript_pipeline.live_capture.service import CaptureService
 
@@ -120,3 +121,57 @@ def test_rotation_keeps_chunk_identity_and_order(service):
     assert [c.chunk_id for c in chunks] == ["chunk-000000", "chunk-000001", "chunk-000002"]
     assert all(c.state is ChunkState.FINALIZED for c in chunks)
     assert [c.media_size_bytes for c in chunks] == [7, 7, 7]
+
+
+def test_cancel_upload_removes_partial_and_retry_is_allowed(service, tmp_path):
+    session = service.create_session("cancel-upload")
+    service.start_chunk(session.session_id)
+    cancelled = service.cancel_upload(session.session_id, 0)
+    assert cancelled.state is ChunkState.UPLOAD_CANCELLED
+    assert service.cancel_upload(session.session_id, 0).state is ChunkState.UPLOAD_CANCELLED
+    retried = service.retry_cancelled_upload(session.session_id, 0)
+    assert retried.state is ChunkState.RECORDING
+    path = _media_path(tmp_path, session.session_id, 0)
+    service.finalize_chunk(session.session_id, 0, b"retry")
+    assert path.read_bytes() == b"retry"
+
+
+def test_cancel_during_stream_aborts_atomic_write(service, tmp_path):
+    session = service.create_session("cancel-inflight")
+    service.start_chunk(session.session_id)
+    entered = threading.Event()
+    release = threading.Event()
+    errors = []
+
+    class BlockingStream:
+        calls = 0
+
+        def read(self, size):
+            self.calls += 1
+            if self.calls == 1:
+                entered.set()
+                release.wait(timeout=5)
+                return b"partial"
+            return b""
+
+    def upload():
+        try:
+            service.finalize_chunk_stream(session.session_id, 0, BlockingStream())
+        except Exception as exc:
+            errors.append(exc)
+
+    worker = threading.Thread(target=upload)
+    worker.start()
+    assert entered.wait(timeout=5)
+    canceler = threading.Thread(target=lambda: service.cancel_upload(session.session_id, 0))
+    canceler.start()
+    assert service._upload_events[(session.session_id, 0)].wait(timeout=5)
+    release.set()
+    worker.join(timeout=5)
+    canceler.join(timeout=5)
+    assert not worker.is_alive() and not canceler.is_alive()
+    assert errors and isinstance(errors[0], UploadCancelledError)
+    assert service.get_session(session.session_id).chunks[0].state is ChunkState.UPLOAD_CANCELLED
+    chunk_dir = _media_path(tmp_path, session.session_id, 0).parent
+    assert not list(chunk_dir.glob("*.tmp"))
+    assert not _media_path(tmp_path, session.session_id, 0).exists()

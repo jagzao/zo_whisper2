@@ -128,6 +128,21 @@ def test_gc_suggestions_are_read_only(client):
     assert response.json["candidates"] == []
 
 
+def test_cancel_upload_is_idempotent_and_retryable(client):
+    session = _create_session(client, "cancelable").json["session"]
+    session_id = session["sessionId"]
+    _start_chunk(client, session_id)
+    url = f"/api/capture/sessions/{session_id}/chunks/0/cancel-upload"
+    first = client.post(url, headers=AUTH_HEADERS)
+    second = client.post(url, headers=AUTH_HEADERS)
+    assert first.json["chunk"]["state"] == "UPLOAD_CANCELLED"
+    assert second.json["chunk"]["state"] == "UPLOAD_CANCELLED"
+    retry = client.post(f"/api/capture/sessions/{session_id}/chunks/0/retry-upload", headers=AUTH_HEADERS)
+    assert retry.json["chunk"]["state"] == "RECORDING"
+    final = _finalize_chunk(client, session_id, 0, b"retry bytes")
+    assert final.json["chunk"]["state"] == "FINALIZED"
+
+
 def test_create_session_rejects_invalid_duration(client):
     resp = _create_session(client, "X", chunk_duration_sec="not-a-number")
     assert resp.status_code == 400
@@ -286,7 +301,7 @@ def test_list_sessions_surfaces_interrupted_failed_sessions(client, monkeypatch)
     sessions = client.get("/api/capture/sessions").get_json()["sessions"]
     failed = [s for s in sessions if s["sessionId"] == session_id]
     assert failed and failed[0]["status"] == "FAILED"
-    assert failed[0]["chunks"][0]["state"] == "FAILED"
+    assert failed[0]["chunks"][0]["state"] == "UPLOAD_CANCELLED"
 
 
 # ── W6 crop selection / persistence ──────────────────────────────────────
