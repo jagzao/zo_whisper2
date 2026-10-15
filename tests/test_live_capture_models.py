@@ -50,6 +50,13 @@ def test_chunk_processing_can_fail_and_retry():
     assert failed.transition_to(ChunkState.PROCESSING).state is ChunkState.PROCESSING
 
 
+def test_capture_mode_roundtrips_and_rejects_unknown_values():
+    playlist = _session(capture_mode="playlist")
+    assert Session.from_manifest(playlist.to_manifest()).capture_mode == "playlist"
+    with pytest.raises(ValidationError, match="captureMode"):
+        _session(capture_mode="unknown")
+
+
 def test_cancelled_upload_can_retry_but_is_not_playable():
     cancelled = _chunk().transition_to(ChunkState.UPLOAD_CANCELLED)
     assert cancelled.state is ChunkState.UPLOAD_CANCELLED

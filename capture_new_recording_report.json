@@ -1,0 +1,199 @@
+{
+  "checks": [
+    {
+      "name": "videos_section_present",
+      "status": "PASS",
+      "detail": "VIDEOS"
+    },
+    {
+      "name": "new_recording_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "new_recording_opens_capture",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "preview_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "normal_mode_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "playlist_mode_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "crop_control_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "save_local_present_unchecked",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "start_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "stop_button_hidden_initially",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "timer_visible_initial",
+      "status": "PASS",
+      "detail": "00:00:00"
+    },
+    {
+      "name": "upload_status_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logical_videos_shell_empty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "playlist_mode_selectable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "normal_mode_selectable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fragment_target_default",
+      "status": "PASS",
+      "detail": "{\"targetMs\": 15000, \"minMs\": 10000, \"maxMs\": 30000, \"resolvedMs\": 15000, \"maxPendingFragments\": 4}"
+    },
+    {
+      "name": "fragment_configurable_range_10_30s",
+      "status": "PASS",
+      "detail": "min=10000 max=30000"
+    },
+    {
+      "name": "fragment_queue_bounded_4",
+      "status": "PASS",
+      "detail": "4"
+    },
+    {
+      "name": "fragment_cadence_configurable",
+      "status": "PASS",
+      "detail": "10s=10000 30s=30000"
+    },
+    {
+      "name": "fragment_ids_stable_monotonic",
+      "status": "PASS",
+      "detail": "a={'ids': ['fragment-000001', 'fragment-000002', 'fragment-000003'], 'monotonic': True} b={'ids': ['fragment-000004', 'fragment-000005', 'fragment-000006'], 'monotonic': True}"
+    },
+    {
+      "name": "recording_state",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "stop_button_visible_while_recording",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "preview_has_stream",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "timer_advances_while_recording",
+      "status": "PASS",
+      "detail": "00:00:02"
+    },
+    {
+      "name": "two_fragment_acks_while_recording",
+      "status": "PASS",
+      "detail": "acked=['fragment-000001', 'fragment-000002'] state=recording"
+    },
+    {
+      "name": "fragment_queue_drains_after_ack",
+      "status": "PASS",
+      "detail": "pending=0 stalled=False"
+    },
+    {
+      "name": "fragments_use_distinct_endpoint",
+      "status": "PASS",
+      "detail": "fragments=2 legacyChunks=[]"
+    },
+    {
+      "name": "fragments_durable_on_server",
+      "status": "PASS",
+      "detail": "[{\"fragmentId\": \"fragment-000001\", \"sequence\": 1, \"state\": \"ACKED\", \"mediaSizeBytes\": 37546}, {\"fragmentId\": \"fragment-000002\", \"sequence\": 2, \"state\": \"ACKED\", \"mediaSizeBytes\": 38764}]"
+    },
+    {
+      "name": "acked_ids_match_server_order",
+      "status": "PASS",
+      "detail": "server=['fragment-000001', 'fragment-000002'] acked=['fragment-000001', 'fragment-000002']"
+    },
+    {
+      "name": "fragment_sequence_ordered",
+      "status": "PASS",
+      "detail": "[1, 2]"
+    },
+    {
+      "name": "playlist_mode_persisted",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "short_fragments_not_processing_chunks",
+      "status": "PASS",
+      "detail": "chunkDurationSec=600 chunks=[]"
+    },
+    {
+      "name": "capture_saved_state",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "final_fragment_acked_on_stop",
+      "status": "PASS",
+      "detail": "{\"ackedFragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\"], \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\"], \"pendingUploads\": 0}"
+    },
+    {
+      "name": "no_legacy_chunk_finalize_from_browser",
+      "status": "PASS",
+      "detail": "[]"
+    },
+    {
+      "name": "capture_session_created",
+      "status": "PASS",
+      "detail": "1 new sessions"
+    },
+    {
+      "name": "capture_session_finalized",
+      "status": "PASS",
+      "detail": "FINALIZED"
+    },
+    {
+      "name": "mobile_viewport_capture_controls",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "capture_no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

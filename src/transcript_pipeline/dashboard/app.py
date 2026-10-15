@@ -1502,9 +1502,12 @@ def api_capture_create_session() -> Any:
         audio_availability = _parse_audio_availability(payload.get("audio_availability"))
     except capture_errors.ValidationError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
+    capture_mode = str(payload.get("capture_mode") or "normal").lower()
+    if capture_mode not in {"normal", "playlist"}:
+        return jsonify({"ok": False, "error": "capture_mode must be normal or playlist"}), 400
     session = _get_capture_service().create_session(
         title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop,
-        audio_availability=audio_availability,
+        audio_availability=audio_availability, capture_mode=capture_mode,
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
 

@@ -3076,6 +3076,7 @@
                         recorded_at: new Date().toISOString(),
                         crop: capture.pendingCrop,
                         audio_availability: capture.audioAvailability,
+                        capture_mode: capture.mode,
                         // W6: aggregation threshold. Defaults to the server's
                         // 600s; only a test hook overrides it.
                         chunk_duration_sec: capture.requestedChunkDurationSec || CAPTURE_DEFAULT_CHUNK_DURATION_SEC,

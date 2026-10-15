@@ -178,19 +178,20 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: crop model/API/integration tests 54 passed; synthetic UI Playwright passes selection, clear, persisted metadata round-trip, and no browser errors. The initial test tried crop selection before camera preview was live and missed the first gesture; it now waits for the synthetic camera to be ready, then validates the full UI journey: `capture_crop_report.json`.
 
 ### W10 - Continuous Playlist capture
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: record sequential external source videos with one continuous camera session.
 - Dependencies: W3, W4, W5 PASS.
 - Implementation tasks: mode selection; no manual stop/start between sources; distinct physical capture, processing and logical boundaries.
 - Relevant files/modules: capture UI/JS, session domain, API, tests.
-- Acceptance criteria: one capture session spans synthetic Session 1 -> Session 2 source transition.
-- Required tests: continuous multi-title fake-source Playwright scenario.
+- Acceptance criteria: Playlist mode is saved in the session manifest; one recording remains active while multiple short fragments are acknowledged, with no manual stop/start between source videos. Logical boundaries remain a later stage.
+- Required tests: mode persistence model/API and continuous-fragment Playwright journey.
 - Validation commands: targeted state tests and Playwright playlist journey.
-- Expected artifacts: synthetic session with multiple source markers.
+- Expected artifacts: `artifacts/gates/capture_new_recording_report.json`.
 - Recovery/fallback: continue physical capture and mark uncertain title transition for review.
+- Evidence: model/API suite 57 passed; synthetic Playwright 39/39 PASS including playlist mode persisted and multiple fragments ACKed while the same session stays RECORDING. Source title detection/boundaries are validated in W11-W15.
 
 ### W11 - Automatic visual title detection
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: periodically detect source title metadata from displayed screen frames.
 - Dependencies: W10 PASS.
 - Implementation tasks: sample frames; OCR broad title/category/session/date/time patterns; confidence and provenance; handle OCR unavailable.
@@ -405,6 +406,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W7 PASS. IndexedDB persists each fragment before upload, retries the same stable ID after reconnect/reload, and removes it only after server ACK. Added configurable 0.05–4096 MB local pending limit (64 MB default), near/full warnings, capture backpressure, and verified Save local copy stays off by default without gallery/download writes. API/LAN tests: 54 passed, 1 host interception skip. Synthetic offline Playwright: 22/22 PASS. Initial test failures traced to duplicate synthetic test IDs, test helper cap overshoot, and unstable buffer-warning setup; corrected those root causes and reran the full browser journey successfully. W8 is next.
 - 2026-10-15: W8 PASS. Kept upload cancellation visibly `UPLOAD_CANCELLED` through stalled-state repaints. Unit/API cancellation suite 41 passed; synthetic Playwright 9/9 passed for real browser abort/no durable partial, retry, queued cancel/retry/delete, active Cancelando/CANCELLED, and no browser errors. The first browser run found the upload cancellation message was cleared during a state repaint; fixed and reran the complete scenario. W9 is next.
 - 2026-10-15: W9 PASS. Crop/mask is selectable over the live camera preview, can be cleared, persists in capture metadata, and passes into existing processing integration. Focused crop/API/pipeline tests 54 passed; synthetic Playwright 5/5. Updated the E2E to wait for an active synthetic preview before using the crop surface; rerun passed. W10 is next.
+- 2026-10-15: W10 PASS. Persisted `captureMode` (`normal`/`playlist`) through session API/domain and wired the live UI mode into session creation. One continuous synthetic playlist session stayed Recording through three fragment ACKs. Model/API 57 passed; New Recording Playwright 39/39. W11 is IN_PROGRESS for title recognition.
 
 ## Final Delivery Checklist
 

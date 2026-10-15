@@ -121,6 +121,7 @@ class CaptureService:
         recorded_at: str | None = None,
         created_at: str | None = None,
         audio_availability: models.AudioAvailability = models.AudioAvailability.UNKNOWN,
+        capture_mode: str = "normal",
     ) -> models.Session:
         created_at = created_at or models.now_iso()
         session = models.Session(
@@ -132,6 +133,7 @@ class CaptureService:
             chunk_duration_sec=chunk_duration_sec,
             audio_availability=audio_availability,
             crop=crop,
+            capture_mode=capture_mode,
         )
         self.store.create_session(session)
         return session

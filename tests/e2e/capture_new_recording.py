@@ -197,6 +197,7 @@ def main() -> int:
             # (1s) so multiple short fragments are emitted and ACKed while the
             # capture keeps running.
             page.locator("#captureChunkDuration").fill("1")
+            page.locator("#captureModePlaylist").check()
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS
@@ -271,6 +272,7 @@ def main() -> int:
             server_session = requests.get(
                 f"{DASHBOARD_URL}/api/capture/sessions/{session_id}", timeout=10
             ).json()["session"]
+            all_ok &= check("playlist_mode_persisted", server_session.get("captureMode") == "playlist")
             all_ok &= check(
                 "short_fragments_not_processing_chunks",
                 server_session.get("chunkDurationSec") == 600 and server_session.get("chunks") == [],

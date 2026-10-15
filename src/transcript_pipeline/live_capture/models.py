@@ -517,6 +517,7 @@ class Session:
     transcript: Transcript | None = None
     chunks: tuple[Chunk, ...] = ()
     reason: str | None = None
+    capture_mode: str = "normal"
 
     def __post_init__(self) -> None:
         validate_session_id(self.session_id)
@@ -528,6 +529,8 @@ class Session:
             or self.chunk_duration_sec <= 0
         ):
             raise ValidationError("chunkDurationSec must be a positive integer")
+        if self.capture_mode not in {"normal", "playlist"}:
+            raise ValidationError("captureMode must be normal or playlist")
 
     @property
     def next_chunk_index(self) -> int:
@@ -592,6 +595,7 @@ class Session:
             "crop": self.crop.to_manifest() if self.crop else None,
             "chunks": [c.to_manifest() for c in self.chunks],
             "reason": self.reason,
+            "captureMode": self.capture_mode,
         }
 
     @classmethod
@@ -620,6 +624,7 @@ class Session:
                 transcript=transcript,
                 chunks=chunks,
                 reason=_optional_nonempty_str(data.get("reason")),
+                capture_mode=str(data.get("captureMode") or "normal"),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("session manifest is malformed") from exc

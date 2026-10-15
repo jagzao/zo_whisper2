@@ -106,6 +106,22 @@ def test_create_session_returns_active_session_with_recorded_at(client, env):
     assert (env["videos"] / "live_capture" / session["sessionId"] / "session.json").exists()
 
 
+def test_create_session_persists_continuous_playlist_mode(client, env):
+    response = _create_session(client, "Playlist", capture_mode="playlist")
+    assert response.status_code == 200
+    session = response.get_json()["session"]
+    assert session["captureMode"] == "playlist"
+    persisted = capture_models.Session.from_manifest(
+        json.loads((env["videos"] / "live_capture" / session["sessionId"] / "session.json").read_text())
+    )
+    assert persisted.capture_mode == "playlist"
+
+
+def test_create_session_rejects_invalid_capture_mode(client):
+    response = _create_session(client, "Invalid mode", capture_mode="loop")
+    assert response.status_code == 400
+
+
 def test_create_session_requires_dashboard_token(client):
     resp = client.post(
         "/api/capture/sessions",
