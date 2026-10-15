@@ -976,6 +976,8 @@
             <div class="row" style="align-items:center; margin-top:0;">
                 <label for="captureChunkDuration">Fragment duration (s):</label>
                 <input type="number" id="captureChunkDuration" value="15" min="10" max="30" step="1" style="width:6rem;">
+                <label for="captureBufferLimitMB" style="margin-left:1rem;">Pending buffer limit (MB):</label>
+                <input type="number" id="captureBufferLimitMB" value="64" min="0.05" max="4096" step="0.05" style="width:5rem;">
                 <label for="captureSaveLocal" style="display:flex; align-items:center; gap:0.35rem; margin-left:1rem;">
                     <input type="checkbox" id="captureSaveLocal"> Save local copy
                 </label>
@@ -989,6 +991,7 @@
             <div id="captureNotice" class="ai-package-summary hidden"></div>
             <div id="captureJobs" style="margin:0.5rem 0;"></div>
             <div id="captureAudioWarning" class="ai-package-summary hidden" style="color:var(--danger);"></div>
+            <div id="captureBufferWarning" class="ai-package-summary hidden" role="status" aria-live="polite"></div>
             <div id="captureTranscriptSupply" class="hidden" style="margin:0.5rem 0;">
                 <label for="captureTranscriptText" style="font-size:0.85rem; color:var(--muted);">Supply transcript later (loose timing — no per-second sync):</label>
                 <select id="captureTranscriptSession" onchange="selectTranscriptSession()" style="width:100%; margin-top:0.25rem;"></select>
@@ -2124,6 +2127,15 @@
         const CAPTURE_FRAGMENT_TIMESLICE_MS = 1000;
         const CAPTURE_MAX_PENDING_FRAGMENTS = 4;
         const CAPTURE_DEFAULT_CHUNK_DURATION_SEC = 600;
+        // W7: durable local buffer. Unacknowledged fragments live in IndexedDB
+        // (never browser Downloads/gallery) until the server ACKs them; the
+        // buffer is bounded and warns before it fills.
+        const CAPTURE_BUFFER_DB = 'zmi-capture-buffer';
+        const CAPTURE_BUFFER_STORE = 'fragments';
+        const CAPTURE_BUFFER_DEFAULT_MAX_BYTES = 64 * 1024 * 1024;
+        const CAPTURE_BUFFER_WARN_RATIO = 0.5;
+        const CAPTURE_UPLOAD_RETRY_BASE_MS = 1000;
+        const CAPTURE_UPLOAD_RETRY_MAX_MS = 30000;
         const CAPTURE_MIME_FALLBACKS = [
             'video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm', 'video/mp4',
         ];
@@ -2158,6 +2170,16 @@
             transcriptSessions: [],
             uploadController: null,
             jobsPoller: null,
+            // W7 durable IndexedDB buffer (pending unACKed fragments).
+            bufferDb: null,
+            bufferReady: false,
+            bufferLimitBytes: Math.max(0.05, Number(localStorage.getItem('zmi.captureBufferLimitMB')) || 64) * 1024 * 1024,
+            bufferedBytes: 0,
+            bufferCount: 0,
+            bufferWarning: 'none',  // none | near | full
+            autoRetry: true,
+            retryAttempts: 0,
+            retryTimer: null,
             mode: 'normal',         // W3: 'normal' | 'playlist'
             timerSeconds: 0,        // W3: visible recording timer
             timerInterval: null,
@@ -2243,6 +2265,179 @@
             return 'fragment-' + String(sequence).padStart(6, '0');
         }
 
+        // ── W7 durable local buffer (IndexedDB) ───────────────────────────
+        // Every emitted fragment is persisted here *before* the network upload.
+        // Its record is deleted only after a durable server ACK. If the page is
+        // reloaded or the network drops, the surviving records are re-uploaded
+        // with the same capture-session + fragment ID, so the idempotent server
+        // never stores a duplicate. This buffer is internal storage only: it
+        // never writes to browser Downloads/gallery, and "Save local copy"
+        // stays an explicit opt-in (OFF by default). The buffer is bounded by
+        // CAPTURE_BUFFER_DEFAULT_MAX_BYTES and warns before it fills.
+        function captureBufferSupported() {
+            return typeof indexedDB !== 'undefined' && indexedDB !== null;
+        }
+
+        function captureBufferKey(sessionId, fragmentId) {
+            return sessionId + '::' + fragmentId;
+        }
+
+        function captureBufferOpen() {
+            if (capture.bufferDb) return Promise.resolve(capture.bufferDb);
+            if (!captureBufferSupported()) return Promise.resolve(null);
+            return new Promise(resolve => {
+                let request;
+                try { request = indexedDB.open(CAPTURE_BUFFER_DB, 1); }
+                catch (e) { resolve(null); return; }
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(CAPTURE_BUFFER_STORE)) {
+                        const store = db.createObjectStore(CAPTURE_BUFFER_STORE, { keyPath: 'key' });
+                        store.createIndex('sessionId', 'sessionId', { unique: false });
+                    }
+                };
+                request.onsuccess = () => { capture.bufferDb = request.result; capture.bufferReady = true; resolve(request.result); };
+                request.onerror = () => resolve(null);
+            });
+        }
+
+        function captureBufferPut(record) {
+            return captureBufferOpen().then(db => {
+                if (!db) return false;
+                const entry = Object.assign({}, record, {
+                    key: captureBufferKey(record.sessionId, record.fragmentId),
+                    createdAt: record.createdAt || new Date().toISOString(),
+                });
+                return new Promise(resolve => {
+                    const tx = db.transaction(CAPTURE_BUFFER_STORE, 'readwrite');
+                    tx.objectStore(CAPTURE_BUFFER_STORE).put(entry);
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                    tx.onabort = () => resolve(false);
+                });
+            });
+        }
+
+        function captureBufferDelete(sessionId, fragmentId) {
+            return captureBufferOpen().then(db => {
+                if (!db) return false;
+                return new Promise(resolve => {
+                    const tx = db.transaction(CAPTURE_BUFFER_STORE, 'readwrite');
+                    tx.objectStore(CAPTURE_BUFFER_STORE).delete(captureBufferKey(sessionId, fragmentId));
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
+                    tx.onabort = () => resolve(false);
+                });
+            });
+        }
+
+        function captureBufferList(sessionId) {
+            return captureBufferOpen().then(db => {
+                if (!db) return [];
+                return new Promise(resolve => {
+                    const tx = db.transaction(CAPTURE_BUFFER_STORE, 'readonly');
+                    const store = tx.objectStore(CAPTURE_BUFFER_STORE);
+                    const request = sessionId ? store.index('sessionId').getAll(sessionId) : store.getAll();
+                    request.onsuccess = () => resolve(request.result || []);
+                    request.onerror = () => resolve([]);
+                });
+            });
+        }
+
+        function captureBufferClear() {
+            return captureBufferOpen().then(db => {
+                if (!db) return 0;
+                return new Promise(resolve => {
+                    const tx = db.transaction(CAPTURE_BUFFER_STORE, 'readwrite');
+                    tx.objectStore(CAPTURE_BUFFER_STORE).clear();
+                    tx.oncomplete = () => resolve(0);
+                    tx.onerror = () => resolve(0);
+                    tx.onabort = () => resolve(0);
+                });
+            });
+        }
+
+        function updateCaptureBufferWarning() {
+            const limit = capture.bufferLimitBytes;
+            const ratio = limit > 0 ? capture.bufferedBytes / limit : 0;
+            capture.bufferWarning = ratio >= 1 ? 'full' : (ratio >= CAPTURE_BUFFER_WARN_RATIO ? 'near' : 'none');
+            renderCaptureBufferWarning();
+            return capture.bufferWarning;
+        }
+
+        function renderCaptureBufferWarning() {
+            const el = document.getElementById('captureBufferWarning');
+            if (!el) return;
+            if (capture.bufferWarning === 'none') {
+                el.textContent = '';
+                el.classList.add('hidden');
+                return;
+            }
+            const mb = value => (value / (1024 * 1024)).toFixed(1);
+            if (capture.bufferWarning === 'full') {
+                el.textContent = `Local buffer FULL: ${mb(capture.bufferedBytes)}/${mb(capture.bufferLimitBytes)} MB in ${capture.bufferCount} fragment(s). Capture paused — reconnect or retry to free space. The current fragment remains available in this tab.`;
+                el.style.color = 'var(--danger)';
+            } else {
+                el.textContent = `Local buffer near limit: ${mb(capture.bufferedBytes)}/${mb(capture.bufferLimitBytes)} MB in ${capture.bufferCount} fragment(s). Upload or reconnect to free space.`;
+                el.style.color = 'var(--warn)';
+            }
+            el.classList.remove('hidden');
+        }
+
+        function refreshCaptureBufferStats() {
+            return captureBufferList().then(rows => {
+                capture.bufferCount = rows.length;
+                capture.bufferedBytes = rows.reduce((sum, row) => sum + (Number(row.sizeBytes) || 0), 0);
+                updateCaptureBufferWarning();
+                return { count: capture.bufferCount, bytes: capture.bufferedBytes, warning: capture.bufferWarning };
+            });
+        }
+
+        // Re-uploads every surviving buffered fragment with its original
+        // capture-session + fragment ID and deletes each only after ACK. The
+        // server is idempotent per ID, so a repeated restore cannot duplicate
+        // durable media.
+        async function restorePendingFragments() {
+            if (!captureBufferSupported()) return { restored: 0, pending: 0, offline: false };
+            const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+            const rows = (await captureBufferList()).slice();
+            if (!rows.length) { await refreshCaptureBufferStats(); return { restored: 0, pending: 0, offline }; }
+            if (offline) { await refreshCaptureBufferStats(); return { restored: 0, pending: rows.length, offline }; }
+            rows.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+            let restored = 0;
+            for (const row of rows) {
+                // While this session is actively recording, the live upload
+                // loop owns its fragments; leave them alone to avoid a race.
+                if (capture.state === 'recording' && row.sessionId === capture.sessionId) continue;
+                try {
+                    const form = new FormData();
+                    form.append('fragment_id', row.fragmentId);
+                    form.append('sequence', String(row.sequence));
+                    form.append('media_extension', row.extension || '.webm');
+                    if (row.durationMs !== null && row.durationMs !== undefined) form.append('duration_ms', String(row.durationMs));
+                    if (row.offsetMs !== null && row.offsetMs !== undefined) form.append('recorded_offset_ms', String(row.offsetMs));
+                    if (row.recordedAt) form.append('recorded_at', row.recordedAt);
+                    form.append('media', row.blob, row.fragmentId + (row.extension || '.webm'));
+                    const res = await fetch(`/api/capture/sessions/${row.sessionId}/fragments`, {
+                        method: 'POST',
+                        headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                        body: form,
+                    }).then(r => r.json());
+                    if (!res.ok) throw new Error(res.error || 'restore failed');
+                    await captureBufferDelete(row.sessionId, row.fragmentId);
+                    restored += 1;
+                } catch (err) {
+                    // Keep the record; the next reconnect retries the same ID.
+                }
+            }
+            await refreshCaptureBufferStats();
+            return { restored, pending: capture.bufferCount, offline };
+        }
+
+        function ensureCaptureBufferFresh() {
+            return captureBufferOpen().then(() => refreshCaptureBufferStats());
+        }
+
         function clearFragmentBuffers() {
             // Drop the in-flight fragment accumulator only. Queued fragments
             // are kept until the server ACKs them; nothing is marked
@@ -2274,8 +2469,9 @@
             const el = document.getElementById('captureChunkInfo');
             if (!el) return;
             const recording = (capture.recorder && capture.recorder.state !== 'inactive') ? 'recording' : 'idle';
-            el.textContent = `${recording} · acked ${capture.ackedFragmentIds.length} · pending ${capture.uploadQueue.length}`;
+            el.textContent = `${recording} · acked ${capture.ackedFragmentIds.length} · pending ${capture.uploadQueue.length} · buffered ${capture.bufferCount}`;
             renderCaptureStatus();
+            renderCaptureBufferWarning();
         }
 
         function formatCaptureTimer(totalSeconds) {
@@ -2435,8 +2631,94 @@
                 processingChunkSeconds: capture.requestedChunkDurationSec,
                 saveLocal: !!(document.getElementById('captureSaveLocal') || {}).checked,
                 logicalVideos: (capture.logicalVideos || []).length,
+                bufferSupported: captureBufferSupported(),
+                bufferCount: capture.bufferCount,
+                bufferedBytes: capture.bufferedBytes,
+                bufferLimitBytes: capture.bufferLimitBytes,
+                bufferWarning: capture.bufferWarning,
+                autoRetry: capture.autoRetry,
             };
         };
+
+        // W7 test hooks: deterministic IndexedDB buffer introspection. They
+        // read/write only the internal pending-fragment store and never
+        // fabricate a server acknowledgement.
+        window.__captureBufferState = function () {
+            return {
+                supported: captureBufferSupported(),
+                count: capture.bufferCount,
+                bytes: capture.bufferedBytes,
+                limitBytes: capture.bufferLimitBytes,
+                warning: capture.bufferWarning,
+            };
+        };
+        window.__captureBufferAll = function () {
+            return captureBufferList().then(rows => rows
+                .slice()
+                .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+                .map(row => ({
+                    sessionId: row.sessionId,
+                    fragmentId: row.fragmentId,
+                    sequence: row.sequence,
+                    sizeBytes: row.sizeBytes,
+                    extension: row.extension,
+                })));
+        };
+        window.__captureSetBufferLimitBytes = function (bytes) {
+            const n = Number(bytes);
+            if (Number.isFinite(n) && n > 0) capture.bufferLimitBytes = Math.floor(n);
+            updateCaptureBufferWarning();
+            return capture.bufferLimitBytes;
+        };
+        window.__captureSetAutoRetry = function (enabled) {
+            capture.autoRetry = enabled !== false;
+            if (!capture.autoRetry) { clearTimeout(capture.retryTimer); capture.retryTimer = null; }
+            return capture.autoRetry;
+        };
+        window.__captureBufferFillTest = function (totalBytes, sessionId, extension) {
+            const target = Math.max(0, Math.floor(Number(totalBytes) || 0));
+            const sid = sessionId || capture.sessionId || 'sess-buffer-test';
+            const ext = extension || '.webm';
+            let written = 0;
+            const step = async () => {
+                if (written >= target) return written;
+                const available = capture.bufferLimitBytes - capture.bufferedBytes - written;
+                if (available <= 0) return written;
+                const size = Math.min(256 * 1024, target - written, available);
+                window.__captureBufferTestSequence = (window.__captureBufferTestSequence || 0) + 1;
+                const sequence = window.__captureBufferTestSequence;
+                const ok = await captureBufferPut({
+                    sessionId: sid,
+                    fragmentId: `fragment-test-${String(sequence).padStart(6, '0')}`,
+                    sequence,
+                    extension: ext,
+                    sizeBytes: size,
+                    blob: new Blob([new Uint8Array(size)], { type: 'video/webm' }),
+                });
+                if (ok) written += size;
+                return step();
+            };
+            return step().then(() => refreshCaptureBufferStats());
+        };
+        window.__captureRestorePending = function () {
+            return restorePendingFragments();
+        };
+        window.__captureBufferClearTest = function () {
+            return captureBufferClear().then(() => refreshCaptureBufferStats());
+        };
+
+        const captureBufferLimitInput = document.getElementById('captureBufferLimitMB');
+        if (captureBufferLimitInput) {
+            captureBufferLimitInput.value = String(Number((capture.bufferLimitBytes / (1024 * 1024)).toFixed(2)));
+            captureBufferLimitInput.addEventListener('change', () => {
+                const megabytes = Math.max(0.05, Math.min(4096, Number(captureBufferLimitInput.value) || 64));
+                captureBufferLimitInput.value = String(Number(megabytes.toFixed(2)));
+                localStorage.setItem('zmi.captureBufferLimitMB', String(megabytes));
+                capture.bufferLimitBytes = megabytes * 1024 * 1024;
+                refreshCaptureBufferStats();
+            });
+        }
+
 
         // W4/W5 test hooks: deterministic fragment cadence/config and ID checks
         // without waiting for a real ~15s fragment. They never fabricate a
@@ -2477,6 +2759,9 @@
             capture.requestedChunkDurationSec = null;
             capture.recordedOffsetMs = 0;
             capture.fragmentStartedAtMs = null;
+            capture.retryAttempts = 0;
+            clearTimeout(capture.retryTimer);
+            capture.retryTimer = null;
             setCaptureMode('normal');
             resetCaptureTimer();
             const saveLocal = document.getElementById('captureSaveLocal');
@@ -2486,6 +2771,9 @@
             if (txBox) txBox.value = '';
             capture.fragmentDurationMs = resolveFragmentDurationMs();
             renderCropRegion();
+            // W7: reflect any fragments still pending in the durable buffer and
+            // try to restore them (same IDs) if connectivity allows.
+            ensureCaptureBufferFresh().then(() => restorePendingFragments());
             updateChunkInfo();
             updateAudioWarning(null, false);
             if (!captureSupported()) {
@@ -2874,16 +3162,51 @@
             // An empty fragment is dropped locally; it is never sent and never
             // counted as an upload.
             if (blob.size > 0) {
-                capture.uploadQueue.push({
+                enqueueFragment({
                     id,
                     sequence,
                     blob,
                     extension: capture.extension,
+                    sizeBytes: blob.size,
                     durationMs,
                     offsetMs,
                     recordedAt: startedAtMs ? new Date(startedAtMs).toISOString() : null,
                 });
+            } else {
+                updateChunkInfo();
+                beginUpload();
+                maybeResume();
             }
+        }
+
+        // W7: persist the fragment to the durable IndexedDB buffer *before* any
+        // network upload, then hand it to the upload loop. The buffer is
+        // bounded: if this fragment would push durable bytes past the ceiling,
+        // warn visibly and pause instead of overflowing storage silently. The
+        // fragment is kept in the bounded in-memory queue for explicit retry.
+        async function enqueueFragment(record) {
+            const projected = capture.bufferedBytes + (Number(record.sizeBytes) || 0);
+            if (projected > capture.bufferLimitBytes) {
+                capture.bufferWarning = 'full';
+                renderCaptureBufferWarning();
+                capture.uploadQueue.push(record);
+                updateChunkInfo();
+                setStalled(true, 'BUFFER_FULL: local buffer full — reconnect or cancel to free space.');
+                return;
+            }
+            const persisted = await captureBufferPut({
+                sessionId: capture.sessionId,
+                fragmentId: record.id,
+                sequence: record.sequence,
+                extension: record.extension,
+                sizeBytes: record.sizeBytes,
+                durationMs: record.durationMs,
+                offsetMs: record.offsetMs,
+                recordedAt: record.recordedAt,
+                blob: record.blob,
+            });
+            if (persisted) await refreshCaptureBufferStats();
+            capture.uploadQueue.push(record);
             updateChunkInfo();
             beginUpload();
             maybeResume();
@@ -2937,14 +3260,24 @@
                             if (!finRes.ok) throw new Error(finRes.error || 'Could not store fragment');
                         } catch (err) {
                             if (err.name === 'AbortError') return;
+                            capture.retryAttempts = (capture.retryAttempts || 0) + 1;
                             setStalled(true, 'Upload failed: ' + err.message);
+                            scheduleUploadRetry();
                             return;
                         } finally {
                             capture.uploadController = null;
                         }
+                        // Durable ACK received: now the buffered copy may be
+                        // released (IndexedDB + in-memory queue). It is deleted
+                        // only here, never before the ACK.
                         capture.uploadQueue.shift();
                         capture.ackedFragmentIds.push(item.id);
                         capture.finalizedIndexes.push(item.sequence);
+                        capture.retryAttempts = 0;
+                        clearTimeout(capture.retryTimer);
+                        capture.retryTimer = null;
+                        await captureBufferDelete(capture.sessionId, item.id);
+                        await refreshCaptureBufferStats();
                         updateChunkInfo();
                         maybeResume();
                     }
@@ -3001,6 +3334,32 @@
             maybeResume();
         }
 
+        // W7 pause/retry/backoff: after a transient upload failure, retry the
+        // same fragment ID automatically with exponential backoff (capped). The
+        // manual Retry button remains available and resets the timer.
+        function scheduleUploadRetry() {
+            if (!capture.autoRetry) return;
+            if (capture.retryTimer) return;
+            const attempt = Math.max(0, (capture.retryAttempts || 1) - 1);
+            const delay = Math.min(CAPTURE_UPLOAD_RETRY_MAX_MS, CAPTURE_UPLOAD_RETRY_BASE_MS * Math.pow(2, attempt));
+            capture.retryTimer = setTimeout(() => {
+                capture.retryTimer = null;
+                if (capture.stalled) retryUpload();
+            }, delay);
+        }
+
+        // Reconnect: retry the stalled in-memory fragment, then restore any
+        // fragments still durable in IndexedDB (e.g. after a reload) with their
+        // original IDs.
+        function onCaptureReconnect() {
+            if (capture.stalled) {
+                clearTimeout(capture.retryTimer);
+                capture.retryTimer = null;
+                retryUpload();
+            }
+            restorePendingFragments();
+        }
+
         async function finishSession() {
             try {
                 // W6 stop: /drain force-finalizes the partial processing-chunk
@@ -3047,6 +3406,10 @@
 
         window.addEventListener('pagehide', emergencyStopCapture);
         window.addEventListener('beforeunload', emergencyStopCapture);
+        // W7 reconnect: retry stalled uploads and restore durable pending
+        // fragments with their original IDs. The server is idempotent per
+        // capture-session + fragment ID, so a reconnect never duplicates media.
+        window.addEventListener('online', onCaptureReconnect);
 
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') { closePreview(); closeEdit(); closeProjectsModal(); closeLogsModal(); closeHelpModal(); closeFrameModal(); closeCaptureModal(); }
@@ -3056,6 +3419,9 @@
         loadFolders(); loadFiles(); loadProjects(); loadLogs(); loadMetrics(); updateRunStatus();
         updateServerHealth(); loadLanNetworkInfo();
         attachCropSelection();
+        // W7 reload recovery: pick up fragments that survived a reload/offline
+        // gap and re-upload them by ID (no duplicates).
+        ensureCaptureBufferFresh().then(() => restorePendingFragments());
     </script>
 </body>
 </html>

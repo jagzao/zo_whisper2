@@ -139,16 +139,17 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: official W25 targeted gate passed; latest focused suite 55 passed, 2 skipped (host-level Norton TLS interception); settings/security/dashboard regressions 163 passed; dashboard API regressions 181 passed; broad filter 290 passed, 1 skipped. `mobile_lan_access_report.json` 16/16 PASS for HTTPS, backend ONLINE, LAN URLs, camera preview, synthetic recording, durable fragment ACKs, stop, mobile viewport and browser errors. Integration exercised `0.0.0.0`, HTTPS health/files and synthetic fragment upload through a LAN interface. Host check to active Wi-Fi URL `https://192.168.50.67:5001/api/health` returned 200 ONLINE. CA-to-server chain is cryptographically validated; live CA trust is skipped because Norton substitutes local TLS. Added private-client filtering and SAN-aware certificate regeneration on IP changes. Local config is enabled and private cert/key are in ignored `lan-access/`.
 
 ### W7 - Upload resilience and local buffer
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: survive transient/offline connectivity without fragment loss or duplication.
 - Dependencies: W5 PASS.
 - Implementation tasks: IndexedDB pending-fragment queue, configurable storage ceiling, visible near/full warning, pause/retry/backoff, ACK cleanup and opt-in Save local copy.
 - Relevant files/modules: dashboard JS, capture API/service, browser and unit tests.
-- Acceptance criteria: reconnect resumes same IDs; acknowledged media is not resent; buffer remains bounded and user is warned.
+- Acceptance criteria: reconnect resumes same IDs; acknowledged media is not resent; browser-persistent pending buffer is configurable, bounded, and visibly warns near/full; default Save local copy is OFF.
 - Required tests: offline/reconnect, duplicate replay, buffer limit warning, default local-copy OFF.
-- Validation commands: unit queue tests and Playwright connectivity simulation.
-- Expected artifacts: deterministic IndexedDB/fake-network report.
+- Validation commands: `.venv-validation\Scripts\python.exe -m pytest tests/test_dashboard_capture_offline_retry_api.py tests/test_lan_access.py tests/test_dashboard_lan_access.py -q`; `ZMI_BASE_URL=http://127.0.0.1:5088 .venv-validation\Scripts\python.exe tests/e2e/capture_offline_retry.py`.
+- Expected artifacts: `artifacts/gates/capture_offline_retry_report.json`.
 - Recovery/fallback: pause capture uploads and preserve pending IndexedDB data; provide export/retry path when quota is exhausted.
+- Evidence: focused API/LAN tests 54 passed, 1 host TLS interception skip; offline/reconnect Playwright report 22/22 PASS with synthetic media, stable IDs, ACK cleanup, reload restore, 64 MiB default, user-configurable cap, visible near/full warning, and Save local copy default OFF. Browser report: `artifacts/gates/capture_offline_retry_report.json`.
 
 ### W8 - Cancellation
 - Status: PENDING
@@ -399,6 +400,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W5 PASS. Added separate durable fragment manifest/media and idempotent upload/list endpoints; browser releases bytes only on real ACK, retries stable IDs, and keeps session processing duration at 600s without creating a processing chunk per fragment. API/unit/browser verification passed (33 focused fragment tests, 326 dashboard/live-capture tests selected, synthetic Playwright capture/chunking/cancellation). W6 now IN_PROGRESS to assemble/map these fragments into server processing chunks.
 - 2026-10-15: W6 PASS. Backend assembles ACKed short fragments into ~600-second playable chunks during capture and drains a partial tail on stop. Fragment-to-chunk mapping is durable and retryable. Focused W6 unit/API/FFmpeg tests 25 passed; broad capture/dashboard/live-capture selection 352 passed; W6 synthetic Playwright 17/17 and all W5 UI regressions passed. Added W25 MOBILE/LAN ACCESS as the next stage and marked IN_PROGRESS before implementation.
 - 2026-10-15: W25 PASS. Added explicit LAN opt-in, `0.0.0.0` bind, local CA/server certificate with detected IP SANs, backend ONLINE indicator, LAN URL help, same-origin HTTPS health/capture/upload and phone trust guide. Focused suite 55 passed/2 skipped; synthetic mobile HTTPS Playwright 16/16; security/API regressions green. Norton Web/Mail Shield intercepts local TLS, so direct trust assertions skip with evidence; device CA install remains required. Active Wi-Fi URL is `https://192.168.50.67:5001/`. W7 is IN_PROGRESS.
+- 2026-10-15: W7 PASS. IndexedDB persists each fragment before upload, retries the same stable ID after reconnect/reload, and removes it only after server ACK. Added configurable 0.05–4096 MB local pending limit (64 MB default), near/full warnings, capture backpressure, and verified Save local copy stays off by default without gallery/download writes. API/LAN tests: 54 passed, 1 host interception skip. Synthetic offline Playwright: 22/22 PASS. Initial test failures traced to duplicate synthetic test IDs, test helper cap overshoot, and unstable buffer-warning setup; corrected those root causes and reran the full browser journey successfully. W8 is next.
 
 ## Final Delivery Checklist
 

@@ -1,0 +1,114 @@
+{
+  "checks": [
+    {
+      "name": "save_local_default_off",
+      "status": "PASS",
+      "detail": "False"
+    },
+    {
+      "name": "buffer_limit_default_64_mb",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "buffer_limit_user_configurable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "buffer_supported_indexeddb",
+      "status": "PASS",
+      "detail": "{\"supported\": true, \"count\": 0, \"bytes\": 0, \"limitBytes\": 83886080, \"warning\": \"none\"}"
+    },
+    {
+      "name": "buffer_starts_empty_none",
+      "status": "PASS",
+      "detail": "{\"supported\": true, \"count\": 0, \"bytes\": 0, \"limitBytes\": 83886080, \"warning\": \"none\"}"
+    },
+    {
+      "name": "buffer_near_limit_warning_visible",
+      "status": "PASS",
+      "detail": "{\"supported\": true, \"count\": 1, \"bytes\": 262144, \"limitBytes\": 1048576, \"warning\": \"none\"}"
+    },
+    {
+      "name": "buffer_near_limit_warning",
+      "status": "PASS",
+      "detail": "{\"supported\": true, \"count\": 3, \"bytes\": 786432, \"limitBytes\": 1048576, \"warning\": \"near\"}"
+    },
+    {
+      "name": "buffer_full_warning_visible",
+      "status": "PASS",
+      "detail": "{\"supported\": true, \"count\": 4, \"bytes\": 1048576, \"limitBytes\": 1048576, \"warning\": \"full\"}"
+    },
+    {
+      "name": "buffer_bounded_never_exceeds_limit",
+      "status": "PASS",
+      "detail": "bytes=1048576 limit=1048576"
+    },
+    {
+      "name": "buffer_records_keyed_by_fragment",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "first_fragment_acked_online",
+      "status": "PASS",
+      "detail": "['fragment-000001']"
+    },
+    {
+      "name": "fragment_persisted_before_network",
+      "status": "PASS",
+      "detail": "buffered=['fragment-000002'] server=['fragment-000001']"
+    },
+    {
+      "name": "offline_buffer_warning_visible",
+      "status": "PASS",
+      "detail": "{\"bufferCount\": 1, \"bufferedBytes\": 38764, \"bufferLimitBytes\": 52428.8, \"bufferWarning\": \"near\"}"
+    },
+    {
+      "name": "reconnect_retries_same_ids",
+      "status": "PASS",
+      "detail": "buffered=['fragment-000002'] server=['fragment-000001', 'fragment-000002']"
+    },
+    {
+      "name": "reconnect_no_duplicate_fragments",
+      "status": "PASS",
+      "detail": "[{\"fragmentId\": \"fragment-000001\", \"state\": \"ACKED\", \"mediaSizeBytes\": 37546}, {\"fragmentId\": \"fragment-000002\", \"state\": \"ACKED\", \"mediaSizeBytes\": 38764}]"
+    },
+    {
+      "name": "reconnect_buffer_released_after_ack",
+      "status": "PASS",
+      "detail": "{\"bufferCount\": 0, \"bufferedBytes\": 0}"
+    },
+    {
+      "name": "capture_saved_after_reconnect",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "pending_fragment_survives_before_reload",
+      "status": "PASS",
+      "detail": "{\"supported\": true, \"count\": 1, \"bytes\": 4096, \"limitBytes\": 52428.8, \"warning\": \"none\"}"
+    },
+    {
+      "name": "reload_restores_pending_fragment_same_id",
+      "status": "PASS",
+      "detail": "[\"fragment-test-000005\"]"
+    },
+    {
+      "name": "reload_restore_no_duplicate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_browser_downloads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
