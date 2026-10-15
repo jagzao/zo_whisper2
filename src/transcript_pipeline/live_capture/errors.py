@@ -35,6 +35,14 @@ class ChunkTooLargeError(LiveCaptureError):
     """Streamed chunk media exceeded the configured upload size limit."""
 
 
+class FragmentTooLargeError(LiveCaptureError):
+    """Streamed fragment media exceeded the configured upload size limit."""
+
+
+class FragmentConflictError(LiveCaptureError):
+    """A fragment ID was replayed with different bytes or identity."""
+
+
 class UploadCancelledError(LiveCaptureError):
     """A streamed upload was cancelled before atomic finalization."""
 

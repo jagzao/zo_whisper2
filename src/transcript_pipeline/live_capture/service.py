@@ -18,7 +18,14 @@ from pathlib import Path
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
 from transcript_pipeline.live_capture.audio import transcript_required
-from transcript_pipeline.live_capture.errors import ChunkTooLargeError, InvalidTransitionError, UploadCancelledError, ValidationError
+from transcript_pipeline.live_capture.errors import (
+    ChunkTooLargeError,
+    FragmentConflictError,
+    FragmentTooLargeError,
+    InvalidTransitionError,
+    UploadCancelledError,
+    ValidationError,
+)
 from transcript_pipeline.live_capture.store import ManifestStore, normalize_extension
 from transcript_pipeline.media.utils import media_has_audio_stream
 
@@ -29,12 +36,12 @@ STREAM_BLOCK_SIZE = 64 * 1024
 logger = logging.getLogger(__name__)
 
 
-def _stream_blocks(source, max_bytes: int | None, cancelled=None):
+def _stream_blocks(source, max_bytes: int | None, cancelled=None, too_large_error=ChunkTooLargeError):
     """Reads `source` (a `.read(n)` file-like) in bounded blocks.
 
     Enforces the empty-body and size-limit invariants lazily, before any byte
     is persisted: an empty stream raises `ValidationError`; exceeding
-    `max_bytes` raises `ChunkTooLargeError` (and the caller's atomic write
+    `max_bytes` raises `too_large_error` (and the caller's atomic write
     removes its temp file).
     """
     total = 0
@@ -48,7 +55,7 @@ def _stream_blocks(source, max_bytes: int | None, cancelled=None):
             return
         total += len(block)
         if max_bytes is not None and total > max_bytes:
-            raise ChunkTooLargeError(f"chunk media exceeds {max_bytes} bytes")
+            raise too_large_error(f"media exceeds {max_bytes} bytes")
         yield block
 
 
@@ -474,3 +481,88 @@ class CaptureService:
             and self.store.chunk_media_exists(session_id, chunk.index, chunk.media_extension)
         ]
         return sorted(result, key=lambda c: c.index)
+
+    # ── upload fragments (W5) ───────────────────────────────────────
+
+    def list_fragments(self, session_id: str) -> list[models.Fragment]:
+        """Durable fragments for a session, ordered by sequence then ID."""
+        self.store.load_session(session_id)
+        return self.store.load_fragments(session_id)
+
+    def upload_fragment(
+        self,
+        session_id: str,
+        fragment_id: str,
+        sequence: int,
+        source,
+        *,
+        media_extension: str = ".webm",
+        max_bytes: int | None = None,
+    ) -> models.Fragment:
+        """Durably stores one upload fragment and returns its ACK record.
+
+        The body is streamed in bounded blocks into a temp file (never
+        buffered whole) and hashed incrementally. Only after the bytes are
+        durable *and* the manifest entry is written is the fragment returned
+        as ACKed. Replaying the same `fragment_id`:
+
+        - with identical bytes returns the previously ACKed record without
+          writing a duplicate or touching the stored media;
+        - with different bytes, size or extension raises
+          `FragmentConflictError` (-> 409) and never overwrites the original.
+
+        Concurrent uploads for the same session are serialized around the
+        manifest check/commit by the per-session lock; staging happens outside
+        that lock so an in-flight body cannot block unrelated reads.
+        """
+        normalized_id = models.validate_fragment_id(fragment_id)
+        if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
+            raise ValidationError("fragment sequence must be a nonnegative integer")
+        extension = normalize_extension(media_extension)
+        # A missing session must fail before any bytes are staged.
+        self.store.load_session(session_id)
+
+        tmp_path = None
+        try:
+            tmp_path, sha256, size = self.store.stage_fragment_stream(
+                session_id,
+                normalized_id,
+                _stream_blocks(source, max_bytes, too_large_error=FragmentTooLargeError),
+            )
+            with self._lock_for(session_id):
+                # Re-validate under the lock: the session may have been
+                # removed between staging and commit.
+                self.store.load_session(session_id)
+                fragments = self.store.load_fragments(session_id)
+                existing = next((f for f in fragments if f.fragment_id == normalized_id), None)
+                if existing is not None:
+                    if (
+                        existing.media_sha256 != sha256
+                        or existing.media_size_bytes != size
+                        or existing.media_extension != extension
+                    ):
+                        raise FragmentConflictError(
+                            f"fragment {normalized_id} already exists with different bytes"
+                        )
+                    if not self.store.fragment_media_exists(session_id, normalized_id, extension):
+                        # Manifest says stored but the file is gone: repair by
+                        # committing the identical staged bytes, still ACK.
+                        self.store.commit_staged_fragment(tmp_path, session_id, normalized_id, extension)
+                        tmp_path = None
+                    return existing
+
+                fragment = models.Fragment(
+                    fragment_id=normalized_id,
+                    sequence=sequence,
+                    created_at=models.now_iso(),
+                    media_extension=extension,
+                    media_size_bytes=size,
+                    media_sha256=sha256,
+                )
+                self.store.commit_staged_fragment(tmp_path, session_id, normalized_id, extension)
+                tmp_path = None
+                self.store.save_fragments(session_id, [*fragments, fragment])
+                return fragment
+        finally:
+            if tmp_path is not None:
+                tmp_path.unlink(missing_ok=True)

@@ -194,7 +194,9 @@ def _handle_capture_error(e: capture_errors.LiveCaptureError) -> Any:
         capture_errors.ChunkNotFoundError: 404,
         capture_errors.SessionConflictError: 409,
         capture_errors.InvalidTransitionError: 409,
+        capture_errors.FragmentConflictError: 409,
         capture_errors.ChunkTooLargeError: 413,
+        capture_errors.FragmentTooLargeError: 413,
     }.get(type(e), 500)
     return jsonify({"ok": False, "error": str(e)}), status
 
@@ -1430,6 +1432,56 @@ def api_capture_create_session() -> Any:
 def api_capture_get_session(session_id: str) -> Any:
     session = _get_capture_service().get_session(session_id)
     return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+# ── W5 upload fragments ──────────────────────────────────────────────────
+# Short browser fragments are transferred incrementally to a *distinct*
+# fragment endpoint — never as 15-second processing chunks. Each fragment has
+# a stable client ID; the server stores its media + manifest atomically and
+# ACKs only after both are durable. Replaying an ID with identical bytes is
+# idempotent; different bytes are a conflict.
+
+def _fragment_payload(fragment: capture_models.Fragment) -> dict[str, Any]:
+    return fragment.to_manifest()
+
+
+@app.route("/api/capture/sessions/<session_id>/fragments", methods=["POST"])
+def api_capture_upload_fragment(session_id: str) -> Any:
+    fragment_id = str(request.form.get("fragment_id") or "").strip()
+    if not fragment_id:
+        return jsonify({"ok": False, "error": "fragment_id required"}), 400
+    media = request.files.get("media")
+    if media is None:
+        return jsonify({"ok": False, "error": "media file required"}), 400
+    try:
+        sequence = int(request.form.get("sequence"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "sequence must be an integer"}), 400
+    extension = (
+        request.form.get("media_extension")
+        or request.form.get("extension")
+        or request.headers.get("X-Media-Extension")
+        or ".webm"
+    )
+    max_bytes = app.config.get("MAX_CONTENT_LENGTH") or (SETTINGS.upload_max_mb * 1024 * 1024)
+    # Stream straight from the multipart part; the service reads it in bounded
+    # blocks and writes atomically — the whole fragment is never buffered.
+    fragment = _get_capture_service().upload_fragment(
+        session_id,
+        fragment_id,
+        sequence,
+        media.stream,
+        media_extension=extension,
+        max_bytes=max_bytes,
+    )
+    return jsonify({"ok": True, "fragment": _fragment_payload(fragment)})
+
+
+@app.route("/api/capture/sessions/<session_id>/fragments", methods=["GET"])
+def api_capture_list_fragments(session_id: str) -> Any:
+    """Observability read: durable fragments for a session, in order."""
+    fragments = _get_capture_service().list_fragments(session_id)
+    return jsonify({"ok": True, "fragments": [_fragment_payload(f) for f in fragments]})
 
 
 @app.route("/api/capture/sessions/<session_id>/crop", methods=["PUT"])

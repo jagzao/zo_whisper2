@@ -1,4 +1,4 @@
-"""W3/W4 browser scenario: `Videos -> New Recording` capture shell.
+"""W3/W4/W5 browser scenario: `Videos -> New Recording` capture shell.
 
 Launches Chromium with deterministic fake media devices (no real camera or
 microphone), grants camera permission, and proves the frozen W3/W4 journey:
@@ -12,8 +12,12 @@ microphone), grants camera permission, and proves the frozen W3/W4 journey:
 3. W4 fragment cadence/config and stable fragment IDs are deterministic
    (checked through pure state hooks — no 15s wait).
 4. Starting capture with the fake device shows a live, incrementing timer.
-5. Stopping succeeds, keeps the final short fragment, and reaches the saved
-   state; the synthetic mobile viewport keeps the controls usable.
+5. W5: with a 1s deterministic cadence, at least two short fragments are
+   durably ACKed while capture keeps running, via the distinct fragment
+   endpoint (never the legacy per-fragment processing-chunk finalize), and the
+   session keeps its 600s processing chunk_duration_sec with no chunks.
+6. Stopping ACKs any remaining fragment and reaches the saved state; the
+   synthetic mobile viewport keeps the controls usable.
 
 Synthetic devices/media only. Reports PASS/FAIL checks to JSON like the other
 capture e2e scripts.
@@ -162,17 +166,37 @@ def main() -> int:
                 f"10s={resolved_10} 30s={resolved_30}",
             )
 
-            # 3c. W4 stable, monotonically increasing fragment IDs.
+            # 3c. W4/W5 stable, monotonically increasing fragment IDs.
             seq_a = page.evaluate("() => window.__captureTestFragmentSequence(3)")
             seq_b = page.evaluate("() => window.__captureTestFragmentSequence(3)")
             all_ok &= check(
                 "fragment_ids_stable_monotonic",
                 bool(seq_a.get("monotonic")) and bool(seq_b.get("monotonic"))
-                and seq_a.get("ids") == [1, 2, 3] and seq_b.get("ids") == [4, 5, 6],
+                and seq_a.get("ids") == ["fragment-000001", "fragment-000002", "fragment-000003"]
+                and seq_b.get("ids") == ["fragment-000004", "fragment-000005", "fragment-000006"],
                 f"a={seq_a} b={seq_b}",
             )
 
-            # 4. Start fake-device capture with a visible, incrementing timer.
+            # Deterministic network observation: every short fragment must go
+            # to the distinct fragment endpoint — never the legacy
+            # per-fragment processing-chunk finalize.
+            fragment_posts: list[str] = []
+            legacy_chunk_posts: list[str] = []
+
+            def _observe_request(req) -> None:
+                if req.method != "POST":
+                    return
+                if "/fragments" in req.url:
+                    fragment_posts.append(req.url)
+                if "/chunks/" in req.url:
+                    legacy_chunk_posts.append(req.url)
+
+            page.on("request", _observe_request)
+
+            # 4. Start fake-device capture with a short deterministic cadence
+            # (1s) so multiple short fragments are emitted and ACKed while the
+            # capture keeps running.
+            page.locator("#captureChunkDuration").fill("1")
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS
@@ -198,25 +222,83 @@ def main() -> int:
                 timer_text,
             )
 
-            # 5. Stop succeeds and reaches the saved state.
+            # 5. W5: at least 2 short fragments are durably ACKed while capture
+            # continues (state stays Recording).
+            page.wait_for_function(
+                "() => { const s = window.__captureSnapshot && window.__captureSnapshot();"
+                " return !!(s && s.ackedFragmentIds.length >= 2 && s.state === 'recording'); }",
+                timeout=TIMEOUT_MS,
+            )
+            mid = page.evaluate("() => window.__captureSnapshot()")
+            acked_mid = mid.get("ackedFragmentIds") or []
+            all_ok &= check(
+                "two_fragment_acks_while_recording",
+                len(acked_mid) >= 2 and mid.get("state") == "recording",
+                f"acked={acked_mid} state={mid.get('state')}",
+            )
+            all_ok &= check(
+                "fragment_queue_drains_after_ack",
+                mid.get("pendingUploads") == 0 and mid.get("stalled") is False,
+                f"pending={mid.get('pendingUploads')} stalled={mid.get('stalled')}",
+            )
+            all_ok &= check(
+                "fragments_use_distinct_endpoint",
+                len(fragment_posts) >= 2 and not legacy_chunk_posts,
+                f"fragments={len(fragment_posts)} legacyChunks={legacy_chunk_posts[:3]}",
+            )
+
+            session_id = mid.get("sessionId")
+            server_fragments = requests.get(
+                f"{DASHBOARD_URL}/api/capture/sessions/{session_id}/fragments", timeout=10
+            ).json().get("fragments", [])
+            all_ok &= check(
+                "fragments_durable_on_server",
+                len(server_fragments) >= 2
+                and all(f.get("state") == "ACKED" and f.get("mediaSizeBytes", 0) > 0 for f in server_fragments),
+                json.dumps([{k: f.get(k) for k in ("fragmentId", "sequence", "state", "mediaSizeBytes")} for f in server_fragments]),
+            )
+            all_ok &= check(
+                "acked_ids_match_server_order",
+                [f["fragmentId"] for f in server_fragments][: len(acked_mid)] == list(acked_mid),
+                f"server={[f['fragmentId'] for f in server_fragments]} acked={acked_mid}",
+            )
+            sequences = [f["sequence"] for f in server_fragments]
+            all_ok &= check(
+                "fragment_sequence_ordered",
+                sequences == sorted(sequences) and len(set(sequences)) == len(sequences),
+                str(sequences),
+            )
+            server_session = requests.get(
+                f"{DASHBOARD_URL}/api/capture/sessions/{session_id}", timeout=10
+            ).json()["session"]
+            all_ok &= check(
+                "short_fragments_not_processing_chunks",
+                server_session.get("chunkDurationSec") == 600 and server_session.get("chunks") == [],
+                f"chunkDurationSec={server_session.get('chunkDurationSec')} chunks={server_session.get('chunks')}",
+            )
+
+            # 6. Stop succeeds and reaches the saved state; the final short
+            # fragment is ACKed before the session is finalized.
             page.locator("#captureStopBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Saved'", timeout=TIMEOUT_MS
             )
             all_ok &= check("capture_saved_state", page.locator("#captureState").inner_text() == "Saved")
 
-            # The final short fragment is kept and only marked finalized after
-            # a real server response (never a fabricated ACK).
-            snap = page.evaluate("() => window.__captureSnapshot()")
+            final = page.evaluate("() => window.__captureSnapshot()")
+            acked_final = final.get("ackedFragmentIds") or []
             all_ok &= check(
-                "final_fragment_kept_on_stop",
-                snap.get("fragmentIds") == [1] and snap.get("fragmentSeq") == 1,
-                json.dumps({k: snap.get(k) for k in ("fragmentIds", "fragmentSeq")}),
+                "final_fragment_acked_on_stop",
+                final.get("pendingUploads") == 0
+                and final.get("stalled") is False
+                and len(acked_final) >= 2
+                and set(acked_final).issubset(set(final.get("fragmentIds") or [])),
+                json.dumps({k: final.get(k) for k in ("ackedFragmentIds", "fragmentIds", "pendingUploads")}),
             )
             all_ok &= check(
-                "fragment_finalized_only_from_server",
-                snap.get("finalizedIndexes") == [0] and snap.get("stalled") is False,
-                f"finalized={snap.get('finalizedIndexes')} stalled={snap.get('stalled')}",
+                "no_legacy_chunk_finalize_from_browser",
+                not legacy_chunk_posts,
+                str(legacy_chunk_posts[:3]),
             )
 
             sessions_after = _sessions()

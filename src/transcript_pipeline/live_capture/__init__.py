@@ -8,6 +8,8 @@ API that W4 (browser UI) and W5 (chunking/upload) call.
 from transcript_pipeline.live_capture.errors import (
     ChunkNotFoundError,
     ChunkTooLargeError,
+    FragmentConflictError,
+    FragmentTooLargeError,
     InvalidTransitionError,
     LiveCaptureError,
     ManifestCorruptError,
@@ -26,10 +28,14 @@ from transcript_pipeline.live_capture.models import (
     Chunk,
     ChunkState,
     CropRegion,
+    Fragment,
+    FRAGMENT_STATE_ACKED,
     Session,
     SessionStatus,
     TRANSCRIPT_ALIGNMENT_LOOSE,
     Transcript,
+    fragment_id,
+    validate_fragment_id,
 )
 from transcript_pipeline.live_capture.service import CaptureService
 from transcript_pipeline.live_capture.store import ManifestStore
@@ -42,6 +48,10 @@ __all__ = [
     "ChunkState",
     "ChunkTooLargeError",
     "CropRegion",
+    "Fragment",
+    "FragmentConflictError",
+    "FragmentTooLargeError",
+    "FRAGMENT_STATE_ACKED",
     "InvalidTransitionError",
     "LiveCaptureError",
     "ManifestCorruptError",
@@ -56,7 +66,9 @@ __all__ = [
     "apply_crop_to_frames",
     "audio_availability_from_track_count",
     "crop_frame",
+    "fragment_id",
     "resolve_audio_availability",
     "to_pixel_box",
     "transcript_required",
+    "validate_fragment_id",
 ]

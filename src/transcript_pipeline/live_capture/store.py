@@ -19,7 +19,14 @@ import logging
 from pathlib import Path
 
 from transcript_pipeline.live_capture import models
-from transcript_pipeline.live_capture.atomic import atomic_write_bytes, atomic_write_json, atomic_write_stream, read_json
+from transcript_pipeline.live_capture.atomic import (
+    atomic_write_bytes,
+    atomic_write_json,
+    atomic_write_stream,
+    commit_staged,
+    read_json,
+    stage_stream,
+)
 from transcript_pipeline.live_capture.errors import (
     ManifestCorruptError,
     SessionConflictError,
@@ -32,6 +39,8 @@ logger = logging.getLogger(__name__)
 LIVE_CAPTURE_DIR = "live_capture"
 SESSION_FILE = "session.json"
 CHUNKS_DIR = "chunks"
+FRAGMENTS_DIR = "fragments"
+FRAGMENT_MANIFEST_FILE = "fragments.json"
 TRANSCRIPT_FILE = "transcript.txt"
 
 _ALLOWED_EXTENSIONS = frozenset({".webm", ".mp4", ".mkv", ".mov", ".m4a", ".wav", ".mp3", ".ogg", ".opus", ".flac"})
@@ -66,6 +75,15 @@ class ManifestStore:
 
     def chunk_media_path(self, session_id: str, index: int, extension: str) -> Path:
         return self.chunks_dir(session_id) / f"{models.chunk_id(index)}{normalize_extension(extension)}"
+
+    def fragments_dir(self, session_id: str) -> Path:
+        return self.session_dir(session_id) / FRAGMENTS_DIR
+
+    def fragment_manifest_file(self, session_id: str) -> Path:
+        return self.session_dir(session_id) / FRAGMENT_MANIFEST_FILE
+
+    def fragment_media_path(self, session_id: str, fragment_id: str, extension: str) -> Path:
+        return self.fragments_dir(session_id) / f"{models.validate_fragment_id(fragment_id)}{normalize_extension(extension)}"
 
     def transcript_path(self, session_id: str) -> Path:
         """Plain-text sidecar for a late-supplied transcript (W8).
@@ -143,3 +161,60 @@ class ManifestStore:
         path = self.transcript_path(session_id)
         path.parent.mkdir(parents=True, exist_ok=True)
         atomic_write_bytes(path, text.encode("utf-8"))
+
+    # ── upload fragment persistence (W5) ────────────────────────────
+
+    def load_fragments(self, session_id: str) -> list[models.Fragment]:
+        """Fragment manifest for a session, ordered by sequence then ID.
+
+        A missing manifest is an empty list (no fragments uploaded yet); a
+        present-but-malformed manifest is never trusted and is reported, so a
+        corrupt file cannot be silently rewritten into a partial history.
+        """
+        session_id = models.validate_session_id(session_id)
+        path = self.fragment_manifest_file(session_id)
+        if not path.exists():
+            return []
+        raw = read_json(path)
+        if not isinstance(raw, dict):
+            raise ManifestCorruptError(f"fragment manifest {path} is not valid JSON")
+        if raw.get("schemaVersion") != models.FRAGMENT_MANIFEST_SCHEMA_VERSION:
+            raise ManifestCorruptError(
+                f"unsupported fragment manifest schemaVersion {raw.get('schemaVersion')!r}"
+            )
+        fragments_raw = raw.get("fragments", [])
+        if not isinstance(fragments_raw, list):
+            raise ManifestCorruptError(f"fragment manifest {path} has no fragment list")
+        try:
+            fragments = [models.Fragment.from_manifest(item) for item in fragments_raw]
+        except ValidationError as exc:
+            raise ManifestCorruptError(f"fragment manifest {path} is malformed: {exc}") from exc
+        fragments.sort(key=lambda f: (f.sequence, f.fragment_id))
+        return fragments
+
+    def save_fragments(self, session_id: str, fragments: list[models.Fragment]) -> None:
+        session_id = models.validate_session_id(session_id)
+        ordered = sorted(fragments, key=lambda f: (f.sequence, f.fragment_id))
+        payload = {
+            "schemaVersion": models.FRAGMENT_MANIFEST_SCHEMA_VERSION,
+            "sessionId": session_id,
+            "fragments": [f.to_manifest() for f in ordered],
+        }
+        self.fragments_dir(session_id).mkdir(parents=True, exist_ok=True)
+        atomic_write_json(self.fragment_manifest_file(session_id), payload)
+
+    def stage_fragment_stream(self, session_id: str, fragment_id: str, source) -> tuple[Path, str, int]:
+        """Streams a fragment body into a temp file under the session's
+        fragments dir; returns `(temp_path, sha256, size)` without committing.
+        """
+        parent = self.fragments_dir(session_id)
+        prefix = f".{models.validate_fragment_id(fragment_id)}."
+        return stage_stream(parent, prefix, source)
+
+    def commit_staged_fragment(
+        self, tmp_path: Path, session_id: str, fragment_id: str, extension: str
+    ) -> None:
+        commit_staged(Path(tmp_path), self.fragment_media_path(session_id, fragment_id, extension))
+
+    def fragment_media_exists(self, session_id: str, fragment_id: str, extension: str) -> bool:
+        return self.fragment_media_path(session_id, fragment_id, extension).is_file()

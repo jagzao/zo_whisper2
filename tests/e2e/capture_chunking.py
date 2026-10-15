@@ -1,11 +1,14 @@
-"""W5 browser chunk flow using Playwright + fake media devices.
+"""W5 browser fragment flow using Playwright + fake media devices.
 
-Two accelerated scenarios (no real camera/media):
+Two accelerated scenarios (no real camera/media) against the distinct W5
+fragment endpoint:
 
-1. Rotation/order/overlap — a 2s chunk duration drives the MediaRecorder to
-   finalize multiple chunks in order while the next chunk keeps recording.
-2. Stalled/retry — a synthetic failed chunk-0 upload is observed as a
-   retryable stalled state, then an explicit retry recovers and finalizes.
+1. Rotation/order/overlap — a 2s fragment cadence drives the MediaRecorder to
+   emit multiple short fragments that are ACKed in order while the next
+   fragment keeps recording.
+2. Stalled/retry — a synthetic failed fragment upload is observed as a
+   retryable stalled state, then an explicit retry recovers it. The same
+   fragment ID is reused, so the retry is idempotent and never duplicates.
 
 Reports PASS/FAIL checks to JSON like the dashboard smoke test.
 """
@@ -31,12 +34,6 @@ def check(name: str, condition: bool, detail: str = "") -> bool:
     return condition
 
 
-def _sessions() -> list[dict]:
-    r = requests.get(f"{DASHBOARD_URL}/api/capture/sessions", timeout=10)
-    r.raise_for_status()
-    return r.json().get("sessions", [])
-
-
 def _close_safely(handle) -> None:
     try:
         handle.close()
@@ -46,6 +43,12 @@ def _close_safely(handle) -> None:
 
 def _snapshot(page) -> dict:
     return page.evaluate("() => window.__captureSnapshot && window.__captureSnapshot()")
+
+
+def _server_fragments(session_id: str) -> list[dict]:
+    r = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{session_id}/fragments", timeout=10)
+    r.raise_for_status()
+    return r.json().get("fragments", [])
 
 
 def _open_and_start(page, all_ok) -> bool:
@@ -66,21 +69,34 @@ def rotation_flow(page, all_ok) -> bool:
     page.wait_for_function(
         "() => {"
         " const s = window.__captureSnapshot && window.__captureSnapshot();"
-        " if (!s || s.finalizedIndexes.length < 3) return false;"
-        " return s.recordingIndex !== null && s.recordingIndex > Math.max.apply(null, s.finalizedIndexes);"
+        " return !!(s && s.ackedFragmentIds.length >= 3 && s.state === 'recording');"
         "}",
         timeout=TIMEOUT_MS,
     )
     snap = _snapshot(page)
+    acked = snap["ackedFragmentIds"]
     all_ok &= check(
-        "chunk_rotation_ordered",
-        snap["finalizedIndexes"][:3] == [0, 1, 2],
-        json.dumps(snap["finalizedIndexes"]),
+        "fragment_rotation_ordered",
+        acked[:3] == ["fragment-000001", "fragment-000002", "fragment-000003"],
+        json.dumps(acked),
     )
     all_ok &= check(
-        "chunk_overlap_next_recording",
-        snap["recordingIndex"] > snap["finalizedIndexes"][-1],
-        f"recording={snap['recordingIndex']} finalized={snap['finalizedIndexes']}",
+        "fragment_capture_continues",
+        snap["state"] == "recording" and len(acked) >= 3,
+        f"state={snap['state']} acked={len(acked)}",
+    )
+
+    server = _server_fragments(snap["sessionId"])
+    sequences = [f["sequence"] for f in server]
+    all_ok &= check(
+        "fragment_server_order",
+        len(server) >= 3 and sequences == sorted(sequences) and len(set(sequences)) == len(sequences),
+        str(sequences),
+    )
+    all_ok &= check(
+        "fragment_server_durable",
+        all(f.get("state") == "ACKED" and f.get("mediaSizeBytes", 0) > 0 for f in server),
+        json.dumps([f.get("fragmentId") for f in server]),
     )
 
     page.locator("#captureStopBtn").click()
@@ -89,14 +105,12 @@ def rotation_flow(page, all_ok) -> bool:
     )
     all_ok &= check("chunk_saved_state", page.locator("#captureState").inner_text() == "Saved")
 
-    sessions = _sessions()
-    active = [s for s in sessions if s.get("status") == "FINALIZED" and s.get("chunks")]
-    newest = active[0] if active else None
-    all_ok &= check("chunk_session_finalized", newest is not None)
-    if newest:
-        finalized = [c for c in newest["chunks"] if c.get("state") == "FINALIZED"]
-        indexes = [c["index"] for c in finalized]
-        all_ok &= check("chunk_server_order", len(finalized) >= 3 and indexes == list(range(len(finalized))), str(indexes))
+    final = _snapshot(page)
+    all_ok &= check(
+        "fragment_no_pending_after_stop",
+        final["pendingUploads"] == 0 and final["stalled"] is False,
+        f"pending={final['pendingUploads']} stalled={final['stalled']}",
+    )
     return all_ok
 
 
@@ -112,7 +126,7 @@ def stalled_flow(page, all_ok) -> bool:
         else:
             route.continue_()
 
-    page.route("**/chunks/0/finalize", fail_once)
+    page.route("**/fragments", fail_once)
 
     page.wait_for_function(
         "() => { const s = window.__captureSnapshot && window.__captureSnapshot(); return !!(s && s.stalled); }",
@@ -120,17 +134,21 @@ def stalled_flow(page, all_ok) -> bool:
     )
     all_ok &= check("chunk_stalled_state", page.locator("#captureRetryBtn").is_visible())
 
-    page.unroute("**/chunks/0/finalize", fail_once)
+    page.unroute("**/fragments", fail_once)
     page.locator("#captureRetryBtn").click()
     page.wait_for_function(
         "() => { const s = window.__captureSnapshot && window.__captureSnapshot(); return !!(s && !s.stalled); }",
         timeout=TIMEOUT_MS,
     )
     page.wait_for_function(
-        "() => { const s = window.__captureSnapshot && window.__captureSnapshot(); return !!(s && s.finalizedIndexes.indexOf(0) !== -1); }",
+        "() => { const s = window.__captureSnapshot && window.__captureSnapshot(); return !!(s && s.ackedFragmentIds.length >= 1); }",
         timeout=TIMEOUT_MS,
     )
-    all_ok &= check("chunk_retry_recovered", _snapshot(page)["finalizedIndexes"].count(0) == 1)
+    all_ok &= check(
+        "chunk_retry_recovered",
+        _snapshot(page)["ackedFragmentIds"].count("fragment-000001") == 1,
+        str(_snapshot(page)["ackedFragmentIds"]),
+    )
 
     page.locator("#captureStopBtn").click()
     page.wait_for_function(

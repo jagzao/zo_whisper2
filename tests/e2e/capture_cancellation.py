@@ -36,7 +36,7 @@ def main() -> int:
             page.add_init_script("""
                 const realFetch = window.fetch.bind(window);
                 window.fetch = (input, init = {}) => {
-                    if (String(input).includes('/chunks/0/finalize') && init.signal) {
+                    if (String(input).includes('/fragments') && init.signal) {
                         window.__uploadStarted = true;
                         return new Promise((resolve, reject) => init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), {once:true}));
                     }
@@ -55,8 +55,17 @@ def main() -> int:
             page.locator("#captureCancelUploadBtn").click()
             page.wait_for_function("document.getElementById('captureError').textContent.includes('UPLOAD_CANCELLED')")
             session_id = page.evaluate("window.__captureSnapshot().sessionId")
-            session = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{session_id}", timeout=10).json()["session"]
-            all_ok &= check("upload_aborted_and_persisted", session["chunks"][0]["state"] == "UPLOAD_CANCELLED", session["chunks"][0]["state"])
+            snapshot = page.evaluate("window.__captureSnapshot()")
+            # W5: an aborted fragment upload is never durably stored, and the
+            # queued blob is retained (never marked uploaded) for retry.
+            server_fragments = requests.get(
+                f"{DASHBOARD_URL}/api/capture/sessions/{session_id}/fragments", timeout=10
+            ).json()["fragments"]
+            all_ok &= check(
+                "upload_aborted_no_durable_fragment",
+                server_fragments == [] and snapshot["pendingUploads"] >= 1 and snapshot["stalled"] is True,
+                f"fragments={len(server_fragments)} pending={snapshot['pendingUploads']} stalled={snapshot['stalled']}",
+            )
             all_ok &= check("upload_retry_available", page.locator("#captureRetryBtn").is_visible())
 
             unique_title = 'cancel queued synthetic ' + uuid.uuid4().hex[:8]

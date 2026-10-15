@@ -24,7 +24,14 @@ from transcript_pipeline.live_capture.errors import (
 )
 
 SCHEMA_VERSION = 1
+FRAGMENT_MANIFEST_SCHEMA_VERSION = 1
 DEFAULT_CHUNK_DURATION_SEC = 600
+
+# An upload fragment is an immutable, idempotently-ACKed unit of browser
+# media. It has exactly one durable state (ACKED): it only exists after the
+# server stored its media and manifest entry, so there is no recipient-side
+# "recording"/"partial" state to model.
+FRAGMENT_STATE_ACKED = "ACKED"
 
 # A late-supplied transcript is always stored as one opaque text block with
 # only its arrival time. No per-second segment sync is ever invented, so the
@@ -32,6 +39,7 @@ DEFAULT_CHUNK_DURATION_SEC = 600
 TRANSCRIPT_ALIGNMENT_LOOSE = "loose"
 
 SESSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+FRAGMENT_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 
 
 def now_iso() -> str:
@@ -51,6 +59,19 @@ def validate_session_id(value: str) -> str:
 
 def chunk_id(index: int) -> str:
     return f"chunk-{index:06d}"
+
+
+def validate_fragment_id(value: str) -> str:
+    if not isinstance(value, str) or not FRAGMENT_ID_RE.fullmatch(value):
+        raise ValidationError("fragmentId must match ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+    return value
+
+
+def fragment_id(sequence: int) -> str:
+    """Stable, path-safe fragment ID derived from its 1-based sequence."""
+    if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
+        raise ValidationError("fragment sequence must be a nonnegative integer")
+    return f"fragment-{sequence:06d}"
 
 
 class SessionStatus(str, Enum):
@@ -237,6 +258,74 @@ class Chunk:
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("chunk manifest is malformed") from exc
+
+
+@dataclass(frozen=True)
+class Fragment:
+    """An immutable, durably-ACKed browser upload fragment (W5).
+
+    A fragment is identified by a stable, path-safe `fragment_id` supplied by
+    the client (e.g. ``fragment-000001``) and ordered by `sequence`. Its media
+    is content-addressed by `media_sha256`/`media_size_bytes`, so replaying the
+    same ID with identical bytes is idempotent and replaying it with different
+    bytes is rejected before anything is overwritten. A persisted Fragment is
+    always ACKED — it cannot exist before its media and manifest entry landed.
+    """
+
+    fragment_id: str
+    sequence: int
+    created_at: str
+    media_extension: str
+    media_size_bytes: int
+    media_sha256: str
+    state: str = FRAGMENT_STATE_ACKED
+
+    def __post_init__(self) -> None:
+        validate_fragment_id(self.fragment_id)
+        if isinstance(self.sequence, bool) or not isinstance(self.sequence, int) or self.sequence < 0:
+            raise ValidationError("fragment sequence must be a nonnegative integer")
+        if not isinstance(self.created_at, str) or not self.created_at.strip():
+            raise ValidationError("fragment createdAt must be a non-empty string")
+        if not isinstance(self.media_extension, str) or not self.media_extension.startswith("."):
+            raise ValidationError("fragment mediaExtension must be a dotted extension")
+        if (
+            isinstance(self.media_size_bytes, bool)
+            or not isinstance(self.media_size_bytes, int)
+            or self.media_size_bytes < 0
+        ):
+            raise ValidationError("fragment mediaSizeBytes must be a nonnegative integer")
+        if not isinstance(self.media_sha256, str) or not self.media_sha256.strip():
+            raise ValidationError("fragment mediaSha256 must be a non-empty string")
+        if self.state != FRAGMENT_STATE_ACKED:
+            raise ValidationError("upload fragment state must be ACKED")
+
+    def to_manifest(self) -> dict[str, Any]:
+        return {
+            "fragmentId": self.fragment_id,
+            "sequence": self.sequence,
+            "state": self.state,
+            "createdAt": self.created_at,
+            "mediaExtension": self.media_extension,
+            "mediaSizeBytes": self.media_size_bytes,
+            "mediaSha256": self.media_sha256,
+        }
+
+    @classmethod
+    def from_manifest(cls, data: object) -> Fragment:
+        if not isinstance(data, dict):
+            raise ValidationError("fragment manifest must be a mapping")
+        try:
+            return cls(
+                fragment_id=str(data["fragmentId"]),
+                sequence=_require_nonnegative_int(data, "sequence"),
+                created_at=_require_nonempty_str(data, "createdAt"),
+                media_extension=_require_nonempty_str(data, "mediaExtension"),
+                media_size_bytes=_require_nonnegative_int(data, "mediaSizeBytes"),
+                media_sha256=_require_nonempty_str(data, "mediaSha256"),
+                state=str(data.get("state") or FRAGMENT_STATE_ACKED),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValidationError("fragment manifest is malformed") from exc
 
 
 @dataclass(frozen=True)
@@ -430,4 +519,11 @@ def _optional_nonnegative_int(value: object) -> int | None:
         return None
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValidationError("optional integer field must be a nonnegative integer or null")
+    return value
+
+
+def _require_nonnegative_int(data: dict[str, Any], key: str) -> int:
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValidationError(f"{key} must be a nonnegative integer")
     return value

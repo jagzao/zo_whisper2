@@ -96,23 +96,24 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Required tests: fragment cadence/state/IDs, start/timer/stop, MIME feature detection, synthetic mobile viewport.
 - Validation commands: template JavaScript syntax check; `python -m py_compile tests/e2e/capture_new_recording.py`; synthetic Playwright `capture_new_recording.py`; regression `capture_dashboard.py`, `capture_crop.py`, `capture_chunking.py`, `capture_cancellation.py`.
 - Expected artifacts: `capture_new_recording_report.json` and existing capture reports.
-- Evidence: JS syntax `JS_OK`; test syntax `PY_OK`; diff check PASS. Synthetic Playwright W4 scenario 31/31 PASS. Regressions: capture dashboard 14/14, crop 5/5, chunking 10/10, cancellation 9/9. Current UI still transfers through the legacy processing-chunk endpoint; W5/W6 must replace this provisional coupling so short upload fragments do not become 15-second processing chunks.
+- Evidence: JS syntax `JS_OK`; test syntax `PY_OK`; diff check PASS. Synthetic Playwright W4 scenario 31/31 PASS. Regressions: capture dashboard 14/14, crop 5/5, chunking 10/10, cancellation 9/9. W5 removed the legacy per-fragment processing-chunk upload path.
 - Recovery/fallback: feature-detect supported MediaRecorder MIME types; visible unsupported state with retry.
 
 ### W5 - Incremental upload fragments
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: transfer short fragments incrementally and release acknowledged local bytes.
 - Dependencies: W3, W4 PASS.
 - Implementation tasks: stable fragment ID/idempotency key, bounded streaming endpoint, server digest/ACK, replay-safe duplicate response, browser ACK handling and progress state.
 - Relevant files/modules: capture API/service/store, dashboard JS, integration and Playwright tests.
 - Acceptance criteria: fragment N is ACKed while N+1 records; acknowledged temporary fragment is released; retry never duplicates it.
-- Required tests: first upload, duplicate ID, ACK, interrupted POST and retry.
-- Validation commands: targeted API tests; fragment-upload Playwright journey.
-- Expected artifacts: fragment manifest/mapping and gate report.
+- Required tests: first upload, duplicate ID same/different bytes, ACK, interrupted POST and retry, browser ACK during capture, fragment ordering and no chunk creation.
+- Validation commands: `.venv-validation\\Scripts\\python.exe -m pytest tests/test_live_capture_fragments.py tests/test_dashboard_capture_fragments_api.py tests/test_live_capture_streaming.py tests/test_live_capture_store.py tests/test_live_capture_models.py tests/test_dashboard_capture_api.py tests/test_dashboard_capture_transcript_api.py -q`; broader `pytest -q -k "dashboard or live_capture"`; JS syntax and Playwright capture-new-recording/chunking/cancellation journeys.
+- Expected artifacts: `fragments.json`, fragment media, `capture_new_recording_report.json`, `capture_chunking_report.json`, `capture_cancellation_report.json`.
+- Evidence: focused fragment/API suite 33 passed; prior selected regression suite 121 passed; broad dashboard/live-capture selection 326 passed, 685 deselected. Playwright `capture_new_recording.py` passed: 2+ durable ACKs while recording, ordered server fragments, 600s processing duration and no processing chunks; `capture_chunking.py` and `capture_cancellation.py` passed. JS `node --check` and Playwright `py_compile` passed. Same-ID identical replay ACKs once; differing bytes conflict; interrupted upload leaves no media, manifest or temp file.
 - Recovery/fallback: retain unACKed local blob; retry same identity; never mark unACKed data uploaded.
 
 ### W6 - Server processing chunks
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: map short fragments to server-side ~10-15 minute processing chunks.
 - Dependencies: W5 PASS.
 - Implementation tasks: configurable aggregation/finalization, duration/size thresholds, server-side concat/remux where required, boundary/final-chunk handling and mapping persistence.
@@ -378,6 +379,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: New acceptance criteria reveal the prior Capture/Chunking/Live Capture PASS labels covered the old modal, not the expected `Videos -> New Recording` UI. Reopened W3-W21 pending user-journey evidence. Existing backend and tests remain foundations, not acceptance proof. Baseline HEAD/remote `e9e61be`, clean tree. W2 host E2E PASS; W23 currently RAM-blocked at last 5.62 GiB reading. Plan must be committed before implementation.
 - 2026-10-15: W3 PASS. Added Videos -> New Recording entry and responsive capture shell with modes, crop, default-off Save local copy, timer, status, logical-video placeholder, and distinct actions. Synthetic Playwright journey passed 23/23; existing capture and cancellation journeys passed 16/16 and 9/9; Date unit tests 5/5. This verifies only W3 shell; mobile fragment capture and playlist features remain pending.
 - 2026-10-15: W4 PASS for browser capture generation. MediaRecorder now emits 10-30s bounded units with 15s default, stable sequence IDs, MIME feature detection, bounded pending queue, stop/error cleanup and synthetic mobile Playwright coverage. 31/31 new checks plus existing capture/crop/chunking/cancellation regressions pass. W5 is IN_PROGRESS to add distinct fragment ACK/idempotency endpoints and remove the legacy coupling where each emitted short unit is treated as a processable chunk; W6 remains required for ~10-15-minute server aggregation.
+- 2026-10-15: W5 PASS. Added separate durable fragment manifest/media and idempotent upload/list endpoints; browser releases bytes only on real ACK, retries stable IDs, and keeps session processing duration at 600s without creating a processing chunk per fragment. API/unit/browser verification passed (33 focused fragment tests, 326 dashboard/live-capture tests selected, synthetic Playwright capture/chunking/cancellation). W6 now IN_PROGRESS to assemble/map these fragments into server processing chunks.
 
 ## Final Delivery Checklist
 

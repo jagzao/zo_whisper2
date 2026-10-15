@@ -2051,20 +2051,27 @@
             document.getElementById('helpModal').classList.add('hidden');
         }
 
-        // ── Live Capture (W4) ─────────────────────────────────────────────
+        // ── Live Capture (W4/W5) ──────────────────────────────────────────
         // W4: mobile-safe fragment production. The camera stream is acquired
         // once and reused; a MediaRecorder emits short bounded fragments
         // (~15s target, configurable 10-30s) so no whole-session/15-minute
         // blob is ever held in the browser. Each fragment gets a stable,
         // monotonically increasing ID and waits in a bounded local queue
         // (at most 4). When the queue is full, recording pauses visibly and
-        // recovers once it drains. W5 adds durable server upload; W4 never
-        // claims a fragment is acknowledged unless the server actually said so.
+        // recovers once it drains.
+        // W5: each queued fragment is uploaded to the distinct fragment
+        // endpoint and its local blob is released only after a durable server
+        // ACK. A failed upload pauses and keeps the same ID for retry; a
+        // fragment is never marked uploaded unless the server acknowledged it.
+        // Short fragments are NOT processing chunks: the session keeps its
+        // default 600s processing chunk_duration_sec and no /chunks/{index}
+        // is created or finalized per fragment (that is W6).
         const CAPTURE_FRAGMENT_TARGET_MS = 15000;
         const CAPTURE_FRAGMENT_MIN_MS = 10000;
         const CAPTURE_FRAGMENT_MAX_MS = 30000;
         const CAPTURE_FRAGMENT_TIMESLICE_MS = 1000;
         const CAPTURE_MAX_PENDING_FRAGMENTS = 4;
+        const CAPTURE_DEFAULT_CHUNK_DURATION_SEC = 600;
         const CAPTURE_MIME_FALLBACKS = [
             'video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm', 'video/mp4',
         ];
@@ -2073,16 +2080,16 @@
             stream: null,
             recorder: null,
             sessionId: null,
-            recordingIndex: null,
-            chunkDurationSec: 600,
+            chunkDurationSec: CAPTURE_DEFAULT_CHUNK_DURATION_SEC,
             fragmentDurationMs: CAPTURE_FRAGMENT_TARGET_MS,
             state: 'idle',
             mimeType: '',
             extension: '.webm',
             pendingParts: [],       // Blob parts for the fragment being recorded
-            uploadQueue: [],        // [{index, id, blob, extension}] awaiting upload (FIFO)
-            finalizedIndexes: [],   // server-confirmed finalized fragment indexes (ordered)
-            fragmentSeq: 0,         // stable monotonically increasing fragment ID source
+            uploadQueue: [],        // [{id, sequence, blob, extension}] awaiting ACK (FIFO)
+            ackedFragmentIds: [],   // server-ACKed fragment IDs (ordered)
+            finalizedIndexes: [],   // ACKed fragment sequences (ordered)
+            fragmentSeq: 0,         // stable monotonically increasing fragment sequence source
             fragmentIds: [],        // ordered fragment IDs created this session
             queueFull: false,       // recording paused because the pending queue is full
             uploading: false,
@@ -2092,8 +2099,8 @@
             starting: false,
             rotateTimer: null,
             pendingCrop: null,      // W6: normalized {x,y,width,height} crop, or null
-    audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
-    transcriptSessions: [],
+            audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
+            transcriptSessions: [],
             uploadController: null,
             jobsPoller: null,
             mode: 'normal',         // W3: 'normal' | 'playlist'
@@ -2171,15 +2178,20 @@
             return CAPTURE_FRAGMENT_TARGET_MS;
         }
 
-        function nextFragmentId() {
+        function nextFragmentSequence() {
             capture.fragmentSeq += 1;
-            capture.fragmentIds.push(capture.fragmentSeq);
             return capture.fragmentSeq;
+        }
+
+        // Stable, server-path-safe fragment ID derived from its sequence.
+        function fragmentIdFor(sequence) {
+            return 'fragment-' + String(sequence).padStart(6, '0');
         }
 
         function clearFragmentBuffers() {
             // Drop the in-flight fragment accumulator only. Queued fragments
-            // are kept for W5 upload/recovery; nothing is marked acknowledged.
+            // are kept until the server ACKs them; nothing is marked
+            // acknowledged locally.
             capture.pendingParts = [];
         }
 
@@ -2199,7 +2211,6 @@
                 try { capture.recorder.stop(); } catch (e) {}
             }
             capture.recorder = null;
-            capture.recordingIndex = null;
             clearFragmentBuffers();
             stopCaptureTracks();
         }
@@ -2207,8 +2218,8 @@
         function updateChunkInfo() {
             const el = document.getElementById('captureChunkInfo');
             if (!el) return;
-            const recording = capture.recordingIndex !== null ? `recording chunk ${capture.recordingIndex}` : 'idle';
-            el.textContent = `${recording} · finalized [${capture.finalizedIndexes.join(', ')}] · pending ${capture.uploadQueue.length}`;
+            const recording = (capture.recorder && capture.recorder.state !== 'inactive') ? 'recording' : 'idle';
+            el.textContent = `${recording} · acked ${capture.ackedFragmentIds.length} · pending ${capture.uploadQueue.length}`;
             renderCaptureStatus();
         }
 
@@ -2344,12 +2355,13 @@
         }
 
         // Test-only introspection: mirrors capture state for the deterministic
-        // Playwright chunk-flow checks without parsing UI text.
+        // Playwright fragment-flow checks without parsing UI text.
         window.__captureSnapshot = function () {
             return {
                 state: capture.state,
                 sessionId: capture.sessionId,
-                recordingIndex: capture.recordingIndex,
+                recordingFragmentSeq: (capture.recorder && capture.recorder.state !== 'inactive') ? capture.fragmentSeq + 1 : null,
+                ackedFragmentIds: capture.ackedFragmentIds.slice(),
                 finalizedIndexes: capture.finalizedIndexes.slice(),
                 pendingUploads: capture.uploadQueue.length,
                 stalled: capture.stalled,
@@ -2369,7 +2381,7 @@
             };
         };
 
-        // W4 test hooks: deterministic fragment cadence/config and ID checks
+        // W4/W5 test hooks: deterministic fragment cadence/config and ID checks
         // without waiting for a real ~15s fragment. They never fabricate a
         // server acknowledgement.
         window.__captureFragmentConfig = function () {
@@ -2384,7 +2396,7 @@
         window.__captureTestFragmentSequence = function (count) {
             const n = Number.isFinite(count) && count > 0 ? Math.floor(count) : 3;
             const ids = [];
-            for (let i = 0; i < n; i++) ids.push(nextFragmentId());
+            for (let i = 0; i < n; i++) ids.push(fragmentIdFor(nextFragmentSequence()));
             const monotonic = ids.every((value, idx) => idx === 0 || value > ids[idx - 1]);
             return { ids, monotonic };
         };
@@ -2480,8 +2492,8 @@
         }
 
         async function cancelCaptureChunkUpload(sessionId, index) {
-            if (capture.sessionId === sessionId && capture.uploadController && capture.uploadQueue[0]?.index === index) {
-                await cancelCaptureUpload();
+            if (capture.sessionId === sessionId && capture.uploadController) {
+                cancelCaptureUpload();
                 return;
             }
             await captureFetch(`/api/capture/sessions/${sessionId}/chunks/${index}/cancel-upload`);
@@ -2676,6 +2688,7 @@
             capture.extension = extensionForMime(capture.mimeType);
             capture.pendingParts = [];
             capture.uploadQueue = [];
+            capture.ackedFragmentIds = [];
             capture.finalizedIndexes = [];
             capture.stalled = false;
             capture.stopRequested = false;
@@ -2687,15 +2700,17 @@
 
             const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
             capture.fragmentDurationMs = resolveFragmentDurationMs();
-            const chunkDurationSec = Math.max(1, Math.round(capture.fragmentDurationMs / 1000));
-            capture.chunkDurationSec = chunkDurationSec;
+            // W5: short fragments are not processing chunks. The session keeps
+            // its default 600s processing chunk_duration_sec; the fragment
+            // duration only controls MediaRecorder rotation.
+            capture.chunkDurationSec = CAPTURE_DEFAULT_CHUNK_DURATION_SEC;
             capture.fragmentSeq = 0;
             capture.fragmentIds = [];
             capture.queueFull = false;
             try {
                 const createRes = await captureFetch('/api/capture/sessions', {
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), chunk_duration_sec: chunkDurationSec, crop: capture.pendingCrop, audio_availability: capture.audioAvailability }),
+                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), crop: capture.pendingCrop, audio_availability: capture.audioAvailability }),
                 });
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
@@ -2708,24 +2723,15 @@
 
             resetCaptureTimer();
             ensureCaptureTimer();
-            startChunkRecording();
+            startFragmentRecording();
         }
 
-        async function startChunkRecording() {
+        function startFragmentRecording() {
             if (capture.starting || capture.stopRequested || capture.stalled || capture.closed) return;
+            if (!capture.stream) return;
             capture.starting = true;
             try {
-                const startRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/start`);
-                if (!startRes.ok) throw new Error(startRes.error || 'Could not start next chunk');
-                // A stop/stall may have landed while we awaited the server —
-                // do not start a recorder that would overwrite that state.
-                if (capture.stopRequested || capture.stalled || capture.closed) {
-                    await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${startRes.chunk.index}/cancel-upload`);
-                    return;
-                }
-                capture.recordingIndex = startRes.chunk.index;
                 capture.pendingParts = [];
-
                 let recorder;
                 try {
                     recorder = new MediaRecorder(capture.stream, capture.mimeType ? { mimeType: capture.mimeType } : undefined);
@@ -2733,7 +2739,7 @@
                     recorder = new MediaRecorder(capture.stream);
                 }
                 recorder.ondataavailable = e => { if (e.data && e.data.size > 0) capture.pendingParts.push(e.data); };
-                recorder.onstop = () => onChunkStopped();
+                recorder.onstop = () => onFragmentStopped();
                 recorder.onerror = e => {
                     capture.recorder = null;
                     clearFragmentBuffers();
@@ -2745,7 +2751,7 @@
                 setCaptureState('recording');
                 scheduleRotation();
             } catch (err) {
-                setStalled(true, 'Could not start next chunk: ' + err.message);
+                setStalled(true, 'Could not start next fragment: ' + err.message);
             } finally {
                 capture.starting = false;
             }
@@ -2761,28 +2767,27 @@
             clearTimeout(capture.rotateTimer);
             const rec = capture.recorder;
             capture.recorder = null;
-            rec.stop(); // onChunkStopped finalizes this chunk and starts the next
+            rec.stop(); // onFragmentStopped queues this fragment and starts the next
         }
 
-        function onChunkStopped() {
-            if (capture.recordingIndex === null) {
-                clearFragmentBuffers();
-                return;
-            }
-            const index = capture.recordingIndex;
+        function onFragmentStopped() {
             if (capture.closed) {
                 // Modal closed or navigated away mid-recording: discard the
                 // in-flight fragment buffer (never queued) instead of
                 // pretending it was stored.
                 clearFragmentBuffers();
-                capture.recordingIndex = null;
                 return;
             }
-            const id = nextFragmentId();
+            const sequence = nextFragmentSequence();
+            const id = fragmentIdFor(sequence);
+            capture.fragmentIds.push(id);
             const blob = new Blob(capture.pendingParts, { type: capture.mimeType || 'video/webm' });
             clearFragmentBuffers();
-            capture.recordingIndex = null;
-            capture.uploadQueue.push({ index, id, blob, extension: capture.extension });
+            // An empty fragment is dropped locally; it is never sent and never
+            // counted as an upload.
+            if (blob.size > 0) {
+                capture.uploadQueue.push({ id, sequence, blob, extension: capture.extension });
+            }
             updateChunkInfo();
             beginUpload();
             maybeResume();
@@ -2798,7 +2803,7 @@
                 return;
             }
             capture.queueFull = false;
-            startChunkRecording();
+            startFragmentRecording();
         }
 
         function beginUpload() {
@@ -2806,19 +2811,27 @@
             capture.uploading = true;
             setCaptureState(capture.state);
             (async () => {
-                let drained = false;
                 try {
                     while (capture.uploadQueue.length) {
                         if (capture.stalled) return;
                         const item = capture.uploadQueue[0];
                         capture.uploadController = new AbortController();
                         try {
-                            const finRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/finalize`, {
-                                headers: { 'Content-Type': 'application/octet-stream', 'X-Media-Extension': item.extension, 'X-Audio-Availability': capture.audioAvailability },
-                                body: item.blob,
+                            // W5: multipart fragment upload to the distinct
+                            // fragment endpoint. The queued blob is released
+                            // only after this durable ACK.
+                            const form = new FormData();
+                            form.append('fragment_id', item.id);
+                            form.append('sequence', String(item.sequence));
+                            form.append('media_extension', item.extension);
+                            form.append('media', item.blob, item.id + item.extension);
+                            const finRes = await fetch(`/api/capture/sessions/${capture.sessionId}/fragments`, {
+                                method: 'POST',
+                                headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                                body: form,
                                 signal: capture.uploadController.signal,
-                            });
-                            if (!finRes.ok) throw new Error(finRes.error || 'Could not save chunk');
+                            }).then(r => r.json());
+                            if (!finRes.ok) throw new Error(finRes.error || 'Could not store fragment');
                         } catch (err) {
                             if (err.name === 'AbortError') return;
                             setStalled(true, 'Upload failed: ' + err.message);
@@ -2827,39 +2840,32 @@
                             capture.uploadController = null;
                         }
                         capture.uploadQueue.shift();
-                        capture.finalizedIndexes.push(item.index);
+                        capture.ackedFragmentIds.push(item.id);
+                        capture.finalizedIndexes.push(item.sequence);
                         updateChunkInfo();
                         maybeResume();
                     }
-                    drained = true;
                 } finally {
                     capture.uploading = false;
-                    setCaptureState(capture.state);
+                    // Do not clear a stall raised by cancelCaptureUpload from
+                    // this request's own abort handling.
+                    if (!capture.stalled) setCaptureState(capture.state);
                 }
-                if (drained && capture.stopRequested && !capture.stalled) {
+                if (capture.stopRequested && !capture.stalled) {
                     finishSession();
                 }
             })();
         }
 
-        async function cancelCaptureUpload() {
+        function cancelCaptureUpload() {
             const item = capture.uploadQueue[0];
             if (!item || !capture.uploadController) return;
+            // Abort the in-flight fragment request. The server leaves no
+            // durable media for an interrupted upload, and the blob stays
+            // queued (never marked uploaded) for an explicit retry.
             capture.uploadController.abort();
-            try {
-                const result = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/cancel-upload`);
-                if (result.chunk && result.chunk.state === 'FINALIZED') {
-                    capture.uploadQueue.shift();
-                    capture.finalizedIndexes.push(item.index);
-                    updateChunkInfo();
-                    maybeResume();
-                    return;
-                }
-                item.uploadCancelled = result.chunk?.state === 'UPLOAD_CANCELLED';
-                setCaptureState('stalled', 'UPLOAD_CANCELLED');
-            } catch (error) {
-                setCaptureState('error', 'Upload cancellation failed: ' + error.message);
-            }
+            item.uploadCancelled = true;
+            setStalled(true, 'UPLOAD_CANCELLED');
         }
 
         function setStalled(stalled, reason) {
@@ -2867,7 +2873,7 @@
             capture.queueFull = false;
             if (stalled) {
                 // Stop the current recorder so recording does not grow while
-                // uploads are stalled; its chunk is finalized into the queue.
+                // uploads are stalled; its fragment is queued (never uploaded).
                 if (capture.recorder && capture.recorder.state !== 'inactive') {
                     clearTimeout(capture.rotateTimer);
                     const rec = capture.recorder;
@@ -2883,17 +2889,13 @@
 
         function retryUpload() {
             if (!capture.stalled) return;
-            (async () => {
-                const item = capture.uploadQueue[0];
-                if (item && item.uploadCancelled) {
-                    const retry = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/retry-upload`);
-                    if (!retry.ok) throw new Error(retry.error || 'Could not retry cancelled upload');
-                    item.uploadCancelled = false;
-                }
-                setStalled(false);
-                beginUpload();
-                maybeResume();
-            })();
+            const item = capture.uploadQueue[0];
+            // Same fragment ID is retried; an identical replay is idempotent
+            // server-side, so a retry can never duplicate durable media.
+            if (item) item.uploadCancelled = false;
+            setStalled(false);
+            beginUpload();
+            maybeResume();
         }
 
         async function finishSession() {
@@ -2929,10 +2931,10 @@
                 const rec = capture.recorder;
                 capture.recorder = null;
                 // rec.stop() flushes the final short fragment through
-                // ondataavailable/onstop; onChunkStopped keeps it for W5.
+                // ondataavailable/onstop; onFragmentStopped queues it for W5.
                 rec.stop();
-            } else if (capture.recordingIndex !== null && capture.pendingParts.length) {
-                onChunkStopped();
+            } else if (capture.pendingParts.length) {
+                onFragmentStopped();
             } else {
                 beginUpload();
             }
