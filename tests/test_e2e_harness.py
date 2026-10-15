@@ -160,3 +160,30 @@ def test_browser_cleanup_does_not_replace_primary_failure():
             with ExitStack() as cleanup:
                 cleanup.callback(_SMOKE._close_safely, ClosedHandle())
                 raise ValueError("folders_visible")
+
+
+def test_report_is_mirrored_to_repo_root_for_gate_runner(tmp_path, monkeypatch):
+    # gate_runner.py reads ROOT/e2e_report.json for the failure signature;
+    # without the mirror a stale root report from an older run mislabels the
+    # current gate's failure.
+    root = tmp_path / "repo"
+    root.mkdir()
+    monkeypatch.setattr(e2e, "ROOT", root)
+    data_report = tmp_path / "fixture-root" / "e2e_report.json"
+
+    e2e._persist_report(data_report, {"status": "FAIL", "ok": False})
+
+    assert json.loads(data_report.read_text(encoding="utf-8"))["status"] == "FAIL"
+    mirrored = json.loads((root / "e2e_report.json").read_text(encoding="utf-8"))
+    assert mirrored["status"] == "FAIL"
+
+
+def test_report_mirror_is_skipped_when_report_path_is_repo_root(tmp_path, monkeypatch):
+    root = tmp_path / "repo"
+    root.mkdir()
+    monkeypatch.setattr(e2e, "ROOT", root)
+    report_path = root / "e2e_report.json"
+
+    e2e._persist_report(report_path, {"status": "PASS", "ok": True})
+
+    assert json.loads(report_path.read_text(encoding="utf-8"))["status"] == "PASS"
