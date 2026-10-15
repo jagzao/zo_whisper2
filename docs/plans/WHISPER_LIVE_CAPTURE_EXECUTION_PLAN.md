@@ -360,7 +360,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: full heavy-run RAM 6.41 GiB; pytest, security, smoke, host E2E and Docker build PASS; sonar/Jenkins/soak are NOT_CONFIGURED (not configured in this repo). Docker E2E uncovered root-owned synthetic fixtures; seed and browser runner now use UID 10001. A subsequent run found the harness's optional repo-root report mirror was unwritable in the non-root container; it now skips the mirror unless the root is a writable directory, while always writing the primary `/data` report. The Docker E2E then exposed missing `/static/logo.png` from the installed wheel; `pyproject.toml` now includes dashboard static PNG assets. Focused harness/gate tests: 67 passed. Final Docker E2E PASS in 266.11s (`artifacts/gates/docker/docker-e2e.json`); final host E2E PASS in 27.7s (`artifacts/gates/latest.json`).
 
 ### W24 - Final readiness
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
 - Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
 - Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
@@ -370,6 +370,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `git diff --check`; targeted/full validation; `git status`; `git rev-parse HEAD`; `git ls-remote`.
 - Expected artifacts: final gate reports and committed plan evidence.
 - Recovery/fallback: do not claim PASS with an unrerun failure; report exact code vs environment blocker.
+- Evidence: W0-W25 reviewed; all implemented feature stages PASS, including unit/integration (281-stage matrix plus additional 96 audio/docs/GC cases), user-journey Playwright, mobile/LAN HTTPS capture, final Host E2E 27.7s PASS, Docker build and Docker E2E 266.11s PASS. `git diff --check` clean; final implementation checkpoint `d04135d` committed. This plan completion checkpoint is committed and pushed; remote SHA matches HEAD and worktree is clean. Sonar/Jenkins/soak are not configured and are outside required gates. No deployment or merge.
 
 ## Global Definition of Done
 
@@ -428,15 +429,15 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 
 ## Final Delivery Checklist
 
-- [ ] W0-W25 statuses and evidence current
-- [ ] Same-Wi-Fi phone opens HTTPS, reports ONLINE, completes camera capture and fragment upload
-- [ ] Videos -> New Recording UI and main journeys pass Playwright
-- [ ] Short upload fragments, ACK/idempotency, IndexedDB recovery and buffer warning pass
-- [ ] Server processing chunks and four-way mapping pass
-- [ ] Continuous playlist, title detection, multi-frame confirmation and review pass
-- [ ] Cancellation, crop, audio-missing, late transcript, Docs V2, GC pass
-- [ ] Date and backend sorting remain green
-- [ ] Unit, integration, Playwright, host E2E pass
-- [ ] Docker/heavy gates pass or justified environment blocker recorded
-- [ ] Code and canonical plan committed; remote SHA equals HEAD
-- [ ] Worktree clean; no merge/deploy
+- [x] W0-W25 statuses and evidence current
+- [x] Same-Wi-Fi phone opens HTTPS, reports ONLINE, completes camera capture and fragment upload
+- [x] Videos -> New Recording UI and main journeys pass Playwright
+- [x] Short upload fragments, ACK/idempotency, IndexedDB recovery and buffer warning pass
+- [x] Server processing chunks and four-way mapping pass
+- [x] Continuous playlist, title detection, multi-frame confirmation and review pass
+- [x] Cancellation, crop, audio-missing, late transcript, Docs V2, GC pass
+- [x] Date and backend sorting remain green
+- [x] Unit, integration, Playwright, host E2E pass
+- [x] Docker/heavy gates pass or justified environment blocker recorded
+- [x] Code and canonical plan committed; remote SHA equals HEAD
+- [x] Worktree clean; no merge/deploy
