@@ -89,6 +89,10 @@ except ImportError:
 RUN_ID = configure_logging("simple_scan.log")
 logger = logging.getLogger(__name__)
 
+
+class CaptureProcessingCancelled(Exception):
+    pass
+
 TUTORIAL_FEATURES_AVAILABLE = False
 try:
     from transcript_pipeline.documentation.engine import generate_documentation
@@ -336,6 +340,7 @@ class SimpleScanProcessor:
             frame_info = self._ensure_keyframes(
                 audio_path, crop=capture.crop if capture is not None else None
             )
+            self._assert_capture_not_cancelled(capture)
 
             # Detect language: prefix > lang.txt > projects.json > auto-detect
             detected_lang = self._language_detector.detect(audio_path.name, audio_path.parent)
@@ -494,6 +499,7 @@ class SimpleScanProcessor:
             audio_path.name,
         )
         frame_info = self._ensure_keyframes(audio_path, crop=capture.crop)
+        self._assert_capture_not_cancelled(capture)
         result = {
             "text": "",
             "segments": [],
@@ -799,6 +805,7 @@ class SimpleScanProcessor:
             frame_info = result.get("frame_info")
             capture = result.get("capture") or capture
             if frame_info:
+                self._assert_capture_not_cancelled(capture)
                 self._integrate_transcription_with_frames(result, frame_info)
                 if capture is not None:
                     self._integrate_capture_context(frame_info, capture)
@@ -806,16 +813,25 @@ class SimpleScanProcessor:
             self.save_transcription(audio_path, result)
 
             if frame_info:
+                self._assert_capture_not_cancelled(capture)
                 self._generate_documentation_bundle(audio_path, frame_info, result.get("project"))
 
             if capture is not None:
-                self._set_capture_processed(capture, transcript_available=bool(result.get("text")) or capture.transcript is not None)
+                completed = self._set_capture_processed(
+                    capture,
+                    transcript_available=bool(result.get("text")) or capture.transcript is not None,
+                )
+                if not completed:
+                    return False
 
             self.tracker.mark_as_processed(audio_path, "completed")
 
             self.stats["processed"] += 1
             return True
 
+        except CaptureProcessingCancelled:
+            self._set_capture_cancelled(capture)
+            return False
         except Exception as e:
             if capture is not None and capture_started:
                 self._set_capture_failed(capture)
@@ -829,6 +845,13 @@ class SimpleScanProcessor:
         from transcript_pipeline.live_capture.service import CaptureService
 
         return CaptureService(self.videos_base), (capture.session_id, capture.chunk_index)
+
+    def _assert_capture_not_cancelled(self, capture) -> None:
+        service, key = self._capture_service_and_chunk(capture)
+        if service is not None:
+            state = service.store.load_session(key[0]).get_chunk(key[1]).state
+            if state is ChunkState.CANCEL_REQUESTED:
+                raise CaptureProcessingCancelled("Live Capture processing cancellation requested")
 
     def _set_capture_processing(self, capture) -> bool:
         try:
@@ -844,17 +867,27 @@ class SimpleScanProcessor:
             logger.warning("[CAPTURE] Could not persist processing state: %s", exc)
         return False
 
-    def _set_capture_processed(self, capture, *, transcript_available: bool) -> None:
+    def _set_capture_processed(self, capture, *, transcript_available: bool) -> bool:
+        try:
+            service, key = self._capture_service_and_chunk(capture)
+            if service is None:
+                return True
+            result = service.complete_processing(*key, transcript_available=transcript_available)
+            return result.state is ChunkState.PROCESSED
+        except Exception as exc:
+            logger.warning("[CAPTURE] Could not persist processed state: %s", exc)
+            return True
+
+    def _set_capture_cancelled(self, capture) -> None:
         try:
             service, key = self._capture_service_and_chunk(capture)
             if service is None:
                 return
             session = service.store.load_session(key[0])
-            chunk = session.get_chunk(key[1])
-            if chunk.state is ChunkState.PROCESSING:
-                service.mark_processed(*key, transcript_available=transcript_available)
+            if session.get_chunk(key[1]).state is ChunkState.CANCEL_REQUESTED:
+                service.mark_cancelled(*key)
         except Exception as exc:
-            logger.warning("[CAPTURE] Could not persist processed state: %s", exc)
+            logger.warning("[CAPTURE] Could not persist cancelled state: %s", exc)
 
     def _set_capture_failed(self, capture) -> None:
         try:

@@ -1468,6 +1468,33 @@ def api_capture_retry_upload(session_id: str, index: int) -> Any:
     return jsonify({"ok": True, "chunk": chunk.to_manifest()})
 
 
+@app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/cancel-processing", methods=["POST"])
+def api_capture_cancel_processing(session_id: str, index: int) -> Any:
+    chunk = _get_capture_service().cancel_processing(session_id, index)
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
+
+
+@app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/retry-processing", methods=["POST"])
+def api_capture_retry_processing(session_id: str, index: int) -> Any:
+    service = _get_capture_service()
+    current = service.store.load_session(session_id).get_chunk(index)
+    chunk = (
+        service.retry_cancelled_processing(session_id, index)
+        if current.state is capture_models.ChunkState.CANCELLED
+        else current
+    )
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
+
+
+@app.route("/api/capture/sessions/<session_id>/chunks/<int:index>", methods=["DELETE"])
+def api_capture_delete_cancelled_chunk(session_id: str, index: int) -> Any:
+    payload = request.get_json(silent=True) or {}
+    chunk = _get_capture_service().delete_cancelled_chunk(
+        session_id, index, confirmed=payload.get("confirm") is True
+    )
+    return jsonify({"ok": True, "chunk": chunk.to_manifest()})
+
+
 @app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/detect-audio", methods=["POST"])
 def api_capture_detect_chunk_audio(session_id: str, index: int) -> Any:
     """W7: server-side ffprobe detection of a finalized chunk's audio stream.

@@ -437,3 +437,35 @@ def test_regenerate_capture_documentation_uses_late_transcript_once_and_is_idemp
     items_again = _read_evidence_items(frames_dir)
     assert len(items_again) == len(items)
     assert len([item for item in items_again if item["untimed"]]) == 1
+
+
+def test_accepted_processing_cancel_stops_before_documentation(tmp_path):
+    service = _service(tmp_path)
+    session = _finalized_chunk(service, audio=A.MISSING, title="cancel during processing")
+    service.mark_processing(session.session_id, 0)
+    chunk_path = service.store.chunk_media_path(session.session_id, 0, ".webm")
+    context = resolve_capture_context(chunk_path, videos_root=tmp_path / "Videos")
+    events = []
+    instance = _bare_processor(tmp_path)
+    instance.tracker = _Tracker(events)
+    instance.stats = {"already_processed": 0, "tutorials_processed": 0, "errors": 0, "processed": 0}
+
+    def request_cancel_during_transcription(_path):
+        service.cancel_processing(session.session_id, 0)
+        return {
+            "text": "",
+            "segments": [],
+            "language": "unknown",
+            "duration": 1.0,
+            "processing_time": 0.0,
+            "project": None,
+            "frame_info": {"frames_dir": str(tmp_path / "not-generated")},
+            "capture": context,
+        }
+
+    instance.transcribe_file = request_cancel_during_transcription
+    instance._integrate_transcription_with_frames = lambda *args: pytest.fail("cancelled work advanced to docs")
+
+    assert instance.process_file(chunk_path) is False
+    assert events == []
+    assert service.get_session(session.session_id).get_chunk(0).state is models.ChunkState.CANCELLED

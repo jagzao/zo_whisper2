@@ -325,6 +325,63 @@ class CaptureService:
     def mark_failed(self, session_id: str, index: int) -> models.Chunk:
         return self._transition_chunk(session_id, index, models.ChunkState.FAILED)
 
+    def cancel_processing(self, session_id: str, index: int) -> models.Chunk:
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            chunk = session.get_chunk(index)
+            if chunk.state in (models.ChunkState.CANCELLED, models.ChunkState.CANCEL_REQUESTED,
+                               models.ChunkState.PROCESSED, models.ChunkState.UPLOAD_CANCELLED):
+                return chunk
+            target = (
+                models.ChunkState.CANCELLED
+                if chunk.state is models.ChunkState.FINALIZED
+                else models.ChunkState.CANCEL_REQUESTED
+            )
+            cancelled = chunk.transition_to(target)
+            self.store.save_session(session.with_chunk(cancelled))
+            return cancelled
+
+    def retry_cancelled_processing(self, session_id: str, index: int) -> models.Chunk:
+        return self._transition_chunk(session_id, index, models.ChunkState.FINALIZED)
+
+    def mark_cancelled(self, session_id: str, index: int) -> models.Chunk:
+        return self._transition_chunk(session_id, index, models.ChunkState.CANCELLED)
+
+    def delete_cancelled_chunk(self, session_id: str, index: int, *, confirmed: bool) -> models.Chunk:
+        if not confirmed:
+            raise ValidationError("explicit confirmation is required")
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            chunk = session.get_chunk(index)
+            if chunk.state is not models.ChunkState.CANCELLED:
+                raise InvalidTransitionError("only CANCELLED media can be deleted")
+            if chunk.media_extension:
+                self.store.chunk_media_path(session_id, index, chunk.media_extension).unlink(missing_ok=True)
+            self.store.save_session(replace(session, chunks=tuple(c for c in session.chunks if c.index != index)))
+            return chunk
+
+    def complete_processing(
+        self, session_id: str, index: int, *, transcript_available: bool
+    ) -> models.Chunk:
+        """Atomically honor cancellation before committing successful completion."""
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            chunk = session.get_chunk(index)
+            if chunk.state is models.ChunkState.CANCEL_REQUESTED:
+                updated = chunk.transition_to(models.ChunkState.CANCELLED)
+            elif chunk.state is models.ChunkState.PROCESSING:
+                available = transcript_available or chunk.transcript_available
+                updated = chunk.transition_to(models.ChunkState.PROCESSED)
+                updated = replace(
+                    updated,
+                    transcript_available=available,
+                    transcript_required=not available and chunk.audio_availability is models.AudioAvailability.MISSING,
+                )
+            else:
+                return chunk
+            self.store.save_session(session.with_chunk(updated))
+            return updated
+
     # ── audio detection (W7) ─────────────────────────────────────────
 
     def detect_chunk_audio(self, session_id: str, index: int) -> models.Chunk:

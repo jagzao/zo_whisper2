@@ -143,6 +143,32 @@ def test_cancel_upload_is_idempotent_and_retryable(client):
     assert final.json["chunk"]["state"] == "FINALIZED"
 
 
+def test_cancel_processing_queued_twice_and_retry(client):
+    session = _create_session(client, "queued-cancel").json["session"]
+    session_id = session["sessionId"]
+    _start_chunk(client, session_id)
+    _finalize_chunk(client, session_id, 0, b"synthetic")
+    url = f"/api/capture/sessions/{session_id}/chunks/0/cancel-processing"
+    first = client.post(url, headers=AUTH_HEADERS)
+    second = client.post(url, headers=AUTH_HEADERS)
+    assert first.json["chunk"]["state"] == "CANCELLED"
+    assert second.json["chunk"]["state"] == "CANCELLED"
+    retry = client.post(f"/api/capture/sessions/{session_id}/chunks/0/retry-processing", headers=AUTH_HEADERS)
+    assert retry.json["chunk"]["state"] == "FINALIZED"
+
+
+def test_cancel_processing_active_returns_cancel_requested(client):
+    session = _create_session(client, "active-cancel").json["session"]
+    session_id = session["sessionId"]
+    _start_chunk(client, session_id)
+    _finalize_chunk(client, session_id, 0, b"synthetic")
+    dashboard_app._get_capture_service().mark_processing(session_id, 0)
+    response = client.post(
+        f"/api/capture/sessions/{session_id}/chunks/0/cancel-processing", headers=AUTH_HEADERS
+    )
+    assert response.json["chunk"]["state"] == "CANCEL_REQUESTED"
+
+
 def test_create_session_rejects_invalid_duration(client):
     resp = _create_session(client, "X", chunk_duration_sec="not-a-number")
     assert resp.status_code == 400

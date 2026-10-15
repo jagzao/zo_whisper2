@@ -902,6 +902,7 @@
                 </label>
             </div>
             <div id="captureNotice" class="ai-package-summary hidden"></div>
+            <div id="captureJobs" style="margin:0.5rem 0;"></div>
             <div id="captureAudioWarning" class="ai-package-summary hidden" style="color:var(--danger);"></div>
             <div id="captureTranscriptSupply" class="hidden" style="margin:0.5rem 0;">
                 <label for="captureTranscriptText" style="font-size:0.85rem; color:var(--muted);">Supply transcript later (loose timing — no per-second sync):</label>
@@ -1981,6 +1982,7 @@
     audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
     transcriptSessions: [],
             uploadController: null,
+            jobsPoller: null,
         };
 
         const CAPTURE_MAX_PENDING_UPLOADS = 4;
@@ -2139,10 +2141,13 @@
             }
             setCaptureState('idle');
             loadCaptureSessions();
+            clearInterval(capture.jobsPoller);
+            capture.jobsPoller = setInterval(loadCaptureSessions, 2000);
         }
 
         function closeCaptureModal() {
             capture.closed = true;
+            clearInterval(capture.jobsPoller);
             emergencyStopCapture();
             setCaptureState('idle');
             document.getElementById('captureModal').classList.add('hidden');
@@ -2153,6 +2158,7 @@
             let res;
             try { res = await api('/api/capture/sessions'); }
             catch (e) { notice.classList.add('hidden'); return; }
+            renderCaptureJobs(res.sessions || []);
             const transcriptSelect = document.getElementById('captureTranscriptSession');
             if (transcriptSelect) {
                 const eligible = (res.sessions || []).filter(s => s.transcriptRequired && s.status !== 'ACTIVE');
@@ -2176,6 +2182,53 @@
             } else {
                 notice.classList.add('hidden');
             }
+        }
+
+        function renderCaptureJobs(sessions) {
+            const target = document.getElementById('captureJobs');
+            if (!target) return;
+            const rows = [];
+            for (const session of sessions) for (const chunk of (session.chunks || [])) {
+                const state = chunk.state;
+                let action = '';
+                if (state === 'RECORDING') action = `<button onclick="cancelCaptureChunkUpload('${session.sessionId}',${chunk.index})">Cancelar subida</button>`;
+                else if (state === 'FINALIZED' || state === 'PROCESSING') action = `<button onclick="cancelCaptureProcessing('${session.sessionId}',${chunk.index})">Cancelar procesamiento</button>`;
+                else if (state === 'CANCEL_REQUESTED') action = '<button disabled>Cancelando</button>';
+                else if (state === 'CANCELLED') action = `<button onclick="retryCaptureProcessing('${session.sessionId}',${chunk.index})">Procesar de nuevo</button> <button class="danger" onclick="deleteCancelledCapture('${session.sessionId}',${chunk.index})">Eliminar</button>`;
+                else if (state === 'FAILED') action = `<button onclick="retryCaptureProcessing('${session.sessionId}',${chunk.index})">Reintentar</button>`;
+                rows.push(`<div class="row" style="justify-content:space-between;"><span>${escapeHtml(session.title)} · ${escapeHtml(chunk.chunkId)} · ${escapeHtml(state)}</span>${action}</div>`);
+            }
+            target.innerHTML = rows.join('');
+        }
+
+        async function cancelCaptureChunkUpload(sessionId, index) {
+            if (capture.sessionId === sessionId && capture.uploadController && capture.uploadQueue[0]?.index === index) {
+                await cancelCaptureUpload();
+                return;
+            }
+            await captureFetch(`/api/capture/sessions/${sessionId}/chunks/${index}/cancel-upload`);
+            await loadCaptureSessions();
+        }
+
+        async function cancelCaptureProcessing(sessionId, index) {
+            const res = await captureFetch(`/api/capture/sessions/${sessionId}/chunks/${index}/cancel-processing`);
+            if (res.chunk?.state === 'CANCEL_REQUESTED') showToast('Cancelando');
+            await loadCaptureSessions();
+        }
+
+        async function retryCaptureProcessing(sessionId, index) {
+            await captureFetch(`/api/capture/sessions/${sessionId}/chunks/${index}/retry-processing`);
+            await captureFetch('/api/run/transcribe');
+            await loadCaptureSessions();
+        }
+
+        async function deleteCancelledCapture(sessionId, index) {
+            if (!window.confirm('Eliminar este video cancelado permanentemente?')) return;
+            await fetch(`/api/capture/sessions/${sessionId}/chunks/${index}`, {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                body: JSON.stringify({ confirm: true }),
+            });
+            await loadCaptureSessions();
         }
 
         function selectTranscriptSession() {

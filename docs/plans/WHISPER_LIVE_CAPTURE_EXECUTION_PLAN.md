@@ -202,7 +202,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 
 
 ### W12 ? Processing job cancellation
-- Status: PENDING
+- Status: PASS
 - Objective: persist cancellable processing jobs and stop work safely between long pipeline stages.
 - Dependencies: W3, W9 PASS.
 - Implementation tasks: PROCESSING ? CANCEL_REQUESTED ? CANCELLED state machine; idempotent API; optimistic state validation preventing completion after accepted cancellation; cancellation checks between extraction, transcription, visual analysis, docs, embeddings; clean only temporary/partial artifacts; retain original media; retry cancelled work.
@@ -212,6 +212,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Validation commands: targeted unit/API/integration tests with controllable stage barriers.
 - Expected artifacts: synthetic job cancellation traces; no original media deletion.
 - Recovery/fallback: cancellation is cooperative at stage boundaries; if a dependency is non-interruptible, finish that call then stop before next stage and document the bounded delay.
+
 
 ### W13 ? Cancellation controls and browser regression
 - Status: PENDING
@@ -332,7 +333,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
-- 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PENDING.
+- 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PASS; browser controls W13 PENDING.
 - 2026-10-15: W10 PASS (commit `46cd486`). Advisory cleanup API/UI; requires old + processed + documented; no deletion; 37 tests passed. W11 PENDING.
 - 2026-10-15: W9 PASS (commit `5f04593`). Existing processor routes finalized chunks through crop-aware extraction and Docs V2; no-audio avoids Whisper; late transcript is one untimed `session_transcript.loose` evidence item. Processing state is persisted, and duplicate timed/loose evidence is avoided. Targeted regression: 82 passed. W10 PASS; W11?W13 cancellation stages added by user scope.
  - 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.
