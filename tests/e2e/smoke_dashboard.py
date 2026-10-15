@@ -368,6 +368,8 @@ def main() -> int:
         screenshot(page, "edit")
         page.locator("#editModal .close-x").click()
         page.wait_for_selector("#editModal.hidden", state="hidden", timeout=TIMEOUT_MS)
+        if project_name:
+            page.locator("#projectFilter").select_option("")
 
         # F5 â€” Edit File: manual project override (auto â†’ manual â†’ persisted
         # â†’ auto). Uses a disposable file named with the first project's
@@ -452,16 +454,15 @@ def main() -> int:
                     f"before={state_before} after={state_after}",
                 )
 
-                # Reload â†’ the manual assignment must survive (disk-persisted).
-                # wait_until="domcontentloaded": the page has no external
-                # blocking scripts, so DOM-ready is enough for #fileFilter to
-                # exist; waiting for the full "load" event hung for 30s once
-                # when a pooled keep-alive connection reset (net::
-                # ERR_CONNECTION_RESET) mid-reload on loopback — the document
-                # itself had been served and Chromium retried it, but the
-                # load event never fired and the whole suite died here. The
-                # persistence assertion below is unchanged.
-                page.reload(wait_until="domcontentloaded")
+                # A fresh page in the same context preserves browser state but
+                # drops polling/fetch work bound to the edited page.
+                _close_safely(page)
+                page = context.new_page()
+                cleanup.callback(_close_safely, page)
+                page.on("dialog", _auto_accept_dialog)
+                page.on("console", _capture_console)
+                page.on("pageerror", _capture_page_error)
+                page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
                 page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
                 page.locator("#fileFilter").fill(stem)
                 page.wait_for_timeout(400)
@@ -664,10 +665,18 @@ def main() -> int:
             page.set_input_files("#fileInput", str(upload_path))
             try:
                 page.wait_for_function(
-                    "document.getElementById('uploadQueue').innerText.trim() !== ''", timeout=TIMEOUT_MS
+                    """() => {
+                        const text = document.getElementById('uploadQueue').innerText;
+                        return text.includes('OK e2e_smoke_upload.mp3') || text.includes('Error e2e_smoke_upload.mp3');
+                    }""",
+                    timeout=TIMEOUT_MS,
                 )
                 queue_text = page.locator("#uploadQueue").inner_text(timeout=5000)
-                all_ok &= check("upload_appears_as_job", "e2e_smoke_upload" in queue_text, queue_text[:200])
+                all_ok &= check(
+                    "upload_appears_as_job",
+                    "OK e2e_smoke_upload.mp3" in queue_text,
+                    queue_text[:200],
+                )
             except Exception as e:
                 all_ok &= check("upload_appears_as_job", False, f"did not resolve: {e}")
         finally:
