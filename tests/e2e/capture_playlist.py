@@ -116,6 +116,17 @@ def main() -> int:
             page.locator("#captureStopBtn").click()
             page.wait_for_function("document.getElementById('captureState').textContent === 'Saved'")
             all_ok &= check("playlist_stop_works", True)
+            page.locator("#captureModal .close-x").click()
+            api_logical = page.evaluate("fetch('/api/files').then(r => r.json()).then(d => d.files.filter(f => f.logical_video))")
+            all_ok &= check("logical_videos_returned_by_files_api", len(api_logical) >= 2, json.dumps(api_logical))
+            page.locator("#fileFilter").fill("AMS KAP Compliance Session 1")
+            page.evaluate("async () => { await loadFiles(); applyFileFilters(); }")
+            page.wait_for_function("document.getElementById('filesList').innerText.includes('AMS KAP Compliance Session 1')")
+            video_rows = page.locator("#filesList tbody tr").filter(has_text="AMS KAP Compliance Session")
+            all_ok &= check("logical_videos_appear_in_videos_table", video_rows.count() >= 2)
+            session_one_row = page.locator("#filesList tbody tr").filter(has_text="Session 1").first
+            all_ok &= check("logical_video_reuses_documentation_action", session_one_row.get_by_role("button", name="Generate Documentation").count() == 1)
+            all_ok &= check("logical_video_cannot_delete_shared_physical_chunk", session_one_row.get_by_role("button", name="Delete").count() == 0)
             all_ok &= check("no_browser_errors", not errors, "; ".join(errors))
         finally:
             page.close()

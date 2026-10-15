@@ -8,7 +8,7 @@
     {
       "name": "capture_session_started",
       "status": "PASS",
-      "detail": "sess-c11e69e221e5"
+      "detail": "sess-198c72f01e3d"
     },
     {
       "name": "session_uses_accelerated_chunk_duration",
@@ -18,12 +18,12 @@
     {
       "name": "chunk_finalized_while_recording",
       "status": "PASS",
-      "detail": "auto={'chunkExtension': '.webm', 'chunkIndex': 0, 'createdAt': '2026-10-15T22:36:36.700798+00:00', 'durationMs': 4038, 'finalizedAt': '2026-10-15T22:36:37.252912+00:00', 'fragmentIds': ['fragment-000001', 'fragment-000002', 'fragment-000003', 'fragment-000004'], 'lastError': None, 'recordedAt': '2026-10-15T22:36:32.631Z', 'startOffsetMs': 0, 'state': 'FINALIZED'} state=recording"
+      "detail": "auto={'chunkExtension': '.webm', 'chunkIndex': 0, 'createdAt': '2026-10-15T22:47:32.490423+00:00', 'durationMs': 4032, 'finalizedAt': '2026-10-15T22:47:33.170873+00:00', 'fragmentIds': ['fragment-000001', 'fragment-000002', 'fragment-000003', 'fragment-000004'], 'lastError': None, 'recordedAt': '2026-10-15T22:47:28.426Z', 'startOffsetMs': 0, 'state': 'FINALIZED'} state=recording"
     },
     {
       "name": "auto_chunk_index_zero_has_fragments",
       "status": "PASS",
-      "detail": "{\"chunkIndex\": 0, \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"durationMs\": 4038}"
+      "detail": "{\"chunkIndex\": 0, \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"durationMs\": 4032}"
     },
     {
       "name": "capture_saved_state",
@@ -33,7 +33,7 @@
     {
       "name": "stop_calls_drain_endpoint",
       "status": "PASS",
-      "detail": "drain=['http://127.0.0.1:5117/api/capture/sessions/sess-c11e69e221e5/drain']"
+      "detail": "drain=['http://127.0.0.1:5117/api/capture/sessions/sess-198c72f01e3d/drain']"
     },
     {
       "name": "no_legacy_chunk_finalize_from_browser",
@@ -43,7 +43,7 @@
     {
       "name": "processing_chunks_nonempty",
       "status": "PASS",
-      "detail": "[{\"chunkExtension\": \".webm\", \"chunkIndex\": 0, \"createdAt\": \"2026-10-15T22:36:36.700798+00:00\", \"durationMs\": 4038, \"finalizedAt\": \"2026-10-15T22:36:37.252912+00:00\", \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"lastError\": null, \"recordedAt\": \"2026-10-15T22:36:32.631Z\", \"startOffsetMs\": 0, \"state\": \"FINALIZED\"}, {\"chunkExtension\": \".webm\", \"chunkIndex\": 1, \"createdAt\": \"2026-10-15T22:36:38.865572+00:00\", \"durationMs\": 2141, \"finalizedAt\": \"2026-10-15T22:36:39.429326+00:00\", \"fragmentIds\": [\"fragment-000005\", \"fragment-000006\", \"fragment-000007\"], \"lastError\": null, \"recordedAt\": \"2026-10-15T22:36:36.682Z\", \"startOffsetMs\": 4038, \"state\": \"FINALIZED\"}]"
+      "detail": "[{\"chunkExtension\": \".webm\", \"chunkIndex\": 0, \"createdAt\": \"2026-10-15T22:47:32.490423+00:00\", \"durationMs\": 4032, \"finalizedAt\": \"2026-10-15T22:47:33.170873+00:00\", \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"lastError\": null, \"recordedAt\": \"2026-10-15T22:47:28.426Z\", \"startOffsetMs\": 0, \"state\": \"FINALIZED\"}, {\"chunkExtension\": \".webm\", \"chunkIndex\": 1, \"createdAt\": \"2026-10-15T22:47:34.695337+00:00\", \"durationMs\": 2159, \"finalizedAt\": \"2026-10-15T22:47:35.368862+00:00\", \"fragmentIds\": [\"fragment-000005\", \"fragment-000006\", \"fragment-000007\"], \"lastError\": null, \"recordedAt\": \"2026-10-15T22:47:32.469Z\", \"startOffsetMs\": 4032, \"state\": \"FINALIZED\"}]"
     },
     {
       "name": "all_processing_chunks_finalized",
@@ -73,7 +73,7 @@
     {
       "name": "finalized_chunks_have_media",
       "status": "PASS",
-      "detail": "[{\"index\": 0, \"state\": \"FINALIZED\", \"mediaSizeBytes\": 156384}, {\"index\": 1, \"state\": \"FINALIZED\", \"mediaSizeBytes\": 88045}]"
+      "detail": "[{\"index\": 0, \"state\": \"FINALIZED\", \"mediaSizeBytes\": 156580}, {\"index\": 1, \"state\": \"FINALIZED\", \"mediaSizeBytes\": 85940}]"
     },
     {
       "name": "fragments_use_distinct_endpoint",

@@ -24,7 +24,7 @@ import subprocess
 import sys
 import tempfile
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlparse
@@ -837,8 +837,7 @@ def api_files() -> Any:
             transcription = _resolve_transcription(path)
             media_id = _to_media_id(root, path)
             project, project_source = _effective_project(media_id, path.name)
-            media_files.append(
-                {
+            file_row = {
                     "media_id": media_id,
                     "relative": str(path.relative_to(ROOT)),
                     "name": path.name,
@@ -852,7 +851,41 @@ def api_files() -> Any:
                     "transcription": transcription,
                     "documentation": _resolve_documentation(path, root),
                 }
-            )
+            media_files.append(file_row)
+            parts = path.parts
+            if root is MediaRoot.VIDEOS and "live_capture" in parts:
+                live_index = parts.index("live_capture")
+                if live_index + 3 < len(parts) and parts[live_index + 2] == "chunks":
+                    session_id = parts[live_index + 1]
+                    chunk_id = path.stem
+                    try:
+                        playlist = _get_playlist_service().list(session_id)
+                        for logical in playlist.get("logicalVideos", []):
+                            if logical.get("status") != "CONFIRMED" or chunk_id not in logical.get("processingChunkIds", []):
+                                continue
+                            logical_row = dict(file_row)
+                            logical_row["logical_video"] = {
+                                key: logical.get(key) for key in (
+                                    "id", "title", "category", "sessionNumber", "recordedAt", "confidence",
+                                    "startOffsetMs", "endOffsetMs", "processingChunkIds",
+                                )
+                            }
+                            logical_row["logical_session_id"] = session_id
+                            logical_row["name"] = f"{logical.get('title') or path.stem}{path.suffix}"
+                            logical_row["logical_read_only"] = True
+                            displayed_at = logical.get("recordedAt")
+                            if displayed_at:
+                                try:
+                                    parsed = datetime.fromisoformat(str(displayed_at).replace(" UTC", "+00:00"))
+                                    if parsed.tzinfo is None:
+                                        parsed = parsed.replace(tzinfo=timezone.utc)
+                                    logical_row["date_epoch"] = parsed.timestamp()
+                                    logical_row["date"] = parsed.astimezone().isoformat(timespec="seconds")
+                                except ValueError:
+                                    pass
+                            media_files.append(logical_row)
+                    except (ValueError, OSError, capture_errors.ValidationError):
+                        logger.exception("Could not list logical videos for %s", session_id)
 
     sort_by = request.args.get("sort_by", "date").lower()
     direction = request.args.get("order", "desc").lower()

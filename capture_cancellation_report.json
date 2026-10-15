@@ -8,7 +8,7 @@
     {
       "name": "upload_aborted_no_durable_fragment",
       "status": "PASS",
-      "detail": "fragments=0 pending=1 stalled=True"
+      "detail": "fragments=0 pending=2 stalled=True"
     },
     {
       "name": "upload_retry_available",
@@ -23,7 +23,7 @@
     {
       "name": "cancelled_retry_and_delete_visible",
       "status": "PASS",
-      "detail": "cancel queued synthetic c00d2b09 \u00b7 chunk-000000 \u00b7 CANCELLED\nProcesar de nuevo\nEliminar :: ['Procesar de nuevo', 'Eliminar']"
+      "detail": "cancel queued synthetic bfe2eb66 \u00b7 chunk-000000 \u00b7 CANCELLED\nProcesar de nuevo\nEliminar :: ['Procesar de nuevo', 'Eliminar']"
     },
     {
       "name": "queued_job_cancelled",

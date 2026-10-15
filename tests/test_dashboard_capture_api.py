@@ -148,6 +148,25 @@ def test_playlist_title_samples_confirm_boundary_and_persist_review_actions(clie
     assert confirmed["logicalVideos"][2]["manuallyReviewed"] is True
 
 
+def test_confirmed_logical_video_is_listed_as_read_only_videos_entry(client):
+    session_id = _create_session(client, "Playlist listing", capture_mode="playlist").get_json()["session"]["sessionId"]
+    service = dashboard_app._get_capture_service()
+    service.start_chunk(session_id)
+    service.finalize_chunk(session_id, 0, b"synthetic video chunk")
+    playlist = dashboard_app._get_playlist_service()
+    title = "AMS KAP\nCompliance\nSession 8\n2026-08-05 12:29 UTC"
+    playlist.observe(session_id, title, 0.98, 1000, 1)
+    playlist.observe(session_id, title, 0.98, 5000, 1)
+
+    response = client.get("/api/files")
+
+    assert response.status_code == 200
+    rows = response.get_json()["files"]
+    logical = next(row for row in rows if row.get("logical_video", {}).get("title") == "AMS KAP Compliance Session 8")
+    assert logical["logical_read_only"] is True
+    assert logical["media_id"]
+
+
 def test_create_session_requires_dashboard_token(client):
     resp = client.post(
         "/api/capture/sessions",

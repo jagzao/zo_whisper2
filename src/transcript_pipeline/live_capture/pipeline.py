@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -27,6 +28,7 @@ class CaptureContext:
     transcript: models.Transcript | None
     audio_availability: models.AudioAvailability | None
     source: str = "live_capture_manifest"
+    logical_videos: tuple[dict, ...] = ()
 
     @property
     def audio_missing(self) -> bool:
@@ -54,6 +56,7 @@ class CaptureContext:
             "crop": self.crop.to_manifest() if self.crop else None,
             "audioAvailability": self.audio_availability.value if self.audio_availability else None,
             "transcriptAlignment": self.transcript.alignment if self.transcript else None,
+            "logicalVideos": [dict(item) for item in self.logical_videos],
         }
 
 
@@ -96,12 +99,38 @@ def resolve_capture_context(media_path: Path, *, videos_root: Path | None = None
         chunk = session.get_chunk(chunk_index)
         if chunk.state in (models.ChunkState.RECORDING, models.ChunkState.FAILED):
             return None
+        playlist_path = store.session_dir(session_id) / "playlist.json"
+        logical_videos = ()
+        if playlist_path.is_file():
+            playlist = json.loads(playlist_path.read_text(encoding="utf-8"))
+            chunk_id = models.chunk_id(chunk_index)
+            logical_videos = tuple(
+                {key: value for key, value in video.items() if key in {
+                    "id", "title", "category", "sessionNumber", "recordedAt", "confidence",
+                    "status", "startOffsetMs", "endOffsetMs", "processingChunkIds",
+                }}
+                for video in playlist.get("logicalVideos", [])
+                if video.get("status") == "CONFIRMED"
+                and chunk_id in _logical_processing_chunk_ids(video, playlist, session.chunk_duration_sec)
+            )
         return CaptureContext(
             session_id=session_id,
             chunk_index=chunk_index,
             crop=session.crop,
             transcript=session.transcript,
             audio_availability=chunk.audio_availability,
+            logical_videos=logical_videos,
         )
     except Exception:
         return None
+
+
+def _logical_processing_chunk_ids(video: dict, playlist: dict, chunk_duration_sec: int) -> list[str]:
+    duration_ms = max(1, int(chunk_duration_sec)) * 1000
+    start = max(0, int(video.get("startOffsetMs", 0)))
+    end = video.get("endOffsetMs")
+    if end is None:
+        end = playlist.get("currentOffsetMs", start)
+    first = start // duration_ms
+    last = max(first, max(0, int(end) - 1) // duration_ms)
+    return [models.chunk_id(index) for index in range(first, last + 1)]

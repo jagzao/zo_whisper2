@@ -282,7 +282,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: synthetic late transcript associated to the capture session with `alignment=loose`, warning cleared, and provenance persisted; dashboard Playwright passed; audio/transcript/docs focused tests included in 96 passes.
 
 ### W18 - Documentation pipeline integration
-- Status: PENDING
+- Status: PASS
 - Objective: route confirmed logical videos through existing Whisper processing and Documentation V2.
 - Dependencies: W6, W14, W15, W16, W17 PASS.
 - Implementation tasks: present logical video as normal media with recorded_at; reuse processor, crop, transcript/audio evidence and idempotent docs generation.
@@ -292,9 +292,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: processor/docs tests and Playwright normal-video flow.
 - Expected artifacts: generated docs from synthetic source only.
 - Recovery/fallback: persist retryable pipeline status and source mapping; keep captured media.
+- Evidence: logical videos are exposed as read-only normal Videos entries backed by their mapped processed chunks; existing Generate Documentation action routes the chunk through Whisper. The existing media processor's capture context now carries confirmed logical title/date/confidence/ranges into Docs V2 provenance. Synthetic integration tests passed; Playlist UI checked both rows, documentation action and no destructive shared-chunk action.
 
 ### W19 - GC candidates
-- Status: PENDING
+- Status: PASS
 - Objective: retain safe, advisory media lifecycle suggestions for physical and derived media.
 - Dependencies: W14, W18 PASS.
 - Implementation tasks: identify old+processed+documented+unused candidates; account for logical mapping references; explicit confirmed deletion only.
@@ -304,9 +305,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: unit/API tests and Playwright suggestion check.
 - Expected artifacts: synthetic candidate report.
 - Recovery/fallback: false negatives are safe; never broaden deletion automatically.
+- Evidence: candidate logic tests cover old+processed+documented eligibility, missing-doc exclusion, references and explicit confirmation; synthetic Playwright verified the cleanup review control, surfaced safe empty-state, no automatic-delete notice/action, and no browser errors.
 
 ### W20 - Unit and integration matrix
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: complete automated validation of all required states and mappings.
 - Dependencies: W5-W19 implementation stages PASS where relevant.
 - Implementation tasks: fill gaps for fragment identity/idempotency, aggregation, detector confirmation, boundaries, cancellation, audio, GC and Date.
@@ -316,10 +318,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: targeted pytest then full pytest if W23 permits.
 - Expected artifacts: pytest reports.
 - Recovery/fallback: max two distinct root-cause repair attempts per failure; never weaken assertions.
-- Evidence: focused live-capture/dashboard API/Date matrix 279 passed; audio, late transcript, docs integration and GC matrix 96 passed. Synthetic OCR fixture is local only; no private media used.
+- Evidence: final live-capture/dashboard API/Date matrix 281 passed; audio, late transcript, docs integration and GC matrix 96 passed. Synthetic OCR/video/audio fixtures only; no private media used.
 
 ### W21 - Playwright user journeys
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: prove capture and playlist journeys through the actual Whisper UI.
 - Dependencies: W3-W19 PASS.
 - Implementation tasks: fake camera, synthetic title source, fake connectivity, UI action/state assertions.
@@ -329,10 +331,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: targeted Playwright scripts; no arbitrary waits.
 - Expected artifacts: named JSON reports/screenshots.
 - Recovery/fallback: inspect browser trace and app/API logs; repair root cause and rerun.
-- Evidence: actual synthetic Playwright journeys passed for playlist/title review (11 checks), silent capture+late transcript, New Recording/incremental ACK, crop, offline IndexedDB retry, upload/processing cancellation, server chunks, chunking retry, and backend Date sort across filtered pages. No browser errors reported.
+- Evidence: final synthetic Playwright rerun passed playlist/title review and Videos table/docs action (14 checks), GC safety UI (5), silent capture+late transcript, New Recording/incremental ACK, crop, offline IndexedDB retry, upload/processing cancellation, server chunks, chunking retry, and backend Date sort across filtered pages. No browser errors reported.
 
 ### W22 - Host E2E regression
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: revalidate dashboard critical path with completed capture UI and preserve projects/date flows.
 - Dependencies: W2, W20, W21 PASS.
 - Implementation tasks: run host harness; repair changed UI selectors/fixtures without dropping checks.
@@ -342,7 +344,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
 - Expected artifacts: host report/log/latest gate.
 - Recovery/fallback: two root-cause fixes maximum per failure; continue independent stages.
-- Evidence: `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e` PASS, 31.29s; `artifacts/gates/latest.json` and host E2E report recorded; no TargetClosedError.
+- Evidence: pre-W18 change host rerun passed in 31.29s. Final host gate reruns in W23 heavy validation after logical-video listing changes.
 
 ### W23 - Docker/heavy validation
 - Status: IN_PROGRESS
@@ -380,12 +382,12 @@ Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access work
 | UNIT | fragment states/idempotency, ACK/retry, buffer cap, aggregation, logical boundaries, OCR parsing/confidence/multiframe confirmation | W5-W14/W20 | PASS; 279 capture/API/Date tests |
 | UNIT | cancellation/idempotency/races, audio missing, late transcript, GC candidates, recorded/created date and sorting | W8/W16-W20 | PASS; 96 audio/transcript/docs/GC/Date tests |
 | INTEGRATION/API | session, fragment upload/duplicate/interrupted retry, processing chunks, fragment/chunk/logical mappings, inside-chunk boundary | W5-W14/W20 | PASS; focused live capture/API matrix |
-| INTEGRATION/API | cancellation, no-audio, late transcript, Docs V2, GC, videos sorting | W8/W16-W20 | PASS for existing session pipeline; logical-video publication remains W18 follow-up |
+| INTEGRATION/API | cancellation, no-audio, late transcript, Docs V2, GC, videos sorting | W8/W16-W20 | PASS; logical title provenance and Videos listing integration added |
 | PLAYWRIGHT | Videos -> New Recording, preview, modes, timer, fragment ACK/progress, stop | W3-W5/W21 | PASS; synthetic mobile-sized capture and multiple ACKs |
 | MOBILE/LAN E2E | same-Wi-Fi HTTPS origin, ONLINE health, camera preview, recording, fragment upload | W25 | PASS; 16/16 previously, local CA trust required on phone |
 | PLAYWRIGHT | offline retry/buffer warning, local-copy OFF default, cancellation controls | W7-W8/W21 | PASS; offline/cancellation synthetic journeys |
 | PLAYWRIGHT | crop, playlist Session1->Session2, low confidence, review rename/date/split/merge/confirm | W9-W15/W21 | PASS; crop 5/5, playlist 11/11 |
-| PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PARTIAL; audio/transcript and Date pass; Docs/GC UI follow-up remains |
+| PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PASS; audio/transcript, logical Videos documentation action, GC review UI and Date sort exercised |
 | HOST E2E | dashboard critical path, Projects, Videos Date sorting, no browser errors | W2/W22 | PASS after UI work, 31.29s |
 | DOCKER/MEDIA | Docker config/build/E2E; synthetic video/audio/OCR title fixtures only | W11-W23 | IN_PROGRESS; RAM 6.55 GiB permits heavy gates |
 
@@ -419,7 +421,8 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W10 PASS. Persisted `captureMode` (`normal`/`playlist`) through session API/domain and wired the live UI mode into session creation. One continuous synthetic playlist session stayed Recording through three fragment ACKs. Model/API 57 passed; New Recording Playwright 39/39. W11 is IN_PROGRESS for title recognition.
 - 2026-10-15: W11-W15 PASS after correcting W11's erroneous BLOCKED classification. Root cause was missing completion evidence/status reconciliation, not an external dependency. Tesseract honors `TESSERACT_CMD`; OCR samples respect selected crop; session refresh no longer clears playlist review rows. Title/playlist/API suite 50 passed; actual synthetic camera OCR/review Playwright 11/11 passed. Host E2E passed in 31.29s.
 - 2026-10-15: W16-W17 PASS. Silent synthetic capture completes and shows AUDIO_MISSING / TRANSCRIPT_REQUIRED; later transcript persists with loose alignment and clears requirement. Audio/transcript/docs/GC focused tests 96 passed; capture dashboard Playwright passed.
-- 2026-10-15: W20-W21 IN_PROGRESS; broad matrix subset and capture journeys are green, but W18 logical-video Videos/docs flow and W19 GC Playwright proof remain before full acceptance. W22 host E2E independently rerun PASS with no browser errors.
+- 2026-10-15: W18-W19 PASS. Confirmed logical playlist videos now appear as read-only entries in Videos, map to the same physical chunk, and carry title metadata into the existing processor/Docs V2 provenance; GC suggestions are review-only. Integration tests passed; Playwright verified playlist rows/docs action and GC safety UI. W20-W21 await final full rerun after these changes.
+- 2026-10-15: W20-W21 PASS. Final focused unit/integration matrix 281 passed. Synthetic Playwright journeys passed for capture, playlist/title review, Videos/docs action, GC safety, audio/transcript, crop, offline/retry, cancellation, processing chunks, and Date. W22 is rerunning after these changes.
 - 2026-10-15: W23 IN_PROGRESS. RAM gate currently allows heavy validation at 6.55 GiB (threshold 6.0); run full heavy/Docker gates and continue after failures using bounded root-cause repair policy.
 
 ## Final Delivery Checklist

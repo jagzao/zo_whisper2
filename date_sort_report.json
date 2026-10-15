@@ -13,7 +13,7 @@
     {
       "name": "default_newest_order",
       "status": "PASS",
-      "detail": "['date_fixture_8082cfe3_6.mp4', 'date_fixture_8082cfe3_5.mp4', 'date_fixture_8082cfe3_4.mp4', 'date_fixture_8082cfe3_3.mp4', 'date_fixture_8082cfe3_2.mp4', 'date_fixture_8082cfe3_1.mp4', 'date_fixture_8082cfe3_0.mp4']"
+      "detail": "['date_fixture_efd5b6f4_6.mp4', 'date_fixture_efd5b6f4_5.mp4', 'date_fixture_efd5b6f4_4.mp4', 'date_fixture_efd5b6f4_3.mp4', 'date_fixture_efd5b6f4_2.mp4', 'date_fixture_efd5b6f4_1.mp4', 'date_fixture_efd5b6f4_0.mp4']"
     },
     {
       "name": "date_click_queries_backend",
@@ -23,12 +23,12 @@
     {
       "name": "ascending_first_page",
       "status": "PASS",
-      "detail": "['date_fixture_8082cfe3_0.mp4', 'date_fixture_8082cfe3_1.mp4', 'date_fixture_8082cfe3_2.mp4', 'date_fixture_8082cfe3_3.mp4', 'date_fixture_8082cfe3_4.mp4']"
+      "detail": "['date_fixture_efd5b6f4_0.mp4', 'date_fixture_efd5b6f4_1.mp4', 'date_fixture_efd5b6f4_2.mp4', 'date_fixture_efd5b6f4_3.mp4', 'date_fixture_efd5b6f4_4.mp4']"
     },
     {
       "name": "ascending_second_page",
       "status": "PASS",
-      "detail": "['date_fixture_8082cfe3_5.mp4', 'date_fixture_8082cfe3_6.mp4']"
+      "detail": "['date_fixture_efd5b6f4_5.mp4', 'date_fixture_efd5b6f4_6.mp4']"
     },
     {
       "name": "descending_after_filter_and_page",
