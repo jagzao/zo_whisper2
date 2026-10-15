@@ -33,6 +33,11 @@ import sys
 import time
 from pathlib import Path
 
+try:
+    from . import validation_env
+except ImportError:  # direct script execution
+    import validation_env
+
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_DIR = ROOT / "artifacts" / "gates"
 LOGS_DIR = ARTIFACTS_DIR / "logs"
@@ -242,6 +247,27 @@ def run_gate(gate: str, extra_args: list[str] | None = None) -> int:
         return 2
 
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+    if gate == "e2e":
+        try:
+            validation_env.ensure_playwright_chromium()
+        except Exception as exc:  # noqa: BLE001
+            LATEST_PATH.write_text(
+                json.dumps({
+                    "status": STATUS_FAIL,
+                    "gate": gate,
+                    "category": category_of(gate),
+                    "check": "playwright_chromium",
+                    "error_signature": f"{type(exc).__name__}: {exc}",
+                    "affected_files": [],
+                    "artifact": None,
+                    "duration_seconds": 0.0,
+                    "command": "python -m playwright install chromium",
+                }, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            print(f"[{STATUS_FAIL}] {gate} (Chromium unavailable) -> artifacts/gates/latest.json")
+            return 1
 
     start = time.monotonic()
     try:

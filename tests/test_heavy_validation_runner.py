@@ -26,7 +26,8 @@ FORBIDDEN_IMPORTS = ("import openai", "import anthropic", "import litellm", "imp
 
 
 @pytest.fixture(autouse=True)
-def _clean_summary():
+def _clean_summary(monkeypatch):
+    monkeypatch.setattr(heavy_validation_runner.validation_env, "ensure", lambda: heavy_validation_runner.validation_env.python_path())
     if SUMMARY_PATH.exists():
         SUMMARY_PATH.unlink()
     yield

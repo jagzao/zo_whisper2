@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -28,8 +29,9 @@ if __package__ in (None, ""):  # executed directly: python scripts/heavy_validat
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import gate_runner
     import ram_gate
+    import validation_env
 else:  # imported as part of the scripts package from tests
-    from . import gate_runner, ram_gate
+    from . import gate_runner, ram_gate, validation_env
 
 ROOT = Path(__file__).resolve().parents[1]
 SUMMARY_PATH = ROOT / "artifacts" / "gates" / "heavy-validation.json"
@@ -65,7 +67,13 @@ def _gate_summary_fields(results: list[dict]) -> dict[str, object]:
 
 def _run_gate(gate: str) -> int:
     """Indirection point so tests can stub gate execution without spawning."""
-    return gate_runner.run_gate(gate)
+    env = gate_runner.validation_environment(gate)
+    return subprocess.run(
+        [str(validation_env.python_path()), str(ROOT / "scripts" / "gate_runner.py"), gate],
+        cwd=ROOT,
+        env=env,
+        check=False,
+    ).returncode
 
 
 def run(available_gib_override: float | None = None, gates: list[str] | None = None) -> int:
@@ -109,6 +117,18 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
             }
         )
         return 3
+
+    try:
+        validation_env.ensure()
+    except Exception as exc:  # noqa: BLE001 - setup failure blocks heavy execution
+        _write_summary({
+            "terminal_state": "BLOCKED",
+            "ram": ram_info,
+            "gates": [],
+            **_gate_summary_fields([]),
+            "reason": f"validation environment setup failed: {type(exc).__name__}: {exc}",
+        })
+        return 5
 
     results: list[dict] = []
     any_configured = False

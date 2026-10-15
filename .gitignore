@@ -61,6 +61,7 @@ sbom.json
 # ── Entornos Python ──────────────────────────────────────────────────────────
 watcher/venv/
 deepseek/venv/
+.venv-validation/
 .venv/
 venv/
 __pycache__/
