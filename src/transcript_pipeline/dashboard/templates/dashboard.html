@@ -1043,7 +1043,7 @@
                 return true;
             });
             window._filteredFiles = filtered;
-            window._fileSort = window._fileSort || { col: 'name', dir: 'asc' };
+            window._fileSort = window._fileSort || { col: 'date', dir: 'desc' };
             sortFiles(window._fileSort.col, window._fileSort.dir, false);
             renderFilePage(page || window._currentPage || 1);
         }
@@ -1053,6 +1053,14 @@
                 dir = window._fileSort.dir === 'asc' ? 'desc' : 'asc';
             }
             window._fileSort = { col, dir };
+            if (col === 'date' && toggle) {
+                api(`/api/files?sort_by=date&order=${encodeURIComponent(dir)}`).then(data => {
+                    window._allFiles = data.files || [];
+                    populateProjectFilter(window._allFiles);
+                    applyFileFilters(window._currentPage || 1);
+                });
+                return;
+            }
             const files = window._filteredFiles || [];
             files.sort((a, b) => {
                 let va, vb;

@@ -228,7 +228,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 
 
 ### W14 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Videos Date API and server sorting
-- Status: PENDING
+- Status: PASS
 - Objective: complete canonical Date and backend sorting while preserving UI.
 - Dependencies: W3 PASS.
 - Implementation tasks: prefer recorded_at, created_at fallback, filesystem fallback; server sort/direction before pagination/filter; preserve sort on page/filter changes; default newest first.
@@ -238,6 +238,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Validation commands: targeted date/API pytest and Playwright date sort.
 - Expected artifacts: targeted test report.
 - Recovery/fallback: filesystem fallback for legacy media; unknown sort fields use stable default.
+
 
 ### W15 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Full unit/integration acceptance matrix
 - Status: PENDING
@@ -295,8 +296,8 @@ Implementation complete; Date green with recorded/created preference and backend
 
 | Layer | Required coverage | Stage | Evidence |
 |---|---|---|---|
-| UNIT | date selection / recorded_at / created_at fallback | W14 | pending |
-| UNIT | newest default, asc/desc sorting, filter/page preservation | W14 | pending |
+| UNIT | date selection / recorded_at / created_at fallback | W14 | PASS: API fallback and UTC epoch tests |
+| UNIT | newest default, asc/desc sorting, filter/page preservation | W14 | PASS: server sort tests; Playwright 7/7 |
 | UNIT | chunk state transitions | W3/W5 | W3 PASS: covered in 31 new tests |
 | UNIT | audio-state logic | W7 | pending |
 | UNIT | GC candidate logic | W10 | pending |
@@ -305,10 +306,10 @@ Implementation complete; Date green with recorded/created preference and backend
 | INTEGRATION/API | chunk finalization/order; processing state | W5 | pending |
 | INTEGRATION/API | no-audio flow | W7 | pending |
 | INTEGRATION/API | late transcript association | W8 | W8 PASS: 37 model/service/API tests; synthetic browser late association and loose alignment pass |
-| INTEGRATION/API | video listing sorting | W14 | pending |
+| INTEGRATION/API | video listing sorting | W14 | PASS: recorded/created date sorting API tests |
 | INTEGRATION/API | upload cancel; queued/active processing cancel; double cancel; retry | W11/W12 | pending |
 | PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13 | W2 PASS: 56 checks pass, 0 fail; gate E2E PASS |
-| PLAYWRIGHT/E2E | Date display and asc/desc | W14/W16 | pending |
+| PLAYWRIGHT/E2E | Date display and asc/desc | W14/W16 | W14 PASS: 7/7 synthetic Date checks |
 | PLAYWRIGHT/E2E | upload cancel; processing cancel/Cancelando/CANCELLED/retry | W13 | pending |
 | PLAYWRIGHT/E2E | capture start, state, stop, cleanup | W4/W13 | W4 PASS: 12/12 fake-camera checks, 0 browser errors |
 | PLAYWRIGHT/E2E | chunk flow where testable | W5/W13 | pending |
@@ -335,6 +336,7 @@ Implementation complete; Date green with recorded/created preference and backend
 ## Progress Log
 
 - 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PASS; W13 PASS: synthetic Playwright cancellation checks 9/9.
+- 2026-10-15: W14 PASS. Date API uses recorded_at then created_at, Date DESC by default, backend ASC/DESC; filters/pagination retain order. 32 tests + 7 Playwright checks passed.
 - 2026-10-15: W10 PASS (commit `46cd486`). Advisory cleanup API/UI; requires old + processed + documented; no deletion; 37 tests passed. W11 PENDING.
 - 2026-10-15: W9 PASS (commit `5f04593`). Existing processor routes finalized chunks through crop-aware extraction and Docs V2; no-audio avoids Whisper; late transcript is one untimed `session_transcript.loose` evidence item. Processing state is persisted, and duplicate timed/loose evidence is avoided. Targeted regression: 82 passed. W10 PASS; W11?W13 cancellation stages added by user scope.
  - 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.

@@ -665,6 +665,28 @@ def _resolve_documentation(media_path: Path, root: MediaRoot) -> dict | None:
     }
 
 
+def _media_recorded_datetime(media_path: Path, root: MediaRoot, modified_at: float) -> datetime:
+    """Capture recorded_at wins; legacy/ordinary media falls back to mtime."""
+    if root is MediaRoot.VIDEOS:
+        try:
+            relative = media_path.relative_to(VIDEOS_BASE)
+            if len(relative.parts) == 4 and relative.parts[0] == "live_capture" and relative.parts[2] == "chunks":
+                from transcript_pipeline.live_capture.pipeline import parse_chunk_index
+
+                service = _get_capture_service()
+                session = service.store.load_session(relative.parts[1])
+                index = parse_chunk_index(media_path)
+                chunk = session.get_chunk(index) if index is not None else None
+                recorded_at = (chunk.recorded_at if chunk else None) or session.recorded_at
+                if recorded_at:
+                    return datetime.fromisoformat(recorded_at.replace("Z", "+00:00"))
+                created_at = chunk.created_at if chunk else session.created_at
+                return datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except Exception:
+            pass
+    return datetime.fromtimestamp(modified_at).astimezone()
+
+
 def _frame_media_url(frames_parent: Path, relative_to_frames_parent: str) -> str:
     """URL for a raw frame file (relative to frames_parent, where
     KeyframeExtractor wrote it — NOT manual_dir, whose assets/ only holds
@@ -723,6 +745,7 @@ def api_files() -> Any:
             if not path.is_file() or path.suffix.lower() not in SUPPORTED_MEDIA:
                 continue
             media_stat = path.stat()
+            media_date = _media_recorded_datetime(path, root, media_stat.st_mtime)
             transcription = _resolve_transcription(path)
             media_id = _to_media_id(root, path)
             project, project_source = _effective_project(media_id, path.name)
@@ -732,8 +755,8 @@ def api_files() -> Any:
                     "relative": str(path.relative_to(ROOT)),
                     "name": path.name,
                     "size": media_stat.st_size,
-                    "date": datetime.fromtimestamp(media_stat.st_mtime).astimezone().isoformat(timespec="seconds"),
-                    "date_epoch": media_stat.st_mtime,
+                    "date": media_date.astimezone().isoformat(timespec="seconds"),
+                    "date_epoch": media_date.timestamp(),
                     "status": _file_status(path),
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,
@@ -743,7 +766,13 @@ def api_files() -> Any:
                 }
             )
 
-    media_files.sort(key=lambda x: x["name"].lower())
+    sort_by = request.args.get("sort_by", "date").lower()
+    direction = request.args.get("order", "desc").lower()
+    reverse = direction != "asc"
+    if sort_by == "name":
+        media_files.sort(key=lambda item: item["name"].lower(), reverse=reverse)
+    else:
+        media_files.sort(key=lambda item: (item["date_epoch"], item["name"].lower()), reverse=reverse)
     return jsonify({"files": media_files})
 
 

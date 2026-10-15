@@ -44,6 +44,11 @@ def test_date_sort_uses_raw_timestamp_and_existing_sort_modes_remain():
     assert "else if (col === 'size')" in TEMPLATE
 
 
+def test_date_sort_uses_server_query_and_defaults_to_newest_first():
+    assert "window._fileSort || { col: 'date', dir: 'desc' }" in TEMPLATE
+    assert "api(`/api/files?sort_by=date&order=${encodeURIComponent(dir)}`)" in TEMPLATE
+
+
 def test_date_format_is_localized_and_invalid_values_use_dash():
     helper = re.search(r"function formatMediaDate\(value\) \{(.*?)\n        \}", TEMPLATE, re.S)
     assert helper
