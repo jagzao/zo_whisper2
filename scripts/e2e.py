@@ -28,6 +28,21 @@ from docs.assets.generate_mock_data import MOCK_MEDIA_FILENAMES
 
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_URL = os.environ.get("ZMI_BASE_URL", "http://127.0.0.1:5000")
+
+# Deterministic project fixture: generate_mock_data.py only creates media and
+# transcriptions, so without this file /api/projects returns [] and the
+# Projects modal renders zero items. Match rules mirror the synthetic media
+# filenames so project routing/filtering stays deterministic. Must never
+# contain real owner project data.
+SYNTHETIC_PROJECTS: list[dict] = [
+    {"name": "Northwind Dev", "match": {"prefix": ["northwind_"]}},
+    {"name": "Zo Interviews", "match": {"prefix": ["zo_"]}},
+    {"name": "Contoso Team", "match": {"prefix": ["contoso_"]}},
+    {"name": "Dev Meetings", "match": {"filename_contains": ["meeting"]}},
+    {"name": "Fabrikam", "match": {"prefix": ["fabrikam_"]}},
+    {"name": "Tutorials", "match": {"filename_contains": ["tutorial"]}},
+]
+
 HOST_TEST_DATA_ROOT = ROOT / "artifacts" / "gates" / "e2e-host-data"
 TEST_DATA_ROOT = (
     Path(os.environ.get("ZMI_TEST_DATA_ROOT", str(ROOT))).resolve()
@@ -67,6 +82,10 @@ def prepare_host_data_root(env: dict[str, str]) -> Path:
     )
     if result.returncode:
         raise RuntimeError((result.stderr or result.stdout or "fixture generation failed")[-2000:])
+    (root / "projects.json").write_text(
+        json.dumps({"projects": SYNTHETIC_PROJECTS}, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
     return root
 
 
@@ -137,15 +156,31 @@ def _preflight_synthetic_data(url: str) -> None:
     validate_synthetic_files(payload.get("files", []))
 
 
-def _write_failure(report_path: Path, check: str, detail: str, server_output: str = "") -> int:
+def _persist_report(report_path: Path, payload: dict) -> None:
+    """Write the run report to its data-root path and mirror it to the repo
+    root.
+
+    scripts/gate_runner.py extracts the e2e failure signature from
+    ``ROOT / "e2e_report.json"`` (REPORT_FILES), but the harness writes the
+    report under ZMI_TEST_DATA_ROOT — on host runs that is the fixture root,
+    so the gate used to read whatever stale report was left at the repo root
+    from an older run and attribute its failures to the current gate."""
+    text = json.dumps(payload, indent=2)
     report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(json.dumps({
+    report_path.write_text(text, encoding="utf-8")
+    mirror = ROOT / report_path.name
+    if mirror != report_path:
+        mirror.write_text(text, encoding="utf-8")
+
+
+def _write_failure(report_path: Path, check: str, detail: str, server_output: str = "") -> int:
+    _persist_report(report_path, {
         "status": "FAIL",
         "check": check,
         "detail": _safe_child_output(detail),
         "server_output": _safe_child_output(server_output),
         "ok": False,
-    }, indent=2), encoding="utf-8")
+    })
     print(f"[FAIL] {check}: {_safe_child_output(detail)}")
     return 1
 
@@ -258,7 +293,7 @@ def main() -> int:
                 if server.poll() is None:
                     server.kill()
 
-    REPORT_PATH.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    _persist_report(REPORT_PATH, report)
     print(report["stdout"][-2000:])
     if report["stderr"]:
         print(report["stderr"][-1000:])

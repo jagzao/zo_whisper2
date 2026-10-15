@@ -1059,8 +1059,11 @@ def api_frames() -> Any:
         request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO]
     )
     info = _resolve_frames(target)
-    if not info:
-        return jsonify({"ok": False, "error": "No frames available"}), 404
+    if info is None:
+        # Valid media whose keyframe extraction never ran is a normal state,
+        # not an error — a 404 here made the browser log a network error on
+        # every frames-tab open for frame-less media.
+        return jsonify({"ok": True, "frames": [], "count": 0})
     return jsonify({"ok": True, **info})
 
 

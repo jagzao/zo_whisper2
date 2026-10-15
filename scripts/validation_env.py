@@ -85,11 +85,20 @@ def dependency_smoke() -> dict[str, str]:
     return versions
 
 
-def ensure_playwright_chromium() -> bool:
-    from playwright.sync_api import sync_playwright
+def _read_chromium_executable_path() -> str:
+    import asyncio
 
-    with sync_playwright() as playwright:
-        executable = Path(playwright.chromium.executable_path)
+    from playwright.async_api import async_playwright
+
+    async def _probe() -> str:
+        async with async_playwright() as playwright:
+            return playwright.chromium.executable_path
+
+    return asyncio.run(_probe())
+
+
+def ensure_playwright_chromium() -> bool:
+    executable = Path(_read_chromium_executable_path())
     if executable.is_file():
         return False
     result = subprocess.run(

@@ -29,7 +29,7 @@ Deliver browser Live Capture integrated with Whisper's existing media, transcrip
 
 - Keep capture local-first in the dashboard and browser `getUserMedia`/`MediaRecorder`; require explicit camera/microphone permission.
 - Persist session/chunk metadata alongside files using a small versioned JSON manifest and atomic writes unless existing persistence patterns justify a better fit. Media stays under configured `Videos` and behind `SafePathResolver` for serving/mutation.
-- Model session/chunk state explicitly; finalize bounded-duration chunks (~10–15 minutes, configurable) incrementally. Chunk N may upload/process while N+1 records. Never buffer a whole session.
+- Model session/chunk state explicitly; finalize bounded-duration chunks (~10â€“15 minutes, configurable) incrementally. Chunk N may upload/process while N+1 records. Never buffer a whole session.
 - Persist session ID, chunk order, `created_at`, `recorded_at`, processing/audio/transcript states and crop metadata. Recover interrupted sessions by reconciling manifests/finalized chunks; never claim incomplete bytes are playable.
 - Use `recorded_at`, then `created_at`, then filesystem timestamp for Date display/sort. Add backend sorting before pagination/filter slicing and retain sort through page/filter changes.
 - Missing audio is valid (`AUDIO_MISSING` / `TRANSCRIPT_REQUIRED`); transcript/audio may arrive later with loose session/chunk association and no fabricated second-level sync.
@@ -40,7 +40,7 @@ Deliver browser Live Capture integrated with Whisper's existing media, transcrip
 
 Stages run in dependency order; independent stages may proceed around genuine environment blockers. Status: `PENDING | IN_PROGRESS | PASS | BLOCKED`.
 
-### W0 — Repository and evidence baseline
+### W0 â€” Repository and evidence baseline
 - Status: PASS
 - Objective: establish current branch/tree, implementation, tests and gate evidence.
 - Dependencies: none.
@@ -53,7 +53,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Recovery/fallback: repeat read-only inspection; preserve all worktree state.
 - Evidence: `feat/zmi-documentation-synthesis-v2`, `f3e9f66`, clean; findings above.
 
-### W1 — Canonical execution plan
+### W1 â€” Canonical execution plan
 - Status: PASS
 - Objective: commit this full-scope plan before further implementation.
 - Dependencies: W0 PASS.
@@ -65,7 +65,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: plan commit.
 - Recovery/fallback: restore plan from Git history; no worktree creation.
 
-### W2 — Host E2E diagnosis and repair
+### W2 â€” Host E2E diagnosis and repair
 - Status: IN_PROGRESS
 - Objective: reproduce/fix host E2E failures, including reported Playwright `TargetClosedError` if reproducible.
 - Dependencies: W1 PASS.
@@ -76,8 +76,9 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Validation commands: targeted harness invocation; then `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
 - Expected artifacts: updated reports/logs under `artifacts/gates/`.
 - Recovery/fallback: two distinct root-cause attempts per failure; record exact environment error and continue independent work if browser unavailable.
+- Evidence: fixture/API defects fixed; W2 focused tests 55 passed; Playwright repro verified 6 project items, empty frame payload, zero console errors; gate runner E2E PASS (26.45s). `TargetClosedError` was in `scripts/validation_env.ensure_playwright_chromium()` teardown, not dashboard page ownership; async Playwright lifecycle removed it.
 
-### W3 — Capture domain and session persistence
+### W3 â€” Capture domain and session persistence
 - Status: PENDING
 - Objective: create durable, recoverable session/chunk model and transitions.
 - Dependencies: W1 PASS.
@@ -89,7 +90,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic manifest fixtures and test report.
 - Recovery/fallback: rebuild indexes from valid manifests; report malformed manifests without deleting media.
 
-### W4 — Browser camera capture UI
+### W4 â€” Browser camera capture UI
 - Status: PENDING
 - Objective: open camera, start/stop capture and clean tracks safely.
 - Dependencies: W3 PASS.
@@ -101,9 +102,9 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: Playwright report and synthetic capture files only.
 - Recovery/fallback: feature-detect MediaRecorder; show unsupported-browser state while retaining API usability.
 
-### W5 — Bounded chunking and upload/processing
+### W5 â€” Bounded chunking and upload/processing
 - Status: PENDING
-- Objective: rotate ~10–15 minute chunks without stopping capture or unbounded memory use.
+- Objective: rotate ~10â€“15 minute chunks without stopping capture or unbounded memory use.
 - Dependencies: W3, W4 PASS.
 - Implementation tasks: configurable duration; finalize/upload N while N+1 records; bounded queue/backpressure; ordered identity; retry-safe finalization.
 - Relevant files/modules: capture browser JS/service/API and tests.
@@ -113,7 +114,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic manifests and gate report.
 - Recovery/fallback: retain finalized chunks for retry; mark stalled upload and allow explicit retry.
 
-### W6 — Monitor crop/mask selection
+### W6 â€” Monitor crop/mask selection
 - Status: PENDING
 - Objective: select useful screen region and persist crop metadata.
 - Dependencies: W4 PASS.
@@ -125,7 +126,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: crop metadata fixture/report.
 - Recovery/fallback: invalid crop uses full frame with explicit status; never discard source.
 
-### W7 — Audio detection and missing-audio state
+### W7 â€” Audio detection and missing-audio state
 - Status: PENDING
 - Objective: make video-only capture a valid flow.
 - Dependencies: W3, W5 PASS.
@@ -137,7 +138,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic fixtures and test report.
 - Recovery/fallback: probe failure becomes `AUDIO_UNKNOWN`/retryable, not fatal; document state.
 
-### W8 — Late transcript/audio association
+### W8 â€” Late transcript/audio association
 - Status: PENDING
 - Objective: attach transcript/audio after video processing without tight-sync assumptions.
 - Dependencies: W3, W7 PASS.
@@ -149,7 +150,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic manifest/transcript fixture.
 - Recovery/fallback: retain unattached transcript as pending; user may retry association.
 
-### W9 — Documentation pipeline integration
+### W9 â€” Documentation pipeline integration
 - Status: PENDING
 - Objective: send finalized capture through existing Whisper documentation flow.
 - Dependencies: W5, W6, W7 PASS; W8 PASS for transcript-aware docs.
@@ -161,7 +162,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic documentation bundle only.
 - Recovery/fallback: evidence-only output remains available when synthesis lacks transcript; never fabricate instructions.
 
-### W10 — Advisory media GC candidates
+### W10 â€” Advisory media GC candidates
 - Status: PENDING
 - Objective: surface stale, processed, documented media as deletion suggestions only.
 - Dependencies: W3, W9 PASS.
@@ -173,7 +174,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic candidate fixtures/report; no real deletion.
 - Recovery/fallback: uncertain reference state excludes candidate.
 
-### W11 — Videos Date API and server sorting
+### W11 â€” Videos Date API and server sorting
 - Status: PENDING
 - Objective: complete canonical Date and backend sorting while preserving UI.
 - Dependencies: W3 PASS.
@@ -185,10 +186,10 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: targeted test report.
 - Recovery/fallback: filesystem fallback for legacy media; unknown sort fields use stable default.
 
-### W12 — Full unit/integration acceptance matrix
+### W12 â€” Full unit/integration acceptance matrix
 - Status: PENDING
 - Objective: validate all required domain/API flows before broad browser regressions.
-- Dependencies: W3, W5–W11 PASS.
+- Dependencies: W3, W5â€“W11 PASS.
 - Implementation tasks: fill only requirement-tied test gaps; synthetic fixtures only.
 - Relevant files/modules: `tests/` and changed package modules.
 - Acceptance criteria: every UNIT and INTEGRATION/API matrix row passes.
@@ -197,10 +198,10 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: gate reports in `artifacts/gates/`.
 - Recovery/fallback: two distinct fixes per failure, classify/document and continue independent stages.
 
-### W13 — Playwright/E2E regression
+### W13 â€” Playwright/E2E regression
 - Status: PENDING
 - Objective: verify dashboard, projects, Date and Live Capture end-to-end.
-- Dependencies: W2, W4–W11 PASS.
+- Dependencies: W2, W4â€“W11 PASS.
 - Implementation tasks: deterministic synthetic browser scenarios; assert no console/page errors and correct lifecycle.
 - Relevant files/modules: `tests/e2e/`, `scripts/e2e.py`, dashboard.
 - Acceptance criteria: every PLAYWRIGHT row passes, including host E2E.
@@ -209,7 +210,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: reports/screenshots/logs.
 - Recovery/fallback: no sleeps; after two distinct fixes classify actual external/browser issue and continue others.
 
-### W14 — Docker/heavy validation
+### W14 â€” Docker/heavy validation
 - Status: PENDING
 - Objective: verify applicable container and full repository gates.
 - Dependencies: W12, W13 PASS and repository review policy permits heavy gates.
@@ -221,7 +222,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: `artifacts/gates/latest.json`, logs/reports.
 - Recovery/fallback: defer low RAM; classify missing Docker/daemon/credentials as environment blocker; never bypass policy.
 
-### W15 — Documentation/readiness/final delivery
+### W15 â€” Documentation/readiness/final delivery
 - Status: PENDING
 - Objective: document user flows and prove committed/synchronized clean delivery.
 - Dependencies: W12, W13 PASS; W14 PASS or justified environment-only BLOCKED.
@@ -251,12 +252,12 @@ Implementation complete; Date green with recorded/created preference and backend
 | INTEGRATION/API | no-audio flow | W7 | pending |
 | INTEGRATION/API | late transcript association | W8 | pending |
 | INTEGRATION/API | video listing sorting | W11 | pending |
-| PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13 | pending |
+| PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13 | W2 PASS: 56 checks pass, 0 fail; gate E2E PASS |
 | PLAYWRIGHT/E2E | Date display and asc/desc | W11/W13 | pending |
 | PLAYWRIGHT/E2E | capture start, state, stop, cleanup | W4/W13 | pending |
 | PLAYWRIGHT/E2E | chunk flow where testable | W5/W13 | pending |
 | PLAYWRIGHT/E2E | missing-audio warning / transcript-required | W7/W13 | pending |
-| MEDIA | synthetic video/audio/silent-video/crop fixtures only | W4–W14 | pending |
+| MEDIA | synthetic video/audio/silent-video/crop fixtures only | W4â€“W14 | pending |
 
 ## Known Risks
 
@@ -277,11 +278,12 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
+- 2026-10-15: W2 PASS. Seeded isolated synthetic project fixtures; valid media with no frames returns an empty successful response. Replaced synchronous Playwright probe in validation startup with awaited async lifecycle after reproducing teardown `TargetClosedError`; targeted tests 55 passed; host gate PASS (26.45s), no warning. W3 IN_PROGRESS.
 - 2026-10-15: W0 PASS. Baseline: branch `feat/zmi-documentation-synthesis-v2`, HEAD `f3e9f66`, clean. Date UI exists but metadata/backend sort incomplete. Live Capture absent. Host report shows projects fixture failure and missing-frame 404, not TargetClosedError. W1 PASS: plan written, reviewed, and committed before implementation (commit SHA recorded in Git).
 
 ## Final Delivery Checklist
 
-- [ ] W0–W15 evidence and statuses current
+- [ ] W0â€“W15 evidence and statuses current
 - [ ] Date API/UI and fallback tests pass
 - [ ] Live Capture, chunking, crop, missing-audio, late transcript, Docs V2 and GC complete
 - [ ] Unit and integration/API matrix passes

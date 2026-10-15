@@ -45,12 +45,17 @@ def fetch_files() -> list[dict]:
 
 
 def file_has_frames(media_id: str) -> bool:
-    """True when the server can serve keyframes for this media id (i.e. its
-    frame_mapping.json exists) â€” the prerequisite for the frames tab and for
-    the Generate Documentation endpoint."""
+    """True when the server reports a non-empty frame set for this media id
+    (i.e. its frame_mapping.json exists) â€” the prerequisite for the frames
+    tab and for the Generate Documentation endpoint. A valid media file
+    without frames now returns a successful *empty* payload, so the body
+    must be inspected, not just the status code."""
     try:
         r = requests.get(f"{DASHBOARD_URL}/api/frames?id={media_id}", timeout=10)
-        return r.status_code == 200
+        if r.status_code != 200:
+            return False
+        payload = r.json()
+        return bool(payload.get("ok")) and payload.get("count", 0) > 0
     except Exception:
         return False
 
@@ -445,7 +450,15 @@ def main() -> int:
                 )
 
                 # Reload â†’ the manual assignment must survive (disk-persisted).
-                page.reload()
+                # wait_until="domcontentloaded": the page has no external
+                # blocking scripts, so DOM-ready is enough for #fileFilter to
+                # exist; waiting for the full "load" event hung for 30s once
+                # when a pooled keep-alive connection reset (net::
+                # ERR_CONNECTION_RESET) mid-reload on loopback — the document
+                # itself had been served and Chromium retried it, but the
+                # load event never fired and the whole suite died here. The
+                # persistence assertion below is unchanged.
+                page.reload(wait_until="domcontentloaded")
                 page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
                 page.locator("#fileFilter").fill(stem)
                 page.wait_for_timeout(400)

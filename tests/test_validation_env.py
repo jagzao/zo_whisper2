@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
 from unittest import mock
+
+import pytest
 
 from scripts import validation_env
 
@@ -80,12 +83,16 @@ def test_playwright_installer_runs_only_when_chromium_missing(monkeypatch, tmp_p
         executable_path = str(executable)
     class Playwright:
         chromium = Chromium()
-        def __enter__(self):
+        async def __aenter__(self):
             return self
-        def __exit__(self, *args):
+        async def __aexit__(self, *args):
             return False
     monkeypatch.setitem(__import__("sys").modules, "playwright", type("P", (), {})())
-    monkeypatch.setitem(__import__("sys").modules, "playwright.sync_api", type("A", (), {"sync_playwright": staticmethod(lambda: Playwright())})())
+    monkeypatch.setitem(
+        __import__("sys").modules,
+        "playwright.async_api",
+        type("A", (), {"async_playwright": staticmethod(lambda: Playwright())})(),
+    )
 
     def install(args, **kwargs):
         executable.write_bytes(b"browser")
@@ -95,3 +102,26 @@ def test_playwright_installer_runs_only_when_chromium_missing(monkeypatch, tmp_p
     assert validation_env.ensure_playwright_chromium() is True
     with mock.patch.object(validation_env.subprocess, "run", side_effect=AssertionError("already installed")):
         assert validation_env.ensure_playwright_chromium() is False
+
+
+def test_chromium_probe_exits_without_pending_task_warnings():
+    pytest.importorskip("playwright")
+    code = (
+        "from scripts import validation_env\n"
+        "print(validation_env._read_chromium_executable_path())\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=validation_env.ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "TargetClosedError" not in output
+    assert "Task was destroyed but it is pending" not in output
+    assert "Future exception was never retrieved" not in output
+    assert "was never awaited" not in output

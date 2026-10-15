@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 from pathlib import Path
 from unittest import mock
@@ -42,6 +43,35 @@ def test_host_e2e_fixture_root_is_scoped_and_does_not_touch_workspace_media(tmp_
     assert not (host_root / "stale.txt").exists()
     assert (host_root / "fixture.generated").exists()
     assert real_media.read_bytes() == b"preserve"
+
+
+def test_host_e2e_fixture_writes_deterministic_synthetic_projects_json(tmp_path, monkeypatch):
+    # Regression: the fixture generator creates no projects.json, so the
+    # Projects modal listed 0 items and projects_modal_items failed.
+    from transcript_pipeline.projects import validate_project
+
+    root = tmp_path / "repo"
+    host_root = root / "artifacts" / "gates" / "e2e-host-data"
+    host_root.mkdir(parents=True)
+    monkeypatch.setattr(e2e, "ROOT", root)
+    monkeypatch.setattr(e2e, "HOST_TEST_DATA_ROOT", host_root)
+
+    def fake_run(command, **kwargs):
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    with mock.patch.object(e2e.subprocess, "run", side_effect=fake_run):
+        prepared = e2e.prepare_host_data_root({})
+
+    projects_file = prepared / "projects.json"
+    assert projects_file.exists()
+    first_content = projects_file.read_text(encoding="utf-8")
+    projects = json.loads(first_content)["projects"]
+    assert len(projects) >= 1
+    assert all(validate_project(project) == [] for project in projects)
+
+    with mock.patch.object(e2e.subprocess, "run", side_effect=fake_run):
+        e2e.prepare_host_data_root({})
+    assert (prepared / "projects.json").read_text(encoding="utf-8") == first_content
 
 
 def test_folder_visibility_wait_is_bounded_and_checks_four_cards():

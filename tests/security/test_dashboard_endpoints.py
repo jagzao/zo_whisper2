@@ -239,6 +239,24 @@ def test_frames_missing_id_rejected(client):
     assert resp.status_code in (400, 404)
 
 
+def test_frames_nonexistent_media_rejected(client, env):
+    resp = client.get("/api/frames" + q(mid(MediaRoot.VIDEOS, "missing.mp4")))
+    assert resp.status_code == 404
+
+
+def test_frames_valid_media_without_frames_returns_success_empty_payload(client, env):
+    # Regression: this used to 404, which the browser logged as a console
+    # error on every frames-tab open for valid media without keyframes.
+    video = env["videos"] / "clip.mp4"
+    video.write_bytes(b"fake video")
+    resp = client.get("/api/frames" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body["frames"] == []
+    assert body["count"] == 0
+
+
 def test_frame_urls_returned_by_api_frames_are_actually_servable(client, env):
     # Regression: _resolve_frames() used to build frame["url"] relative to
     # ROOT instead of TRANSCRIPTIONS_BASE, so every generated URL 404'd.
