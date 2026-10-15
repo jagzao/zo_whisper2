@@ -970,8 +970,8 @@
                 <input type="text" id="captureTitle" value="Live capture" style="flex:1;">
             </div>
             <div class="row" style="align-items:center; margin-top:0;">
-                <label for="captureChunkDuration">Chunk duration (s):</label>
-                <input type="number" id="captureChunkDuration" value="600" min="1" step="1" style="width:6rem;">
+                <label for="captureChunkDuration">Fragment duration (s):</label>
+                <input type="number" id="captureChunkDuration" value="15" min="10" max="30" step="1" style="width:6rem;">
                 <label for="captureSaveLocal" style="display:flex; align-items:center; gap:0.35rem; margin-left:1rem;">
                     <input type="checkbox" id="captureSaveLocal"> Save local copy
                 </label>
@@ -2051,25 +2051,40 @@
             document.getElementById('helpModal').classList.add('hidden');
         }
 
-        // ── Live Capture (W4/W5) ──────────────────────────────────────────
-        // W5: bounded chunking. The camera stream is acquired once and reused;
-        // a MediaRecorder records one bounded chunk, is finalized, then the
-        // next chunk starts immediately so chunk N uploads while N+1 records.
-        // Per-chunk Blobs are kept (and uploaded) as Blobs — never
-        // arrayBuffer()/full-bytes — and the pending-upload queue is bounded
-        // with a retryable stalled state.
+        // ── Live Capture (W4) ─────────────────────────────────────────────
+        // W4: mobile-safe fragment production. The camera stream is acquired
+        // once and reused; a MediaRecorder emits short bounded fragments
+        // (~15s target, configurable 10-30s) so no whole-session/15-minute
+        // blob is ever held in the browser. Each fragment gets a stable,
+        // monotonically increasing ID and waits in a bounded local queue
+        // (at most 4). When the queue is full, recording pauses visibly and
+        // recovers once it drains. W5 adds durable server upload; W4 never
+        // claims a fragment is acknowledged unless the server actually said so.
+        const CAPTURE_FRAGMENT_TARGET_MS = 15000;
+        const CAPTURE_FRAGMENT_MIN_MS = 10000;
+        const CAPTURE_FRAGMENT_MAX_MS = 30000;
+        const CAPTURE_FRAGMENT_TIMESLICE_MS = 1000;
+        const CAPTURE_MAX_PENDING_FRAGMENTS = 4;
+        const CAPTURE_MIME_FALLBACKS = [
+            'video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm', 'video/mp4',
+        ];
+
         const capture = {
             stream: null,
             recorder: null,
             sessionId: null,
             recordingIndex: null,
             chunkDurationSec: 600,
+            fragmentDurationMs: CAPTURE_FRAGMENT_TARGET_MS,
             state: 'idle',
             mimeType: '',
             extension: '.webm',
-            pendingParts: [],       // Blob parts for the chunk being recorded
-            uploadQueue: [],        // [{index, blob, extension}] awaiting upload (FIFO)
-            finalizedIndexes: [],   // server-confirmed finalized chunk indexes (ordered)
+            pendingParts: [],       // Blob parts for the fragment being recorded
+            uploadQueue: [],        // [{index, id, blob, extension}] awaiting upload (FIFO)
+            finalizedIndexes: [],   // server-confirmed finalized fragment indexes (ordered)
+            fragmentSeq: 0,         // stable monotonically increasing fragment ID source
+            fragmentIds: [],        // ordered fragment IDs created this session
+            queueFull: false,       // recording paused because the pending queue is full
             uploading: false,
             stalled: false,
             stopRequested: false,
@@ -2087,9 +2102,6 @@
             sessions: [],           // W3: latest session list (for status/cancel controls)
             logicalVideos: [],      // W3: detected-title/logical-video shell
         };
-
-        const CAPTURE_MAX_PENDING_UPLOADS = 4;
-        const CAPTURE_TIMESLICE_MS = 1000;
 
         const CAPTURE_STATE_LABELS = {
             idle: 'Idle',
@@ -2141,6 +2153,36 @@
             return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof window.MediaRecorder !== 'undefined');
         }
 
+        // Explicit feature detection: only trust MediaRecorder.isTypeSupported
+        // when it actually exists, and walk the known-good fallback list.
+        function mediaRecorderSupportsMime(mime) {
+            return typeof window.MediaRecorder !== 'undefined'
+                && typeof window.MediaRecorder.isTypeSupported === 'function'
+                && window.MediaRecorder.isTypeSupported(mime);
+        }
+
+        // Resolves the configured fragment length. The control advertises the
+        // 10-30s mobile range; any positive value is honoured so accelerated
+        // tests can drive sub-second fragments.
+        function resolveFragmentDurationMs() {
+            const input = document.getElementById('captureChunkDuration');
+            const seconds = input ? parseInt(input.value, 10) : NaN;
+            if (Number.isFinite(seconds) && seconds > 0) return Math.round(seconds * 1000);
+            return CAPTURE_FRAGMENT_TARGET_MS;
+        }
+
+        function nextFragmentId() {
+            capture.fragmentSeq += 1;
+            capture.fragmentIds.push(capture.fragmentSeq);
+            return capture.fragmentSeq;
+        }
+
+        function clearFragmentBuffers() {
+            // Drop the in-flight fragment accumulator only. Queued fragments
+            // are kept for W5 upload/recovery; nothing is marked acknowledged.
+            capture.pendingParts = [];
+        }
+
         function stopCaptureTracks() {
             if (capture.stream) {
                 capture.stream.getTracks().forEach(t => t.stop());
@@ -2152,9 +2194,13 @@
 
         function emergencyStopCapture() {
             clearTimeout(capture.rotateTimer);
+            capture.closed = true;
             if (capture.recorder && capture.recorder.state !== 'inactive') {
                 try { capture.recorder.stop(); } catch (e) {}
             }
+            capture.recorder = null;
+            capture.recordingIndex = null;
+            clearFragmentBuffers();
             stopCaptureTracks();
         }
 
@@ -2226,7 +2272,9 @@
         function renderCaptureStatus() {
             const el = document.getElementById('captureUploadStatus');
             if (!el) return;
-            const uploadState = capture.uploading ? 'uploading' : (capture.stalled ? 'paused' : 'idle');
+            const uploadState = capture.queueFull ? 'paused (queue full)'
+                : capture.uploading ? 'uploading'
+                : (capture.stalled ? 'paused' : 'idle');
             const session = currentSession();
             const processing = session ? (session.chunks || []).filter(c => c.state === 'PROCESSING').length : 0;
             el.textContent = `Upload: ${uploadState} · pending ${capture.uploadQueue.length} · processing ${processing}`;
@@ -2307,6 +2355,11 @@
                 stalled: capture.stalled,
                 stopRequested: capture.stopRequested,
                 chunkDurationSec: capture.chunkDurationSec,
+                fragmentDurationMs: capture.fragmentDurationMs,
+                fragmentSeq: capture.fragmentSeq,
+                fragmentIds: capture.fragmentIds.slice(),
+                maxPendingFragments: CAPTURE_MAX_PENDING_FRAGMENTS,
+                queueFull: capture.queueFull,
                 crop: capture.pendingCrop,
                 audioAvailability: capture.audioAvailability,
                 mode: capture.mode,
@@ -2314,6 +2367,26 @@
                 saveLocal: !!(document.getElementById('captureSaveLocal') || {}).checked,
                 logicalVideos: (capture.logicalVideos || []).length,
             };
+        };
+
+        // W4 test hooks: deterministic fragment cadence/config and ID checks
+        // without waiting for a real ~15s fragment. They never fabricate a
+        // server acknowledgement.
+        window.__captureFragmentConfig = function () {
+            return {
+                targetMs: CAPTURE_FRAGMENT_TARGET_MS,
+                minMs: CAPTURE_FRAGMENT_MIN_MS,
+                maxMs: CAPTURE_FRAGMENT_MAX_MS,
+                resolvedMs: resolveFragmentDurationMs(),
+                maxPendingFragments: CAPTURE_MAX_PENDING_FRAGMENTS,
+            };
+        };
+        window.__captureTestFragmentSequence = function (count) {
+            const n = Number.isFinite(count) && count > 0 ? Math.floor(count) : 3;
+            const ids = [];
+            for (let i = 0; i < n; i++) ids.push(nextFragmentId());
+            const monotonic = ids.every((value, idx) => idx === 0 || value > ids[idx - 1]);
+            return { ids, monotonic };
         };
 
         async function openCaptureModal() {
@@ -2330,6 +2403,7 @@
             renderLogicalVideos([]);
             const txBox = document.getElementById('captureTranscriptText');
             if (txBox) txBox.value = '';
+            capture.fragmentDurationMs = resolveFragmentDurationMs();
             renderCropRegion();
             updateChunkInfo();
             updateAudioWarning(null, false);
@@ -2442,9 +2516,8 @@
         }
 
         function pickCaptureMimeType() {
-            const candidates = ['video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm', 'video/mp4'];
-            for (const mime of candidates) {
-                if (window.MediaRecorder.isTypeSupported(mime)) return mime;
+            for (const mime of CAPTURE_MIME_FALLBACKS) {
+                if (mediaRecorderSupportsMime(mime)) return mime;
             }
             return '';
         }
@@ -2613,8 +2686,12 @@
             try { await video.play(); } catch (e) {}
 
             const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
-            const rawDuration = parseInt(document.getElementById('captureChunkDuration').value, 10);
-            const chunkDurationSec = Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : 600;
+            capture.fragmentDurationMs = resolveFragmentDurationMs();
+            const chunkDurationSec = Math.max(1, Math.round(capture.fragmentDurationMs / 1000));
+            capture.chunkDurationSec = chunkDurationSec;
+            capture.fragmentSeq = 0;
+            capture.fragmentIds = [];
+            capture.queueFull = false;
             try {
                 const createRes = await captureFetch('/api/capture/sessions', {
                     headers: { 'Content-Type': 'application/json' },
@@ -2622,7 +2699,7 @@
                 });
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
-                capture.chunkDurationSec = createRes.session.chunkDurationSec || chunkDurationSec;
+                if (createRes.session.chunkDurationSec) capture.chunkDurationSec = createRes.session.chunkDurationSec;
             } catch (err) {
                 stopCaptureTracks();
                 setCaptureState('error', err.message);
@@ -2659,11 +2736,12 @@
                 recorder.onstop = () => onChunkStopped();
                 recorder.onerror = e => {
                     capture.recorder = null;
+                    clearFragmentBuffers();
                     stopCaptureTracks();
                     setCaptureState('error', 'Recorder error: ' + ((e.error && e.error.name) || 'unknown'));
                 };
                 capture.recorder = recorder;
-                recorder.start(CAPTURE_TIMESLICE_MS);
+                recorder.start(CAPTURE_FRAGMENT_TIMESLICE_MS);
                 setCaptureState('recording');
                 scheduleRotation();
             } catch (err) {
@@ -2675,7 +2753,7 @@
 
         function scheduleRotation() {
             clearTimeout(capture.rotateTimer);
-            capture.rotateTimer = setTimeout(() => rotateChunk(), capture.chunkDurationSec * 1000);
+            capture.rotateTimer = setTimeout(() => rotateChunk(), capture.fragmentDurationMs);
         }
 
         function rotateChunk() {
@@ -2687,19 +2765,24 @@
         }
 
         function onChunkStopped() {
-            if (capture.recordingIndex === null) return;
+            if (capture.recordingIndex === null) {
+                clearFragmentBuffers();
+                return;
+            }
             const index = capture.recordingIndex;
             if (capture.closed) {
-                // Modal closed mid-recording: discard the in-flight chunk (never
-                // finalized), matching W4 reconciliation semantics.
-                capture.pendingParts = [];
+                // Modal closed or navigated away mid-recording: discard the
+                // in-flight fragment buffer (never queued) instead of
+                // pretending it was stored.
+                clearFragmentBuffers();
                 capture.recordingIndex = null;
                 return;
             }
+            const id = nextFragmentId();
             const blob = new Blob(capture.pendingParts, { type: capture.mimeType || 'video/webm' });
-            capture.pendingParts = [];
+            clearFragmentBuffers();
             capture.recordingIndex = null;
-            capture.uploadQueue.push({ index, blob, extension: capture.extension });
+            capture.uploadQueue.push({ index, id, blob, extension: capture.extension });
             updateChunkInfo();
             beginUpload();
             maybeResume();
@@ -2708,7 +2791,13 @@
         function maybeResume() {
             if (capture.stopRequested || capture.stalled || capture.closed) return;
             if (capture.recorder && capture.recorder.state !== 'inactive') return;
-            if (capture.uploadQueue.length >= CAPTURE_MAX_PENDING_UPLOADS) return;
+            if (capture.uploadQueue.length >= CAPTURE_MAX_PENDING_FRAGMENTS) {
+                // Bounded queue: pause visibly instead of dropping fragments.
+                capture.queueFull = true;
+                renderCaptureStatus();
+                return;
+            }
+            capture.queueFull = false;
             startChunkRecording();
         }
 
@@ -2775,6 +2864,7 @@
 
         function setStalled(stalled, reason) {
             capture.stalled = stalled;
+            capture.queueFull = false;
             if (stalled) {
                 // Stop the current recorder so recording does not grow while
                 // uploads are stalled; its chunk is finalized into the queue.
@@ -2832,12 +2922,17 @@
             if (capture.state !== 'recording' && capture.state !== 'stalled') return;
             capture.stopRequested = true;
             capture.stalled = false;
+            capture.queueFull = false;
             setCaptureState('finalizing');
             clearTimeout(capture.rotateTimer);
             if (capture.recorder && capture.recorder.state !== 'inactive') {
                 const rec = capture.recorder;
                 capture.recorder = null;
-                rec.stop(); // onChunkStopped enqueues; beginUpload drains -> finishSession
+                // rec.stop() flushes the final short fragment through
+                // ondataavailable/onstop; onChunkStopped keeps it for W5.
+                rec.stop();
+            } else if (capture.recordingIndex !== null && capture.pendingParts.length) {
+                onChunkStopped();
             } else {
                 beginUpload();
             }

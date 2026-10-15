@@ -1,7 +1,7 @@
-"""W3 browser scenario: `Videos -> New Recording` capture shell.
+"""W3/W4 browser scenario: `Videos -> New Recording` capture shell.
 
 Launches Chromium with deterministic fake media devices (no real camera or
-microphone), grants camera permission, and proves the frozen W3 journey:
+microphone), grants camera permission, and proves the frozen W3/W4 journey:
 
 1. The user reaches the capture shell from `Videos -> New Recording` (not only
    the header Capture icon).
@@ -9,8 +9,11 @@ microphone), grants camera permission, and proves the frozen W3 journey:
    Playlist modes, crop control, Save local copy (default unchecked), Start/
    Stop Recording, a visible timer, upload/processing status, and the
    detected-title/logical-video shell with its empty state.
-3. Starting capture with the fake device shows a live, incrementing timer.
-4. Stopping succeeds and reaches the saved state.
+3. W4 fragment cadence/config and stable fragment IDs are deterministic
+   (checked through pure state hooks — no 15s wait).
+4. Starting capture with the fake device shows a live, incrementing timer.
+5. Stopping succeeds, keeps the final short fragment, and reaches the saved
+   state; the synthetic mobile viewport keeps the controls usable.
 
 Synthetic devices/media only. Reports PASS/FAIL checks to JSON like the other
 capture e2e scripts.
@@ -131,6 +134,44 @@ def main() -> int:
             page.locator("#captureModeNormal").check()
             all_ok &= check("normal_mode_selectable", page.evaluate("() => window.__captureSnapshot().mode") == "normal")
 
+            # 3b. W4 fragment cadence/config — deterministic, no 15s wait.
+            cfg = page.evaluate("() => window.__captureFragmentConfig()")
+            all_ok &= check(
+                "fragment_target_default",
+                cfg.get("targetMs") == 15000 and cfg.get("resolvedMs") == 15000,
+                json.dumps(cfg),
+            )
+            all_ok &= check(
+                "fragment_configurable_range_10_30s",
+                cfg.get("minMs") == 10000 and cfg.get("maxMs") == 30000,
+                f"min={cfg.get('minMs')} max={cfg.get('maxMs')}",
+            )
+            all_ok &= check(
+                "fragment_queue_bounded_4",
+                cfg.get("maxPendingFragments") == 4,
+                str(cfg.get("maxPendingFragments")),
+            )
+            page.locator("#captureChunkDuration").fill("10")
+            resolved_10 = page.evaluate("() => window.__captureFragmentConfig().resolvedMs")
+            page.locator("#captureChunkDuration").fill("30")
+            resolved_30 = page.evaluate("() => window.__captureFragmentConfig().resolvedMs")
+            page.locator("#captureChunkDuration").fill("15")
+            all_ok &= check(
+                "fragment_cadence_configurable",
+                resolved_10 == 10000 and resolved_30 == 30000,
+                f"10s={resolved_10} 30s={resolved_30}",
+            )
+
+            # 3c. W4 stable, monotonically increasing fragment IDs.
+            seq_a = page.evaluate("() => window.__captureTestFragmentSequence(3)")
+            seq_b = page.evaluate("() => window.__captureTestFragmentSequence(3)")
+            all_ok &= check(
+                "fragment_ids_stable_monotonic",
+                bool(seq_a.get("monotonic")) and bool(seq_b.get("monotonic"))
+                and seq_a.get("ids") == [1, 2, 3] and seq_b.get("ids") == [4, 5, 6],
+                f"a={seq_a} b={seq_b}",
+            )
+
             # 4. Start fake-device capture with a visible, incrementing timer.
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
@@ -164,11 +205,33 @@ def main() -> int:
             )
             all_ok &= check("capture_saved_state", page.locator("#captureState").inner_text() == "Saved")
 
+            # The final short fragment is kept and only marked finalized after
+            # a real server response (never a fabricated ACK).
+            snap = page.evaluate("() => window.__captureSnapshot()")
+            all_ok &= check(
+                "final_fragment_kept_on_stop",
+                snap.get("fragmentIds") == [1] and snap.get("fragmentSeq") == 1,
+                json.dumps({k: snap.get(k) for k in ("fragmentIds", "fragmentSeq")}),
+            )
+            all_ok &= check(
+                "fragment_finalized_only_from_server",
+                snap.get("finalizedIndexes") == [0] and snap.get("stalled") is False,
+                f"finalized={snap.get('finalizedIndexes')} stalled={snap.get('stalled')}",
+            )
+
             sessions_after = _sessions()
             new_sessions = [s for s in sessions_after if s["sessionId"] not in sessions_before]
             all_ok &= check("capture_session_created", len(new_sessions) == 1, f"{len(new_sessions)} new sessions")
             if new_sessions:
                 all_ok &= check("capture_session_finalized", new_sessions[0]["status"] == "FINALIZED", new_sessions[0]["status"])
+
+            # Synthetic mobile viewport keeps the capture controls usable.
+            page.set_viewport_size({"width": 390, "height": 844})
+            mobile_ok = page.locator("#capturePreview").is_visible() and (
+                page.locator("#captureStartBtn").is_visible() or page.locator("#captureStopBtn").is_visible()
+            )
+            all_ok &= check("mobile_viewport_capture_controls", mobile_ok)
+            page.set_viewport_size({"width": 1280, "height": 900})
         finally:
             all_ok &= check("capture_no_browser_errors", not browser_errors, "; ".join(browser_errors)[:1000])
             _close_safely(page)

@@ -87,19 +87,20 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: keep existing modal as shared implementation behind the Videos entry; do not duplicate capture state.
 
 ### W4 - Mobile MediaRecorder
-- Status: PENDING
+- Status: PASS
 - Objective: capture on mobile browsers without holding a long video in memory.
 - Dependencies: W3 PASS.
 - Implementation tasks: feature detection, camera/mic permissions, 10-30s fragment production, visible timer, lifecycle cleanup on stop/navigation/error, optional local full-copy path only when opted in.
 - Relevant files/modules: capture JS/template, capture models, browser tests.
 - Acceptance criteria: short bounded fragments emitted while recording continues; no whole-session/15-minute browser blob.
-- Required tests: fragment cadence/state, start/timer/stop, permission failure, synthetic mobile viewport/device.
-- Validation commands: targeted unit tests and fake-device Playwright.
-- Expected artifacts: synthetic fragment report and browser trace/screenshots as needed.
+- Required tests: fragment cadence/state/IDs, start/timer/stop, MIME feature detection, synthetic mobile viewport.
+- Validation commands: template JavaScript syntax check; `python -m py_compile tests/e2e/capture_new_recording.py`; synthetic Playwright `capture_new_recording.py`; regression `capture_dashboard.py`, `capture_crop.py`, `capture_chunking.py`, `capture_cancellation.py`.
+- Expected artifacts: `capture_new_recording_report.json` and existing capture reports.
+- Evidence: JS syntax `JS_OK`; test syntax `PY_OK`; diff check PASS. Synthetic Playwright W4 scenario 31/31 PASS. Regressions: capture dashboard 14/14, crop 5/5, chunking 10/10, cancellation 9/9. Current UI still transfers through the legacy processing-chunk endpoint; W5/W6 must replace this provisional coupling so short upload fragments do not become 15-second processing chunks.
 - Recovery/fallback: feature-detect supported MediaRecorder MIME types; visible unsupported state with retry.
 
 ### W5 - Incremental upload fragments
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: transfer short fragments incrementally and release acknowledged local bytes.
 - Dependencies: W3, W4 PASS.
 - Implementation tasks: stable fragment ID/idempotency key, bounded streaming endpoint, server digest/ACK, replay-safe duplicate response, browser ACK handling and progress state.
@@ -376,6 +377,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 
 - 2026-10-15: New acceptance criteria reveal the prior Capture/Chunking/Live Capture PASS labels covered the old modal, not the expected `Videos -> New Recording` UI. Reopened W3-W21 pending user-journey evidence. Existing backend and tests remain foundations, not acceptance proof. Baseline HEAD/remote `e9e61be`, clean tree. W2 host E2E PASS; W23 currently RAM-blocked at last 5.62 GiB reading. Plan must be committed before implementation.
 - 2026-10-15: W3 PASS. Added Videos -> New Recording entry and responsive capture shell with modes, crop, default-off Save local copy, timer, status, logical-video placeholder, and distinct actions. Synthetic Playwright journey passed 23/23; existing capture and cancellation journeys passed 16/16 and 9/9; Date unit tests 5/5. This verifies only W3 shell; mobile fragment capture and playlist features remain pending.
+- 2026-10-15: W4 PASS for browser capture generation. MediaRecorder now emits 10-30s bounded units with 15s default, stable sequence IDs, MIME feature detection, bounded pending queue, stop/error cleanup and synthetic mobile Playwright coverage. 31/31 new checks plus existing capture/crop/chunking/cancellation regressions pass. W5 is IN_PROGRESS to add distinct fragment ACK/idempotency endpoints and remove the legacy coupling where each emitted short unit is treated as a processable chunk; W6 remains required for ~10-15-minute server aggregation.
 
 ## Final Delivery Checklist
 
