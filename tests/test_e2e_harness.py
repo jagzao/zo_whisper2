@@ -187,3 +187,14 @@ def test_report_mirror_is_skipped_when_report_path_is_repo_root(tmp_path, monkey
     e2e._persist_report(report_path, {"status": "PASS", "ok": True})
 
     assert json.loads(report_path.read_text(encoding="utf-8"))["status"] == "PASS"
+
+
+def test_report_mirror_is_skipped_when_repo_root_is_not_writable(tmp_path, monkeypatch):
+    root = tmp_path / "repo-file"
+    root.write_text("not a directory", encoding="utf-8")
+    monkeypatch.setattr(e2e, "ROOT", root)
+    report_path = tmp_path / "data" / "e2e_report.json"
+
+    e2e._persist_report(report_path, {"status": "PASS", "ok": True})
+
+    assert json.loads(report_path.read_text(encoding="utf-8"))["status"] == "PASS"

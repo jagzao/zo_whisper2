@@ -169,7 +169,7 @@ def _persist_report(report_path: Path, payload: dict) -> None:
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(text, encoding="utf-8")
     mirror = ROOT / report_path.name
-    if mirror != report_path:
+    if mirror != report_path and ROOT.is_dir() and os.access(ROOT, os.W_OK):
         mirror.write_text(text, encoding="utf-8")
 
 

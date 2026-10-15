@@ -84,7 +84,7 @@ where = ["src"]
 # The dashboard template must ship inside the wheel: the Docker runtime
 # installs the project with `pip install --no-deps .` and renders the UI
 # from the installed package (no source-tree checkout in the image).
-"transcript_pipeline.dashboard" = ["templates/*.html"]
+"transcript_pipeline.dashboard" = ["templates/*.html", "static/*.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

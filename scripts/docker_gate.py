@@ -257,6 +257,8 @@ class GateContext:
                 env=env if env is not None else os.environ.copy(),
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 check=False,
                 timeout=remaining,
             )
@@ -514,6 +516,7 @@ def gate_e2e(ctx: GateContext) -> None:
         "-e", "ZMI_DATA_ROOT=/data",
         "-e", "ZMI_TEST_DATA_ROOT=/data",
         "-e", "ZMI_E2E_EXTERNAL_SERVER=1",
+        "--user", "10001:10001",
     ]
     try:
         ctx.run(

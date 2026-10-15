@@ -113,10 +113,12 @@ def test_e2e_gate_runs_playwright_service_in_isolated_compose_network(calls):
     assert len(calls) == 4  # healthy app, synthetic seed, test service, scoped cleanup
     seed = calls[1]["cmd"]
     assert seed[-3:] == ["zmi-e2e", "python", "docs/assets/generate_mock_data.py"]
+    assert "--user" in seed and seed[seed.index("--user") + 1] == "10001:10001"
     run = calls[2]["cmd"]
     assert run[:6] == ["docker", "compose", "-f", str(docker_gate.COMPOSE_FILE), "-p", PROJECT]
     assert run[6:9] == ["--profile", "e2e", "run"]
     assert run[-1] == "zmi-e2e"
+    assert "--user" in run and run[run.index("--user") + 1] == "10001:10001"
     assert "ZMI_BASE_URL=http://127.0.0.1:5000" in run
     assert "ZMI_TEST_DATA_ROOT=/data" in run
     assert "ZMI_E2E_EXTERNAL_SERVER=1" in run

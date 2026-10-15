@@ -137,6 +137,14 @@ def main() -> int:
         page.on("console", _capture_console)
         page.on("pageerror", _capture_page_error)
 
+        def _capture_bad_response(response):
+            if response.status >= 400:
+                detail = f"response: {response.status} {response.url}"
+                browser_errors.append(detail)
+                print(f"[HTTP {response.status}] {response.url}")
+
+        page.on("response", _capture_bad_response)
+
         page.goto(DASHBOARD_URL, timeout=TIMEOUT_MS)
         page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
 

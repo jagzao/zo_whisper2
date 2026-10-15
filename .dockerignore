@@ -52,6 +52,7 @@ dist
 
 # Local virtualenvs
 .venv
+.venv-validation
 venv
 
 # Non-product local code
