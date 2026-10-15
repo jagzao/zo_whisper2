@@ -1,4 +1,4 @@
-﻿# WHISPER LIVE CAPTURE EXECUTION PLAN
+# WHISPER LIVE CAPTURE EXECUTION PLAN
 
 Canonical execution source for the Live Capture mission on `feat/zmi-documentation-synthesis-v2`. Keep this file current at every stage checkpoint. Work stays in this repository and branch; no merge or deploy.
 
@@ -54,7 +54,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: `feat/zmi-documentation-synthesis-v2`, `f3e9f66`, clean; findings above.
 
 ### W1 — Canonical execution plan
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: commit this full-scope plan before further implementation.
 - Dependencies: W0 PASS.
 - Implementation tasks: save plan, review stages/dependencies, commit on current branch.
@@ -66,7 +66,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Recovery/fallback: restore plan from Git history; no worktree creation.
 
 ### W2 — Host E2E diagnosis and repair
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: reproduce/fix host E2E failures, including reported Playwright `TargetClosedError` if reproducible.
 - Dependencies: W1 PASS.
 - Implementation tasks: trace browser/context/page ownership, fixture teardown, async tasks, navigation/reload and modal lifecycle; separately fix fixture project data and expected missing-frame requests if still failing. No sleeps.
@@ -292,4 +292,3 @@ Implementation complete; Date green with recorded/created preference and backend
 - [ ] Plan and implementation committed on current branch
 - [ ] Remote branch SHA equals local HEAD
 - [ ] Worktree clean; no merge/deployment
-
