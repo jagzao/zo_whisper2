@@ -12,8 +12,22 @@ def _read(path: str) -> str:
 
 def test_jenkinsfile_contains_required_deterministic_stages():
     text = _read("Jenkinsfile")
-    for stage in ("Targeted", "Quality", "Security", "Playwright", "SonarQube", "Full E2E"):
+    for stage in (
+        "Bootstrap",
+        "Targeted",
+        "Full pytest",
+        "Quality",
+        "Security",
+        "Docker config and build",
+        "Docker smoke, persistence, ASR",
+        "Playwright E2E",
+        "SonarQube",
+        "Aggregate, archive, notify",
+    ):
         assert f"stage('{stage}')" in text
+    # Host Playwright E2E is intentionally single-stage; PLV5 removed duplicate paths.
+    assert text.count("scripts/gate_runner.py e2e") == 1
+    assert text.count("scripts/docker_gate.py docker-e2e") >= 1
     assert "scripts/gate_runner.py" in text
     assert "SONAR_STATUS=NOT_CONFIGURED" in text
     assert "archiveArtifacts" in text

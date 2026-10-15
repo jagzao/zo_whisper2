@@ -122,3 +122,4 @@ CLAUDE.md
 
 # Deterministic gate runtime artifacts
 artifacts/
+/knowledge-outbox/
