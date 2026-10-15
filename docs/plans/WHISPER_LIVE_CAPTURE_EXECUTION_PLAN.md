@@ -334,7 +334,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: final synthetic Playwright rerun passed playlist/title review and Videos table/docs action (14 checks), GC safety UI (5), silent capture+late transcript, New Recording/incremental ACK, crop, offline IndexedDB retry, upload/processing cancellation, server chunks, chunking retry, and backend Date sort across filtered pages. No browser errors reported.
 
 ### W22 - Host E2E regression
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: revalidate dashboard critical path with completed capture UI and preserve projects/date flows.
 - Dependencies: W2, W20, W21 PASS.
 - Implementation tasks: run host harness; repair changed UI selectors/fixtures without dropping checks.
@@ -344,7 +344,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
 - Expected artifacts: host report/log/latest gate.
 - Recovery/fallback: two root-cause fixes maximum per failure; continue independent stages.
-- Evidence: pre-W18 change host rerun passed in 31.29s. Final host gate reruns in W23 heavy validation after logical-video listing changes.
+- Evidence: final `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e` PASS in 25.92s after logical-video listing changes; `artifacts/gates/e2e-host-data/e2e_report.json` reports PASS, `critical_path_no_browser_errors` PASS, no TargetClosedError.
 
 ### W23 - Docker/heavy validation
 - Status: IN_PROGRESS
@@ -423,6 +423,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W16-W17 PASS. Silent synthetic capture completes and shows AUDIO_MISSING / TRANSCRIPT_REQUIRED; later transcript persists with loose alignment and clears requirement. Audio/transcript/docs/GC focused tests 96 passed; capture dashboard Playwright passed.
 - 2026-10-15: W18-W19 PASS. Confirmed logical playlist videos now appear as read-only entries in Videos, map to the same physical chunk, and carry title metadata into the existing processor/Docs V2 provenance; GC suggestions are review-only. Integration tests passed; Playwright verified playlist rows/docs action and GC safety UI. W20-W21 await final full rerun after these changes.
 - 2026-10-15: W20-W21 PASS. Final focused unit/integration matrix 281 passed. Synthetic Playwright journeys passed for capture, playlist/title review, Videos/docs action, GC safety, audio/transcript, crop, offline/retry, cancellation, processing chunks, and Date. W22 is rerunning after these changes.
+- 2026-10-15: W22 PASS. Heavy-run host E2E after the final UI/API integration passed in 25.92s, with critical path and no-browser-errors checks PASS. W23 Docker/heavy gates continue.
 - 2026-10-15: W23 IN_PROGRESS. RAM gate currently allows heavy validation at 6.55 GiB (threshold 6.0); run full heavy/Docker gates and continue after failures using bounded root-cause repair policy.
 
 ## Final Delivery Checklist
