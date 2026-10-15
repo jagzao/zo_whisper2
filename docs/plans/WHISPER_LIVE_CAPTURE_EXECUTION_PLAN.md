@@ -241,7 +241,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 
 
 ### W15 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Full unit/integration acceptance matrix
-- Status: PENDING
+- Status: PASS
 - Objective: validate all required domain/API flows before broad browser regressions.
 - Dependencies: W3, W5ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W11 PASS.
 - Implementation tasks: fill only requirement-tied test gaps; synthetic fixtures only.
@@ -251,6 +251,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Validation commands: targeted test files, then repository pytest as policy permits.
 - Expected artifacts: gate reports in `artifacts/gates/`.
 - Recovery/fallback: two distinct fixes per failure, classify/document and continue independent stages.
+
 
 ### W16 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Playwright/E2E regression
 - Status: PENDING
@@ -298,16 +299,16 @@ Implementation complete; Date green with recorded/created preference and backend
 |---|---|---|---|
 | UNIT | date selection / recorded_at / created_at fallback | W14 | PASS: API fallback and UTC epoch tests |
 | UNIT | newest default, asc/desc sorting, filter/page preservation | W14 | PASS: server sort tests; Playwright 7/7 |
-| UNIT | chunk state transitions | W3/W5 | W3 PASS: covered in 31 new tests |
-| UNIT | audio-state logic | W7 | pending |
-| UNIT | GC candidate logic | W10 | pending |
+| UNIT | chunk state transitions | W3/W5/W11/W12 | PASS: domain, upload/processing cancel, retry and completion race tests |
+| UNIT | audio-state logic | W7/W9 | PASS: audio-state and no-audio processor tests |
+| UNIT | GC candidate logic | W10 | PASS: documented/stale, undocumented and no-delete tests |
 | UNIT | upload cancellation transitions/retry/cleanup; processing cancellation races/idempotency | W11/W12 | pending |
 | INTEGRATION/API | create session; persist recording and recorded_at | W3 | W3 PASS: store/service roundtrip tests; W4 PASS: 19 Flask API tests |
-| INTEGRATION/API | chunk finalization/order; processing state | W5 | pending |
-| INTEGRATION/API | no-audio flow | W7 | pending |
+| INTEGRATION/API | chunk finalization/order; processing state | W5/W9 | PASS: bounded upload, ordering, persisted processor state |
+| INTEGRATION/API | no-audio flow | W7/W9 | PASS: missing audio remains processable and transcript-required |
 | INTEGRATION/API | late transcript association | W8 | W8 PASS: 37 model/service/API tests; synthetic browser late association and loose alignment pass |
 | INTEGRATION/API | video listing sorting | W14 | PASS: recorded/created date sorting API tests |
-| INTEGRATION/API | upload cancel; queued/active processing cancel; double cancel; retry | W11/W12 | pending |
+| INTEGRATION/API | upload cancel; queued/active processing cancel; double cancel; retry | W11/W12 | PASS: idempotent API and service state tests |
 | PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13 | W2 PASS: 56 checks pass, 0 fail; gate E2E PASS |
 | PLAYWRIGHT/E2E | Date display and asc/desc | W14/W16 | W14 PASS: 7/7 synthetic Date checks |
 | PLAYWRIGHT/E2E | upload cancel; processing cancel/Cancelando/CANCELLED/retry | W13 | pending |
@@ -335,7 +336,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
-- 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PASS; W13 PASS: synthetic Playwright cancellation checks 9/9.
+- 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PASS; W13 PASS: synthetic Playwright cancellation checks 9/9. W14 PASS (32 API/static + 7 browser checks). W15 PASS: full pytest 975 passed / 3 skipped.
 - 2026-10-15: W14 PASS. Date API uses recorded_at then created_at, Date DESC by default, backend ASC/DESC; filters/pagination retain order. 32 tests + 7 Playwright checks passed.
 - 2026-10-15: W10 PASS (commit `46cd486`). Advisory cleanup API/UI; requires old + processed + documented; no deletion; 37 tests passed. W11 PENDING.
 - 2026-10-15: W9 PASS (commit `5f04593`). Existing processor routes finalized chunks through crop-aware extraction and Docs V2; no-audio avoids Whisper; late transcript is one untimed `session_transcript.loose` evidence item. Processing state is persisted, and duplicate timed/loose evidence is avoided. Targeted regression: 82 passed. W10 PASS; W11?W13 cancellation stages added by user scope.
