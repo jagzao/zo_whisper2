@@ -35,16 +35,18 @@ def test_dependency_audit_uses_project_lockfiles_and_separates_evidence(tmp_path
 
     def run(args, **kwargs):
         calls.append(args)
-        return subprocess.CompletedProcess(args, 0, stdout='{"dependencies": []}', stderr="")
+        return subprocess.CompletedProcess(args, 0, stdout=json.dumps({
+            "status": "CLEAN", "service_used": "pypi", "transport_fallback": False, "vulnerabilities": []
+        }), stderr="")
 
     monkeypatch.setattr(security.subprocess, "run", run)
     report = []
     check_dependency_audit(report)
 
-    assert [entry[entry.index("-r") + 1] for entry in calls] == [
+    assert [entry[entry.index("--lockfile") + 1] for entry in calls] == [
         str(root / "requirements.runtime.lock.txt"), str(root / "requirements.lock.txt")
     ]
-    assert all(entry[-1] == "--format=json" for entry in calls)
+    assert all(entry[1].endswith("pip_audit_locked.py") for entry in calls)
     assert [item["name"] for item in report] == ["dependency_audit_runtime", "dependency_audit_dev"]
     assert all(item["status"] == "PASS" for item in report)
     assert (audit_dir / "runtime-audit.json").is_file()
@@ -64,9 +66,10 @@ def test_project_lock_vulnerability_is_blocking_and_reports_fix(tmp_path, monkey
     monkeypatch.setattr(security, "AUDIT_DIR", tmp_path / "audit")
 
     def run(args, **kwargs):
-        payload = {"dependencies": [{"name": "lib", "version": "1", "vulns": [
-            {"id": "GHSA-test", "fix_versions": ["2"]}
-        ]}]}
+        payload = {
+            "status": "VULNERABLE", "service_used": "pypi", "transport_fallback": False,
+            "vulnerabilities": [{"package": "lib", "version": "1", "advisory": "GHSA-test", "fixed_versions": ["2"]}],
+        }
         return subprocess.CompletedProcess(args, 1, stdout=json.dumps(payload), stderr="")
 
     monkeypatch.setattr(security.subprocess, "run", run)
@@ -76,6 +79,9 @@ def test_project_lock_vulnerability_is_blocking_and_reports_fix(tmp_path, monkey
     assert report[0]["vulnerabilities"] == [{
         "package": "lib", "version": "1", "advisory": "GHSA-test", "fixed_versions": ["2"]
     }]
+    assert report[0]["audit_status"] == "VULNERABLE"
+    assert report[0]["service_used"] == "pypi"
+    assert (tmp_path / "audit" / "runtime-audit.json").is_file()
 
 
 def test_security_pytest_inherits_source_import_path(monkeypatch):

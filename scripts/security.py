@@ -357,7 +357,7 @@ def check_dependency_audit(report: list[dict]) -> None:
         audit_path = AUDIT_DIR / f"{scope}-audit.json"
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pip_audit", "-r", str(lock_path), "--format=json"],
+                [sys.executable, str(ROOT / "scripts" / "pip_audit_locked.py"), "--lockfile", str(lock_path)],
                 cwd=str(ROOT),
                 capture_output=True,
                 text=True,
@@ -368,40 +368,46 @@ def check_dependency_audit(report: list[dict]) -> None:
             try:
                 payload: dict[str, object] = json.loads(result.stdout or "{}")
             except json.JSONDecodeError:
-                payload = {"raw_output": result.stdout, "stderr": result.stderr}
+                payload = {
+                    "status": "INVALID_REPORT",
+                    "service_used": "none",
+                    "transport_fallback": False,
+                    "vulnerabilities": [],
+                }
+            valid_statuses = {"CLEAN", "VULNERABLE", "TRANSPORT_ERROR", "INVALID_REPORT"}
+            audit_status = payload.get("status")
+            if audit_status not in valid_statuses:
+                payload = {
+                    "status": "INVALID_REPORT",
+                    "service_used": "none",
+                    "transport_fallback": False,
+                    "vulnerabilities": [],
+                }
+                audit_status = "INVALID_REPORT"
+            if audit_status == "CLEAN" and result.returncode != 0:
+                payload["status"] = "INVALID_REPORT"
+                audit_status = "INVALID_REPORT"
             temp_path = audit_path.with_suffix(f".json.tmp-{os.getpid()}")
             temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
             os.replace(temp_path, audit_path)
-            vulnerabilities = []
-            dependencies = payload.get("dependencies")
-            for dependency in dependencies if isinstance(dependencies, list) else []:
-                if not isinstance(dependency, dict):
-                    continue
-                package_vulns = dependency.get("vulns")
-                for vulnerability in package_vulns if isinstance(package_vulns, list) else []:
-                    if not isinstance(vulnerability, dict):
-                        continue
-                    vulnerabilities.append({
-                        "package": dependency.get("name"),
-                        "version": dependency.get("version"),
-                        "advisory": vulnerability.get("id"),
-                        "fixed_versions": vulnerability.get("fix_versions", []),
-                    })
-            valid_report = isinstance(payload.get("dependencies"), list)
-            ok = result.returncode == 0 and valid_report and not vulnerabilities
+            vulnerabilities = payload.get("vulnerabilities", [])
+            if not isinstance(vulnerabilities, list):
+                vulnerabilities = []
+                payload["status"] = "INVALID_REPORT"
+                audit_status = "INVALID_REPORT"
+            ok = audit_status == "CLEAN"
             report.append({
                 "name": f"dependency_audit_{scope}",
                 "status": "PASS" if ok else "FAIL",
-                "detail": f"{len(vulnerabilities)} vulnerability(ies); evidence={audit_path}",
+                "detail": f"{audit_status}; service={payload.get('service_used', 'none')}; fallback={payload.get('transport_fallback', False)}; evidence={audit_path}",
                 "vulnerabilities": vulnerabilities,
+                "audit_status": audit_status,
+                "service_used": payload.get("service_used", "none"),
+                "transport_fallback": payload.get("transport_fallback", False),
             })
-            print(f"[{'PASS' if ok else 'FAIL'}] dependency_audit_{scope}: {len(vulnerabilities)} vulnerability(ies)")
-            if result.returncode and not vulnerabilities:
-                _log(report, f"dependency_audit_{scope}_command", False, (result.stderr or result.stdout).strip())
-            elif not valid_report:
-                _log(report, f"dependency_audit_{scope}_report", False, "pip-audit returned invalid JSON report")
+            print(f"[{'PASS' if ok else 'FAIL'}] dependency_audit_{scope}: {audit_status}")
         except Exception as exc:  # fail closed on missing tool, lock, or audit execution
-            _log(report, f"dependency_audit_{scope}", False, f"{type(exc).__name__}: {exc}")
+            _log(report, f"dependency_audit_{scope}", False, f"TRANSPORT_ERROR: {type(exc).__name__}")
 
 
 def check_history_policy(report: list[dict]) -> None:
