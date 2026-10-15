@@ -31,6 +31,11 @@ python docs/assets/cleanup_mock_data.py
 
 Zo Media Intelligence is a web application; its UI adapter is Playwright Chromium. Electron is not a dependency of this product.
 
+## Mobile / LAN access
+
+Loopback is the default. To reach the dashboard from a phone on the same Wi-Fi over HTTPS, opt in and install the local certificate. See `docs/ops/MOBILE_LAN_ACCESS.md`.
+
+
 ## Jenkins
 
 `Jenkinsfile` orchestrates:

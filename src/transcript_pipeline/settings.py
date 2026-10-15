@@ -67,6 +67,19 @@ def _str_or_none(name: str) -> str | None:
     return val if val else None
 
 
+def _comma_list(raw: str | None) -> tuple[str, ...]:
+    """Parses a comma-separated host list, dropping blanks.
+
+    Entries are kept verbatim except for surrounding whitespace; binding a
+    hostname would resolve against the network at runtime, and this list is
+    used only for the Host/Origin allowlist and certificate SANs, so no DNS
+    resolution happens here.
+    """
+    if not raw:
+        return ()
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
 def _allowed_export_roots(raw: str | None) -> tuple[Path, ...]:
     """Parses ZMI_ALLOWED_EXPORT_ROOTS into Path entries.
 
@@ -132,6 +145,18 @@ class Settings:
     container_mode: bool = False
     allowed_export_roots: tuple[Path, ...] = ()
 
+    # ── Mobile/LAN access (W25, explicit opt-in) ─────────────────────
+    # Off by default; loopback-only behavior is unchanged while `lan_access`
+    # is False. When True the dashboard may bind 0.0.0.0, accepts requests
+    # whose Host/Origin is one of `lan_hosts` (or a detected interface IP),
+    # and can serve HTTPS with the configured certificate/key so a phone on
+    # the same Wi-Fi gets camera permission. Defaults keep keyword
+    # construction in existing test fixtures working.
+    lan_access: bool = False
+    lan_hosts: tuple[str, ...] = ()
+    dashboard_cert_file: Path | None = None
+    dashboard_key_file: Path | None = None
+
     @classmethod
     def from_env(cls) -> Settings:
         import os
@@ -169,6 +194,10 @@ class Settings:
             icecream_videos=Path(v) if (v := os.getenv("ICECREAM_VIDEOS")) else None,
             container_mode=_bool("ZMI_CONTAINER_MODE", False),
             allowed_export_roots=_allowed_export_roots(os.getenv("ZMI_ALLOWED_EXPORT_ROOTS")),
+            lan_access=_bool("ZMI_LAN_ACCESS", False),
+            lan_hosts=_comma_list(os.getenv("ZMI_LAN_HOSTS")),
+            dashboard_cert_file=Path(v) if (v := os.getenv("DASHBOARD_CERT")) else None,
+            dashboard_key_file=Path(v) if (v := os.getenv("DASHBOARD_KEY")) else None,
         )
         settings._validate()
         return settings
@@ -187,13 +216,26 @@ class Settings:
             # host's loopback only. Anything else non-loopback (a LAN IP,
             # a hostname) is still rejected: no public-bind mode exists.
             dashboard_host_ok = self.dashboard_host in _LOOPBACK_HOSTNAMES or self.dashboard_host == "0.0.0.0"
+        elif self.lan_access:
+            # Explicit mobile/LAN opt-in (W25): the owner asked for
+            # same-Wi-Fi access, so a wildcard bind is allowed. Loopback is
+            # still accepted. This is a deliberate, separate flag — never
+            # implied by container mode or by DASHBOARD_HOST alone.
+            dashboard_host_ok = self.dashboard_host in _LOOPBACK_HOSTNAMES or self.dashboard_host == "0.0.0.0"
         else:
             dashboard_host_ok = self.dashboard_host in _LOOPBACK_HOSTNAMES
         if not dashboard_host_ok:
             container_hint = " or 0.0.0.0 (container mode)" if self.container_mode else ""
+            if not self.lan_access:
+                container_hint += " or 0.0.0.0 (ZMI_LAN_ACCESS=true)"
             raise ConfigurationError(
                 f"DASHBOARD_HOST must be a loopback address (127.0.0.1/localhost/::1{container_hint}): "
-                f"{self.dashboard_host!r} — remote binding is not supported."
+                f"{self.dashboard_host!r} — remote binding requires ZMI_LAN_ACCESS=true."
+            )
+        if (self.dashboard_cert_file is None) != (self.dashboard_key_file is None):
+            raise ConfigurationError(
+                "DASHBOARD_CERT and DASHBOARD_KEY must be set together — HTTPS needs both the "
+                "certificate and its private key."
             )
         for root in self.allowed_export_roots:
             # Absolute-only: a relative entry would resolve against an

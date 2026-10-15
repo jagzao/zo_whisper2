@@ -15,6 +15,7 @@ Features:
 from __future__ import annotations
 
 import json
+import ipaddress
 import logging
 import os
 import re
@@ -49,6 +50,7 @@ from transcript_pipeline.documentation.engine import (
     remove_step,
     update_step,
 )
+from transcript_pipeline import lan_access
 from transcript_pipeline.live_capture import CaptureService
 from transcript_pipeline.live_capture import errors as capture_errors
 from transcript_pipeline.live_capture import models as capture_models
@@ -105,6 +107,14 @@ app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
 # opened".
 _LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1"}
 _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+# W25: extra Host/Origin values accepted only when ZMI_LAN_ACCESS is enabled.
+# Populated once at import from the configured host list plus the machine's
+# detected private LAN IPv4 addresses; tests and operators can override it.
+# Empty (loopback-only) unless LAN mode is explicitly opted in.
+_LAN_HOST_ALLOWLIST: set[str] = set()
+if SETTINGS.lan_access:
+    _LAN_HOST_ALLOWLIST.update(h.lower() for h in SETTINGS.lan_hosts)
+    _LAN_HOST_ALLOWLIST.update(lan_access.local_ipv4_addresses())
 # Generated fresh per process, never persisted, never logged — the frontend
 # reads it from the page it was served (see index()) and echoes it back on
 # every mutating request via X-Local-Dashboard-Token.
@@ -147,16 +157,31 @@ def _hostname_only(host_header: str) -> str:
     return host_header
 
 
+def _allowed_request_hostnames() -> set[str]:
+    """Loopback names plus (only with LAN mode) configured/detected LAN hosts."""
+    return _LOCAL_HOSTNAMES | _LAN_HOST_ALLOWLIST
+
+
 @app.before_request
 def _enforce_local_only() -> Any:
+    allowed = _allowed_request_hostnames()
+    if SETTINGS.lan_access:
+        try:
+            remote = ipaddress.ip_address(request.remote_addr or "")
+        except ValueError:
+            return jsonify({"ok": False, "error": "Forbidden"}), 403
+        if not remote.is_loopback and not remote.is_private:
+            logger.warning("[SECURITY] Rejected non-private LAN client: %s", remote)
+            return jsonify({"ok": False, "error": "Forbidden"}), 403
+
     host = _hostname_only(request.host or "")
-    if host not in _LOCAL_HOSTNAMES:
+    if host not in allowed:
         logger.warning("[SECURITY] Rejected request with non-local Host: %s", request.host)
         return jsonify({"ok": False, "error": "Forbidden"}), 403
 
     if request.method in _MUTATING_METHODS:
         origin = request.headers.get("Origin")
-        if origin and (urlparse(origin).hostname or "").lower() not in _LOCAL_HOSTNAMES:
+        if origin and (urlparse(origin).hostname or "").lower() not in allowed:
             logger.warning("[SECURITY] Rejected %s with non-local Origin: %s", request.method, origin)
             return jsonify({"ok": False, "error": "Forbidden"}), 403
 
@@ -707,6 +732,61 @@ def index() -> str:
 @app.route("/api/status")
 def api_status() -> Any:
     return jsonify(_run_state)
+
+
+@app.route("/api/health")
+def api_health() -> Any:
+    """Backend liveness used by the UI's ONLINE indicator.
+
+    Same-origin relative call: the phone reaches the same server that serves
+    the page, so this is the authoritative "the backend is up" signal — never
+    inferred from a hardcoded loopback URL.
+    """
+    return jsonify({"ok": True, "status": "ONLINE", "service": "whisper-dashboard"})
+
+
+@app.route("/api/network")
+def api_network() -> Any:
+    """Advertised LAN endpoints/setup for the phone, built from real request data.
+
+    URLs are assembled from the detected/configured LAN hosts and the actual
+    serving scheme — no loopback literal is hardcoded into a client-facing
+    URL. Empty list when LAN access is disabled.
+    """
+    lan_access_enabled = bool(SETTINGS.lan_access)
+    https_active = bool(request.is_secure)
+    port = SETTINGS.dashboard_port
+    scheme = "https" if https_active else "http"
+
+    advertised: list[str] = []
+    if lan_access_enabled:
+        seen: set[str] = set()
+        for host in [*SETTINGS.lan_hosts, *lan_access.local_ipv4_addresses()]:
+            normalized = lan_access.normalize_host(host)
+            if not normalized or normalized in seen or normalized in {"localhost", "127.0.0.1"}:
+                continue
+            seen.add(normalized)
+            advertised.append(f"{scheme}://{normalized}:{port}/")
+
+    fingerprint = None
+    if SETTINGS.dashboard_cert_file and SETTINGS.dashboard_cert_file.is_file():
+        try:
+            fingerprint = lan_access.certificate_fingerprint(SETTINGS.dashboard_cert_file)
+        except Exception:
+            fingerprint = None
+
+    return jsonify(
+        {
+            "ok": True,
+            "lan_access": lan_access_enabled,
+            "https": https_active,
+            "port": port,
+            "urls": advertised,
+            "health_path": "/api/health",
+            "cert_fingerprint_sha256": fingerprint,
+            "setup_doc": "docs/ops/MOBILE_LAN_ACCESS.md",
+        }
+    )
 
 
 @app.route("/api/folders")
@@ -1804,12 +1884,17 @@ def _mark_failed_stage() -> None:
 
 
 def main() -> None:
-    # A non-loopback DASHBOARD_HOST is rejected at Settings.from_env() time
-    # (see settings.py) — by the time main() runs, dashboard_host is
-    # guaranteed to be loopback-only, or 0.0.0.0 when ZMI_CONTAINER_MODE=true
-    # (container-internal bind; Compose publishes the port on host loopback
-    # only, and the Host/Origin/token request protections still apply).
+    # Mobile/LAN mode (W25) is an explicit opt-in (ZMI_LAN_ACCESS=true). While
+    # it is off, dashboard_host is guaranteed loopback-only here, or 0.0.0.0
+    # when ZMI_CONTAINER_MODE=true (container-internal bind; Compose publishes
+    # the port on host loopback only). With LAN mode on, the owner asked for
+    # same-Wi-Fi access, so the server binds all interfaces — the Host/Origin
+    # allowlist and per-process token still apply to every request.
     _ensure_folders()
+    host = "0.0.0.0" if SETTINGS.lan_access else SETTINGS.dashboard_host
+    ssl_context = None
+    if SETTINGS.dashboard_cert_file and SETTINGS.dashboard_key_file:
+        ssl_context = (str(SETTINGS.dashboard_cert_file), str(SETTINGS.dashboard_key_file))
     # threaded=True: single-threaded serving repeatedly stalled unrelated
     # requests behind a still-open media stream or the browser's own
     # background polling (/api/status, /api/logs every 3s) — reproduced
@@ -1817,7 +1902,13 @@ def main() -> None:
     # locking on shared JSON files today, but writes are infrequent/
     # user-driven (edit/delete/upload) — the concurrency risk is far smaller
     # than a dev server that can stall client requests indefinitely.
-    app.run(host=SETTINGS.dashboard_host, port=SETTINGS.dashboard_port, debug=False, threaded=True)
+    app.run(
+        host=host,
+        port=SETTINGS.dashboard_port,
+        debug=False,
+        threaded=True,
+        ssl_context=ssl_context,
+    )
 
 
 if __name__ == "__main__":

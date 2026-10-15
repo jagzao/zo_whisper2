@@ -35,6 +35,9 @@ Frames/
 # ── K'ab ingest runtime (media recibido, certs, token — nunca en Git) ───────
 kab-inbox/
 
+# ── Mobile/LAN access runtime (dashboard HTTPS cert + private key) ──────────
+lan-access/
+
 # ── Base de datos del FileTracker ───────────────────────────────────────────
 processed_files.json
 

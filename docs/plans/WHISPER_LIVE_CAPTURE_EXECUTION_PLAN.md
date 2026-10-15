@@ -126,7 +126,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: W6 unit/API/FFmpeg tests 25 passed; broad `pytest -q -k "capture or dashboard or live_capture"` 352 passed, 684 deselected. Synthetic Playwright `capture_processing_chunks.py` 17/17 PASS; chunk 0 finalized while recording, stop drained/finalized the tail, all 7 ACKed fragments mapped once, media present. W5 Playwright regressions `capture_new_recording`, `capture_chunking`, `capture_dashboard`, `capture_crop`, `capture_cancellation` passed. `py_compile` and inline JS syntax check passed. An added assertion verifies `recorded_at` is preserved from the first fragment through mapping and assembled chunk. Source fragments remain available.
 
 ### W25 - MOBILE/LAN ACCESS
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: make Whisper reachable from a phone on the same Wi-Fi over HTTPS, with API, camera, capture, and fragment upload working from the LAN origin.
 - Dependencies: W3, W4, W5, W6 PASS.
 - Implementation tasks: bind the server to `0.0.0.0`; remove loopback-only settings validation; use same-origin relative API requests; configure HTTPS certificate whose SAN includes the LAN host; expose a clear phone URL and trust/setup instructions; tie capture status to server health; verify camera permission and fragment upload over HTTPS.
@@ -136,9 +136,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: focused settings/API tests; inspect listening address; start HTTPS server on `0.0.0.0`; Playwright Chromium with synthetic camera/media over HTTPS; open advertised LAN endpoint from another local process.
 - Expected artifacts: HTTPS certificate/config (private key excluded from Git), LAN setup guide, `mobile_lan_access_report.json`.
 - Recovery/fallback: accept an explicit certificate path and host/SAN configuration; if a trusted device certificate cannot be provisioned here, validate HTTPS using a test CA and document the device trust installation step.
+- Evidence: official W25 targeted gate passed; latest focused suite 55 passed, 2 skipped (host-level Norton TLS interception); settings/security/dashboard regressions 163 passed; dashboard API regressions 181 passed; broad filter 290 passed, 1 skipped. `mobile_lan_access_report.json` 16/16 PASS for HTTPS, backend ONLINE, LAN URLs, camera preview, synthetic recording, durable fragment ACKs, stop, mobile viewport and browser errors. Integration exercised `0.0.0.0`, HTTPS health/files and synthetic fragment upload through a LAN interface. Host check to active Wi-Fi URL `https://192.168.50.67:5001/api/health` returned 200 ONLINE. CA-to-server chain is cryptographically validated; live CA trust is skipped because Norton substitutes local TLS. Added private-client filtering and SAN-aware certificate regeneration on IP changes. Local config is enabled and private cert/key are in ignored `lan-access/`.
 
 ### W7 - Upload resilience and local buffer
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: survive transient/offline connectivity without fragment loss or duplication.
 - Dependencies: W5 PASS.
 - Implementation tasks: IndexedDB pending-fragment queue, configurable storage ceiling, visible near/full warning, pause/retry/backoff, ACK cleanup and opt-in Save local copy.
@@ -384,6 +385,7 @@ Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access work
 - RAM heavy gate last measured 5.62 GiB (<6 GiB). Docker build/E2E remain gated; independent host/UI implementation continues.
 - Existing capture modal controls are not proof of required Videos entry or playlist usability.
 - LAN camera capture requires HTTPS and a phone-trusted certificate; untrusted self-signed TLS will not grant camera access.
+- Norton Web/Mail Shield replaces locally served certificates; host trust checks are explicitly skipped there. The generated CA/server chain is validated offline; the phone must trust the CA once.
 
 ## Model / Executor Policy
 
@@ -396,6 +398,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W4 PASS for browser capture generation. MediaRecorder now emits 10-30s bounded units with 15s default, stable sequence IDs, MIME feature detection, bounded pending queue, stop/error cleanup and synthetic mobile Playwright coverage. 31/31 new checks plus existing capture/crop/chunking/cancellation regressions pass. W5 is IN_PROGRESS to add distinct fragment ACK/idempotency endpoints and remove the legacy coupling where each emitted short unit is treated as a processable chunk; W6 remains required for ~10-15-minute server aggregation.
 - 2026-10-15: W5 PASS. Added separate durable fragment manifest/media and idempotent upload/list endpoints; browser releases bytes only on real ACK, retries stable IDs, and keeps session processing duration at 600s without creating a processing chunk per fragment. API/unit/browser verification passed (33 focused fragment tests, 326 dashboard/live-capture tests selected, synthetic Playwright capture/chunking/cancellation). W6 now IN_PROGRESS to assemble/map these fragments into server processing chunks.
 - 2026-10-15: W6 PASS. Backend assembles ACKed short fragments into ~600-second playable chunks during capture and drains a partial tail on stop. Fragment-to-chunk mapping is durable and retryable. Focused W6 unit/API/FFmpeg tests 25 passed; broad capture/dashboard/live-capture selection 352 passed; W6 synthetic Playwright 17/17 and all W5 UI regressions passed. Added W25 MOBILE/LAN ACCESS as the next stage and marked IN_PROGRESS before implementation.
+- 2026-10-15: W25 PASS. Added explicit LAN opt-in, `0.0.0.0` bind, local CA/server certificate with detected IP SANs, backend ONLINE indicator, LAN URL help, same-origin HTTPS health/capture/upload and phone trust guide. Focused suite 55 passed/2 skipped; synthetic mobile HTTPS Playwright 16/16; security/API regressions green. Norton Web/Mail Shield intercepts local TLS, so direct trust assertions skip with evidence; device CA install remains required. Active Wi-Fi URL is `https://192.168.50.67:5001/`. W7 is IN_PROGRESS.
 
 ## Final Delivery Checklist
 

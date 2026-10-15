@@ -724,6 +724,7 @@
             <h1>Zo Media <span>Intelligence</span></h1>
         </div>
         <div class="row" style="margin:0;">
+            <span id="serverHealth" class="status pending" title="Backend health">Checking…</span>
             <span id="runStatus" class="status pending">Ready</span>
             <button id="btnRunFull" onclick="run('full')">RUN Full</button>
             <button id="btnRunCompress" onclick="run('compress')">Compress Only</button>
@@ -937,6 +938,9 @@
 
                 <h3>Logs</h3>
                 <p>The document icon opens real-time logs to debug errors.</p>
+
+                <h3>Mobile / LAN access</h3>
+                <div id="lanAccessHelp" class="muted">Checking LAN access…</div>
             </div>
         </div>
     </div>
@@ -1003,6 +1007,7 @@
             <div class="row capture-status" style="margin-top:0;">
                 <span id="captureTimer" aria-label="Recording timer">00:00:00</span>
                 <span id="captureUploadStatus" aria-label="Upload status" style="flex:1;">Upload: idle · pending 0 · processing 0</span>
+                <span id="captureServerHealth" class="status pending" title="Backend health">Backend: checking…</span>
                 <span id="cropInfo" style="color:var(--muted); font-size:0.8rem;">Crop: full frame</span>
                 <button id="cropClearBtn" class="secondary" onclick="clearCropRegion()">Clear crop</button>
             </div>
@@ -1356,6 +1361,53 @@
                 loadFolders(); loadFiles(); loadMetrics();
             }
             renderPipelineStepper(status);
+        }
+
+        // ONLINE status is derived from the backend health endpoint, called
+        // same-origin (relative URL) so it works identically on loopback and
+        // on a phone over the LAN HTTPS origin.
+        async function updateServerHealth() {
+            const header = document.getElementById('serverHealth');
+            const captureBadge = document.getElementById('captureServerHealth');
+            let online = false;
+            try {
+                const res = await fetch('/api/health', { headers: { 'Accept': 'application/json' }});
+                const data = res.ok ? await res.json() : {};
+                online = res.ok && data.status === 'ONLINE';
+            } catch (e) {
+                online = false;
+            }
+            if (header) {
+                header.textContent = online ? 'ONLINE' : 'OFFLINE';
+                header.className = 'status ' + (online ? 'processed' : 'error');
+            }
+            if (captureBadge) {
+                captureBadge.textContent = online ? 'Backend: ONLINE' : 'Backend: OFFLINE';
+                captureBadge.className = 'status ' + (online ? 'processed' : 'error');
+            }
+            return online;
+        }
+
+        async function loadLanNetworkInfo() {
+            const el = document.getElementById('lanAccessHelp');
+            if (!el) return;
+            try {
+                const info = await api('/api/network');
+                if (!info.lan_access) {
+                    el.innerHTML = 'LAN access is off. Enable <code>ZMI_LAN_ACCESS=true</code> and serve HTTPS to use a phone on the same Wi-Fi. See <code>docs/ops/MOBILE_LAN_ACCESS.md</code>.';
+                    return;
+                }
+                const urls = (info.urls || []).map(u => `<li><code>${u}</code></li>`).join('');
+                const scheme = info.https ? 'HTTPS' : 'HTTP (camera needs HTTPS)';
+                const fp = info.cert_fingerprint_sha256
+                    ? `<p>Certificate SHA-256: <code>${info.cert_fingerprint_sha256}</code></p>` : '';
+                el.innerHTML = `<p>Serving over ${scheme}. Open one of these URLs on the phone (same Wi-Fi):</p>`
+                    + `<ul>${urls || '<li>No LAN address detected.</li>'}</ul>`
+                    + fp
+                    + '<p>Trust the certificate on the phone first — see <code>docs/ops/MOBILE_LAN_ACCESS.md</code>.</p>';
+            } catch (e) {
+                el.textContent = 'Could not load LAN access status.';
+            }
         }
 
         async function loadLogs() {
@@ -3000,8 +3052,9 @@
             if (e.key === 'Escape') { closePreview(); closeEdit(); closeProjectsModal(); closeLogsModal(); closeHelpModal(); closeFrameModal(); closeCaptureModal(); }
         });
 
-        setInterval(() => { updateRunStatus(); loadLogs(); }, 3000);
+        setInterval(() => { updateRunStatus(); loadLogs(); updateServerHealth(); }, 3000);
         loadFolders(); loadFiles(); loadProjects(); loadLogs(); loadMetrics(); updateRunStatus();
+        updateServerHealth(); loadLanNetworkInfo();
         attachCropSelection();
     </script>
 </body>
