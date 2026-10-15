@@ -1,369 +1,390 @@
-# WHISPER LIVE CAPTURE EXECUTION PLAN
+# Whisper Live Capture and Playlist Execution Plan
 
-Canonical execution source for the Live Capture mission on `feat/zmi-documentation-synthesis-v2`. Keep this file current at every stage checkpoint. Work stays in this repository and branch; no merge or deploy.
+Canonical execution plan for `feat/zmi-documentation-synthesis-v2`. Continue this plan in place. Work only in this repository; no worktree, merge, or deployment. Update and commit evidence at stable checkpoints.
 
 ## Goal
 
-Deliver browser Live Capture integrated with Whisper's existing media, transcript and Documentation V2 flows. Preserve and complete Videos Date behavior (`recorded_at` preferred, `created_at` fallback, backend sorting, newest first). Repair the known host E2E failures. Complete required unit, integration, Playwright and applicable Docker/heavy validation; commit every stable checkpoint and synchronize the current branch.
+Deliver a user-facing mobile-safe Live Capture flow at `Videos -> New Recording`, with short acknowledged upload fragments, bounded offline retry, server processing chunks, and Continuous Playlist capture. Detect and confirm title changes from multiple frames, map logical videos to physical fragments and processing chunks, expose review controls, and reuse Whisper's existing documentation pipeline. Preserve Date sorting, cancellation, missing-audio/late-transcript, crop, and advisory GC behavior.
 
 ## Current verified state
 
-- Baseline inspected 2026-10-15: branch `feat/zmi-documentation-synthesis-v2`; HEAD `f3e9f66978b1448d74cac9a937779525520e2281`; clean worktree; tracks `origin/feat/zmi-documentation-synthesis-v2`.
-- Docs V2 is present under `src/transcript_pipeline/documentation/` and wired through `transcription/processor.py` and dashboard documentation endpoints.
-- Dashboard Date column and display formatter exist. `/api/files` currently emits filesystem `st_mtime` as `date`/`date_epoch`, sorts server-side by name; date sorting is client-side over the current loaded set. Required recorded/created metadata preference and server sort query remain incomplete.
-- No Live Capture domain, camera UI, capture API, chunking, or lifecycle implementation found on this branch at baseline.
-- `tests/test_dashboard_date_column.py` checks current column/formatter. No Live Capture tests found.
-- Latest host E2E artifact: `artifacts/gates/e2e-host-data/e2e_report.json`; failures are `projects_modal_items` (0 projects in fixture) and `critical_path_no_browser_errors` (expected `/api/frames` 404 for media without frames). It does not contain the reported `TargetClosedError`. `artifacts/gates/latest.json` is an older E2E run with a separate `folders_visible` failure. Reproduce before changing lifecycle code.
-- Existing `artifacts/gates/e2e-host-data/` contains generated synthetic fixtures/reports; do not treat as source-of-truth or process private media.
-- Existing E2E harness: `scripts/e2e.py`, `tests/e2e/smoke_dashboard.py`; dashboard: `src/transcript_pipeline/dashboard/app.py`, `templates/dashboard.html`; docs: `src/transcript_pipeline/documentation/`.
-- No source files changed during baseline inspection. Plan creation is the first implementation change.
+- Baseline at plan update: branch `feat/zmi-documentation-synthesis-v2`, HEAD `e9e61be470dcccd80df069c04524fcf92cd12ae2`, clean worktree; remote matched HEAD.
+- Existing domain/API and basic browser capture are under `src/transcript_pipeline/live_capture/`, `dashboard/app.py`, and `dashboard.html`; capture is currently reached from a header icon labelled Capture, not `Videos -> New Recording`.
+- Existing modal has preview, title, a 600 second chunk setting, optional microphone, crop, start/stop, upload retry/cancel, missing-audio warning, late transcript, processing controls, and GC suggestions. Prior targeted browser reports cover those earlier flows.
+- UI inspection found no Normal Recording / Continuous Playlist mode, Save local copy toggle, visible timer, fragment-level ACK/progress, IndexedDB pending buffer, current source-title/logical-video list, or playlist review actions (rename/date/split/merge/confirm). Existing browser capture buffers MediaRecorder data until long processing-chunk rotation, so it does not meet the short-fragment mobile-memory requirement.
+- Existing session/chunk model, streamed finalization, cancellation, crop, audio, transcript, docs integration, GC candidates, and Date API/sort remain useful implementation foundations. They are not PASS for the new user-facing scope until the expected UI journey and Playwright evidence pass.
+- Last full host E2E: PASS, 56 checks, no browser errors (`artifacts/gates/e2e-host-data/e2e_report.json`). Last targeted suite: 45 passed. Prior full pytest: 975 passed, 3 skipped. Docker compose config passed; heavy runner previously deferred at 5.62 GiB available vs required >6 GiB.
+- Synthetic fixtures only. Never use private recordings in automated media tests.
 
 ## Non-goals
 
-- No replacement transcription/documentation architecture, independent duplicate processing pipeline, cloud upload, or automatic media deletion.
-- No private real recordings in automated tests.
-- No arbitrary sleeps to hide browser races; no assertion weakening.
-- No merge, deployment, history rewrite, unrelated cleanup, or broad redesign of working UI.
+- No duplicate transcription/documentation stack, cloud upload dependency, guessed title presented as confirmed, fabricated transcript synchronization, automatic deletion, or mandatory full local phone recording.
+- No automatic gallery write. Local full copy defaults OFF and requires explicit opt-in.
+- No arbitrary sleeps, weakened assertions, merge, deployment, worktree, unrelated redesign, or private media in tests.
 
 ## Architecture decisions
 
-- Keep capture local-first in the dashboard and browser `getUserMedia`/`MediaRecorder`; require explicit camera/microphone permission.
-- Persist session/chunk metadata alongside files using a small versioned JSON manifest and atomic writes unless existing persistence patterns justify a better fit. Media stays under configured `Videos` and behind `SafePathResolver` for serving/mutation.
-- Model session/chunk state explicitly; finalize bounded-duration chunks (~10ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“15 minutes, configurable) incrementally. Chunk N may upload/process while N+1 records. Never buffer a whole session.
-- Persist session ID, chunk order, `created_at`, `recorded_at`, processing/audio/transcript states and crop metadata. Recover interrupted sessions by reconciling manifests/finalized chunks; never claim incomplete bytes are playable.
-- Use `recorded_at`, then `created_at`, then filesystem timestamp for Date display/sort. Add backend sorting before pagination/filter slicing and retain sort through page/filter changes.
-- Missing audio is valid (`AUDIO_MISSING` / `TRANSCRIPT_REQUIRED`); transcript/audio may arrive later with loose session/chunk association and no fabricated second-level sync.
-- Route finalized media through existing `SimpleScanProcessor` / Documentation V2. Crop applicable frames and preserve source evidence plus transform metadata.
-- GC is advisory only. Deletion always requires explicit user confirmation and existing safe-path validation.
+- Dashboard entry is `Videos -> New Recording`; a shared capture page/modal exposes Normal Recording and Continuous Playlist. Require browser camera permission, request microphone only when selected, and provide responsive controls and visible state/timer.
+- MediaRecorder emits independently identified fragments about 10-30 seconds long. Upload each incrementally; delete its temporary local copy only after durable server ACK. Store unacknowledged fragments in IndexedDB with configurable byte/count limit, visible warning, retry/backoff, and idempotency key. Save local copy is an explicit opt-in.
+- Server separates `capture_session`, `upload_fragment`, `processing_chunk` (~10-15 minutes, configurable), and `logical_video`. Fragments are assembled or referenced server-side; the phone never needs a 15-minute blob. Persist fragment ACK/digest and mappings atomically. Repeated fragment IDs return prior ACK without duplicate bytes.
+- Capture/session states include CAPTURING, UPLOADING, UPLOAD_PAUSED, RETRYING, UPLOADED, PROCESSING, CANCEL_REQUESTED, CANCELLED, FAILED, COMPLETED. Stop recording finalizes capture; cancel upload aborts one pending transfer; cancel processing requests worker cancellation. They remain distinct and idempotent.
+- Playlist physical time/fragments/processing chunks are independent from logical-video title boundaries. Periodically sample synthetic or real runtime frames; OCR broadly extracts title/category/session/date/time. Confirm a title only after repeated compatible evidence and threshold confidence. Otherwise expose NEEDS_TITLE_REVIEW; never invent confidence.
+- A confirmed title change closes/opens logical-video mappings at its observed time, including inside a processing chunk. Review supports rename, recorded date correction, split, merge, and confirmation.
+- Confirmed logical videos enter the existing Whisper processor, Date listing, and Documentation V2 flow. `recorded_at` precedes `created_at`; backend sorting remains newest-first by default and supports ASC/DESC before filtering/pagination.
+- Missing audio remains valid (`AUDIO_MISSING` / `TRANSCRIPT_REQUIRED`); transcripts may be attached later with loose session/logical-video association. GC stays advisory and destructive deletion requires explicit user action.
 
 ## Execution stages
 
-Stages run in dependency order; independent stages may proceed around genuine environment blockers. Status: `PENDING | IN_PROGRESS | PASS | BLOCKED`.
+Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage passes only after the expected UI journey and relevant Playwright evidence pass. `BLOCKED` is reserved for external/environment constraints after the documented fallback; recoverable code failures remain in progress.
 
-### W0 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Repository and evidence baseline
+### W0 - Repository baseline
 - Status: PASS
-- Objective: establish current branch/tree, implementation, tests and gate evidence.
+- Objective: record branch, HEAD, tree, current code/UI, tests, artifacts and model tooling.
 - Dependencies: none.
-- Implementation tasks: inspect branch/HEAD/status, Date implementation, Live Capture presence, Docs V2 flow, tests and `artifacts/gates/*`.
-- Relevant files/modules: `src/transcript_pipeline/dashboard/`, `src/transcript_pipeline/documentation/`, `src/transcript_pipeline/transcription/`, `tests/`, `artifacts/gates/`.
-- Acceptance criteria: baseline recorded; no files mutated.
-- Required tests: none.
-- Validation commands: `git status --short --branch`; `git rev-parse HEAD`; targeted source/artifact inspection.
-- Expected artifacts: verified-state record in this plan.
-- Recovery/fallback: repeat read-only inspection; preserve all worktree state.
-- Evidence: `feat/zmi-documentation-synthesis-v2`, `f3e9f66`, clean; findings above.
+- Implementation tasks: inspect capture routes/modal/table, domain/pipeline, tests, gate reports and available approved coding executors.
+- Relevant files/modules: `src/transcript_pipeline/live_capture/`, `dashboard/`, `tests/`, `artifacts/gates/`, `.agents/`, `scripts/model_router.py`.
+- Acceptance criteria: verified baseline and missing UI/mobile/playlist capabilities recorded.
+- Required tests: none; read-only inspection.
+- Validation commands: `git status --short --branch`; `git rev-parse HEAD`; source/report inspection.
+- Expected artifacts: baseline in this plan.
+- Recovery/fallback: use Git and source as authority; ignore stale generated reports.
 
-### W1 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Canonical execution plan
+### W1 - Canonical plan update
 - Status: PASS
-- Objective: commit this full-scope plan before further implementation.
+- Objective: commit this reconciled W0-W24 plan before implementation.
 - Dependencies: W0 PASS.
-- Implementation tasks: save plan, review stages/dependencies, commit on current branch.
-- Relevant files/modules: `docs/plans/WHISPER_LIVE_CAPTURE_EXECUTION_PLAN.md`.
-- Acceptance criteria: required sections/stages are present and committed; future implementation updates this file.
-- Required tests: none.
-- Validation commands: inspect Markdown; `git diff --check`; `git status --short`.
-- Expected artifacts: plan commit.
-- Recovery/fallback: restore plan from Git history; no worktree creation.
+- Implementation tasks: preserve historical backend evidence; reopen UI-dependent stages; write full scope, dependencies, validation, and risks; commit on current branch.
+- Relevant files/modules: this plan.
+- Acceptance criteria: same canonical plan contains all new scope and W0-W24 stages; commit exists before code changes.
+- Required tests: `git diff --check`.
+- Validation commands: inspect stage list/statuses; `git diff --check`; `git commit`.
+- Expected artifacts: canonical plan commit.
+- Recovery/fallback: repair this file and recommit; never create parallel plan.
 
-### W2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Host E2E diagnosis and repair
+### W2 - Existing host E2E repair
 - Status: PASS
-- Objective: reproduce/fix host E2E failures, including reported Playwright `TargetClosedError` if reproducible.
+- Objective: preserve fixed dashboard critical path and project modal.
 - Dependencies: W1 PASS.
-- Implementation tasks: trace browser/context/page ownership, fixture teardown, async tasks, navigation/reload and modal lifecycle; separately fix fixture project data and expected missing-frame requests if still failing. No sleeps.
-- Relevant files/modules: `scripts/e2e.py`, `tests/e2e/smoke_dashboard.py`, `artifacts/gates/e2e-host-data/e2e_report.json`, dashboard.
-- Acceptance criteria: targeted scenarios pass with no closed-object errors or browser errors; root cause recorded.
-- Required tests: targeted Playwright `projects_modal_items`, `critical_path_no_browser_errors`, and relevant lifecycle tests.
-- Validation commands: targeted harness invocation; then `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
-- Expected artifacts: updated reports/logs under `artifacts/gates/`.
-- Recovery/fallback: two distinct root-cause attempts per failure; record exact environment error and continue independent work if browser unavailable.
-- Evidence: fixture/API defects fixed; W2 focused tests 55 passed; Playwright repro verified 6 project items, empty frame payload, zero console errors; gate runner E2E PASS (26.45s). `TargetClosedError` was in `scripts/validation_env.ensure_playwright_chromium()` teardown, not dashboard page ownership; async Playwright lifecycle removed it.
+- Implementation tasks: retain synthetic project fixture, page ownership fix, preview/filter and upload-test synchronization repairs.
+- Relevant files/modules: `scripts/e2e.py`, `tests/e2e/smoke_dashboard.py`, gate artifacts.
+- Acceptance criteria: host gate passes without TargetClosedError or browser errors.
+- Required tests: host E2E and project modal.
+- Validation commands: `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
+- Expected artifacts: E2E report with 56 checks.
+- Recovery/fallback: inspect fresh report and correct root cause; no stale-report claims.
 
-### W3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Capture domain and session persistence
-- Status: PASS
-- Objective: create durable, recoverable session/chunk model and transitions.
+### W3 - Live Capture UI
+- Status: PENDING
+- Objective: provide the expected `Videos -> New Recording` user journey.
 - Dependencies: W1 PASS.
-- Implementation tasks: versioned manifest; session identity; ordered chunks; metadata fields; atomic persistence; interrupted-session reconciliation; validated transitions.
-- Relevant files/modules: focused `src/transcript_pipeline/live_capture/` or nearest existing domain; dashboard config/data roots; tests.
-- Acceptance criteria: session/recording persist/reload; `created_at`, `recorded_at`, chunk ID/order and processing state survive restart; invalid transitions rejected.
-- Required tests: unit chunk transitions/metadata persistence; integration session creation and recording persistence.
-- Validation commands: targeted pytest; compile changed modules.
-- Expected artifacts: synthetic manifest fixtures and test report.
-- Recovery/fallback: rebuild indexes from valid manifests; report malformed manifests without deleting media.
-- Evidence: `CaptureService`/`ManifestStore`, explicit session/chunk/audio state and crop metadata implemented; synthetic session/media roundtrip and recovery tests pass. `.venv-validation` targeted suite: 42 passed; compileall passed.
+- Implementation tasks: add Videos action, responsive recording view, camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, fragment/processing progress, detected title/logical-video list and separate cancel controls.
+- Relevant files/modules: `dashboard/templates/dashboard.html`, `dashboard/app.py`, capture browser JS, `tests/e2e/`.
+- Acceptance criteria: users can reach and operate the complete capture shell from Videos; not header-only.
+- Required tests: Playwright opens Videos -> New Recording and verifies all required controls/preview.
+- Validation commands: targeted UI tests and Playwright UI entry scenario.
+- Expected artifacts: screenshot/report showing reachable controls.
+- Recovery/fallback: keep existing modal as shared implementation behind the Videos entry; do not duplicate capture state.
 
-### W4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Browser camera capture UI
-- Status: PASS
-- Objective: open camera, start/stop capture and clean tracks safely.
+### W4 - Mobile MediaRecorder
+- Status: PENDING
+- Objective: capture on mobile browsers without holding a long video in memory.
 - Dependencies: W3 PASS.
-- Implementation tasks: permission/error states; visible indicator; stop/error cleanup; lifecycle-safe navigation; persist finalized blobs; interrupted-capture recovery notice.
-- Relevant files/modules: dashboard routes/template/JS and capture service.
-- Acceptance criteria: start/stop works; tracks stop on all exits; UI mirrors recorder state; interruption leaves recoverable metadata.
-- Required tests: browser start, indicator, stop, permission/error and cleanup with synthetic browser media.
-- Validation commands: targeted Playwright capture suite.
-- Expected artifacts: Playwright report and synthetic capture files only.
-- Recovery/fallback: feature-detect MediaRecorder; show unsupported-browser state while retaining API usability.
-- Evidence: API/session persistence + browser fake-camera lifecycle pass; startup reconciliation marks abandoned ACTIVE sessions/chunks FAILED and preserves metadata. 94 targeted tests passed; focused Playwright capture checks 12/12 passed with synthetic device, saved WebM, recorded_at, no console errors; no fixed-duration wait remains.
+- Implementation tasks: feature detection, camera/mic permissions, 10-30s fragment production, visible timer, lifecycle cleanup on stop/navigation/error, optional local full-copy path only when opted in.
+- Relevant files/modules: capture JS/template, capture models, browser tests.
+- Acceptance criteria: short bounded fragments emitted while recording continues; no whole-session/15-minute browser blob.
+- Required tests: fragment cadence/state, start/timer/stop, permission failure, synthetic mobile viewport/device.
+- Validation commands: targeted unit tests and fake-device Playwright.
+- Expected artifacts: synthetic fragment report and browser trace/screenshots as needed.
+- Recovery/fallback: feature-detect supported MediaRecorder MIME types; visible unsupported state with retry.
 
-### W5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Bounded chunking and upload/processing
-- Status: PASS
-- Objective: rotate ~10ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“15 minute chunks without stopping capture or unbounded memory use.
+### W5 - Incremental upload fragments
+- Status: PENDING
+- Objective: transfer short fragments incrementally and release acknowledged local bytes.
 - Dependencies: W3, W4 PASS.
-- Implementation tasks: configurable duration; finalize/upload N while N+1 records; bounded queue/backpressure; ordered identity; retry-safe finalization.
-- Relevant files/modules: capture browser JS/service/API and tests.
-- Acceptance criteria: accelerated synthetic rotation proves ordered chunks and overlap; no full-session blob accumulation; failure is retryable.
-- Required tests: unit chunk states; API finalization; Playwright chunk flow.
-- Validation commands: targeted pytest and Playwright chunk tests.
-- Expected artifacts: synthetic manifests and gate report.
-- Recovery/fallback: retain finalized chunks for retry; mark stalled upload and allow explicit retry.
+- Implementation tasks: stable fragment ID/idempotency key, bounded streaming endpoint, server digest/ACK, replay-safe duplicate response, browser ACK handling and progress state.
+- Relevant files/modules: capture API/service/store, dashboard JS, integration and Playwright tests.
+- Acceptance criteria: fragment N is ACKed while N+1 records; acknowledged temporary fragment is released; retry never duplicates it.
+- Required tests: first upload, duplicate ID, ACK, interrupted POST and retry.
+- Validation commands: targeted API tests; fragment-upload Playwright journey.
+- Expected artifacts: fragment manifest/mapping and gate report.
+- Recovery/fallback: retain unACKed local blob; retry same identity; never mark unACKed data uploaded.
 
-- Evidence: bounded streamed uploads (64 KiB), atomic persistence, MediaRecorder rotation with FIFO overlap and retry. 58 unit/API tests passed; synthetic Playwright chunk rotation/overlap/order/retry 10/10; W4 capture regression 12/12; security tests 107 passed, 3 skipped; compile/diff check clean.
-
-### W6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Monitor crop/mask selection
-- Status: PASS
-- Objective: select useful screen region and persist crop metadata.
-- Dependencies: W4 PASS.
-- Implementation tasks: preview overlay/adjustable rectangle; normalized coordinates; clamp/validate; save session metadata; apply crop to generated frames where applicable and retain source.
-- Relevant files/modules: dashboard template/JS, capture manifest/service, keyframe/docs integration.
-- Acceptance criteria: region round-trips and deterministically crops a synthetic frame; source remains available.
-- Required tests: crop normalization unit; API integration; Playwright selection/persistence.
-- Validation commands: targeted pytest/Playwright with synthetic image only.
-- Expected artifacts: crop metadata fixture/report.
-- Recovery/fallback: invalid crop uses full frame with explicit status; never discard source.
-
-- Evidence: normalized selection API, session metadata persistence, source-preserving frame crop and mapping metadata implemented. 77 unit/API tests passed; compileall and diff check clean; 2 extraction integration tests passed. Browser crop script was authored but did not produce a report because the Playwright child remained blocked; rerun in W13.
-
-### W7 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Audio detection and missing-audio state
-- Status: PASS
-- Objective: make video-only capture a valid flow.
-- Dependencies: W3, W5 PASS.
-- Implementation tasks: detect usable audio; persist availability; expose `AUDIO_MISSING` and `TRANSCRIPT_REQUIRED`; UI warning; permit later transcript/audio.
-- Relevant files/modules: capture processor, `media/utils.py`, dashboard API/template, tests.
-- Acceptance criteria: video remains usable/documentable without audio; explicit state/warning; no forced Whisper failure.
-- Required tests: audio-state unit; API no-audio processing; Playwright warning/state.
-- Validation commands: targeted pytest/Playwright with synthetic audio/silent video.
-- Expected artifacts: synthetic fixtures and test report.
-- Recovery/fallback: probe failure becomes `AUDIO_UNKNOWN`/retryable, not fatal; document state.
-
-
-- Evidence: pure audio logic, ffprobe stream detector (non-fatal), durable session/chunk state and UI warnings implemented. 890 unit/API tests passed, 3 skipped; synthetic browser capture passed 14 checks including persisted MISSING/TRANSCRIPT_REQUIRED and visible warning; compileall passed.
-
-### W8 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Late transcript/audio association
-- Status: PASS
-- Objective: attach transcript/audio after video processing without tight-sync assumptions.
-- Dependencies: W3, W7 PASS.
-- Implementation tasks: safe association endpoint/UI; persist provenance/arrival time; session/chunk association; update availability without overwriting visual timeline.
-- Relevant files/modules: capture API/service, transcript endpoints, file tracker integration.
-- Acceptance criteria: late transcript enters existing Docs flow; loose timing is labeled; retries are idempotent.
-- Required tests: association unit; API integration; synthetic transcript flow.
-- Validation commands: targeted pytest/API integration.
-- Expected artifacts: synthetic manifest/transcript fixture.
-- Recovery/fallback: retain unattached transcript as pending; user may retry association.
-
-- Evidence: `Transcript` value object (fixed `alignment="loose"`, no start/end/segment fields), session-level `transcript` in the manifest plus a `transcript.txt` sidecar, and `CaptureService.associate_transcript` implemented. Association marks every chunk transcript-available and clears TRANSCRIPT_REQUIRED while leaving each chunk's processing `state` untouched (FINALIZED/PROCESSING never forced to PROCESSED); retries are idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` plus a later-session selector and transcript supply UI. Fixed loose alignment, no per-second fields. 37 new tests pass; full repo suite 927 passed / 3 skipped; synthetic Playwright late-session association/loose alignment 17 checks pass; compileall clean.
-
-### W9 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Documentation pipeline integration
-- Status: PASS
- - Objective: send finalized capture through existing Whisper documentation flow.
- - Dependencies: W5, W6, W7 PASS; W8 PASS for transcript-aware docs.
- - Implementation tasks: discover finalized capture in existing processor; preserve metadata/crop provenance; video-first and later-transcript regeneration; no duplicate pipeline.
- - Relevant files/modules: `transcription/processor.py`, `documentation/`, dashboard app.
- - Acceptance criteria: synthetic capture yields existing evidence/manual/AI package; no-audio video retained; late transcript enriches docs without false second-level alignment.
- - Required tests: video-to-docs integration, no-audio, late-transcript regeneration.
- - Validation commands: targeted docs/processor pytest.
- - Expected artifacts: synthetic documentation bundle only.
- - Recovery/fallback: evidence-only output remains available when synthesis lacks transcript; never fabricate instructions.
- - Evidence: `live_capture/pipeline.py` bridge (`resolve_capture_context`) resolves a finalized capture chunk to its session context (crop/transcript/audio) without a second pipeline; `SimpleScanProcessor` threads the manifest crop into `KeyframeExtractor`, skips Whisper for video-only media (`transcript_status="no_audio"`, no invented transcript, record still completes), and attaches the late session transcript as `frame_mapping.json.transcription_summary.session_transcript`; `documentation/evidence.py` consumes it as an untimed `session_transcript.loose` evidence item (never per-frame alignment). New tests: 13 unit + 3 integration (crop mapping, late-transcript provenance, normal audio path). Targeted suite 157 passed; docs V2/processor/regenerate/handler regressions green.
-
-
-### W10 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Advisory media GC candidates
-- Status: PASS
-- Objective: surface stale, processed, documented media as deletion suggestions only.
-- Dependencies: W3, W9 PASS.
-- Implementation tasks: deterministic age/status/reference logic; explain reasons; require confirmation; safe-path deletion of selected item only.
-- Relevant files/modules: lifecycle service, dashboard API/template, `security/SafePathResolver`, tests.
-- Acceptance criteria: rules explainable; recent/referenced/incomplete media excluded; no auto-delete; confirmation required.
-- Required tests: GC unit; API listing and confirmed deletion safety.
-- Validation commands: targeted pytest/security path tests.
-- Expected artifacts: synthetic candidate fixtures/report; no real deletion.
-- Recovery/fallback: uncertain reference state excludes candidate.
-
-
-### W11 ? Upload cancellation and resumable cleanup
-- Status: PASS
-- Objective: cancel in-flight chunk uploads from browser through server and leave retryable durable state.
+### W6 - Server processing chunks
+- Status: PENDING
+- Objective: map short fragments to server-side ~10-15 minute processing chunks.
 - Dependencies: W5 PASS.
-- Implementation tasks: define upload cancellation state; abort browser request with AbortController; cancel backend upload session if one exists; remove only partial temp files; make repeated cancel safe; recover stale UPLOADING records; permit retry.
-- Relevant files/modules: live_capture models/store/service/API, dashboard capture JavaScript, upload tests.
-- Acceptance criteria: aborted upload yields UPLOAD_CANCELLED; no partial finalized chunk or stale UPLOADING record; original finalized media untouched; retry can upload same chunk.
-- Required tests: unit transitions and cleanup decisions; API cancellation/idempotency/retry; Playwright cancel button and actual abort.
-- Validation commands: targeted capture API/unit tests and fake-media Playwright upload cancellation.
-- Expected artifacts: synthetic cancellation report and clean temp-state fixture.
-- Recovery/fallback: if storage lacks multipart sessions, cancel the request stream and atomically remove only the server-owned partial file.
+- Implementation tasks: configurable aggregation/finalization, duration/size thresholds, server-side concat/remux where required, boundary/final-chunk handling and mapping persistence.
+- Relevant files/modules: live_capture models/service/store/pipeline, media utilities, API, integration tests.
+- Acceptance criteria: browser holds no long blob; backend creates playable processing chunks while capture continues.
+- Required tests: aggregation/order, final partial chunk, cross-chunk mapping and processing state.
+- Validation commands: unit/API integration; synthetic ffmpeg media test.
+- Expected artifacts: processing-chunk fixture and fragment map.
+- Recovery/fallback: retain individually ACKed fragments on assembly failure; retry assembly without re-upload.
 
+### W7 - Upload resilience and local buffer
+- Status: PENDING
+- Objective: survive transient/offline connectivity without fragment loss or duplication.
+- Dependencies: W5 PASS.
+- Implementation tasks: IndexedDB pending-fragment queue, configurable storage ceiling, visible near/full warning, pause/retry/backoff, ACK cleanup and opt-in Save local copy.
+- Relevant files/modules: dashboard JS, capture API/service, browser and unit tests.
+- Acceptance criteria: reconnect resumes same IDs; acknowledged media is not resent; buffer remains bounded and user is warned.
+- Required tests: offline/reconnect, duplicate replay, buffer limit warning, default local-copy OFF.
+- Validation commands: unit queue tests and Playwright connectivity simulation.
+- Expected artifacts: deterministic IndexedDB/fake-network report.
+- Recovery/fallback: pause capture uploads and preserve pending IndexedDB data; provide export/retry path when quota is exhausted.
 
-### W12 ? Processing job cancellation
-- Status: PASS
-- Objective: persist cancellable processing jobs and stop work safely between long pipeline stages.
-- Dependencies: W3, W9 PASS.
-- Implementation tasks: PROCESSING ? CANCEL_REQUESTED ? CANCELLED state machine; idempotent API; optimistic state validation preventing completion after accepted cancellation; cancellation checks between extraction, transcription, visual analysis, docs, embeddings; clean only temporary/partial artifacts; retain original media; retry cancelled work.
-- Relevant files/modules: live_capture models/service, processor/keyframe/docs/embedding boundaries, dashboard API, job state tests.
-- Acceptance criteria: active/queued jobs cancel predictably, duplicate cancel is safe, completed jobs reject/no-op safely, workers do not kill shared processes, retry starts a new valid attempt.
-- Required tests: state transitions, queued/active/double cancel, cancel-vs-complete race, cleanup decision, retry.
-- Validation commands: targeted unit/API/integration tests with controllable stage barriers.
-- Expected artifacts: synthetic job cancellation traces; no original media deletion.
-- Recovery/fallback: cancellation is cooperative at stage boundaries; if a dependency is non-interruptible, finish that call then stop before next stage and document the bounded delay.
+### W8 - Cancellation
+- Status: PENDING
+- Objective: expose independent stop, cancel-upload, and cancel-processing behavior in the new UI.
+- Dependencies: W3, W5, W6 PASS.
+- Implementation tasks: idempotent fragment abort/rescind and cleanup; PROCESSING -> CANCEL_REQUESTED -> CANCELLED worker checks; preserve originals; retry/process again.
+- Relevant files/modules: live_capture service/pipeline/API, dashboard UI, cancellation tests.
+- Acceptance criteria: each operation has distinct UI/state and does not delete acknowledged originals.
+- Required tests: repeated cancel, upload vs ACK race, queued/active processing, cancel vs complete race, retry.
+- Validation commands: unit/API tests and Playwright for all three controls.
+- Expected artifacts: cancellation state report.
+- Recovery/fallback: leave confirmed media intact; reconcile stale upload state; retry only by explicit action.
 
-
-### W13 ? Cancellation controls and browser regression
-- Status: PASS
-- Objective: expose state-appropriate cancellation and retry actions.
-- Dependencies: W11, W12 PASS.
-- Implementation tasks: show Cancelar subida while uploading; Cancelar procesamiento for queued/processing; disable during CANCEL_REQUESTED with Cancelando; expose Procesar de nuevo/Eliminar for CANCELLED only with confirmation for destructive removal; preserve normal/failed actions.
-- Relevant files/modules: dashboard capture/video UI, API client, Playwright scenarios.
-- Acceptance criteria: visible actions match state; upload actually stops; processing reaches CANCELLED; retry appears; original video remains.
-- Required tests: Playwright upload cancel, processing cancel, Cancelando, eventual CANCELLED, retry and destructive confirmation.
-- Validation commands: targeted fake-media Playwright cancellation suite.
-- Expected artifacts: browser report and synthetic upload/job fixtures.
-- Recovery/fallback: retain safe status display and retry path when browser disconnects; reconcile stale requests on next load.
-
-
-### W14 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Videos Date API and server sorting
-- Status: PASS
-- Objective: complete canonical Date and backend sorting while preserving UI.
+### W9 - Crop/mask
+- Status: PENDING
+- Objective: make crop configuration reachable from New Recording and apply it to evidence.
 - Dependencies: W3 PASS.
-- Implementation tasks: prefer recorded_at, created_at fallback, filesystem fallback; server sort/direction before pagination/filter; preserve sort on page/filter changes; default newest first.
-- Relevant files/modules: `dashboard/app.py`, `dashboard.html`, `tests/test_dashboard_date_column.py`, API tests.
-- Acceptance criteria: display correct; API sorts entire result newest/asc/desc; recorded_at wins; filtering/pagination keep sort.
-- Required tests: date fallback unit, sort/API unit, date column regression.
-- Validation commands: targeted date/API pytest and Playwright date sort.
-- Expected artifacts: targeted test report.
-- Recovery/fallback: filesystem fallback for legacy media; unknown sort fields use stable default.
+- Implementation tasks: responsive normalized selection, persistence, edit/clear and processor mapping.
+- Relevant files/modules: crop model/processor, capture UI/API, tests.
+- Acceptance criteria: region round-trips and is visible/editable in the expected flow; original stays intact.
+- Required tests: normalized bounds, persisted selection, cropped synthetic frame Playwright.
+- Validation commands: crop unit/API tests and Playwright.
+- Expected artifacts: crop mapping/report.
+- Recovery/fallback: full frame on invalid region with explicit warning.
 
+### W10 - Continuous Playlist capture
+- Status: PENDING
+- Objective: record sequential external source videos with one continuous camera session.
+- Dependencies: W3, W4, W5 PASS.
+- Implementation tasks: mode selection; no manual stop/start between sources; distinct physical capture, processing and logical boundaries.
+- Relevant files/modules: capture UI/JS, session domain, API, tests.
+- Acceptance criteria: one capture session spans synthetic Session 1 -> Session 2 source transition.
+- Required tests: continuous multi-title fake-source Playwright scenario.
+- Validation commands: targeted state tests and Playwright playlist journey.
+- Expected artifacts: synthetic session with multiple source markers.
+- Recovery/fallback: continue physical capture and mark uncertain title transition for review.
 
-### W15 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Full unit/integration acceptance matrix
-- Status: PASS
-- Objective: validate all required domain/API flows before broad browser regressions.
-- Dependencies: W3, W5ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W11 PASS.
-- Implementation tasks: fill only requirement-tied test gaps; synthetic fixtures only.
-- Relevant files/modules: `tests/` and changed package modules.
-- Acceptance criteria: every UNIT and INTEGRATION/API matrix row passes.
-- Required tests: all listed unit/integration cases.
-- Validation commands: targeted test files, then repository pytest as policy permits.
-- Expected artifacts: gate reports in `artifacts/gates/`.
-- Recovery/fallback: two distinct fixes per failure, classify/document and continue independent stages.
+### W11 - Automatic visual title detection
+- Status: PENDING
+- Objective: periodically detect source title metadata from displayed screen frames.
+- Dependencies: W10 PASS.
+- Implementation tasks: sample frames; OCR broad title/category/session/date/time patterns; confidence and provenance; handle OCR unavailable.
+- Relevant files/modules: new/focused title detector in live_capture, existing OCR/media utilities, pipeline tests.
+- Acceptance criteria: extracts title family examples without hardcoding one exact title; low confidence remains explicit.
+- Required tests: synthetic title cards, date/session parsing, unknown/ambiguous card.
+- Validation commands: title detector unit tests and synthetic media integration.
+- Expected artifacts: OCR evidence fixture with confidence.
+- Recovery/fallback: `NEEDS_TITLE_REVIEW`; never fabricate title/date.
 
+### W12 - Multi-frame confirmation
+- Status: PENDING
+- Objective: require stable evidence across multiple samples before title confirmation.
+- Dependencies: W11 PASS.
+- Implementation tasks: candidate window, normalized title comparison, stability/confidence threshold and hysteresis against transient slides.
+- Relevant files/modules: title detector/confirmation model and tests.
+- Acceptance criteria: repeated Session 2 confirms; one-frame incidental text does not split; uncertain candidate is reviewable.
+- Required tests: repeated, noisy, conflicting and low-confidence frame sequences.
+- Validation commands: unit tests and fixture replay.
+- Expected artifacts: deterministic confirmation results.
+- Recovery/fallback: keep current logical video open and emit NEEDS_TITLE_REVIEW.
 
-### W16 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Playwright/E2E regression
-- Status: PASS
-- Objective: verify dashboard, projects, Date and Live Capture end-to-end.
-- Dependencies: W2, W4ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W11 PASS.
-- Implementation tasks: deterministic synthetic browser scenarios; assert no console/page errors and correct lifecycle.
-- Relevant files/modules: `tests/e2e/`, `scripts/e2e.py`, dashboard.
-- Acceptance criteria: every PLAYWRIGHT row passes, including host E2E.
-- Required tests: critical path, projects modal, Date sort, camera start/state/stop, chunks, missing-audio/transcript-required.
-- Validation commands: targeted Playwright first; `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
-- Expected artifacts: reports/screenshots/logs.
-- Evidence: targeted project filter/preview and name-filter restoration passed; targeted upload finalized with no browser errors; persistence passed in a replacement page sharing the same browser context. Host E2E gate PASS: `artifacts/gates/latest.json`; report has 56 checks, 0 failed, no browser errors, no TargetClosedError. Earlier fixes: reapplied then cleared the project filter; waited for upload terminal status before deleting fixture; replaced flaky page reload with fresh page to retire pending polling work.
-- Recovery/fallback: PASS; retain synthetic gate report and rerun after later dashboard changes.
+### W13 - Logical boundaries
+- Status: PENDING
+- Objective: create logical-video boundaries at confirmed title changes independent of physical chunks.
+- Dependencies: W12 PASS.
+- Implementation tasks: open/close logical records at detected time; support boundary inside processing chunk; preserve source timeline.
+- Relevant files/modules: live_capture logical boundary service, tests.
+- Acceptance criteria: Session 1->2 closes/opens once; incidental slides and duplicate frames do not split.
+- Required tests: boundary state transitions and synthetic transition crossing chunk edge.
+- Validation commands: unit/integration boundary tests.
+- Expected artifacts: logical boundary manifest.
+- Recovery/fallback: mark uncertain span for user review without losing physical capture.
 
-### W17 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Docker/heavy validation
-- Status: BLOCKED
-- Objective: verify applicable container and full repository gates.
-- Dependencies: W15, W16 PASS and repository review policy permits heavy gates.
-- Implementation tasks: RAM gate; full pytest/security/smoke; Docker build/E2E if configured; distinguish unavailable infrastructure.
-- Relevant files/modules: `scripts/gate_runner.py`, `scripts/ram_gate.py`, `scripts/docker_gate.py`, Docker config.
-- Acceptance criteria: gates pass or reproducible environment-only blocker documented.
-- Required tests: full pytest, security, smoke, e2e, Docker build/E2E if applicable.
-- Validation commands: `scripts/ram_gate.py`, gate runner, Docker gates.
-- Expected artifacts: `artifacts/gates/latest.json`, logs/reports.
-- Evidence: host E2E PASS in W16; Docker Compose config PASS (`artifacts/gates/docker/docker-config.json`). RAM gate returned DEFERRED_LOW_RAM at 5.62 GiB (<6.0); heavy runner wrote `artifacts/gates/heavy-validation.json` with pytest/security/smoke/E2E NOT_RUN. Docker CLI/daemon respond, but repository policy gates Docker build/E2E behind RAM >6 GiB and review. W15 full pytest previously passed 975/3 skipped; targeted suite rerun 45 passed. No private media used.
-- Recovery/fallback: rerun RAM gate in the permitted nighttime window after available RAM exceeds 6 GiB; then run remaining heavy gates and Docker build/E2E.
+### W14 - Logical-video and chunk mapping
+- Status: PENDING
+- Objective: persist mappings among capture session, upload fragments, processing chunks and logical videos.
+- Dependencies: W5, W6, W13 PASS.
+- Implementation tasks: versioned mapping schema, time ranges, fragment digests, transactional updates, migration/recovery and idempotency.
+- Relevant files/modules: live_capture models/store/service, Dashboard APIs, integration tests.
+- Acceptance criteria: logical video can span fragments/chunks and a chunk can contain multiple logical videos.
+- Required tests: mapping roundtrip, restart recovery, split inside chunk, duplicate fragment.
+- Validation commands: model/API integration tests.
+- Expected artifacts: synthetic mapping manifest.
+- Recovery/fallback: rebuild derived mapping from immutable fragment timeline; never delete source fragments.
 
-### W18 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Documentation/readiness/final delivery
-- Status: PASS
-- Objective: document user flows and prove committed/synchronized clean delivery.
-- Dependencies: W14 PASS; W16 PASS; W17 PASS or justified environment-only BLOCKED.
-- Implementation tasks: document permissions, chunk recovery/retry, crop, missing/late audio, metadata, manual deletion; update plan; commit final checkpoint; sync current branch.
-- Relevant files/modules: `docs/LIVE_CAPTURE.md`, plan, implementation/tests.
-- Acceptance criteria: DoD met; statuses explicit; commits on current branch; remote SHA=HEAD; clean tree; no merge/deploy.
-- Required tests: final targeted Date/Live Capture suites and applicable gate evidence.
-- Validation commands: `git diff --check`, tests, status/HEAD and `git ls-remote` for branch.
-- Expected artifacts: final plan/gate artifacts.
-- Evidence: user guide is present; W16 host/browser acceptance PASS. W17 has only a repository-enforced low-RAM blocker documented; code, plan, and tests are committed and pushed on this branch.
-- Recovery/fallback: if push unavailable, preserve local commit and report exact external blocker.
+### W15 - Playlist Review UI
+- Status: PENDING
+- Objective: let users inspect and correct detected logical videos.
+- Dependencies: W3, W13, W14 PASS.
+- Implementation tasks: display title/confidence/date; rename, correct recorded date, split, merge, confirm low-confidence items; protect original mapping.
+- Relevant files/modules: Videos table, playlist review UI/API, logical-video service, Playwright tests.
+- Acceptance criteria: Session 1/2 and unknown title appear; all review actions work and persist.
+- Required tests: UI journey for confirm/rename/date/split/merge and low-confidence review.
+- Validation commands: API tests and playlist Playwright.
+- Expected artifacts: review report/screenshots.
+- Recovery/fallback: user edits are auditable and reversible; never silently auto-confirm a low-confidence title.
+
+### W16 - Audio-missing flow
+- Status: PENDING
+- Objective: preserve video processing without usable audio in the new flow.
+- Dependencies: W4, W6 PASS.
+- Implementation tasks: detect audio per fragment/processing chunk; expose AUDIO_MISSING / TRANSCRIPT_REQUIRED and later supply actions.
+- Relevant files/modules: audio detector, models, capture UI/API, tests.
+- Acceptance criteria: silent synthetic source remains valid and warning is clear in playlist/video UI.
+- Required tests: silent media unit/API and Playwright warning.
+- Validation commands: targeted tests and fake-device browser flow.
+- Expected artifacts: silent fixture and report.
+- Recovery/fallback: mark unknown if detector unavailable; never fail video record solely for absent audio.
+
+### W17 - Late transcript
+- Status: PENDING
+- Objective: associate later transcript/audio with the right logical video/session without false sync.
+- Dependencies: W14, W16 PASS.
+- Implementation tasks: explicit association selector/API, loose alignment, state update and retries.
+- Relevant files/modules: transcript model/API, review UI, tests.
+- Acceptance criteria: later transcript clears requirement warning, retains provenance, and has no fabricated timestamps.
+- Required tests: late association API and Playwright.
+- Validation commands: unit/API tests and synthetic browser flow.
+- Expected artifacts: transcript association report.
+- Recovery/fallback: retain unassociated transcript and ask for user mapping; do not guess a logical video.
+
+### W18 - Documentation pipeline integration
+- Status: PENDING
+- Objective: route confirmed logical videos through existing Whisper processing and Documentation V2.
+- Dependencies: W6, W14, W15, W16, W17 PASS.
+- Implementation tasks: present logical video as normal media with recorded_at; reuse processor, crop, transcript/audio evidence and idempotent docs generation.
+- Relevant files/modules: `live_capture/integration.py`, transcription processor, documentation engine, Videos API/tests.
+- Acceptance criteria: confirmed logical video appears in Videos and produces docs through existing pipeline; no duplicate pipeline.
+- Required tests: synthetic end-to-end integration and UI listing.
+- Validation commands: processor/docs tests and Playwright normal-video flow.
+- Expected artifacts: generated docs from synthetic source only.
+- Recovery/fallback: persist retryable pipeline status and source mapping; keep captured media.
+
+### W19 - GC candidates
+- Status: PENDING
+- Objective: retain safe, advisory media lifecycle suggestions for physical and derived media.
+- Dependencies: W14, W18 PASS.
+- Implementation tasks: identify old+processed+documented+unused candidates; account for logical mapping references; explicit confirmed deletion only.
+- Relevant files/modules: GC service/API/UI and tests.
+- Acceptance criteria: active/referenced media excluded; UI never deletes automatically.
+- Required tests: candidate logic, references, UI suggestion and explicit confirmation guard.
+- Validation commands: unit/API tests and Playwright suggestion check.
+- Expected artifacts: synthetic candidate report.
+- Recovery/fallback: false negatives are safe; never broaden deletion automatically.
+
+### W20 - Unit and integration matrix
+- Status: PENDING
+- Objective: complete automated validation of all required states and mappings.
+- Dependencies: W5-W19 implementation stages PASS where relevant.
+- Implementation tasks: fill gaps for fragment identity/idempotency, aggregation, detector confirmation, boundaries, cancellation, audio, GC and Date.
+- Relevant files/modules: `tests/test_live_capture*`, `tests/integration/`, dashboard API tests.
+- Acceptance criteria: each UNIT and INTEGRATION row below has current PASS evidence.
+- Required tests: all unit/integration cases in Test Matrix; synthetic media only.
+- Validation commands: targeted pytest then full pytest if W23 permits.
+- Expected artifacts: pytest reports.
+- Recovery/fallback: max two distinct root-cause repair attempts per failure; never weaken assertions.
+
+### W21 - Playwright user journeys
+- Status: PENDING
+- Objective: prove capture and playlist journeys through the actual Whisper UI.
+- Dependencies: W3-W19 PASS.
+- Implementation tasks: fake camera, synthetic title source, fake connectivity, UI action/state assertions.
+- Relevant files/modules: `tests/e2e/`, dashboard and capture modules.
+- Acceptance criteria: every specified normal, playlist, low-confidence, cancellation, audio and newest-first journey passes.
+- Required tests: full user journeys listed in Test Matrix.
+- Validation commands: targeted Playwright scripts; no arbitrary waits.
+- Expected artifacts: named JSON reports/screenshots.
+- Recovery/fallback: inspect browser trace and app/API logs; repair root cause and rerun.
+
+### W22 - Host E2E regression
+- Status: PENDING
+- Objective: revalidate dashboard critical path with completed capture UI and preserve projects/date flows.
+- Dependencies: W2, W20, W21 PASS.
+- Implementation tasks: run host harness; repair changed UI selectors/fixtures without dropping checks.
+- Relevant files/modules: `scripts/gate_runner.py`, `scripts/e2e.py`, `tests/e2e/smoke_dashboard.py`.
+- Acceptance criteria: host gate PASS and no browser errors/TargetClosedError.
+- Required tests: full host E2E.
+- Validation commands: `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
+- Expected artifacts: host report/log/latest gate.
+- Recovery/fallback: two root-cause fixes maximum per failure; continue independent stages.
+
+### W23 - Docker/heavy validation
+- Status: PENDING
+- Objective: run required full and Docker validation when repository policy/environment allow.
+- Dependencies: W20, W22 PASS; RAM gate >6 GiB and review prerequisite.
+- Implementation tasks: RAM-gated pytest/security/smoke/sonar and Docker build/E2E if configured.
+- Relevant files/modules: `scripts/ram_gate.py`, `scripts/heavy_validation_runner.py`, `scripts/docker_gate.py`, compose config.
+- Acceptance criteria: gates pass or only an evidenced external RAM/service blocker remains.
+- Required tests: full pytest, security, smoke, Docker build and Docker E2E as applicable.
+- Validation commands: RAM gate; heavy runner; Docker gate config/build/E2E.
+- Expected artifacts: heavy summary and per-gate reports.
+- Recovery/fallback: retry when measured RAM >6 GiB; do not bypass repository enforcement; independent implementation stages continue.
+- Evidence: last measured 5.62 GiB; compose config passed; full heavy runner deferred all gates. Re-measure at final validation.
+
+### W24 - Final readiness
+- Status: PENDING
+- Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
+- Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
+- Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
+- Relevant files/modules: this plan, code/tests, gate artifacts, Git branch.
+- Acceptance criteria: all user-facing features pass via UI+Playwright; only permitted environment blocker remains; branch synchronized; no merge/deploy.
+- Required tests: final targeted matrix and all applicable gates.
+- Validation commands: `git diff --check`; targeted/full validation; `git status`; `git rev-parse HEAD`; `git ls-remote`.
+- Expected artifacts: final gate reports and committed plan evidence.
+- Recovery/fallback: do not claim PASS with an unrerun failure; report exact code vs environment blocker.
 
 ## Global Definition of Done
 
-Implementation complete; Date green with recorded/created preference and backend sorting; camera start/stop/error cleanup and interruption recovery; bounded chunking with concurrent next-chunk work; persisted crop metadata and applicable cropped frames; non-fatal missing audio and late transcript/audio with loose timing; durable capture metadata; existing Docs V2 integration; advisory GC and confirmation-only deletion. Required unit, API/integration, synthetic Playwright, host E2E and applicable Docker/heavy gates pass or have a justified environment-only blocker. Plan reflects evidence, commits are on this branch, remote synchronized, worktree clean; no merge/deploy.
+Live Capture is usable via Videos -> New Recording; mobile capture sends 10-30 second acknowledged fragments and bounded offline retry; server creates ~10-15 minute processing chunks; playlist detection confirms titles across frames and creates reviewable logical videos independent of physical boundaries; logical videos use existing Videos/Date/Docs pipeline; cancellation, crop, audio-missing, late transcript and advisory GC work. Every user-facing feature has a passing main-journal Playwright report. Required unit/integration/host gates pass; Docker/heavy gates pass or have a justified environment-only blocker. Plan, implementation and tests are committed and remote-synchronized; worktree clean. No deployment.
 
 ## Test Matrix
 
-| Layer | Required coverage | Stage | Evidence |
+| Layer | Coverage | Stage | Evidence |
 |---|---|---|---|
-| UNIT | date selection / recorded_at / created_at fallback | W14 | PASS: API fallback and UTC epoch tests |
-| UNIT | newest default, asc/desc sorting, filter/page preservation | W14 | PASS: server sort tests; Playwright 7/7 |
-| UNIT | chunk state transitions | W3/W5/W11/W12 | PASS: domain, upload/processing cancel, retry and completion race tests |
-| UNIT | audio-state logic | W7/W9 | PASS: audio-state and no-audio processor tests |
-| UNIT | GC candidate logic | W10 | PASS: documented/stale, undocumented and no-delete tests |
-| UNIT | upload cancellation transitions/retry/cleanup; processing cancellation races/idempotency | W11/W12 | PASS: 45 targeted tests rerun |
-| INTEGRATION/API | create session; persist recording and recorded_at | W3 | W3 PASS: store/service roundtrip tests; W4 PASS: 19 Flask API tests |
-| INTEGRATION/API | chunk finalization/order; processing state | W5/W9 | PASS: bounded upload, ordering, persisted processor state |
-| INTEGRATION/API | no-audio flow | W7/W9 | PASS: missing audio remains processable and transcript-required |
-| INTEGRATION/API | late transcript association | W8 | W8 PASS: 37 model/service/API tests; synthetic browser late association and loose alignment pass |
-| INTEGRATION/API | video listing sorting | W14 | PASS: recorded/created date sorting API tests |
-| INTEGRATION/API | upload cancel; queued/active processing cancel; double cancel; retry | W11/W12 | PASS: idempotent API and service state tests |
-| PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13/W16 | PASS: W16 host E2E 56 checks, 0 failures |
-| PLAYWRIGHT/E2E | Date display and asc/desc | W14/W16 | W14 PASS: 7/7 synthetic Date checks |
-| PLAYWRIGHT/E2E | upload cancel; processing cancel/Cancelando/CANCELLED/retry | W13 | PASS: 9/9 synthetic checks |
-| PLAYWRIGHT/E2E | capture start, state, stop, cleanup | W4/W13 | W4 PASS: 12/12 fake-camera checks, 0 browser errors |
-| PLAYWRIGHT/E2E | chunk flow where testable | W5/W13 | PASS: rotation and stalled/retry reports green |
-| PLAYWRIGHT/E2E | missing-audio warning / transcript-required | W7/W13 | PASS: capture dashboard synthetic checks green |
-| MEDIA | synthetic video/audio/silent-video/crop fixtures only | W4ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W14 | PASS: synthetic only |
+| UNIT | fragment states/idempotency, ACK/retry, buffer cap, aggregation, logical boundaries, OCR parsing/confidence/multiframe confirmation | W5-W14/W20 | PENDING |
+| UNIT | cancellation/idempotency/races, audio missing, late transcript, GC candidates, recorded/created date and sorting | W8/W16-W20 | prior PASS evidence exists; revalidate against final schema |
+| INTEGRATION/API | session, fragment upload/duplicate/interrupted retry, processing chunks, fragment/chunk/logical mappings, inside-chunk boundary | W5-W14/W20 | PENDING |
+| INTEGRATION/API | cancellation, no-audio, late transcript, Docs V2, GC, videos sorting | W8/W16-W20 | prior domain/API reports; user-journey revalidation pending |
+| PLAYWRIGHT | Videos -> New Recording, preview, modes, timer, fragment ACK/progress, stop | W3-W5/W21 | PENDING; prior modal tests do not cover expected entry/journey |
+| PLAYWRIGHT | offline retry/buffer warning, local-copy OFF default, cancellation controls | W7-W8/W21 | PENDING |
+| PLAYWRIGHT | crop, playlist Session1->Session2, low confidence, review rename/date/split/merge/confirm | W9-W15/W21 | PENDING |
+| PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PENDING |
+| HOST E2E | dashboard critical path, Projects, Videos Date sorting, no browser errors | W2/W22 | PASS previously; rerun after UI work |
+| DOCKER/MEDIA | Docker config/build/E2E; synthetic video/audio/OCR title fixtures only | W11-W23 | config PASS previously; heavy gate deferred at 5.62 GiB; remeasure |
 
 ## Known Risks
 
-- Camera permissions and MediaRecorder codecs vary; use deterministic fake devices and feature detection.
-- MediaRecorder timeslice events may not be standalone playable containers; verify finalization rather than assume.
-- Long sessions risk storage exhaustion/backpressure; bound queues and expose stalled state.
-- Crop orientation/dimensions can affect evidence; preserve originals and validate normalized coordinates.
-- File tracker/filesystem may not retain capture metadata; use sidecars without breaking legacy scan.
-- Host E2E now passes: 56 Playwright checks, 0 failures, and no TargetClosedError; see `artifacts/gates/e2e-host-data/e2e_report.json`.
-- Docker build/E2E and other heavy gates require review plus >6 GiB free RAM; the latest RAM gate measured 5.62 GiB, so W17 is environmentally deferred.
-- Heavy gates follow Project Lead review/RAM policy and may require services; never claim unrun gates pass.
+- Mobile MediaRecorder timeslice output may be container fragments requiring safe server-side remux; ACK only after durable fragment storage.
+- IndexedDB quota/eviction varies; buffer limit, warning, retry and explicit local-copy behavior must be visible.
+- OCR/title slides vary; broad extraction and repeated evidence avoid exact-string coupling and false splits.
+- Title change can occur inside a processing chunk; mappings must support ranges and user edits without mutating source bytes.
+- Phone may be locked/backgrounded for hours; browser suspension is not guaranteed. Surface interrupted/recoverable status and never claim continuous capture while suspended.
+- RAM heavy gate last measured 5.62 GiB (<6 GiB). Docker build/E2E remain gated; independent host/UI implementation continues.
+- Existing capture modal controls are not proof of required Videos entry or playlist usability.
 
 ## Model / Executor Policy
 
-- Routine implementation: Z.AI GLM primary; OpenCode Go/DeepSeek then local Ollama/DeepSeek fallback.
-- This session exposes no model-switch API. Before code work, inspect repository routing for callable GLM worker and use it if available. If none is callable, record evidence and use only an available authorized fallback. Do not expose credentials/private endpoints.
-- No nested agents unless required by configured GLM delegation.
+Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/DeepSeek Flash, then local Ollama/DeepSeek. Do not choose DeepSeek Pro for routine coding. GPT/Claude/Codex are not routine implementers when a configured approved worker is callable. Do not expose credentials. Before code work inspect current router/provider availability; if no approved executor is callable, record the evidence and use the lowest permitted available fallback. No nested agents unless the repository's approved GLM routing explicitly requires delegation.
 
 ## Progress Log
 
-- 2026-10-15: W16 PASS. Targeted filter/preview, upload and new-page persistence Playwright checks pass; host E2E PASS with 56 checks, 0 failures and no browser errors. Fixed filter cleanup, waited for upload result before fixture cleanup, and used a new context page after project override to avoid a connection-reset/reload race. W17 BLOCKED: Docker Compose config passes, but heavy runner deferred all heavy tests at 5.62 GiB against >6.0 GiB policy; Docker build/E2E remain deferred. Targeted suite 45 passed; W15 full pytest prior PASS (975 passed, 3 skipped).
-
-- 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PASS; W13 PASS: synthetic Playwright cancellation checks 9/9. W14 PASS (32 API/static + 7 browser checks). W15 PASS: full pytest 975 passed / 3 skipped.
-- 2026-10-15: W14 PASS. Date API uses recorded_at then created_at, Date DESC by default, backend ASC/DESC; filters/pagination retain order. 32 tests + 7 Playwright checks passed.
-- 2026-10-15: W10 PASS (commit `46cd486`). Advisory cleanup API/UI; requires old + processed + documented; no deletion; 37 tests passed. W11 PENDING.
-- 2026-10-15: W9 PASS (commit `5f04593`). Existing processor routes finalized chunks through crop-aware extraction and Docs V2; no-audio avoids Whisper; late transcript is one untimed `session_transcript.loose` evidence item. Processing state is persisted, and duplicate timed/loose evidence is avoided. Targeted regression: 82 passed. W10 PASS; W11?W13 cancellation stages added by user scope.
- - 2026-10-15: W8 PASS. Added the `Transcript` value object (loose alignment only), session-level transcript persistence (manifest + `transcript.txt` sidecar) and `CaptureService.associate_transcript` — clears TRANSCRIPT_REQUIRED and marks availability without forcing PROCESSED; retries idempotent. Authenticated `POST /api/capture/sessions/<id>/transcript` and a late-transcript supply UI under the missing-audio warning. 37 new tests pass; full repo 927 passed / 3 skipped. W9 PENDING.
-- 2026-10-15: W7 PASS. Added optional audio capture, ffprobe detection, persisted AUDIO_MISSING/TRANSCRIPT_REQUIRED and UI warning. 890 tests passed, 3 skipped; fake-device Playwright 14 checks passed. W8 IN_PROGRESS.
-- 2026-10-15: W6 PASS. Added normalized crop selection, session persistence, clear/update API and source-preserving frame crop with mapping metadata. 77 targeted tests and 2 keyframe integration tests passed; browser crop report deferred to W13. W7 IN_PROGRESS.
-- 2026-10-15: W5 PASS. Implemented bounded streamed uploads and browser chunk rotation with concurrent upload, FIFO order, retry and backpressure. 58 unit/API tests, 10/10 chunk Playwright checks, 12/12 camera regression checks; security 107 passed/3 skipped. W6 IN_PROGRESS.
-- 2026-10-15: W4 PASS. Dashboard camera modal, explicit permission/error states, recording indicator, session/chunk API, bounded body size, stop/error track cleanup and restart reconciliation. Added fake-device Playwright scenario; 94 targeted tests and 12/12 capture browser checks pass. W5 IN_PROGRESS.
-- 2026-10-15: W3 PASS. Added durable session manifests and atomic media finalization under the configured Videos root; explicit state machine, crop/audio metadata, and restart reconciliation. Synthetic targeted tests: 42 passed including W2 harness regression; compileall passed. W4 IN_PROGRESS.
-- 2026-10-15: W2 PASS. Seeded isolated synthetic project fixtures; valid media with no frames returns an empty successful response. Replaced synchronous Playwright probe in validation startup with awaited async lifecycle after reproducing teardown `TargetClosedError`; targeted tests 55 passed; host gate PASS (26.45s), no warning. W3 IN_PROGRESS.
-- 2026-10-15: W0 PASS. Baseline: branch `feat/zmi-documentation-synthesis-v2`, HEAD `f3e9f66`, clean. Date UI exists but metadata/backend sort incomplete. Live Capture absent. Host report shows projects fixture failure and missing-frame 404, not TargetClosedError. W1 PASS: plan written, reviewed, and committed before implementation (commit SHA recorded in Git).
+- 2026-10-15: New acceptance criteria reveal the prior Capture/Chunking/Live Capture PASS labels covered the old modal, not the expected `Videos -> New Recording` UI. Reopened W3-W21 pending user-journey evidence. Existing backend and tests remain foundations, not acceptance proof. Baseline HEAD/remote `e9e61be`, clean tree. W2 host E2E PASS; W23 currently RAM-blocked at last 5.62 GiB reading. Plan must be committed before implementation.
 
 ## Final Delivery Checklist
 
-- [x] W0-W16 evidence and statuses current; W17 environment blocker documented
-- [x] Date API/UI and fallback tests pass
-- [x] Live Capture, cancellation, chunking, crop, missing-audio, late transcript, Docs V2 and GC complete
-- [x] Unit and integration/API matrix passes
-- [x] Playwright matrix and host E2E pass
-- [x] Docker/heavy environment blocker documented (RAM gate 5.62 GiB; see W17)
-- [x] Automated media fixtures are synthetic only
-- [x] User docs and recovery procedures updated
-- [x] Plan and implementation committed on current branch
-- [x] Remote branch SHA equals local HEAD (verified after final push)
-- [x] Worktree clean; no merge/deployment
+- [ ] W0-W24 statuses and evidence current
+- [ ] Videos -> New Recording UI and main journeys pass Playwright
+- [ ] Short upload fragments, ACK/idempotency, IndexedDB recovery and buffer warning pass
+- [ ] Server processing chunks and four-way mapping pass
+- [ ] Continuous playlist, title detection, multi-frame confirmation and review pass
+- [ ] Cancellation, crop, audio-missing, late transcript, Docs V2, GC pass
+- [ ] Date and backend sorting remain green
+- [ ] Unit, integration, Playwright, host E2E pass
+- [ ] Docker/heavy gates pass or justified environment blocker recorded
+- [ ] Code and canonical plan committed; remote SHA equals HEAD
+- [ ] Worktree clean; no merge/deploy
