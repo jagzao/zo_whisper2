@@ -651,6 +651,70 @@
             z-index: 1000;
             color: var(--text);
         }
+
+        /* Live Capture / New Recording (W3) */
+        .videos-header {
+            justify-content: space-between;
+            align-items: center;
+            margin: 0 0 1rem 0;
+        }
+        .capture-modes { margin-top: 0; }
+        .capture-mode {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--panel-2);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .capture-mode:hover { border-color: var(--accent); }
+        .capture-mode:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+        .capture-mode input { accent-color: var(--accent); }
+        .capture-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            font-variant-numeric: tabular-nums;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+        #captureTimer {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: 0.04em;
+        }
+        .capture-logical-videos {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 0.625rem;
+            padding: 0.5rem 0.75rem;
+            max-height: 16rem;
+            overflow-y: auto;
+        }
+        .capture-logical-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.15rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .capture-logical-row:last-child { border-bottom: none; }
+        .capture-empty { color: var(--muted); margin: 0.25rem 0; }
+        @media (max-width: 640px) {
+            .capture-modal { padding: 0.9rem; }
+            .capture-preview-wrap { height: 220px !important; }
+            .capture-status { align-items: flex-start; }
+            #captureActions { flex-direction: column; }
+            #captureActions button { width: 100%; }
+            .capture-mode { width: 100%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -710,8 +774,11 @@
             <div class="folders" id="folders"></div>
         </div>
 
-        <div class="card wide">
-            <h2>Files → Transcriptions</h2>
+        <div class="card wide" id="videosSection">
+            <div class="row videos-header">
+                <h2 style="margin:0;">Videos</h2>
+                <button id="newRecordingBtn" aria-label="New Recording" onclick="openCaptureModal()">New Recording</button>
+            </div>
             <div class="table-toolbar">
                 <input type="text" id="fileFilter" placeholder="Filter by name..." oninput="applyFileFilters()">
                 <select id="projectFilter" onchange="applyFileFilters()"><option value="">All projects</option></select>
@@ -842,7 +909,8 @@
                 <ol>
                     <li><strong>Upload files</strong> with the Drop Area. They go to <code>Video_compress/</code>. Optionally choose a project to auto-rename with prefix.</li>
                     <li>Press <strong>RUN Full</strong> to compress, organize by project and transcribe.</li>
-                    <li>In <strong>Files → Transcriptions</strong> you will see the status, detected language and whether it already has a transcription.</li>
+                    <li>In <strong>Videos</strong> you will see the status, detected language and whether it already has a transcription.</li>
+                    <li>Press <strong>New Recording</strong> in <strong>Videos</strong> to capture from the camera (Normal Recording or Continuous Playlist).</li>
                     <li>Use <strong>View</strong> to play the audio/video alongside its transcription, or <strong>Edit</strong> to correct the text.</li>
                 </ol>
 
@@ -882,10 +950,20 @@
     </div>
 
     <div id="captureModal" class="modal-overlay hidden">
-        <div class="modal" style="max-width: 720px;">
+        <div class="modal capture-modal" style="max-width: 900px;">
             <div class="modal-header">
-                <h2>Live Capture</h2>
+                <h2>New Recording</h2>
                 <button class="close-x" onclick="closeCaptureModal()" aria-label="Close capture">&times;</button>
+            </div>
+            <div class="row capture-modes" role="radiogroup" aria-label="Recording mode" style="margin-top:0;">
+                <label class="capture-mode" for="captureModeNormal">
+                    <input type="radio" name="captureMode" id="captureModeNormal" value="normal" checked onchange="setCaptureMode('normal')">
+                    Normal Recording
+                </label>
+                <label class="capture-mode" for="captureModePlaylist">
+                    <input type="radio" name="captureMode" id="captureModePlaylist" value="playlist" onchange="setCaptureMode('playlist')">
+                    Continuous Playlist
+                </label>
             </div>
             <div class="row" style="align-items:center; margin-top:0;">
                 <label for="captureTitle">Title:</label>
@@ -894,6 +972,9 @@
             <div class="row" style="align-items:center; margin-top:0;">
                 <label for="captureChunkDuration">Chunk duration (s):</label>
                 <input type="number" id="captureChunkDuration" value="600" min="1" step="1" style="width:6rem;">
+                <label for="captureSaveLocal" style="display:flex; align-items:center; gap:0.35rem; margin-left:1rem;">
+                    <input type="checkbox" id="captureSaveLocal"> Save local copy
+                </label>
                 <span id="captureChunkInfo" style="color:var(--muted); font-size:0.8rem; margin-left:auto;"></span>
             </div>
             <div class="row" style="align-items:center; margin-top:0;">
@@ -913,21 +994,30 @@
                 </div>
             </div>
             <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
-            <div style="position:relative; margin:0.75rem 0; height:320px;">
+            <div class="capture-preview-wrap" style="position:relative; margin:0.75rem 0; height:320px;">
                 <video id="capturePreview" autoplay playsinline muted style="width:100%; height:100%; object-fit:fill; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
                 <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem; z-index:2;">Idle</span>
                 <div id="cropOverlay" title="Drag to select a crop region" style="position:absolute; inset:0; cursor:crosshair; z-index:1; border-radius:0.625rem;"></div>
                 <div id="cropBox" class="hidden" style="position:absolute; border:2px dashed var(--accent,#fff); background:rgba(255,255,255,0.12); z-index:1; pointer-events:none; border-radius:0.125rem;"></div>
             </div>
-            <div class="row" style="align-items:center; margin-top:0;">
+            <div class="row capture-status" style="margin-top:0;">
+                <span id="captureTimer" aria-label="Recording timer">00:00:00</span>
+                <span id="captureUploadStatus" aria-label="Upload status" style="flex:1;">Upload: idle · pending 0 · processing 0</span>
                 <span id="cropInfo" style="color:var(--muted); font-size:0.8rem;">Crop: full frame</span>
-                <button id="cropClearBtn" class="secondary" onclick="clearCropRegion()" style="margin-left:auto;">Clear crop</button>
+                <button id="cropClearBtn" class="secondary" onclick="clearCropRegion()">Clear crop</button>
             </div>
-            <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
-                <button id="captureStartBtn" class="ok" onclick="startCapture()">Start capture</button>
-                <button id="captureStopBtn" class="danger hidden" onclick="stopCapture()">Stop & finalize</button>
-                <button id="captureCancelUploadBtn" class="danger hidden" onclick="cancelCaptureUpload()">Cancelar subida</button>
+            <div id="captureActions" class="row" style="justify-content:flex-end; margin-top:0.75rem;">
+                <button id="captureStartBtn" class="ok" onclick="startCapture()">Start Recording</button>
+                <button id="captureStopBtn" class="danger hidden" onclick="stopCapture()">Stop Recording</button>
+                <button id="captureCancelUploadBtn" class="danger hidden" onclick="cancelCaptureUpload()">Cancel Upload</button>
+                <button id="captureCancelProcessingBtn" class="danger hidden" onclick="cancelCaptureProcessingCurrent()">Cancel Processing</button>
                 <button id="captureRetryBtn" class="secondary hidden" onclick="retryUpload()">Retry upload</button>
+            </div>
+            <div id="captureLogicalSection" style="margin-top:1rem;">
+                <h3 style="margin:0 0 0.5rem 0; font-size:0.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.06em;">Detected titles / logical videos</h3>
+                <div id="captureLogicalVideos" class="capture-logical-videos" aria-label="Detected titles and logical videos">
+                    <p class="capture-empty">No detected titles yet. Logical videos appear here as source titles are recognised and confirmed.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1991,6 +2081,11 @@
     transcriptSessions: [],
             uploadController: null,
             jobsPoller: null,
+            mode: 'normal',         // W3: 'normal' | 'playlist'
+            timerSeconds: 0,        // W3: visible recording timer
+            timerInterval: null,
+            sessions: [],           // W3: latest session list (for status/cancel controls)
+            logicalVideos: [],      // W3: detected-title/logical-video shell
         };
 
         const CAPTURE_MAX_PENDING_UPLOADS = 4;
@@ -2036,6 +2131,8 @@
             document.getElementById('captureStartBtn').classList.toggle('hidden', recording || busy || stalled);
             document.getElementById('captureStopBtn').classList.toggle('hidden', !(recording || stalled));
             document.getElementById('captureCancelUploadBtn').classList.toggle('hidden', !capture.uploading);
+            const cancelProcessing = document.getElementById('captureCancelProcessingBtn');
+            if (cancelProcessing) cancelProcessing.classList.toggle('hidden', !currentCancelableProcessingChunk());
             document.getElementById('captureRetryBtn').classList.toggle('hidden', !stalled);
             document.getElementById('captureStartBtn').disabled = busy;
         }
@@ -2066,6 +2163,90 @@
             if (!el) return;
             const recording = capture.recordingIndex !== null ? `recording chunk ${capture.recordingIndex}` : 'idle';
             el.textContent = `${recording} · finalized [${capture.finalizedIndexes.join(', ')}] · pending ${capture.uploadQueue.length}`;
+            renderCaptureStatus();
+        }
+
+        function formatCaptureTimer(totalSeconds) {
+            const total = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+            const hrs = Math.floor(total / 3600);
+            const mins = Math.floor((total % 3600) / 60);
+            const secs = total % 60;
+            return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function renderCaptureTimer() {
+            const el = document.getElementById('captureTimer');
+            if (el) el.textContent = formatCaptureTimer(capture.timerSeconds);
+        }
+
+        function resetCaptureTimer() {
+            capture.timerSeconds = 0;
+            renderCaptureTimer();
+        }
+
+        function ensureCaptureTimer() {
+            if (capture.timerInterval) return;
+            capture.timerInterval = setInterval(() => {
+                if (capture.state !== 'recording') return;
+                capture.timerSeconds += 1;
+                renderCaptureTimer();
+            }, 1000);
+        }
+
+        function stopCaptureTimer() {
+            clearInterval(capture.timerInterval);
+            capture.timerInterval = null;
+        }
+
+        function setCaptureMode(mode) {
+            capture.mode = mode === 'playlist' ? 'playlist' : 'normal';
+            const normal = document.getElementById('captureModeNormal');
+            const playlist = document.getElementById('captureModePlaylist');
+            if (normal) normal.checked = capture.mode === 'normal';
+            if (playlist) playlist.checked = capture.mode === 'playlist';
+        }
+
+        function currentSession() {
+            if (!capture.sessionId) return null;
+            return (capture.sessions || []).find(s => s.sessionId === capture.sessionId) || null;
+        }
+
+        function currentCancelableProcessingChunk() {
+            const session = currentSession();
+            if (!session) return null;
+            return (session.chunks || []).find(c => c.state === 'FINALIZED' || c.state === 'PROCESSING') || null;
+        }
+
+        function cancelCaptureProcessingCurrent() {
+            const chunk = currentCancelableProcessingChunk();
+            if (!chunk) return;
+            return cancelCaptureProcessing(capture.sessionId, chunk.index);
+        }
+
+        function renderCaptureStatus() {
+            const el = document.getElementById('captureUploadStatus');
+            if (!el) return;
+            const uploadState = capture.uploading ? 'uploading' : (capture.stalled ? 'paused' : 'idle');
+            const session = currentSession();
+            const processing = session ? (session.chunks || []).filter(c => c.state === 'PROCESSING').length : 0;
+            el.textContent = `Upload: ${uploadState} · pending ${capture.uploadQueue.length} · processing ${processing}`;
+        }
+
+        function renderLogicalVideos(items) {
+            const el = document.getElementById('captureLogicalVideos');
+            const list = items || [];
+            capture.logicalVideos = list;
+            if (!el) return;
+            if (!list.length) {
+                el.innerHTML = '<p class="capture-empty">No detected titles yet. Logical videos appear here as source titles are recognised and confirmed.</p>';
+                return;
+            }
+            el.innerHTML = list.map(item => `<div class="capture-logical-row"><span>${escapeHtml(item.title || 'Untitled')}</span><span class="status ${item.confirmed ? 'processed' : 'pending'}">${item.confirmed ? 'confirmed' : 'needs review'}</span></div>`).join('');
+        }
+
+        function renderLogicalVideosForSession() {
+            const session = currentSession();
+            renderLogicalVideos((session && session.logicalVideos) || []);
         }
 
         // W7/W8: surface the missing-audio / transcript-required / supplied
@@ -2128,6 +2309,10 @@
                 chunkDurationSec: capture.chunkDurationSec,
                 crop: capture.pendingCrop,
                 audioAvailability: capture.audioAvailability,
+                mode: capture.mode,
+                timerSeconds: capture.timerSeconds,
+                saveLocal: !!(document.getElementById('captureSaveLocal') || {}).checked,
+                logicalVideos: (capture.logicalVideos || []).length,
             };
         };
 
@@ -2138,6 +2323,11 @@
             capture.sessionId = null;
             capture.pendingCrop = null;
             capture.audioAvailability = 'UNKNOWN';
+            setCaptureMode('normal');
+            resetCaptureTimer();
+            const saveLocal = document.getElementById('captureSaveLocal');
+            if (saveLocal) saveLocal.checked = false;
+            renderLogicalVideos([]);
             const txBox = document.getElementById('captureTranscriptText');
             if (txBox) txBox.value = '';
             renderCropRegion();
@@ -2156,6 +2346,7 @@
         function closeCaptureModal() {
             capture.closed = true;
             clearInterval(capture.jobsPoller);
+            stopCaptureTimer();
             emergencyStopCapture();
             setCaptureState('idle');
             document.getElementById('captureModal').classList.add('hidden');
@@ -2166,7 +2357,12 @@
             let res;
             try { res = await api('/api/capture/sessions'); }
             catch (e) { notice.classList.add('hidden'); return; }
-            renderCaptureJobs(res.sessions || []);
+            capture.sessions = res.sessions || [];
+            renderCaptureJobs(capture.sessions);
+            const cancelProcessing = document.getElementById('captureCancelProcessingBtn');
+            if (cancelProcessing) cancelProcessing.classList.toggle('hidden', !currentCancelableProcessingChunk());
+            renderCaptureStatus();
+            renderLogicalVideosForSession();
             const transcriptSelect = document.getElementById('captureTranscriptSession');
             if (transcriptSelect) {
                 const eligible = (res.sessions || []).filter(s => s.transcriptRequired && s.status !== 'ACTIVE');
@@ -2433,6 +2629,8 @@
                 return;
             }
 
+            resetCaptureTimer();
+            ensureCaptureTimer();
             startChunkRecording();
         }
 
@@ -2616,6 +2814,7 @@
                 });
                 if (!sessRes.ok) throw new Error(sessRes.error || 'Could not finalize session');
                 stopCaptureTracks();
+                stopCaptureTimer();
                 setCaptureState('done');
                 if (sessRes.session) {
                     updateAudioWarning(sessRes.session.audioAvailability, sessRes.session.transcriptRequired, sessRes.session.transcriptAvailable);
@@ -2624,6 +2823,7 @@
                 loadCaptureSessions();
             } catch (err) {
                 stopCaptureTracks();
+                stopCaptureTimer();
                 setCaptureState('error', err.message);
             }
         }

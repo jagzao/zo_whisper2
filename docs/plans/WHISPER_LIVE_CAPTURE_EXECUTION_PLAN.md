@@ -74,15 +74,16 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: inspect fresh report and correct root cause; no stale-report claims.
 
 ### W3 - Live Capture UI
-- Status: PENDING
+- Status: PASS
 - Objective: provide the expected `Videos -> New Recording` user journey.
 - Dependencies: W1 PASS.
 - Implementation tasks: add Videos action, responsive recording view, camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, fragment/processing progress, detected title/logical-video list and separate cancel controls.
 - Relevant files/modules: `dashboard/templates/dashboard.html`, `dashboard/app.py`, capture browser JS, `tests/e2e/`.
 - Acceptance criteria: users can reach and operate the complete capture shell from Videos; not header-only.
-- Required tests: Playwright opens Videos -> New Recording and verifies all required controls/preview.
-- Validation commands: targeted UI tests and Playwright UI entry scenario.
-- Expected artifacts: screenshot/report showing reachable controls.
+- Required tests: Playwright opens Videos -> New Recording and verifies controls, fake-camera preview, timer, start/stop, and no browser errors.
+- Validation commands: `.venv-validation\\Scripts\\python.exe -m pytest tests/test_dashboard_date_column.py -q`; synthetic host Playwright `tests/e2e/capture_new_recording.py`; regression `tests/e2e/capture_dashboard.py` and `tests/e2e/capture_cancellation.py`.
+- Expected artifacts: `capture_new_recording_report.json`; existing capture and cancellation reports.
+- Evidence: 23/23 capture-new-recording checks PASS; fake camera preview and timer advance observed; session finalized. Capture dashboard 16/16 PASS; cancellation 9/9 PASS; Date tests 5 PASS. Reports used isolated synthetic data roots; no private media. `git diff --check` PASS.
 - Recovery/fallback: keep existing modal as shared implementation behind the Videos entry; do not duplicate capture state.
 
 ### W4 - Mobile MediaRecorder
@@ -374,6 +375,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 ## Progress Log
 
 - 2026-10-15: New acceptance criteria reveal the prior Capture/Chunking/Live Capture PASS labels covered the old modal, not the expected `Videos -> New Recording` UI. Reopened W3-W21 pending user-journey evidence. Existing backend and tests remain foundations, not acceptance proof. Baseline HEAD/remote `e9e61be`, clean tree. W2 host E2E PASS; W23 currently RAM-blocked at last 5.62 GiB reading. Plan must be committed before implementation.
+- 2026-10-15: W3 PASS. Added Videos -> New Recording entry and responsive capture shell with modes, crop, default-off Save local copy, timer, status, logical-video placeholder, and distinct actions. Synthetic Playwright journey passed 23/23; existing capture and cancellation journeys passed 16/16 and 9/9; Date unit tests 5/5. This verifies only W3 shell; mobile fragment capture and playlist features remain pending.
 
 ## Final Delivery Checklist
 
