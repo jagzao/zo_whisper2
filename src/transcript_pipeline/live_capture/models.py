@@ -97,7 +97,14 @@ def validate_chunk_transition(current: ChunkState, target: ChunkState) -> ChunkS
 
 @dataclass(frozen=True)
 class CropRegion:
-    """Normalized crop metadata placeholder (W6 selects the real region)."""
+    """Normalized crop region (W6): x/y are the top-left corner, width/height
+    are the extents, all expressed as fractions of the frame in [0,1].
+
+    A validated instance is guaranteed to lie entirely inside the unit
+    square, so downstream consumers can convert it to pixel coordinates
+    without re-validating. `None` (no crop) and the full frame
+    ``(0, 0, 1, 1)`` both mean "leave the frame untouched".
+    """
 
     x: float
     y: float
@@ -115,6 +122,11 @@ class CropRegion:
             raise ValidationError("crop width and height must be within (0,1]")
         if self.x + self.width > 1.0 + 1e-9 or self.y + self.height > 1.0 + 1e-9:
             raise ValidationError("crop region must fit inside the normalized frame")
+
+    @property
+    def is_full_frame(self) -> bool:
+        """True when the region covers the entire frame (a no-op crop)."""
+        return self.x == 0.0 and self.y == 0.0 and self.width == 1.0 and self.height == 1.0
 
     def to_manifest(self) -> dict[str, float]:
         return {"x": self.x, "y": self.y, "width": self.width, "height": self.height}

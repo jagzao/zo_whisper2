@@ -119,7 +119,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: bounded streamed uploads (64 KiB), atomic persistence, MediaRecorder rotation with FIFO overlap and retry. 58 unit/API tests passed; synthetic Playwright chunk rotation/overlap/order/retry 10/10; W4 capture regression 12/12; security tests 107 passed, 3 skipped; compile/diff check clean.
 
 ### W6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Monitor crop/mask selection
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: select useful screen region and persist crop metadata.
 - Dependencies: W4 PASS.
 - Implementation tasks: preview overlay/adjustable rectangle; normalized coordinates; clamp/validate; save session metadata; apply crop to generated frames where applicable and retain source.
@@ -130,8 +130,10 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: crop metadata fixture/report.
 - Recovery/fallback: invalid crop uses full frame with explicit status; never discard source.
 
+- Evidence: normalized selection API, session metadata persistence, source-preserving frame crop and mapping metadata implemented. 77 unit/API tests passed; compileall and diff check clean; 2 extraction integration tests passed. Browser crop script was authored but did not produce a report because the Playwright child remained blocked; rerun in W13.
+
 ### W7 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Audio detection and missing-audio state
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: make video-only capture a valid flow.
 - Dependencies: W3, W5 PASS.
 - Implementation tasks: detect usable audio; persist availability; expose `AUDIO_MISSING` and `TRANSCRIPT_REQUIRED`; UI warning; permit later transcript/audio.
@@ -141,6 +143,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Validation commands: targeted pytest/Playwright with synthetic audio/silent video.
 - Expected artifacts: synthetic fixtures and test report.
 - Recovery/fallback: probe failure becomes `AUDIO_UNKNOWN`/retryable, not fatal; document state.
+
 
 ### W8 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Late transcript/audio association
 - Status: PENDING
@@ -282,6 +285,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
+- 2026-10-15: W6 PASS. Added normalized crop selection, session persistence, clear/update API and source-preserving frame crop with mapping metadata. 77 targeted tests and 2 keyframe integration tests passed; browser crop report deferred to W13. W7 IN_PROGRESS.
 - 2026-10-15: W5 PASS. Implemented bounded streamed uploads and browser chunk rotation with concurrent upload, FIFO order, retry and backpressure. 58 unit/API tests, 10/10 chunk Playwright checks, 12/12 camera regression checks; security 107 passed/3 skipped. W6 IN_PROGRESS.
 - 2026-10-15: W4 PASS. Dashboard camera modal, explicit permission/error states, recording indicator, session/chunk API, bounded body size, stop/error track cleanup and restart reconciliation. Added fake-device Playwright scenario; 94 targeted tests and 12/12 capture browser checks pass. W5 IN_PROGRESS.
 - 2026-10-15: W3 PASS. Added durable session manifests and atomic media finalization under the configured Videos root; explicit state machine, crop/audio metadata, and restart reconciliation. Synthetic targeted tests: 42 passed including W2 harness regression; compileall passed. W4 IN_PROGRESS.

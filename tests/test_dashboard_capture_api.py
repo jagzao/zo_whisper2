@@ -279,3 +279,66 @@ def test_list_sessions_surfaces_interrupted_failed_sessions(client, monkeypatch)
     failed = [s for s in sessions if s["sessionId"] == session_id]
     assert failed and failed[0]["status"] == "FAILED"
     assert failed[0]["chunks"][0]["state"] == "FAILED"
+
+
+# ── W6 crop selection / persistence ──────────────────────────────────────
+
+def _set_crop(client, session_id, crop):
+    return client.put(
+        f"/api/capture/sessions/{session_id}/crop",
+        data=json.dumps({"crop": crop}),
+        content_type="application/json",
+        headers=AUTH_HEADERS,
+    )
+
+
+def test_create_session_accepts_and_persists_crop(client, env):
+    resp = _create_session(client, "Con crop", crop={"x": 0.1, "y": 0.2, "width": 0.5, "height": 0.4})
+    assert resp.status_code == 200
+    session = resp.get_json()["session"]
+    assert session["crop"] == {"x": 0.1, "y": 0.2, "width": 0.5, "height": 0.4}
+
+    got = client.get(f"/api/capture/sessions/{session['sessionId']}").get_json()["session"]
+    assert got["crop"] == {"x": 0.1, "y": 0.2, "width": 0.5, "height": 0.4}
+
+
+def test_create_session_rejects_invalid_crop(client):
+    resp = _create_session(client, "Crop malo", crop={"x": 0.5, "y": 0.5, "width": 0.9, "height": 0.5})
+    assert resp.status_code == 400
+    assert resp.get_json()["ok"] is False
+
+
+def test_set_crop_roundtrips(client):
+    session_id = _create_session(client, "Set crop").get_json()["session"]["sessionId"]
+    resp = _set_crop(client, session_id, {"x": 0.0, "y": 0.0, "width": 0.5, "height": 0.5})
+    assert resp.status_code == 200
+    assert resp.get_json()["session"]["crop"] == {"x": 0.0, "y": 0.0, "width": 0.5, "height": 0.5}
+
+    got = client.get(f"/api/capture/sessions/{session_id}").get_json()["session"]
+    assert got["crop"] == {"x": 0.0, "y": 0.0, "width": 0.5, "height": 0.5}
+
+
+def test_clear_crop_via_null(client):
+    session_id = _create_session(client, "Clear crop", crop={"x": 0.0, "y": 0.0, "width": 0.5, "height": 0.5}).get_json()["session"]["sessionId"]
+    resp = _set_crop(client, session_id, None)
+    assert resp.status_code == 200
+    assert resp.get_json()["session"]["crop"] is None
+
+    got = client.get(f"/api/capture/sessions/{session_id}").get_json()["session"]
+    assert got["crop"] is None
+
+
+def test_set_crop_rejects_out_of_bounds(client):
+    session_id = _create_session(client, "Bad bounds").get_json()["session"]["sessionId"]
+    resp = _set_crop(client, session_id, {"x": 0.0, "y": 0.0, "width": 1.1, "height": 1.0})
+    assert resp.status_code == 400
+
+
+def test_set_crop_requires_dashboard_token(client):
+    session_id = _create_session(client, "Token").get_json()["session"]["sessionId"]
+    resp = client.put(
+        f"/api/capture/sessions/{session_id}/crop",
+        data=json.dumps({"crop": {"x": 0.0, "y": 0.0, "width": 0.5, "height": 0.5}}),
+        content_type="application/json",
+    )
+    assert resp.status_code == 403

@@ -895,7 +895,13 @@
             <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
             <div style="position:relative; margin:0.75rem 0;">
                 <video id="capturePreview" autoplay playsinline muted style="width:100%; max-height:320px; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
-                <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem;">Idle</span>
+                <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem; z-index:2;">Idle</span>
+                <div id="cropOverlay" title="Drag to select a crop region" style="position:absolute; inset:0; cursor:crosshair; z-index:1; border-radius:0.625rem;"></div>
+                <div id="cropBox" class="hidden" style="position:absolute; border:2px dashed var(--accent,#fff); background:rgba(255,255,255,0.12); z-index:1; pointer-events:none; border-radius:0.125rem;"></div>
+            </div>
+            <div class="row" style="align-items:center; margin-top:0;">
+                <span id="cropInfo" style="color:var(--muted); font-size:0.8rem;">Crop: full frame</span>
+                <button id="cropClearBtn" class="secondary" onclick="clearCropRegion()" style="margin-left:auto;">Clear crop</button>
             </div>
             <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
                 <button id="captureStartBtn" class="ok" onclick="startCapture()">Start capture</button>
@@ -1918,6 +1924,7 @@
             closed: false,
             starting: false,
             rotateTimer: null,
+            pendingCrop: null,      // W6: normalized {x,y,width,height} crop, or null
         };
 
         const CAPTURE_MAX_PENDING_UPLOADS = 4;
@@ -2005,6 +2012,7 @@
                 stalled: capture.stalled,
                 stopRequested: capture.stopRequested,
                 chunkDurationSec: capture.chunkDurationSec,
+                crop: capture.pendingCrop,
             };
         };
 
@@ -2012,6 +2020,8 @@
             document.getElementById('captureModal').classList.remove('hidden');
             document.getElementById('captureTitle').value = 'Live capture';
             capture.closed = false;
+            capture.pendingCrop = null;
+            renderCropRegion();
             updateChunkInfo();
             if (!captureSupported()) {
                 setCaptureState('unsupported', 'MediaRecorder or getUserMedia is not supported in this browser.');
@@ -2052,6 +2062,116 @@
 
         function extensionForMime(mime) {
             return (mime && mime.indexOf('mp4') !== -1) ? '.mp4' : '.webm';
+        }
+
+        // ── Crop region selection (W6) ─────────────────────────────────────
+        // The selection rectangle is drawn over the camera preview and stored
+        // as normalized coordinates (relative to the preview box). It is sent
+        // with session creation and can be updated/cleared while a session is
+        // active via PUT /api/capture/sessions/<id>/crop. Full frame (or a
+        // too-small region) is stored as null (no crop).
+        const cropDrag = { active: false, startX: 0, startY: 0 };
+
+        function cropOverlayEl() { return document.getElementById('cropOverlay'); }
+        function cropBoxEl() { return document.getElementById('cropBox'); }
+        function cropInfoEl() { return document.getElementById('cropInfo'); }
+
+        function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+        function round4(v) { return Math.round(v * 10000) / 10000; }
+
+        function readCropRegion() {
+            const box = cropBoxEl();
+            const overlay = cropOverlayEl();
+            if (!box || !overlay || box.classList.contains('hidden')) return null;
+            const or = overlay.getBoundingClientRect();
+            const br = box.getBoundingClientRect();
+            const x = clamp01((br.left - or.left) / or.width);
+            const y = clamp01((br.top - or.top) / or.height);
+            const width = clamp01((br.right - or.left) / or.width - x);
+            const height = clamp01((br.bottom - or.top) / or.height - y);
+            if (width < 0.005 || height < 0.005) return null;
+            return { x: round4(x), y: round4(y), width: round4(width), height: round4(height) };
+        }
+
+        function renderCropRegion() {
+            const box = cropBoxEl();
+            const info = cropInfoEl();
+            const region = capture.pendingCrop;
+            if (!region) {
+                if (box) box.classList.add('hidden');
+                if (info) info.textContent = 'Crop: full frame';
+                return;
+            }
+            const overlay = cropOverlayEl();
+            if (box && overlay) {
+                const or = overlay.getBoundingClientRect();
+                box.style.left = (region.x * or.width) + 'px';
+                box.style.top = (region.y * or.height) + 'px';
+                box.style.width = (region.width * or.width) + 'px';
+                box.style.height = (region.height * or.height) + 'px';
+                box.classList.remove('hidden');
+            }
+            if (info) info.textContent = `Crop: ${Math.round(region.width * 100)}% × ${Math.round(region.height * 100)}%`;
+        }
+
+        function persistCrop() {
+            const region = capture.pendingCrop;
+            if (!capture.sessionId) return Promise.resolve(null);
+            return captureFetch(`/api/capture/sessions/${capture.sessionId}/crop`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ crop: region }),
+            });
+        }
+
+        function setCropRegion(region) {
+            capture.pendingCrop = region;
+            renderCropRegion();
+            return persistCrop();
+        }
+
+        function clearCropRegion() {
+            return setCropRegion(null);
+        }
+
+        function attachCropSelection() {
+            const overlay = cropOverlayEl();
+            if (!overlay) return;
+            overlay.addEventListener('pointerdown', e => {
+                cropDrag.active = true;
+                const rect = overlay.getBoundingClientRect();
+                cropDrag.startX = clamp01(e.clientX - rect.left);
+                cropDrag.startY = clamp01(e.clientY - rect.top);
+                overlay.setPointerCapture(e.pointerId);
+                const box = cropBoxEl();
+                box.classList.remove('hidden');
+                box.style.left = (cropDrag.startX * rect.width) + 'px';
+                box.style.top = (cropDrag.startY * rect.height) + 'px';
+                box.style.width = '0px';
+                box.style.height = '0px';
+            });
+            overlay.addEventListener('pointermove', e => {
+                if (!cropDrag.active) return;
+                const rect = overlay.getBoundingClientRect();
+                const x = clamp01(e.clientX - rect.left);
+                const y = clamp01(e.clientY - rect.top);
+                const left = Math.min(cropDrag.startX, x);
+                const top = Math.min(cropDrag.startY, y);
+                const box = cropBoxEl();
+                box.style.left = (left * rect.width) + 'px';
+                box.style.top = (top * rect.height) + 'px';
+                box.style.width = (Math.abs(x - cropDrag.startX) * rect.width) + 'px';
+                box.style.height = (Math.abs(y - cropDrag.startY) * rect.height) + 'px';
+            });
+            const finish = () => {
+                if (!cropDrag.active) return;
+                cropDrag.active = false;
+                capture.pendingCrop = readCropRegion();
+                renderCropRegion();
+                persistCrop();
+            };
+            overlay.addEventListener('pointerup', finish);
+            overlay.addEventListener('pointercancel', finish);
         }
 
         async function startCapture() {
@@ -2097,7 +2217,7 @@
             try {
                 const createRes = await captureFetch('/api/capture/sessions', {
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), chunk_duration_sec: chunkDurationSec }),
+                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), chunk_duration_sec: chunkDurationSec, crop: capture.pendingCrop }),
                 });
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
@@ -2286,6 +2406,7 @@
 
         setInterval(() => { updateRunStatus(); loadLogs(); }, 3000);
         loadFolders(); loadFiles(); loadProjects(); loadLogs(); loadMetrics(); updateRunStatus();
+        attachCropSelection();
     </script>
 </body>
 </html>

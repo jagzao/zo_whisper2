@@ -1313,6 +1313,19 @@ def _session_payload(session: capture_models.Session) -> dict[str, Any]:
     return session.to_manifest()
 
 
+def _parse_crop(value: object) -> capture_models.CropRegion | None:
+    """Parses a client crop payload into a validated `CropRegion`.
+
+    `None` (or a missing field) means "no crop" — the API treats it as clear.
+    A malformed/out-of-bounds crop raises `capture_errors.ValidationError`,
+    which the Live Capture errorhandler already maps to a 400 without echoing
+    any path.
+    """
+    if value is None:
+        return None
+    return capture_models.CropRegion.from_manifest(value)
+
+
 @app.route("/api/capture/sessions", methods=["GET"])
 def api_capture_list_sessions() -> Any:
     sessions = _get_capture_service().list_sessions()
@@ -1333,8 +1346,12 @@ def api_capture_create_session() -> Any:
         chunk_duration_sec = int(raw_duration) if raw_duration is not None else capture_models.DEFAULT_CHUNK_DURATION_SEC
     except (TypeError, ValueError):
         return jsonify({"ok": False, "error": "chunk_duration_sec must be an integer"}), 400
+    try:
+        crop = _parse_crop(payload.get("crop"))
+    except capture_errors.ValidationError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
     session = _get_capture_service().create_session(
-        title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at
+        title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
 
@@ -1342,6 +1359,20 @@ def api_capture_create_session() -> Any:
 @app.route("/api/capture/sessions/<session_id>", methods=["GET"])
 def api_capture_get_session(session_id: str) -> Any:
     session = _get_capture_service().get_session(session_id)
+    return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/sessions/<session_id>/crop", methods=["PUT"])
+def api_capture_set_crop(session_id: str) -> Any:
+    """Sets (or clears, with a `null`/absent crop) the session's normalized
+    crop region. The crop is validated by `CropRegion` and persists in the
+    session manifest — clearing never touches finalized media or source."""
+    payload = request.get_json(silent=True) or {}
+    try:
+        crop = _parse_crop(payload.get("crop"))
+    except capture_errors.ValidationError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    session = _get_capture_service().set_crop(session_id, crop)
     return jsonify({"ok": True, "session": _session_payload(session)})
 
 

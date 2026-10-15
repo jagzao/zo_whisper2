@@ -15,6 +15,7 @@ from transcript_pipeline.live_capture.errors import (
     SessionNotFoundError,
     ValidationError,
 )
+from transcript_pipeline.live_capture.crop import apply_crop_to_frames, crop_frame, to_pixel_box
 from transcript_pipeline.live_capture.models import (
     AudioAvailability,
     Chunk,
@@ -43,4 +44,7 @@ __all__ = [
     "SessionNotFoundError",
     "SessionStatus",
     "ValidationError",
+    "apply_crop_to_frames",
+    "crop_frame",
+    "to_pixel_box",
 ]
