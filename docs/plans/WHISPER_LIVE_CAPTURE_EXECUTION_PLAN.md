@@ -66,7 +66,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Recovery/fallback: restore plan from Git history; no worktree creation.
 
 ### W2 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Host E2E diagnosis and repair
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: reproduce/fix host E2E failures, including reported Playwright `TargetClosedError` if reproducible.
 - Dependencies: W1 PASS.
 - Implementation tasks: trace browser/context/page ownership, fixture teardown, async tasks, navigation/reload and modal lifecycle; separately fix fixture project data and expected missing-frame requests if still failing. No sleeps.
@@ -79,7 +79,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: fixture/API defects fixed; W2 focused tests 55 passed; Playwright repro verified 6 project items, empty frame payload, zero console errors; gate runner E2E PASS (26.45s). `TargetClosedError` was in `scripts/validation_env.ensure_playwright_chromium()` teardown, not dashboard page ownership; async Playwright lifecycle removed it.
 
 ### W3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Capture domain and session persistence
-- Status: PENDING
+- Status: PASS
 - Objective: create durable, recoverable session/chunk model and transitions.
 - Dependencies: W1 PASS.
 - Implementation tasks: versioned manifest; session identity; ordered chunks; metadata fields; atomic persistence; interrupted-session reconciliation; validated transitions.
@@ -92,7 +92,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: `CaptureService`/`ManifestStore`, explicit session/chunk/audio state and crop metadata implemented; synthetic session/media roundtrip and recovery tests pass. `.venv-validation` targeted suite: 42 passed; compileall passed.
 
 ### W4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Browser camera capture UI
-- Status: PENDING
+- Status: PASS
 - Objective: open camera, start/stop capture and clean tracks safely.
 - Dependencies: W3 PASS.
 - Implementation tasks: permission/error states; visible indicator; stop/error cleanup; lifecycle-safe navigation; persist finalized blobs; interrupted-capture recovery notice.
@@ -105,7 +105,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Evidence: API/session persistence + browser fake-camera lifecycle pass; startup reconciliation marks abandoned ACTIVE sessions/chunks FAILED and preserves metadata. 94 targeted tests passed; focused Playwright capture checks 12/12 passed with synthetic device, saved WebM, recorded_at, no console errors; no fixed-duration wait remains.
 
 ### W5 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Bounded chunking and upload/processing
-- Status: PENDING
+- Status: PASS
 - Objective: rotate ~10ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“15 minute chunks without stopping capture or unbounded memory use.
 - Dependencies: W3, W4 PASS.
 - Implementation tasks: configurable duration; finalize/upload N while N+1 records; bounded queue/backpressure; ordered identity; retry-safe finalization.
@@ -116,8 +116,10 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Expected artifacts: synthetic manifests and gate report.
 - Recovery/fallback: retain finalized chunks for retry; mark stalled upload and allow explicit retry.
 
+- Evidence: bounded streamed uploads (64 KiB), atomic persistence, MediaRecorder rotation with FIFO overlap and retry. 58 unit/API tests passed; synthetic Playwright chunk rotation/overlap/order/retry 10/10; W4 capture regression 12/12; security tests 107 passed, 3 skipped; compile/diff check clean.
+
 ### W6 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Monitor crop/mask selection
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: select useful screen region and persist crop metadata.
 - Dependencies: W4 PASS.
 - Implementation tasks: preview overlay/adjustable rectangle; normalized coordinates; clamp/validate; save session metadata; apply crop to generated frames where applicable and retain source.
@@ -280,6 +282,7 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Progress Log
 
+- 2026-10-15: W5 PASS. Implemented bounded streamed uploads and browser chunk rotation with concurrent upload, FIFO order, retry and backpressure. 58 unit/API tests, 10/10 chunk Playwright checks, 12/12 camera regression checks; security 107 passed/3 skipped. W6 IN_PROGRESS.
 - 2026-10-15: W4 PASS. Dashboard camera modal, explicit permission/error states, recording indicator, session/chunk API, bounded body size, stop/error track cleanup and restart reconciliation. Added fake-device Playwright scenario; 94 targeted tests and 12/12 capture browser checks pass. W5 IN_PROGRESS.
 - 2026-10-15: W3 PASS. Added durable session manifests and atomic media finalization under the configured Videos root; explicit state machine, crop/audio metadata, and restart reconciliation. Synthetic targeted tests: 42 passed including W2 harness regression; compileall passed. W4 IN_PROGRESS.
 - 2026-10-15: W2 PASS. Seeded isolated synthetic project fixtures; valid media with no frames returns an empty successful response. Replaced synchronous Playwright probe in validation startup with awaited async lifecycle after reproducing teardown `TargetClosedError`; targeted tests 55 passed; host gate PASS (26.45s), no warning. W3 IN_PROGRESS.

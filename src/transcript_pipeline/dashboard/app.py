@@ -194,6 +194,7 @@ def _handle_capture_error(e: capture_errors.LiveCaptureError) -> Any:
         capture_errors.ChunkNotFoundError: 404,
         capture_errors.SessionConflictError: 409,
         capture_errors.InvalidTransitionError: 409,
+        capture_errors.ChunkTooLargeError: 413,
     }.get(type(e), 500)
     return jsonify({"ok": False, "error": str(e)}), status
 
@@ -1364,16 +1365,16 @@ def api_capture_start_chunk(session_id: str) -> Any:
 
 @app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/finalize", methods=["POST"])
 def api_capture_finalize_chunk(session_id: str, index: int) -> Any:
-    data = request.get_data(cache=True)
-    if not data:
-        return jsonify({"ok": False, "error": "empty media payload"}), 400
-    max_bytes = SETTINGS.upload_max_mb * 1024 * 1024
-    if len(data) > max_bytes:
-        return jsonify({"ok": False, "error": "File too large"}), 413
+    # Stream the request body straight to disk in bounded blocks — never
+    # request.get_data()/full bytes — so a long chunk cannot exhaust memory.
+    # The size limit mirrors Flask's MAX_CONTENT_LENGTH (which no longer
+    # applies automatically once the body is read from request.stream).
+    max_bytes = app.config.get("MAX_CONTENT_LENGTH") or (SETTINGS.upload_max_mb * 1024 * 1024)
     extension = request.headers.get("X-Media-Extension", ".webm")
-    chunk = _get_capture_service().finalize_chunk(
-        session_id, index, data, media_extension=extension,
+    chunk = _get_capture_service().finalize_chunk_stream(
+        session_id, index, request.stream, media_extension=extension,
         recorded_at=request.args.get("recorded_at") or None,
+        max_bytes=max_bytes,
     )
     return jsonify({"ok": True, "chunk": chunk.to_manifest()})
 

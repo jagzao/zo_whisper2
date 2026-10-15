@@ -9,14 +9,40 @@ media atomically and flips the chunk RECORDING -> FINALIZED. Incomplete
 
 from __future__ import annotations
 
+import io
 import threading
 from dataclasses import replace
 from pathlib import Path
 
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
-from transcript_pipeline.live_capture.errors import InvalidTransitionError, ValidationError
+from transcript_pipeline.live_capture.errors import ChunkTooLargeError, InvalidTransitionError, ValidationError
 from transcript_pipeline.live_capture.store import ManifestStore, normalize_extension
+
+# Bounded read size for streamed uploads: the server never holds more than
+# this many bytes of a chunk body in memory at once.
+STREAM_BLOCK_SIZE = 64 * 1024
+
+
+def _stream_blocks(source, max_bytes: int | None):
+    """Reads `source` (a `.read(n)` file-like) in bounded blocks.
+
+    Enforces the empty-body and size-limit invariants lazily, before any byte
+    is persisted: an empty stream raises `ValidationError`; exceeding
+    `max_bytes` raises `ChunkTooLargeError` (and the caller's atomic write
+    removes its temp file).
+    """
+    total = 0
+    while True:
+        block = source.read(STREAM_BLOCK_SIZE)
+        if not block:
+            if total == 0:
+                raise ValidationError("media bytes must not be empty")
+            return
+        total += len(block)
+        if max_bytes is not None and total > max_bytes:
+            raise ChunkTooLargeError(f"chunk media exceeds {max_bytes} bytes")
+        yield block
 
 
 class CaptureService:
@@ -141,15 +167,41 @@ class CaptureService:
     ) -> models.Chunk:
         if not isinstance(media_bytes, (bytes, bytearray)):
             raise ValidationError("media bytes must be bytes")
-        data = bytes(media_bytes)
-        if not data:
-            raise ValidationError("media bytes must not be empty")
+        return self.finalize_chunk_stream(
+            session_id,
+            index,
+            io.BytesIO(bytes(media_bytes)),
+            media_extension=media_extension,
+            audio_availability=audio_availability,
+            recorded_at=recorded_at,
+        )
+
+    def finalize_chunk_stream(
+        self,
+        session_id: str,
+        index: int,
+        source,
+        *,
+        media_extension: str = ".webm",
+        audio_availability: models.AudioAvailability | None = None,
+        recorded_at: str | None = None,
+        max_bytes: int | None = None,
+    ) -> models.Chunk:
+        """Streams `source` (a `.read(n)` file-like) into finalized chunk media.
+
+        Reads in bounded blocks, hashes/counts incrementally and writes
+        atomically — the whole body is never buffered. RECORDING -> FINALIZED
+        is persisted only after the media lands; an empty or oversized stream
+        leaves the chunk RECORDING and writes nothing.
+        """
         extension = normalize_extension(media_extension)
         with self._lock_for(session_id):
             session = self.store.load_session(session_id)
             chunk = session.get_chunk(index)
             updated = chunk.transition_to(models.ChunkState.FINALIZED)
-            sha256, size = self.store.write_chunk_media(session_id, index, extension, data)
+            sha256, size = self.store.write_chunk_media_stream(
+                session_id, index, extension, _stream_blocks(source, max_bytes)
+            )
             finalized = replace(
                 updated,
                 finalized_at=models.now_iso(),

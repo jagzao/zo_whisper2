@@ -886,6 +886,11 @@
                 <label for="captureTitle">Title:</label>
                 <input type="text" id="captureTitle" value="Live capture" style="flex:1;">
             </div>
+            <div class="row" style="align-items:center; margin-top:0;">
+                <label for="captureChunkDuration">Chunk duration (s):</label>
+                <input type="number" id="captureChunkDuration" value="600" min="1" step="1" style="width:6rem;">
+                <span id="captureChunkInfo" style="color:var(--muted); font-size:0.8rem; margin-left:auto;"></span>
+            </div>
             <div id="captureNotice" class="ai-package-summary hidden"></div>
             <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
             <div style="position:relative; margin:0.75rem 0;">
@@ -895,6 +900,7 @@
             <div class="row" style="justify-content:flex-end; margin-top:0.75rem;">
                 <button id="captureStartBtn" class="ok" onclick="startCapture()">Start capture</button>
                 <button id="captureStopBtn" class="danger hidden" onclick="stopCapture()">Stop & finalize</button>
+                <button id="captureRetryBtn" class="secondary hidden" onclick="retryUpload()">Retry upload</button>
             </div>
         </div>
     </div>
@@ -1887,17 +1893,35 @@
             document.getElementById('helpModal').classList.add('hidden');
         }
 
-        // ── Live Capture (W4) ─────────────────────────────────────────────
+        // ── Live Capture (W4/W5) ──────────────────────────────────────────
+        // W5: bounded chunking. The camera stream is acquired once and reused;
+        // a MediaRecorder records one bounded chunk, is finalized, then the
+        // next chunk starts immediately so chunk N uploads while N+1 records.
+        // Per-chunk Blobs are kept (and uploaded) as Blobs — never
+        // arrayBuffer()/full-bytes — and the pending-upload queue is bounded
+        // with a retryable stalled state.
         const capture = {
             stream: null,
             recorder: null,
             sessionId: null,
-            chunkIndex: null,
+            recordingIndex: null,
+            chunkDurationSec: 600,
             state: 'idle',
             mimeType: '',
             extension: '.webm',
-            chunks: [],
+            pendingParts: [],       // Blob parts for the chunk being recorded
+            uploadQueue: [],        // [{index, blob, extension}] awaiting upload (FIFO)
+            finalizedIndexes: [],   // server-confirmed finalized chunk indexes (ordered)
+            uploading: false,
+            stalled: false,
+            stopRequested: false,
+            closed: false,
+            starting: false,
+            rotateTimer: null,
         };
+
+        const CAPTURE_MAX_PENDING_UPLOADS = 4;
+        const CAPTURE_TIMESLICE_MS = 1000;
 
         const CAPTURE_STATE_LABELS = {
             idle: 'Idle',
@@ -1908,6 +1932,7 @@
             done: 'Saved',
             unsupported: 'Unsupported',
             error: 'Error',
+            stalled: 'Stalled',
         };
 
         function captureFetch(path, { method = 'POST', headers = {}, body = undefined } = {}) {
@@ -1923,15 +1948,20 @@
             const badge = document.getElementById('captureState');
             badge.textContent = CAPTURE_STATE_LABELS[state] || state;
             badge.className = 'status ' + (
-                state === 'recording' ? 'error' : state === 'done' ? 'processed' : state === 'error' || state === 'unsupported' ? 'error' : 'pending'
+                state === 'recording' ? 'error'
+                : state === 'done' ? 'processed'
+                : state === 'error' || state === 'unsupported' || state === 'stalled' ? 'error'
+                : 'pending'
             );
             const errEl = document.getElementById('captureError');
             if (error) { errEl.textContent = error; errEl.classList.remove('hidden'); }
             else { errEl.textContent = ''; errEl.classList.add('hidden'); }
             const recording = state === 'recording';
             const busy = state === 'requesting' || state === 'finalizing';
-            document.getElementById('captureStartBtn').classList.toggle('hidden', recording || busy);
-            document.getElementById('captureStopBtn').classList.toggle('hidden', !recording);
+            const stalled = state === 'stalled';
+            document.getElementById('captureStartBtn').classList.toggle('hidden', recording || busy || stalled);
+            document.getElementById('captureStopBtn').classList.toggle('hidden', !(recording || stalled));
+            document.getElementById('captureRetryBtn').classList.toggle('hidden', !stalled);
             document.getElementById('captureStartBtn').disabled = busy;
         }
 
@@ -1949,15 +1979,40 @@
         }
 
         function emergencyStopCapture() {
+            clearTimeout(capture.rotateTimer);
             if (capture.recorder && capture.recorder.state !== 'inactive') {
                 try { capture.recorder.stop(); } catch (e) {}
             }
             stopCaptureTracks();
         }
 
+        function updateChunkInfo() {
+            const el = document.getElementById('captureChunkInfo');
+            if (!el) return;
+            const recording = capture.recordingIndex !== null ? `recording chunk ${capture.recordingIndex}` : 'idle';
+            el.textContent = `${recording} · finalized [${capture.finalizedIndexes.join(', ')}] · pending ${capture.uploadQueue.length}`;
+        }
+
+        // Test-only introspection: mirrors capture state for the deterministic
+        // Playwright chunk-flow checks without parsing UI text.
+        window.__captureSnapshot = function () {
+            return {
+                state: capture.state,
+                sessionId: capture.sessionId,
+                recordingIndex: capture.recordingIndex,
+                finalizedIndexes: capture.finalizedIndexes.slice(),
+                pendingUploads: capture.uploadQueue.length,
+                stalled: capture.stalled,
+                stopRequested: capture.stopRequested,
+                chunkDurationSec: capture.chunkDurationSec,
+            };
+        };
+
         async function openCaptureModal() {
             document.getElementById('captureModal').classList.remove('hidden');
             document.getElementById('captureTitle').value = 'Live capture';
+            capture.closed = false;
+            updateChunkInfo();
             if (!captureSupported()) {
                 setCaptureState('unsupported', 'MediaRecorder or getUserMedia is not supported in this browser.');
                 return;
@@ -1967,6 +2022,7 @@
         }
 
         function closeCaptureModal() {
+            capture.closed = true;
             emergencyStopCapture();
             setCaptureState('idle');
             document.getElementById('captureModal').classList.add('hidden');
@@ -2003,6 +2059,7 @@
                 setCaptureState('unsupported', 'MediaRecorder or getUserMedia is not supported in this browser.');
                 return;
             }
+            if (capture.state === 'recording' || capture.state === 'stalled') return;
             setCaptureState('requesting');
             let stream;
             try {
@@ -2023,73 +2080,200 @@
             capture.stream = stream;
             capture.mimeType = pickCaptureMimeType() || 'video/webm';
             capture.extension = extensionForMime(capture.mimeType);
-            capture.chunks = [];
+            capture.pendingParts = [];
+            capture.uploadQueue = [];
+            capture.finalizedIndexes = [];
+            capture.stalled = false;
+            capture.stopRequested = false;
+            capture.closed = false;
+
+            const video = document.getElementById('capturePreview');
+            video.srcObject = stream;
+            try { await video.play(); } catch (e) {}
 
             const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
+            const rawDuration = parseInt(document.getElementById('captureChunkDuration').value, 10);
+            const chunkDurationSec = Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : 600;
             try {
                 const createRes = await captureFetch('/api/capture/sessions', {
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, recorded_at: new Date().toISOString() }),
+                    body: JSON.stringify({ title, recorded_at: new Date().toISOString(), chunk_duration_sec: chunkDurationSec }),
                 });
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
-                const startRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/start`);
-                if (!startRes.ok) throw new Error(startRes.error || 'Could not start recording');
-                capture.chunkIndex = startRes.chunk.index;
+                capture.chunkDurationSec = createRes.session.chunkDurationSec || chunkDurationSec;
             } catch (err) {
                 stopCaptureTracks();
                 setCaptureState('error', err.message);
                 return;
             }
 
-            const video = document.getElementById('capturePreview');
-            video.srcObject = stream;
-            try { await video.play(); } catch (e) {}
-
-            let recorder;
-            try {
-                recorder = new MediaRecorder(stream, capture.mimeType ? { mimeType: capture.mimeType } : undefined);
-            } catch (err) {
-                recorder = new MediaRecorder(stream);
-            }
-            capture.recorder = recorder;
-            recorder.ondataavailable = e => { if (e.data && e.data.size > 0) capture.chunks.push(e.data); };
-            recorder.onerror = e => {
-                capture.recorder = null;
-                stopCaptureTracks();
-                setCaptureState('error', 'Recorder error: ' + ((e.error && e.error.name) || 'unknown'));
-            };
-            recorder.start();
-            setCaptureState('recording');
+            startChunkRecording();
         }
 
-        async function stopCapture() {
-            if (capture.state !== 'recording' || !capture.recorder) return;
-            setCaptureState('finalizing');
-            const blob = await new Promise((resolve) => {
-                const rec = capture.recorder;
-                rec.onstop = () => resolve(new Blob(capture.chunks, { type: capture.mimeType || 'video/webm' }));
-                rec.stop();
-            });
-            capture.recorder = null;
-            stopCaptureTracks();
+        async function startChunkRecording() {
+            if (capture.starting || capture.stopRequested || capture.stalled || capture.closed) return;
+            capture.starting = true;
             try {
-                const buffer = await blob.arrayBuffer();
-                const finRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${capture.chunkIndex}/finalize`, {
-                    headers: { 'Content-Type': 'application/octet-stream', 'X-Media-Extension': capture.extension },
-                    body: buffer,
-                });
-                if (!finRes.ok) throw new Error(finRes.error || 'Could not save recording');
+                const startRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/start`);
+                if (!startRes.ok) throw new Error(startRes.error || 'Could not start next chunk');
+                // A stop/stall may have landed while we awaited the server —
+                // do not start a recorder that would overwrite that state.
+                if (capture.stopRequested || capture.stalled || capture.closed) return;
+                capture.recordingIndex = startRes.chunk.index;
+                capture.pendingParts = [];
+
+                let recorder;
+                try {
+                    recorder = new MediaRecorder(capture.stream, capture.mimeType ? { mimeType: capture.mimeType } : undefined);
+                } catch (err) {
+                    recorder = new MediaRecorder(capture.stream);
+                }
+                recorder.ondataavailable = e => { if (e.data && e.data.size > 0) capture.pendingParts.push(e.data); };
+                recorder.onstop = () => onChunkStopped();
+                recorder.onerror = e => {
+                    capture.recorder = null;
+                    stopCaptureTracks();
+                    setCaptureState('error', 'Recorder error: ' + ((e.error && e.error.name) || 'unknown'));
+                };
+                capture.recorder = recorder;
+                recorder.start(CAPTURE_TIMESLICE_MS);
+                setCaptureState('recording');
+                scheduleRotation();
+            } catch (err) {
+                setStalled(true, 'Could not start next chunk: ' + err.message);
+            } finally {
+                capture.starting = false;
+            }
+        }
+
+        function scheduleRotation() {
+            clearTimeout(capture.rotateTimer);
+            capture.rotateTimer = setTimeout(() => rotateChunk(), capture.chunkDurationSec * 1000);
+        }
+
+        function rotateChunk() {
+            if (capture.state !== 'recording' || !capture.recorder || capture.stopRequested) return;
+            clearTimeout(capture.rotateTimer);
+            const rec = capture.recorder;
+            capture.recorder = null;
+            rec.stop(); // onChunkStopped finalizes this chunk and starts the next
+        }
+
+        function onChunkStopped() {
+            if (capture.recordingIndex === null) return;
+            const index = capture.recordingIndex;
+            if (capture.closed) {
+                // Modal closed mid-recording: discard the in-flight chunk (never
+                // finalized), matching W4 reconciliation semantics.
+                capture.pendingParts = [];
+                capture.recordingIndex = null;
+                return;
+            }
+            const blob = new Blob(capture.pendingParts, { type: capture.mimeType || 'video/webm' });
+            capture.pendingParts = [];
+            capture.recordingIndex = null;
+            capture.uploadQueue.push({ index, blob, extension: capture.extension });
+            updateChunkInfo();
+            beginUpload();
+            maybeResume();
+        }
+
+        function maybeResume() {
+            if (capture.stopRequested || capture.stalled || capture.closed) return;
+            if (capture.recorder && capture.recorder.state !== 'inactive') return;
+            if (capture.uploadQueue.length >= CAPTURE_MAX_PENDING_UPLOADS) return;
+            startChunkRecording();
+        }
+
+        function beginUpload() {
+            if (capture.uploading) return;
+            capture.uploading = true;
+            (async () => {
+                let drained = false;
+                try {
+                    while (capture.uploadQueue.length) {
+                        if (capture.stalled) return;
+                        const item = capture.uploadQueue[0];
+                        try {
+                            const finRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/finalize`, {
+                                headers: { 'Content-Type': 'application/octet-stream', 'X-Media-Extension': item.extension },
+                                body: item.blob,
+                            });
+                            if (!finRes.ok) throw new Error(finRes.error || 'Could not save chunk');
+                        } catch (err) {
+                            setStalled(true, 'Upload failed: ' + err.message);
+                            return;
+                        }
+                        capture.uploadQueue.shift();
+                        capture.finalizedIndexes.push(item.index);
+                        updateChunkInfo();
+                        maybeResume();
+                    }
+                    drained = true;
+                } finally {
+                    capture.uploading = false;
+                }
+                if (drained && capture.stopRequested && !capture.stalled) {
+                    finishSession();
+                }
+            })();
+        }
+
+        function setStalled(stalled, reason) {
+            capture.stalled = stalled;
+            if (stalled) {
+                // Stop the current recorder so recording does not grow while
+                // uploads are stalled; its chunk is finalized into the queue.
+                if (capture.recorder && capture.recorder.state !== 'inactive') {
+                    clearTimeout(capture.rotateTimer);
+                    const rec = capture.recorder;
+                    capture.recorder = null;
+                    try { rec.stop(); } catch (e) {}
+                }
+                setCaptureState('stalled', reason);
+            } else {
+                setCaptureState(capture.stopRequested ? 'finalizing' : 'recording');
+            }
+            updateChunkInfo();
+        }
+
+        function retryUpload() {
+            if (!capture.stalled) return;
+            setStalled(false);
+            beginUpload();
+            maybeResume();
+        }
+
+        async function finishSession() {
+            try {
                 const sessRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/finalize`, {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ended_at: new Date().toISOString() }),
                 });
                 if (!sessRes.ok) throw new Error(sessRes.error || 'Could not finalize session');
+                stopCaptureTracks();
                 setCaptureState('done');
                 showToast('Capture saved');
                 loadCaptureSessions();
             } catch (err) {
+                stopCaptureTracks();
                 setCaptureState('error', err.message);
+            }
+        }
+
+        function stopCapture() {
+            if (capture.state !== 'recording' && capture.state !== 'stalled') return;
+            capture.stopRequested = true;
+            capture.stalled = false;
+            setCaptureState('finalizing');
+            clearTimeout(capture.rotateTimer);
+            if (capture.recorder && capture.recorder.state !== 'inactive') {
+                const rec = capture.recorder;
+                capture.recorder = null;
+                rec.stop(); // onChunkStopped enqueues; beginUpload drains -> finishSession
+            } else {
+                beginUpload();
             }
         }
 

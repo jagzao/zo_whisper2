@@ -19,7 +19,7 @@ import logging
 from pathlib import Path
 
 from transcript_pipeline.live_capture import models
-from transcript_pipeline.live_capture.atomic import atomic_write_bytes, atomic_write_json, read_json
+from transcript_pipeline.live_capture.atomic import atomic_write_bytes, atomic_write_json, atomic_write_stream, read_json
 from transcript_pipeline.live_capture.errors import (
     ManifestCorruptError,
     SessionConflictError,
@@ -116,6 +116,13 @@ class ManifestStore:
         path = self.chunk_media_path(session_id, index, extension)
         atomic_write_bytes(path, data)
         return hashlib.sha256(data).hexdigest(), len(data)
+
+    def write_chunk_media_stream(self, session_id: str, index: int, extension: str, source) -> tuple[str, int]:
+        """Atomically streams finalized chunk media from `source` (an iterable
+        of bytes blocks) and returns (sha256, size) without whole-body
+        buffering."""
+        path = self.chunk_media_path(session_id, index, extension)
+        return atomic_write_stream(path, source)
 
     def chunk_media_exists(self, session_id: str, index: int, extension: str) -> bool:
         return self.chunk_media_path(session_id, index, extension).is_file()

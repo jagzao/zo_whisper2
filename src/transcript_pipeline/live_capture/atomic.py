@@ -8,6 +8,7 @@ ever observe a previous or a next complete state.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
@@ -43,6 +44,38 @@ def atomic_write_bytes(path: Path, data: bytes) -> None:
         tmp.unlink(missing_ok=True)
         raise
     fsync_dir(parent)
+
+
+def atomic_write_stream(path: Path, source) -> tuple[str, int]:
+    """Streams `source` (an iterable of bytes blocks) into a temp file and
+    atomically replaces `path`; returns `(sha256_hex, size)`.
+
+    The whole payload is never buffered in memory — each block is hashed and
+    written as it arrives, so a caller can finalize an unbounded-length
+    upload in bounded memory. On any error the temp file is removed.
+    """
+    parent = path.parent
+    parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(parent))
+    tmp = Path(tmp_name)
+    hasher = hashlib.sha256()
+    size = 0
+    try:
+        with os.fdopen(fd, "wb") as fh:
+            for block in source:
+                if not block:
+                    continue
+                hasher.update(block)
+                fh.write(block)
+                size += len(block)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(str(tmp), str(path))
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+    fsync_dir(parent)
+    return hasher.hexdigest(), size
 
 
 def atomic_write_json(path: Path, payload: Any) -> None:

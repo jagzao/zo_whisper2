@@ -31,5 +31,9 @@ class InvalidTransitionError(LiveCaptureError):
     """The requested state transition is not allowed by the state machine."""
 
 
+class ChunkTooLargeError(LiveCaptureError):
+    """Streamed chunk media exceeded the configured upload size limit."""
+
+
 class ManifestCorruptError(LiveCaptureError):
     """A persisted manifest is malformed and cannot be trusted as playable."""

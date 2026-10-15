@@ -146,6 +146,35 @@ def test_chunk_start_and_finalize_persist_media(client, env):
     assert media_path.read_bytes() == data
 
 
+def test_finalize_multiple_chunks_preserve_order(client, env):
+    session_id = _create_session(client, "multi").get_json()["session"]["sessionId"]
+    _start_chunk(client, session_id)
+    _finalize_chunk(client, session_id, 0, b"c0")
+    _start_chunk(client, session_id)
+    _finalize_chunk(client, session_id, 1, b"c1")
+
+    session = client.get(f"/api/capture/sessions/{session_id}").get_json()["session"]
+    assert [c["index"] for c in session["chunks"]] == [0, 1]
+    assert [c["state"] for c in session["chunks"]] == ["FINALIZED", "FINALIZED"]
+
+    base = env["videos"] / "live_capture" / session_id / "chunks"
+    assert (base / "chunk-000000.webm").read_bytes() == b"c0"
+    assert (base / "chunk-000001.webm").read_bytes() == b"c1"
+    assert not list(base.glob("*.tmp"))
+
+
+def test_finalize_chunk_streams_not_buffered_whole_body(client, monkeypatch):
+    # The streaming path enforces MAX_CONTENT_LENGTH incrementally (it no
+    # longer reads request.get_data), so an oversized body is rejected before
+    # the chunk is finalized and no media is persisted.
+    monkeypatch.setitem(dashboard_app.app.config, "MAX_CONTENT_LENGTH", 64)
+    session_id = _create_session(client).get_json()["session"]["sessionId"]
+    _start_chunk(client, session_id)
+    resp = _finalize_chunk(client, session_id, 0, b"x" * 128)
+    assert resp.status_code == 413
+    assert resp.get_json()["ok"] is False
+
+
 def test_finalize_session_persists_recorded_at_and_ended_at(client):
     session_id = _create_session(
         client, "Clase", recorded_at="2026-10-15T09:00:00+00:00"

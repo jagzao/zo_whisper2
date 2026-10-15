@@ -7,6 +7,7 @@ API that W4 (browser UI) and W5 (chunking/upload) call.
 
 from transcript_pipeline.live_capture.errors import (
     ChunkNotFoundError,
+    ChunkTooLargeError,
     InvalidTransitionError,
     LiveCaptureError,
     ManifestCorruptError,
@@ -31,6 +32,7 @@ __all__ = [
     "Chunk",
     "ChunkNotFoundError",
     "ChunkState",
+    "ChunkTooLargeError",
     "CropRegion",
     "InvalidTransitionError",
     "LiveCaptureError",
