@@ -197,6 +197,9 @@ def main() -> int:
             )
 
         # Preview modal
+        if project_name:
+            page.locator("#projectFilter").select_option(project_name)
+            page.wait_for_timeout(400)
         row = page.locator(f"#filesList table tbody tr:has-text('{target['name']}')")
         ver_button = row.locator("button[aria-label='View']")
         edit_button = row.locator("button[aria-label='Edit']")

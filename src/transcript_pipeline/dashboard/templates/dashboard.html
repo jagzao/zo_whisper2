@@ -913,8 +913,8 @@
                 </div>
             </div>
             <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
-            <div style="position:relative; margin:0.75rem 0;">
-                <video id="capturePreview" autoplay playsinline muted style="width:100%; max-height:320px; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
+            <div style="position:relative; margin:0.75rem 0; height:320px;">
+                <video id="capturePreview" autoplay playsinline muted style="width:100%; height:100%; object-fit:fill; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
                 <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem; z-index:2;">Idle</span>
                 <div id="cropOverlay" title="Drag to select a crop region" style="position:absolute; inset:0; cursor:crosshair; z-index:1; border-radius:0.625rem;"></div>
                 <div id="cropBox" class="hidden" style="position:absolute; border:2px dashed var(--accent,#fff); background:rgba(255,255,255,0.12); z-index:1; pointer-events:none; border-radius:0.125rem;"></div>
@@ -2333,8 +2333,8 @@
             overlay.addEventListener('pointerdown', e => {
                 cropDrag.active = true;
                 const rect = overlay.getBoundingClientRect();
-                cropDrag.startX = clamp01(e.clientX - rect.left);
-                cropDrag.startY = clamp01(e.clientY - rect.top);
+                cropDrag.startX = clamp01((e.clientX - rect.left) / rect.width);
+                cropDrag.startY = clamp01((e.clientY - rect.top) / rect.height);
                 overlay.setPointerCapture(e.pointerId);
                 const box = cropBoxEl();
                 box.classList.remove('hidden');
@@ -2346,8 +2346,8 @@
             overlay.addEventListener('pointermove', e => {
                 if (!cropDrag.active) return;
                 const rect = overlay.getBoundingClientRect();
-                const x = clamp01(e.clientX - rect.left);
-                const y = clamp01(e.clientY - rect.top);
+                const x = clamp01((e.clientX - rect.left) / rect.width);
+                const y = clamp01((e.clientY - rect.top) / rect.height);
                 const left = Math.min(cropDrag.startX, x);
                 const top = Math.min(cropDrag.startY, y);
                 const box = cropBoxEl();
@@ -2444,7 +2444,10 @@
                 if (!startRes.ok) throw new Error(startRes.error || 'Could not start next chunk');
                 // A stop/stall may have landed while we awaited the server —
                 // do not start a recorder that would overwrite that state.
-                if (capture.stopRequested || capture.stalled || capture.closed) return;
+                if (capture.stopRequested || capture.stalled || capture.closed) {
+                    await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${startRes.chunk.index}/cancel-upload`);
+                    return;
+                }
                 capture.recordingIndex = startRes.chunk.index;
                 capture.pendingParts = [];
 
@@ -2565,6 +2568,7 @@
                     maybeResume();
                     return;
                 }
+                item.uploadCancelled = result.chunk?.state === 'UPLOAD_CANCELLED';
                 setCaptureState('stalled', 'UPLOAD_CANCELLED');
             } catch (error) {
                 setCaptureState('error', 'Upload cancellation failed: ' + error.message);
@@ -2593,8 +2597,10 @@
             if (!capture.stalled) return;
             (async () => {
                 const item = capture.uploadQueue[0];
-                if (item) {
-                    await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/retry-upload`);
+                if (item && item.uploadCancelled) {
+                    const retry = await captureFetch(`/api/capture/sessions/${capture.sessionId}/chunks/${item.index}/retry-upload`);
+                    if (!retry.ok) throw new Error(retry.error || 'Could not retry cancelled upload');
+                    item.uploadCancelled = false;
                 }
                 setStalled(false);
                 beginUpload();

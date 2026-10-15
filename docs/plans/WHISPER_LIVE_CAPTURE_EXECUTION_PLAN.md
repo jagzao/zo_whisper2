@@ -254,7 +254,7 @@ Stages run in dependency order; independent stages may proceed around genuine en
 
 
 ### W16 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Playwright/E2E regression
-- Status: PENDING
+- Status: BLOCKED
 - Objective: verify dashboard, projects, Date and Live Capture end-to-end.
 - Dependencies: W2, W4ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W11 PASS.
 - Implementation tasks: deterministic synthetic browser scenarios; assert no console/page errors and correct lifecycle.
@@ -263,10 +263,11 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Required tests: critical path, projects modal, Date sort, camera start/state/stop, chunks, missing-audio/transcript-required.
 - Validation commands: targeted Playwright first; `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
 - Expected artifacts: reports/screenshots/logs.
-- Recovery/fallback: no sleeps; after two distinct fixes classify actual external/browser issue and continue others.
+- Evidence: synthetic capture dashboard, chunking, crop (5/5), cancellation (9/9), and Date (7/7) Playwright reports pass; 45 targeted unit/API tests pass. Required host E2E was run and failed because smoke_dashboard cleared the project filter before locating the fixture after newest-first sorting. Repaired the test to reapply its project filter. The rerun is deferred: ram_gate measured 5.26 GiB available against the strict >6.0 GiB requirement; prior run showed no TargetClosedError.
+- Recovery/fallback: rerun the host E2E after RAM gate permits heavy validation; no arbitrary sleeps.
 
 ### W17 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Docker/heavy validation
-- Status: PENDING
+- Status: BLOCKED
 - Objective: verify applicable container and full repository gates.
 - Dependencies: W15, W16 PASS and repository review policy permits heavy gates.
 - Implementation tasks: RAM gate; full pytest/security/smoke; Docker build/E2E if configured; distinguish unavailable infrastructure.
@@ -275,18 +276,20 @@ Stages run in dependency order; independent stages may proceed around genuine en
 - Required tests: full pytest, security, smoke, e2e, Docker build/E2E if applicable.
 - Validation commands: `scripts/ram_gate.py`, gate runner, Docker gates.
 - Expected artifacts: `artifacts/gates/latest.json`, logs/reports.
-- Recovery/fallback: defer low RAM; classify missing Docker/daemon/credentials as environment blocker; never bypass policy.
+- Evidence: `scripts/ram_gate.py` returned `DEFERRED_LOW_RAM` at 5.26 GiB (threshold strictly greater than 6.0 GiB). Repository protocol `.agents/protocols/deterministic-gates.md` prohibits heavy gates before review and requires this RAM gate. Full pytest had passed earlier in W15; security/smoke/Docker were not rerun.
+- Recovery/fallback: retry in the permitted nighttime window after RAM exceeds threshold and review prerequisite is satisfied.
 
 ### W18 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Documentation/readiness/final delivery
-- Status: PENDING
+- Status: BLOCKED
 - Objective: document user flows and prove committed/synchronized clean delivery.
-- Dependencies: W14?W16 PASS; W17 PASS or justified environment-only BLOCKED.
+- Dependencies: W14 PASS; W16 PASS; W17 PASS or justified environment-only BLOCKED.
 - Implementation tasks: document permissions, chunk recovery/retry, crop, missing/late audio, metadata, manual deletion; update plan; commit final checkpoint; sync current branch.
-- Relevant files/modules: project docs, plan, implementation/tests.
+- Relevant files/modules: `docs/LIVE_CAPTURE.md`, plan, implementation/tests.
 - Acceptance criteria: DoD met; statuses explicit; commits on current branch; remote SHA=HEAD; clean tree; no merge/deploy.
 - Required tests: final targeted Date/Live Capture suites and applicable gate evidence.
 - Validation commands: `git diff --check`, tests, status/HEAD and `git ls-remote` for branch.
 - Expected artifacts: final plan/gate artifacts.
+- Evidence: user guide added. W16 is still blocked pending host E2E rerun, so final DoD cannot be claimed; commit and branch sync are being completed for reviewable delivery.
 - Recovery/fallback: if push unavailable, preserve local commit and report exact external blocker.
 
 ## Global Definition of Done
@@ -302,20 +305,20 @@ Implementation complete; Date green with recorded/created preference and backend
 | UNIT | chunk state transitions | W3/W5/W11/W12 | PASS: domain, upload/processing cancel, retry and completion race tests |
 | UNIT | audio-state logic | W7/W9 | PASS: audio-state and no-audio processor tests |
 | UNIT | GC candidate logic | W10 | PASS: documented/stale, undocumented and no-delete tests |
-| UNIT | upload cancellation transitions/retry/cleanup; processing cancellation races/idempotency | W11/W12 | pending |
+| UNIT | upload cancellation transitions/retry/cleanup; processing cancellation races/idempotency | W11/W12 | PASS: 45 targeted tests rerun |
 | INTEGRATION/API | create session; persist recording and recorded_at | W3 | W3 PASS: store/service roundtrip tests; W4 PASS: 19 Flask API tests |
 | INTEGRATION/API | chunk finalization/order; processing state | W5/W9 | PASS: bounded upload, ordering, persisted processor state |
 | INTEGRATION/API | no-audio flow | W7/W9 | PASS: missing audio remains processable and transcript-required |
 | INTEGRATION/API | late transcript association | W8 | W8 PASS: 37 model/service/API tests; synthetic browser late association and loose alignment pass |
 | INTEGRATION/API | video listing sorting | W14 | PASS: recorded/created date sorting API tests |
 | INTEGRATION/API | upload cancel; queued/active processing cancel; double cancel; retry | W11/W12 | PASS: idempotent API and service state tests |
-| PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13 | W2 PASS: 56 checks pass, 0 fail; gate E2E PASS |
+| PLAYWRIGHT/E2E | dashboard critical path; projects modal | W2/W13/W16 | W2 prior PASS; W16 host rerun BLOCKED by low RAM after test repair |
 | PLAYWRIGHT/E2E | Date display and asc/desc | W14/W16 | W14 PASS: 7/7 synthetic Date checks |
-| PLAYWRIGHT/E2E | upload cancel; processing cancel/Cancelando/CANCELLED/retry | W13 | pending |
+| PLAYWRIGHT/E2E | upload cancel; processing cancel/Cancelando/CANCELLED/retry | W13 | PASS: 9/9 synthetic checks |
 | PLAYWRIGHT/E2E | capture start, state, stop, cleanup | W4/W13 | W4 PASS: 12/12 fake-camera checks, 0 browser errors |
-| PLAYWRIGHT/E2E | chunk flow where testable | W5/W13 | pending |
-| PLAYWRIGHT/E2E | missing-audio warning / transcript-required | W7/W13 | pending |
-| MEDIA | synthetic video/audio/silent-video/crop fixtures only | W4ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W14 | pending |
+| PLAYWRIGHT/E2E | chunk flow where testable | W5/W13 | PASS: rotation and stalled/retry reports green |
+| PLAYWRIGHT/E2E | missing-audio warning / transcript-required | W7/W13 | PASS: capture dashboard synthetic checks green |
+| MEDIA | synthetic video/audio/silent-video/crop fixtures only | W4ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W14 | PASS: synthetic only |
 
 ## Known Risks
 
@@ -324,8 +327,8 @@ Implementation complete; Date green with recorded/created preference and backend
 - Long sessions risk storage exhaustion/backpressure; bound queues and expose stalled state.
 - Crop orientation/dimensions can affect evidence; preserve originals and validate normalized coordinates.
 - File tracker/filesystem may not retain capture metadata; use sidecars without breaking legacy scan.
-- Saved host E2E lacks TargetClosedError; reproduce before lifecycle changes. Current failures point to fixture project data and expected missing-frame requests.
-- Current Date UI sorts client-side over loaded files; backend sorting must preserve filters/pagination.
+- Host E2E reported no TargetClosedError in the last run; it failed at a preview locator after clearing the test project filter. The test is repaired; rerun awaits RAM/review gate.
+- Heavy gates require review plus >6 GiB free RAM; current host has 5.26 GiB available. The host E2E regression remains unverified after its fixture-filter repair.
 - Heavy gates follow Project Lead review/RAM policy and may require services; never claim unrun gates pass.
 
 ## Model / Executor Policy
@@ -335,6 +338,8 @@ Implementation complete; Date green with recorded/created preference and backend
 - No nested agents unless required by configured GLM delegation.
 
 ## Progress Log
+
+- 2026-10-15: W16 blocked pending host E2E rerun. Host gate failed at preview locator because test cleared the fixture project filter; test repaired. RAM gate measured 5.26/6.0 GiB, so repository policy defers heavy gates. W17 blocked for the same environmental prerequisite. Targeted suite: 45 passed; synthetic browser reports for crop 5/5, cancellation 9/9, Date 7/7, capture and chunking pass. Added `docs/LIVE_CAPTURE.md`.
 
 - 2026-10-15: W11 PASS. Upload abort, state, retry, temp cleanup, and restart reconciliation; 76 targeted tests passed. W12 PASS; W13 PASS: synthetic Playwright cancellation checks 9/9. W14 PASS (32 API/static + 7 browser checks). W15 PASS: full pytest 975 passed / 3 skipped.
 - 2026-10-15: W14 PASS. Date API uses recorded_at then created_at, Date DESC by default, backend ASC/DESC; filters/pagination retain order. 32 tests + 7 Playwright checks passed.
@@ -351,14 +356,14 @@ Implementation complete; Date green with recorded/created preference and backend
 
 ## Final Delivery Checklist
 
-- [ ] W0ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“W15 evidence and statuses current
-- [ ] Date API/UI and fallback tests pass
-- [ ] Live Capture, cancellation, chunking, crop, missing-audio, late transcript, Docs V2 and GC complete
-- [ ] Unit and integration/API matrix passes
-- [ ] Playwright matrix and host E2E pass
-- [ ] Docker/heavy pass or environment blocker documented
-- [ ] Automated media fixtures are synthetic only
-- [ ] User docs and recovery procedures updated
+- [x] W0-W15 evidence and statuses current; W16/W17 blockers documented
+- [x] Date API/UI and fallback tests pass
+- [x] Live Capture, cancellation, chunking, crop, missing-audio, late transcript, Docs V2 and GC complete
+- [x] Unit and integration/API matrix passes
+- [ ] Playwright matrix and host E2E pass (host E2E rerun deferred; see W16)
+- [x] Docker/heavy environment blocker documented (RAM gate 5.26 GiB; see W17)
+- [x] Automated media fixtures are synthetic only
+- [x] User docs and recovery procedures updated
 - [ ] Plan and implementation committed on current branch
 - [ ] Remote branch SHA equals local HEAD
 - [ ] Worktree clean; no merge/deployment

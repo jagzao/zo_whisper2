@@ -119,7 +119,7 @@ def main() -> int:
             # 3. Re-select and start capture so the crop persists with the session.
             _drag_crop(page)
             crop = _snapshot_crop(page)
-            page.locator("#cropStartBtn").click()
+            page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS
             )
