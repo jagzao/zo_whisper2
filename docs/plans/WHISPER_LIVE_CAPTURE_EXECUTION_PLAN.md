@@ -74,15 +74,15 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: inspect fresh report and correct root cause; no stale-report claims.
 
 ### W3 - Live Capture UI
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: provide the expected `Videos -> New Recording` user journey.
 - Dependencies: W1 PASS.
-- Implementation tasks: add Videos action, responsive recording view, camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, fragment/processing progress, detected title/logical-video list and separate cancel controls.
+- Implementation tasks: add Videos action, responsive recording view, camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, fragment/processing progress, detected title/logical-video list and separate cancel controls. UAT follow-up: viewport-safe full-screen mobile layout, no horizontal overflow, stacked fields/actions, persistent accessible capture actions, and readable playlist results.
 - Relevant files/modules: `dashboard/templates/dashboard.html`, `dashboard/app.py`, capture browser JS, `tests/e2e/`.
-- Acceptance criteria: users can reach and operate the complete capture shell from Videos; not header-only.
-- Required tests: Playwright opens Videos -> New Recording and verifies controls, fake-camera preview, timer, start/stop, and no browser errors.
-- Validation commands: `.venv-validation\\Scripts\\python.exe -m pytest tests/test_dashboard_date_column.py -q`; synthetic host Playwright `tests/e2e/capture_new_recording.py`; regression `tests/e2e/capture_dashboard.py` and `tests/e2e/capture_cancellation.py`.
-- Expected artifacts: `capture_new_recording_report.json`; existing capture and cancellation reports.
+- Acceptance criteria: users can reach and operate the complete capture shell from Videos; on 390x844 it stays within the viewport, has no horizontal overflow, keeps preview visible near the top, stacks controls, pins accessible Start/Stop actions, and shows readable playlist results.
+- Required tests: desktop and mobile Playwright open Videos -> New Recording and verify controls, fake-camera preview, timer, start/stop, mobile geometry, sticky actions, playlist result readability, and no browser errors.
+- Validation commands: `.venv-validation\\Scripts\\python.exe -m pytest tests/test_dashboard_date_column.py -q`; synthetic host Playwright `tests/e2e/capture_new_recording.py`, `tests/e2e/capture_mobile_layout.py`, and mobile viewport `tests/e2e/capture_playlist.py`; regression `tests/e2e/capture_dashboard.py` and `tests/e2e/capture_cancellation.py`.
+- Expected artifacts: `capture_new_recording_report.json`, `capture_mobile_layout_report.json`, `capture_playlist_report.json`; existing capture and cancellation reports.
 - Evidence: 23/23 capture-new-recording checks PASS; fake camera preview and timer advance observed; session finalized. Capture dashboard 16/16 PASS; cancellation 9/9 PASS; Date tests 5 PASS. Reports used isolated synthetic data roots; no private media. `git diff --check` PASS.
 - Recovery/fallback: keep existing modal as shared implementation behind the Videos entry; do not duplicate capture state.
 
@@ -321,20 +321,20 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: final live-capture/dashboard API/Date matrix 281 passed; audio, late transcript, docs integration and GC matrix 96 passed. Synthetic OCR/video/audio fixtures only; no private media used.
 
 ### W21 - Playwright user journeys
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: prove capture and playlist journeys through the actual Whisper UI.
 - Dependencies: W3-W19 PASS.
-- Implementation tasks: fake camera, synthetic title source, fake connectivity, UI action/state assertions.
+- Implementation tasks: fake camera, synthetic title source, fake connectivity, UI action/state assertions, 390x844 modal/playlist readability checks.
 - Relevant files/modules: `tests/e2e/`, dashboard and capture modules.
 - Acceptance criteria: every specified normal, playlist, low-confidence, cancellation, audio and newest-first journey passes.
 - Required tests: full user journeys listed in Test Matrix.
 - Validation commands: targeted Playwright scripts; no arbitrary waits.
 - Expected artifacts: named JSON reports/screenshots.
 - Recovery/fallback: inspect browser trace and app/API logs; repair root cause and rerun.
-- Evidence: final synthetic Playwright rerun passed playlist/title review and Videos table/docs action (14 checks), GC safety UI (5), silent capture+late transcript, New Recording/incremental ACK, crop, offline IndexedDB retry, upload/processing cancellation, server chunks, chunking retry, and backend Date sort across filtered pages. No browser errors reported.
+- Evidence: prior desktop journeys passed; UAT mobile-responsive validation is IN_PROGRESS and must be rerun after the W3 fix.
 
 ### W22 - Host E2E regression
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: revalidate dashboard critical path with completed capture UI and preserve projects/date flows.
 - Dependencies: W2, W20, W21 PASS.
 - Implementation tasks: run host harness; repair changed UI selectors/fixtures without dropping checks.
@@ -361,7 +361,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback evidence: each configured failed component was rerun independently after its fix and passed; aggregate-only rerun must wait until >6.0 GiB is available.
 
 ### W24 - Final readiness
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
 - Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
 - Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
@@ -428,6 +428,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-15: W22 PASS. Heavy-run host E2E after the final UI/API integration passed in 25.92s, with critical path and no-browser-errors checks PASS. W23 Docker/heavy gates continue.
 - 2026-10-15: W23 aggregate rerun could not start because current available RAM is 3.78 GiB (<6.0 GiB enforced threshold); `heavy-validation.json` records DEFERRED_LOW_RAM. Docker E2E independently passed in 266.11s after root fixes; final Host E2E and focused harness tests passed. W23 classified BLOCKED for the genuine external RAM condition; W24 PASS with all configured component evidence and justified W23 blocker.
 - 2026-10-16: Revalidated stages. W11 is PASS, not BLOCKED: title/API suite and synthetic camera OCR/review Playwright passed 50 checks and 11/11. Host E2E rerun PASS in 27.37s. Mobile/LAN Playwright PASS 12/12 for HTTPS, ONLINE, camera preview, ACKed fragments, durable server state, and no browser errors. A direct title-playlist attempt against LAN HTTPS stopped at Chromium `ERR_CERT_AUTHORITY_INVALID` because that helper does not trust the locally generated CA; this does not invalidate the prior synthetic title run. Aggregate heavy runner retried at 4.99 GiB (<6.0 GiB); W23 remains ENV_BLOCKED. W12-W22 remain PASS; W24 PASS.
+- 2026-10-16: UAT reopened W3, W21, W22, and W24. Reported issue: New Recording modal is not mobile responsive; required 390x844 viewport-safe layout, no horizontal overflow, stacked controls, camera preview near top, sticky accessible Start/Stop, and readable playlist results. Existing capture functionality is retained; responsive layout and mobile Playwright evidence are pending.
 
 ## Final Delivery Checklist
 
