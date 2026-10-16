@@ -74,7 +74,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: inspect fresh report and correct root cause; no stale-report claims.
 
 ### W3 - Live Capture UI
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: provide the expected `Videos -> New Recording` user journey.
 - Dependencies: W1 PASS.
 - Implementation tasks: add Videos action, mandatory existing-project selector before title, project inheritance, responsive recording view, immediate same-stream mobile camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, user-level capture/logical-video progress, and state-scoped cancellation. Never show raw chunk/fragment rows or synthetic/test sessions in normal UI. UAT follow-up: viewport-safe full-screen mobile layout, no horizontal overflow, stacked fields/actions, persistent accessible capture actions, and readable playlist results.
@@ -87,7 +87,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: keep existing modal as shared implementation behind the Videos entry; do not duplicate capture state.
 
 ### W26 - User-level capture jobs, project ownership and mobile UAT
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: close the reported production UI regressions without deleting legitimate historical media.
 - Dependencies: W3, W5, W6, W8, W14, W15, W18, W21 PASS.
 - Implementation tasks: investigate repeated `chunk-000000 FINALIZED` entries and classify source as synthetic, interrupted, duplicate, or historical; hide internal chunks/fragments and synthetic/test sessions from normal views; safely clean only proven synthetic test artifacts; scope cancellation to session/logical video and show actions only for cancellable user states; persist required `project_id` from session through fragments, processing chunks, logical videos and documentation; make preview startup explicit/error-reporting with playsinline/autoplay on the active recording stream.
@@ -98,6 +98,18 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Expected artifacts: mobile user-level capture/cancellation Playwright report, diagnostic inventory report (counts/source classification only; no private media), and real-device UAT checklist.
 - Evidence: project selection and propagation through session/fragments/processing mappings/logical videos/Docs V2 passed. Synthetic Playwright at 390x844: New Recording 51/51, layout 8/8, playlist 18/18, cancellation 11/11. Playlist rerun exposed concurrent manifest mutation (`PermissionError` on Windows `os.replace`); per-service `RLock` serializes playlist observation/review/listing, then the complete playlist journey passed with no browser/API errors. 288 focused unit/API/Date tests passed; host E2E passed. Inventory: 31 session manifests (17 finalized, 14 failed), 10 title-marked synthetic sessions, 0 explicit test flags, 21 ambiguous historical sessions. Repeated `chunk-000000` rows were first chunks in separate sessions, not duplicates within a session. No media was deleted; only explicit test sessions are hidden/eligible for confirmation-only cleanup. Physical phone unavailable; [mobile UAT checklist](../testing/live_capture_mobile_uat.md) documents device verification without claiming it was run.
 - Recovery/fallback: preserve ambiguous historical records but filter internal states; only delete records positively tagged as synthetic test artifacts. If hardware camera cannot be tested in this environment, retain browser synthetic evidence and document exact on-device UAT steps without claiming device acceptance.
+
+### W27 - Served build identity and multi-file upload
+- Status: IN_PROGRESS
+- Objective: ensure desktop and mobile browsers receive the current branch build and provide resilient multi-file upload from the real dashboard.
+- Dependencies: W1 PASS; revalidate W3/W21/W22 as part of acceptance.
+- Implementation tasks: embed the source revision in visible HTML and response headers; disable stale HTML caching and confirm no service worker/static bundle is masking current inline assets; support selecting/dropping at least three files, preserve each row's project selection, show a removable queue, upload with bounded concurrency, per-file cancel/retry/status and independent failures; update the running local/Docker services from this repository revision while preserving the existing data volume.
+- Relevant files/modules: `dashboard/app.py`, `dashboard/templates/dashboard.html`, `Dockerfile`, `compose.yml`, upload API/tests, `tests/e2e/`, this plan.
+- Acceptance criteria: HTTP(S) response build marker equals Git HEAD and remote HEAD; desktop and mobile Playwright sessions receive identical revision and current capture/project UI; upload input has `multiple`; selecting three synthetic media fixtures in one action displays all rows; queued removal, concurrent upload, per-file cancellation/retry/failure and selected project propagation work; actual service is restarted from this repository after commit.
+- Required tests: upload API project propagation; desktop and 390x844 Playwright build identity and 3-file selection/queue; per-file isolation/cancel/retry; no stale cache/service-worker behavior; existing Live Capture and host E2E regressions.
+- Validation commands: focused API/upload tests, browser tests against the actual served URLs on ports 5000 and 5001, `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`, Docker build/health where available, `git diff --check`, Git/remote revision check.
+- Expected artifacts: `capture_multifile_upload_report.json`, served-build Playwright report, host E2E report and updated canonical plan.
+- Recovery/fallback: preserve the existing data volume and do not remove user data; if Docker resource restrictions prevent rebuilding, keep the current-repo LAN server active and classify the desktop container as an environment/operations blocker only after recording evidence. Never claim the desktop and mobile origins match until browser reports prove the same revision.
 
 ### W4 - Mobile MediaRecorder
 - Status: PASS
@@ -334,7 +346,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: final live-capture/dashboard API/Date matrix 281 passed; audio, late transcript, docs integration and GC matrix 96 passed. Synthetic OCR/video/audio fixtures only; no private media used.
 
 ### W21 - Playwright user journeys
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: prove capture and playlist journeys through the actual Whisper UI.
 - Dependencies: W3-W19 PASS.
 - Implementation tasks: fake camera, synthetic title source, fake connectivity, UI action/state assertions, 390x844 modal/playlist readability checks.
@@ -347,7 +359,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: mobile New Recording journey passed 51/51, layout 8/8, playlist/OCR/Videos/project inheritance 18/18, and cancellation 11/11 at 390x844. Preview used the active recording stream with autoplay/playsinline; no raw chunk rows or cancel actions for completed items; no browser errors. Synthetic media only.
 
 ### W22 - Host E2E regression
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: revalidate dashboard critical path with completed capture UI and preserve projects/date flows.
 - Dependencies: W2, W20, W21 PASS.
 - Implementation tasks: run host harness; repair changed UI selectors/fixtures without dropping checks.
@@ -374,7 +386,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback evidence: each configured failed component was rerun independently after its fix and passed; aggregate-only rerun must wait until >6.0 GiB is available.
 
 ### W24 - Final readiness
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
 - Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
 - Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
@@ -447,6 +459,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: UAT reopened W3/W5/W6/W8/W14/W15/W18/W21/W22/W24 and added W26. Regressions: raw chunk rows exposed, cancellation applied at chunk scope, mobile preview unreliable, and capture lacks mandatory project ownership. Investigate repeated `chunk-000000 FINALIZED` records before any cleanup; preserve ambiguous/historical media. Require mobile Playwright and documented real-device UAT before marking user-facing acceptance PASS.
 - 2026-10-16: W3/W5/W6/W8/W14/W15/W18/W21/W22/W26 revalidated after UAT corrections. API now exposes session/logical-video rows only, filters marked/synthetic sessions, scopes cancel/retry to the owning capture session, validates mandatory project selection, and propagates project ownership through fragments/chunks/logical videos/docs. Inventory found 31 manifests (17 finalized/14 failed): 10 title-marked synthetic, 0 explicitly flagged test, 21 ambiguous; repeated `chunk-000000` were per-session first chunks, not within-session duplicates. No media deleted. Mobile evidence at 390x844: New Recording 51/51, layout 8/8, playlist 18/18, cancellation 11/11. One playlist rerun exposed concurrent OCR/review writes to `playlist.json` causing Windows `PermissionError` during `os.replace`; synchronized per-service mutations, reran complete playlist journey PASS. Focused unit/API/Date matrix 288 passed, host E2E 26.24s passed, syntax and diff checks pass. Real-device UAT is documented but not claimed as performed. W23 remains blocked only on enforced aggregate RAM >6 GiB; independent Docker E2E already passed.
 - 2026-10-16: W24 PASS. Implementation, tests, reports, canonical plan and phone UAT guide committed; code/report commit `01c3b55` is pushed and remote SHA matched. This final plan checkpoint records W23 as the only environment blocker (aggregate RAM below enforced threshold); standalone Docker E2E passed.
+- 2026-10-16: UAT reopened W3/W21/W22/W24 and added W27. HEAD and remote were both `91513caa`. Process inspection found stale repo Python server on 5001 (started Oct 15 before later commits) and desktop port 5000 served a separate Docker image built from `C:\Dev\Zo\whisper-zmi-docker`; its HTML lacks New Recording. Current template has inline HTML/JS but no cache/build identity, and its upload input lacked `multiple` and uploads serialized after clearing the queue. No service worker is registered. Preserve Docker's existing data bind while rebuilding from this repository; make both browser origins report one build identity.
 
 ## Final Delivery Checklist
 
@@ -464,3 +477,4 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - [x] Docker/heavy gates pass or justified environment blocker recorded
 - [x] Code and canonical plan committed; remote SHA equals HEAD
 - [x] Worktree clean; no merge/deploy
+
