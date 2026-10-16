@@ -140,6 +140,8 @@ def main() -> int:
             all_ok &= check("test_sessions_hidden", filtered == "")
             all_ok &= check("no_browser_errors", not errors, "; ".join(errors))
         finally:
+            page.evaluate("if (capture.jobsPoller) { clearInterval(capture.jobsPoller); capture.jobsPoller = null; }")
+            page.unroute_all(behavior="wait")
             page.close()
             context.close()
             browser.close()
