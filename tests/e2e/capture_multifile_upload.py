@@ -57,8 +57,7 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         let finished = false;
         const finish = () => { if (!finished) { finished = true; harness.active -= 1; } };
         if (file.name === 'fail-first.mp4' && count === 1) {
-          finish();
-          return Promise.resolve(new Response(JSON.stringify({ok:false,error:'synthetic rejection'}), {status:400,headers:{'Content-Type':'application/json'}}));
+          return new Promise(resolve => setTimeout(() => { finish(); resolve(new Response(JSON.stringify({ok:false,error:'synthetic rejection'}), {status:400,headers:{'Content-Type':'application/json'}})); }, 180));
         }
         if (file.name === 'cancel-first.wav' && count === 1) {
           return new Promise((resolve,reject) => {
@@ -117,6 +116,8 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         remove_row = page.locator('[data-upload-id]').filter(has_text="remove-before-upload.mp3")
         remove_row.get_by_role("button", name="Remove").click()
         check(f"{url}_remove_single_queued_file", page.locator("#uploadQueue").inner_text().count("remove-before-upload.mp3") == 0)
+        page.locator("#fileInput").set_input_files([{"name": "batch-seven.mp4", "mimeType": "video/mp4", "buffer": b"synthetic"}])
+        check(f"{url}_six_file_batch_ready", page.locator("#uploadQueue [data-upload-id]").count() == 6)
         page.locator("#dropzone").evaluate("el => { const data = new DataTransfer(); data.items.add(new File(['a'], 'drop-a.mp4', {type:'video/mp4'})); data.items.add(new File(['b'], 'drop-b.mp3', {type:'audio/mpeg'})); el.dispatchEvent(new DragEvent('drop', {bubbles:true,cancelable:true,dataTransfer:data})); }")
         dropped_names = page.locator("#uploadQueue .upload-file-name").all_inner_texts()
         check(f"{url}_multiple_drag_drop", any("drop-a.mp4" in name for name in dropped_names) and any("drop-b.mp3" in name for name in dropped_names))
@@ -133,11 +134,12 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         check(f"{url}_per_file_cancel_and_retry_available", True)
         fail_row.get_by_role("button", name="Retry").click()
         cancel_row.get_by_role("button", name="Retry").click()
-        page.wait_for_function("""() => ['ok-one.mp4','fail-first.mp4','cancel-first.wav','batch-five.mp4','batch-six.wav'].every(name => {
+        page.wait_for_function("""() => ['ok-one.mp4','fail-first.mp4','cancel-first.wav','batch-five.mp4','batch-six.wav','batch-seven.mp4'].every(name => {
           const row = [...document.querySelectorAll('[data-upload-id]')].find(el => el.innerText.includes(name));
           return row && row.innerText.includes('OK ');
         })""", timeout=15000)
-        check(f"{url}_upload_concurrency_default_four", page.evaluate("window.__uploadHarness.maxActive") == 4, f"maxActive={page.evaluate('window.__uploadHarness.maxActive')}")
+        expected_concurrency = int(page.locator("#startUploadBatch").get_attribute("data-upload-concurrency") or "4")
+        check(f"{url}_upload_concurrency_configured_limit", page.evaluate("window.__uploadHarness.maxActive") == expected_concurrency, f"expected={expected_concurrency} maxActive={page.evaluate('window.__uploadHarness.maxActive')}")
         requests = page.evaluate("window.__uploadHarness.requests")
         carries_project = bool(project_name) and all(row["projectId"] == project_name for row in requests)
         check(f"{url}_each_file_keeps_selected_project", carries_project, json.dumps(requests))
