@@ -76,7 +76,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: inspect fresh report and correct root cause; no stale-report claims.
 
 ### W3 - Live Capture UI
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: provide the expected `Videos -> New Recording` user journey.
 - Dependencies: W1 PASS.
 - Implementation tasks: add Videos action, mandatory existing-project selector before title, project inheritance, responsive recording view, immediate same-stream mobile camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, user-level capture/logical-video progress, and state-scoped cancellation. Never show raw chunk/fragment rows or synthetic/test sessions in normal UI. UAT follow-up: viewport-safe full-screen mobile layout, no horizontal overflow, stacked fields/actions, persistent accessible capture actions, and readable playlist results.
@@ -89,7 +89,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: keep existing modal as shared implementation behind the Videos entry; do not duplicate capture state.
 
 ### W26 - User-level capture jobs, project ownership and mobile UAT
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: close the reported production UI regressions without deleting legitimate historical media.
 - Dependencies: W3, W5, W6, W8, W14, W15, W18, W21 PASS.
 - Implementation tasks: investigate repeated `chunk-000000 FINALIZED` entries and classify source as synthetic, interrupted, duplicate, or historical; hide internal chunks/fragments and synthetic/test sessions from normal views; safely clean only proven synthetic test artifacts; scope cancellation to session/logical video and show actions only for cancellable user states; persist required `project_id` from session through fragments, processing chunks, logical videos and documentation; make preview startup explicit/error-reporting with playsinline/autoplay on the active recording stream.
@@ -197,7 +197,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Artifacts: `artifacts/gates/w30-w33-final/`.
 
 ### W34 - P0 acceptance matrix and final readiness
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: validate all requested P0 scope through UI/API/unit/host and applicable Docker gates; commit and sync final plan.
 - Dependencies: W29-W33 PASS; W23 PASS or justified external ENV_BLOCKED.
 - Implementation tasks: run required matrices, fix within two distinct root-cause attempts, update stage evidence, restart actual services and compare served revision with HEAD/remote.
@@ -456,7 +456,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: mobile New Recording journey passed 51/51, layout 8/8, playlist/OCR/Videos/project inheritance 18/18, and cancellation 11/11 at 390x844. Preview used the active recording stream with autoplay/playsinline; no raw chunk rows or cancel actions for completed items; no browser errors. Synthetic media only.
 
 ### W22 - Host E2E regression
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: revalidate dashboard critical path with completed capture UI and preserve projects/date flows.
 - Dependencies: W2, W20, W21 PASS.
 - Implementation tasks: run host harness; repair changed UI selectors/fixtures without dropping checks.
@@ -466,7 +466,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `.venv-validation\Scripts\python.exe scripts/gate_runner.py e2e`.
 - Expected artifacts: host report/log/latest gate.
 - Recovery/fallback: two root-cause fixes maximum per failure; continue independent stages.
-- Evidence: `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e` PASS in 26.77s after one transient `ERR_CONNECTION_RESET` attempt; report `artifacts/gates/latest.json`.
+- Evidence: final `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e` PASS in 30.53s on commit `c763d72`; report `artifacts/gates/latest.json`; no TargetClosedError.
 
 ### W23 - Docker/heavy validation
 - Status: BLOCKED
@@ -480,6 +480,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Expected artifacts: heavy summary and per-gate reports.
 - Recovery/fallback: retry when measured RAM >6 GiB; do not bypass repository enforcement; independent implementation stages continue.
 - Evidence / blocker: an earlier aggregate run with 6.41 GiB passed pytest, security, smoke, host E2E and Docker build. After fixing its Docker E2E failures (seed/executor UID 10001, optional non-writable report mirror, and missing packaged `/static/logo.png`), the standalone Docker E2E passed in 266.11s (`artifacts/gates/build-local/docker-docker-e2e.json`); focused harness/gate tests passed 67/67. Latest aggregate retry records `DEFERRED_LOW_RAM` at 4.99 GiB, below the enforced 6.0 GiB threshold, so no heavy gates ran. This is an external resource constraint; do not override the repo RAM gate. Sonar/Jenkins/soak are not configured.
+- Latest reevaluation: `scripts/ram_gate.py` reports 3.56 GiB available vs the enforced >6.0 GiB threshold; required aggregate/Docker heavy gate was therefore not run. Current Whisper runtime image rebuilt successfully from the repository and passed served-build/API/Playwright checks. Previous standalone Docker E2E evidence remains valid for its earlier revision, not claimed as current-revision Docker E2E.
 - Recovery/fallback evidence: each configured failed component was rerun independently after its fix and passed; aggregate-only rerun must wait until >6.0 GiB is available.
 
 ### W24 - Final readiness
@@ -493,7 +494,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `git diff --check`; targeted/full validation; `git status`; `git rev-parse HEAD`; `git ls-remote`.
 - Expected artifacts: final gate reports and committed plan evidence.
 - Recovery/fallback: do not claim PASS with an unrerun failure; report exact code vs environment blocker.
-- Evidence: focused upload/security/concurrency tests 47 passed; served-build Playwright and mobile 390x844 layout pass on desktop and HTTPS LAN origins; host E2E passes after one transient connection reset; `git diff --check` passes. W27 serves the same latest Git revision from HEAD and remote on both origins. W23 remains blocked by the enforced >6 GiB aggregate RAM threshold (latest measured run 4.99 GiB); standalone Docker E2E passed earlier. Real physical-phone camera UAT remains documented but was not run in this environment. Final checkpoint is pushed, both services restarted from it, browser revision verified, and worktree clean.
+- Evidence: 383 focused Docs V2/live-capture/settings/security tests pass; six-file Playwright passed at 4 and configured 6; 6x24MiB streamed upload memory delta +79.7MiB; video detail actions/history/timing passed; capture/mobile/playlist/cancellation browser journeys passed. Final Host E2E PASS in 30.53s. Docker runtime image rebuilt successfully, but aggregate/heavy Docker gate is ENV_BLOCKED by 3.56 GiB available RAM against >6.0 GiB repository policy. No private media was used; all synthetic upload fixtures were deleted. Final plan/code checkpoint will be committed/pushed, then served-build marker verified against it.
 
 ## Global Definition of Done
 
@@ -518,7 +519,7 @@ Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access work
 | PLAYWRIGHT | crop, playlist Session1->Session2, low confidence, review rename/date/split/merge/confirm | W9-W15/W21 | PASS; crop 5/5, playlist 18/18 after serialized manifest mutation fix |
 | PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PASS; audio/transcript, logical Videos documentation action, GC review UI and Date sort exercised |
 | HOST E2E | dashboard critical path, Projects, Videos Date sorting, no browser errors | W2/W22 | IN_PROGRESS; final rerun required at current HEAD |
-| DOCKER/MEDIA | Docker config/build/E2E; synthetic video/audio/OCR title fixtures only | W11-W23 | PASS; Docker E2E PASS after UID, report path and packaged logo fixes |
+| DOCKER/MEDIA | Docker config/build/E2E; synthetic video/audio/OCR title fixtures only | W11-W23 | Current image build PASS; required heavy E2E ENV_BLOCKED at 3.56GiB (<6.0GiB); earlier standalone Docker E2E passed on its earlier revision |
 
 ## Known Risks
 
@@ -570,10 +571,11 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: W30 implementation checkpoint. Added `WHISPER_UPLOAD_CONCURRENCY` (default 4, validated 1-6), server-to-template injection, and clarified queued UI as “Ready to upload · pending”; six-file multiselect is tested. Settings tests pass 46/46. Initial browser run proved the services stale (`6bafdef` vs HEAD), then current-repo rebuild restored matching served build. Default-4 Playwright reached four simultaneous uploads; configured-6 Playwright reached six. Six 24MiB synthetic WAV uploads peaked at +73.6MiB container memory (300MiB bound); all test files were removed. W30 remains IN_PROGRESS for stable upload-ID/retry validation against the next rebuilt revision.
 - 2026-10-16: W31/W32 PASS. Detail UI exposes separate `Regenerate Documentation` and `Reprocess Video`; Docs V2 reruns from saved evidence without media work. Version snapshots preserve old outputs/provenance and idempotently skip identical evidence. Focused Docs V2/version/dashboard unit+integration matrix passes 109 tests; browser detail journey passes six checks including latest/previous version viewing. W33 is IN_PROGRESS pending final served-build and host regression.
 - 2026-10-16: W30 PASS on committed build `1e75afd`. Playwright six-file upload measured maxActive 4 default and 6 configured; retry IDs remained stable, project stayed attached, and one failed/cancelled upload did not block peers. Six synthetic 24MiB WAVs at concurrency 6 peaked at +79.7MiB (<300MiB), and cleanup removed every test file. W31-W33 PASS; Docs V2 detail shows separate actions and current/previous versions; state/timing data is visible. Current HEAD was served on desktop and LAN HTTPS. New Recording preview/record/stop, fragment ACK, mobile layout, Session1/2 playlist title detection/project inheritance, chunk mapping, and cancellation journeys passed. Cancellation test initially exposed teardown TargetClosedError from its polling interval; poller is now cleared and route handlers awaited, and rerun passed with no teardown error. W22/W34 host gate is IN_PROGRESS.
+- 2026-10-16: Final W34 evaluation: focused Docs V2/settings/security/live-capture tests 383/383 PASS; upload Playwright 4-default and 6-configured, mobile/LAN build identity, docs current/previous detail, New Recording, playlist and cancellation journeys PASS; Host E2E PASS in 30.53s on `c763d72`. Current-revision Docker image build succeeded. `scripts/ram_gate.py` measured 3.56 GiB available (<6.0 GiB required), so aggregate/Docker heavy gate is ENV_BLOCKED by repository policy; no override attempted. All other W0-W22/W24 and W25-W34 stages PASS. The same plan checkpoint is committed/pushed next, followed by serving that exact final revision.
 
 ## Final Delivery Checklist
 
-- [ ] W0-W34 statuses and evidence current
+- [x] W0-W34 statuses and evidence current; W23 is the sole ENV_BLOCKED gate
 - [x] User-level capture jobs hide physical chunks/fragments and synthetic sessions; project ownership and session cancellation pass mobile Playwright
 - [x] Camera preview, playlist review and mobile layout pass synthetic 390x844 Playwright; real-device procedure documented
 - [x] Same-Wi-Fi phone opens HTTPS, reports ONLINE, completes camera capture and fragment upload
