@@ -74,17 +74,29 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: inspect fresh report and correct root cause; no stale-report claims.
 
 ### W3 - Live Capture UI
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: provide the expected `Videos -> New Recording` user journey.
 - Dependencies: W1 PASS.
-- Implementation tasks: add Videos action, responsive recording view, camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, fragment/processing progress, detected title/logical-video list and separate cancel controls. UAT follow-up: viewport-safe full-screen mobile layout, no horizontal overflow, stacked fields/actions, persistent accessible capture actions, and readable playlist results.
+- Implementation tasks: add Videos action, mandatory existing-project selector before title, project inheritance, responsive recording view, immediate same-stream mobile camera preview, Normal/Continuous Playlist modes, crop, optional Save local copy OFF, start/stop, visible timer/status, user-level capture/logical-video progress, and state-scoped cancellation. Never show raw chunk/fragment rows or synthetic/test sessions in normal UI. UAT follow-up: viewport-safe full-screen mobile layout, no horizontal overflow, stacked fields/actions, persistent accessible capture actions, and readable playlist results.
 - Relevant files/modules: `dashboard/templates/dashboard.html`, `dashboard/app.py`, capture browser JS, `tests/e2e/`.
-- Acceptance criteria: users can reach and operate the complete capture shell from Videos; on 390x844 it stays within the viewport, has no horizontal overflow, keeps preview visible near the top, stacks controls, pins accessible Start/Stop actions, and shows readable playlist results.
+- Acceptance criteria: users can reach and operate capture from Videos; selected project is mandatory and inherited by session/fragments/chunks/logical videos/docs; on 390x844 there is no horizontal overflow, preview is live after permission and shares the recording stream, actions are accessible, playlist results are readable, and jobs list contains only user-level records.
 - Required tests: desktop and mobile Playwright open Videos -> New Recording and verify controls, fake-camera preview, timer, start/stop, mobile geometry, sticky actions, playlist result readability, and no browser errors.
 - Validation commands: `.venv-validation\\Scripts\\python.exe -m pytest tests/test_dashboard_date_column.py -q`; synthetic host Playwright `tests/e2e/capture_new_recording.py`, `tests/e2e/capture_mobile_layout.py`, and mobile viewport `tests/e2e/capture_playlist.py`; regression `tests/e2e/capture_dashboard.py` and `tests/e2e/capture_cancellation.py`.
 - Expected artifacts: `capture_new_recording_report.json`, `capture_mobile_layout_report.json`, `capture_playlist_report.json`; existing capture and cancellation reports.
 - Evidence: prior desktop New Recording flow remains green (23/23 checks). UAT mobile layout passed 8/8 Playwright checks at 390x844: document/modal width 390/388px with no horizontal overflow, preview visible by y=519px, stacked controls, 44px playlist actions, sticky Start and Stop visible at y=785px while scrolled, recording stopped, and no browser errors. Updated playlist OCR/review journey passed 18/18 at the same mobile viewport. Synthetic test data only. `git diff --check` PASS.
 - Recovery/fallback: keep existing modal as shared implementation behind the Videos entry; do not duplicate capture state.
+
+### W26 - User-level capture jobs, project ownership and mobile UAT
+- Status: IN_PROGRESS
+- Objective: close the reported production UI regressions without deleting legitimate historical media.
+- Dependencies: W3, W5, W6, W8, W14, W15, W18, W21 PASS.
+- Implementation tasks: investigate repeated `chunk-000000 FINALIZED` entries and classify source as synthetic, interrupted, duplicate, or historical; hide internal chunks/fragments and synthetic/test sessions from normal views; safely clean only proven synthetic test artifacts; scope cancellation to session/logical video and show actions only for cancellable user states; persist required `project_id` from session through fragments, processing chunks, logical videos and documentation; make preview startup explicit/error-reporting with playsinline/autoplay on the active recording stream.
+- Relevant files/modules: dashboard template/API, `live_capture` models/store/service/pipeline, documentation provenance, dashboard and live-capture tests, mobile Playwright.
+- Acceptance criteria: a phone UAT can open New Recording, select project, see live preview, record/stop, see user-level progress only, cancel the correct logical job, see no cancel on completed work, and verify playlist videos inherit project. No legitimate media is removed.
+- Required tests: model/API project propagation and visibility filtering; cancellation state scoping and idempotency; preview failure and same-stream browser assertions; mobile Playwright viewport and capture journey; recorded real-device UAT procedure.
+- Validation commands: focused live-capture/dashboard tests; `capture_mobile_layout.py`, `capture_new_recording.py`, `capture_playlist.py`, `capture_cancellation.py` at mobile viewport; `scripts/gate_runner.py e2e`.
+- Expected artifacts: mobile user-level capture/cancellation Playwright report, diagnostic inventory report (counts/source classification only; no private media), and real-device UAT checklist.
+- Recovery/fallback: preserve ambiguous historical records but filter internal states; only delete records positively tagged as synthetic test artifacts. If hardware camera cannot be tested in this environment, retain browser synthetic evidence and document exact on-device UAT steps without claiming device acceptance.
 
 ### W4 - Mobile MediaRecorder
 - Status: PASS
@@ -100,7 +112,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: feature-detect supported MediaRecorder MIME types; visible unsupported state with retry.
 
 ### W5 - Incremental upload fragments
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: transfer short fragments incrementally and release acknowledged local bytes.
 - Dependencies: W3, W4 PASS.
 - Implementation tasks: stable fragment ID/idempotency key, bounded streaming endpoint, server digest/ACK, replay-safe duplicate response, browser ACK handling and progress state.
@@ -113,7 +125,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: retain unACKed local blob; retry same identity; never mark unACKed data uploaded.
 
 ### W6 - Server processing chunks
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: map short fragments to server-side ~10-15 minute processing chunks.
 - Dependencies: W5 PASS.
 - Implementation tasks: configurable aggregation/finalization, duration/size thresholds, server-side concat/remux where required, boundary/final-chunk handling and mapping persistence.
@@ -152,7 +164,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: focused API/LAN tests 54 passed, 1 host TLS interception skip; offline/reconnect Playwright report 22/22 PASS with synthetic media, stable IDs, ACK cleanup, reload restore, 64 MiB default, user-configurable cap, visible near/full warning, and Save local copy default OFF. Browser report: `artifacts/gates/capture_offline_retry_report.json`.
 
 ### W8 - Cancellation
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: expose independent stop, cancel-upload, and cancel-processing behavior in the new UI.
 - Dependencies: W3, W5, W6 PASS.
 - Implementation tasks: idempotent fragment abort/rescind and cleanup; PROCESSING -> CANCEL_REQUESTED -> CANCELLED worker checks; preserve originals; retry/process again.
@@ -230,7 +242,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: synthetic playlist Playwright confirmed Session 1->2 at the first matching frame offset while both logical records map to one unchanged physical processing chunk; 11/11 passed.
 
 ### W14 - Logical-video and chunk mapping
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: persist mappings among capture session, upload fragments, processing chunks and logical videos.
 - Dependencies: W5, W6, W13 PASS.
 - Implementation tasks: versioned mapping schema, time ranges, fragment digests, transactional updates, migration/recovery and idempotency.
@@ -243,7 +255,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: persisted playlist restart/mapping tests and actual API assertions verified both logical videos reference the same fragment and processing chunk for an intra-chunk boundary; 50 title/playlist/API tests passed.
 
 ### W15 - Playlist Review UI
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: let users inspect and correct detected logical videos.
 - Dependencies: W3, W13, W14 PASS.
 - Implementation tasks: display title/confidence/date; rename, correct recorded date, split, merge, confirm low-confidence items; protect original mapping.
@@ -282,7 +294,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: synthetic late transcript associated to the capture session with `alignment=loose`, warning cleared, and provenance persisted; dashboard Playwright passed; audio/transcript/docs focused tests included in 96 passes.
 
 ### W18 - Documentation pipeline integration
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: route confirmed logical videos through existing Whisper processing and Documentation V2.
 - Dependencies: W6, W14, W15, W16, W17 PASS.
 - Implementation tasks: present logical video as normal media with recorded_at; reuse processor, crop, transcript/audio evidence and idempotent docs generation.
@@ -321,7 +333,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: final live-capture/dashboard API/Date matrix 281 passed; audio, late transcript, docs integration and GC matrix 96 passed. Synthetic OCR/video/audio fixtures only; no private media used.
 
 ### W21 - Playwright user journeys
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: prove capture and playlist journeys through the actual Whisper UI.
 - Dependencies: W3-W19 PASS.
 - Implementation tasks: fake camera, synthetic title source, fake connectivity, UI action/state assertions, 390x844 modal/playlist readability checks.
@@ -334,7 +346,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: prior desktop journeys passed. UAT mobile New Recording layout Playwright passed 7/7; actual synthetic OCR/title playlist and Videos table flow passed 18/18 at 390x844, including Session 1/2 detection, readable rows, review actions and no horizontal overflow.
 
 ### W22 - Host E2E regression
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: revalidate dashboard critical path with completed capture UI and preserve projects/date flows.
 - Dependencies: W2, W20, W21 PASS.
 - Implementation tasks: run host harness; repair changed UI selectors/fixtures without dropping checks.
@@ -361,7 +373,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback evidence: each configured failed component was rerun independently after its fix and passed; aggregate-only rerun must wait until >6.0 GiB is available.
 
 ### W24 - Final readiness
-- Status: PASS
+- Status: IN_PROGRESS
 - Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
 - Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
 - Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
@@ -431,10 +443,11 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: UAT reopened W3, W21, W22, and W24. Reported issue: New Recording modal is not mobile responsive; required 390x844 viewport-safe layout, no horizontal overflow, stacked controls, camera preview near top, sticky accessible Start/Stop, and readable playlist results. Existing capture functionality is retained; responsive layout and mobile Playwright evidence are pending.
 - 2026-10-16: Mobile UAT fix PASS. Root cause included intrinsic Videos table width expanding the mobile layout viewport (preventing the 640px breakpoint), an inline 900px modal max-width, settings arranged in one row, preview below advanced controls, and non-sticky actions. Contained Videos table scrolling, allowed zero-min grid tracks, added device-width mobile styles, full-screen safe-area modal, preview-first layout, grid form settings, stacked 44px playlist actions and sticky Start/Stop footer. Mobile layout Playwright passed 8/8; full synthetic OCR/review playlist Playwright passed 18/18 at 390x844; Host E2E rerun passed in 26.37s. An initial playlist rerun exposed a stale assertion expecting both original titles after renaming Session 2; corrected it to verify the filtered Session 1 and both current names after clearing the filter, then reran successfully. A separate desktop capture test attempt could not reach its preflight API because Requests rejected the locally self-signed HTTPS certificate; the existing desktop 23/23 result remains valid and current mobile HTTPS tests use explicit local browser certificate allowance. W3/W21/W22 PASS; W24 remains IN_PROGRESS pending final diff/commit/push checks.
 - 2026-10-16: UAT code/report checkpoint `f655dc9` pushed. W3/W21/W22 PASS; W24 PASS with W23's justified RAM-only blocker.
+- 2026-10-16: UAT reopened W3/W5/W6/W8/W14/W15/W18/W21/W22/W24 and added W26. Regressions: raw chunk rows exposed, cancellation applied at chunk scope, mobile preview unreliable, and capture lacks mandatory project ownership. Investigate repeated `chunk-000000 FINALIZED` records before any cleanup; preserve ambiguous/historical media. Require mobile Playwright and documented real-device UAT before marking user-facing acceptance PASS.
 
 ## Final Delivery Checklist
 
-- [x] W0-W25 statuses and evidence current
+- [ ] W0-W26 statuses and evidence current
 - [x] Same-Wi-Fi phone opens HTTPS, reports ONLINE, completes camera capture and fragment upload
 - [x] Videos -> New Recording UI and main journeys pass Playwright
 - [x] Short upload fragments, ACK/idempotency, IndexedDB recovery and buffer warning pass
