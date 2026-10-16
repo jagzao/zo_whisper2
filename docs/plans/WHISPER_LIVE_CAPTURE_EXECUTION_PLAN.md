@@ -4,7 +4,7 @@ Canonical execution plan for `feat/zmi-documentation-synthesis-v2`. Continue thi
 
 ## Goal
 
-Deliver a user-facing mobile-safe Live Capture flow at `Videos -> New Recording`, with short acknowledged upload fragments, bounded offline retry, server processing chunks, and Continuous Playlist capture. Detect and confirm title changes from multiple frames, map logical videos to physical fragments and processing chunks, expose review controls, and reuse Whisper's existing documentation pipeline. Preserve Date sorting, cancellation, missing-audio/late-transcript, crop, and advisory GC behavior.
+Deliver a user-facing mobile-safe Live Capture flow at `Videos -> New Recording`, with short acknowledged upload fragments, bounded offline retry, server processing chunks, and Continuous Playlist capture. Detect and confirm title changes from multiple frames, map logical videos to physical fragments and processing chunks, expose review controls, and reuse Whisper's existing documentation pipeline. Documentation Synthesis V2 must be invokable separately from media reprocessing, reuse saved evidence, preserve versions, and provide traceable reviewable outputs. Preserve Date sorting, cancellation, missing-audio/late-transcript, crop, and advisory GC behavior.
 
 ## Current verified state
 
@@ -32,6 +32,8 @@ Deliver a user-facing mobile-safe Live Capture flow at `Videos -> New Recording`
 - A confirmed title change closes/opens logical-video mappings at its observed time, including inside a processing chunk. Review supports rename, recorded date correction, split, merge, and confirmation.
 - Confirmed logical videos enter the existing Whisper processor, Date listing, and Documentation V2 flow. `recorded_at` precedes `created_at`; backend sorting remains newest-first by default and supports ASC/DESC before filtering/pagination.
 - Missing audio remains valid (`AUDIO_MISSING` / `TRANSCRIPT_REQUIRED`); transcripts may be attached later with loose session/logical-video association. GC stays advisory and destructive deletion requires explicit user action.
+- Bulk dashboard upload uses browser `File`/`FormData` and disk-backed server request streams; it must not materialize whole files in JavaScript or application RAM. Upload concurrency is independently configurable (default 4, hard maximum 6); media-processing concurrency remains separately configured.
+- Documentation regeneration invokes the existing Documentation Synthesis V2 pipeline using persisted transcripts, OCR, frame mappings, and evidence. Media reprocessing remains a separate explicit operation. Version metadata and prior rendered artifacts are retained; repeated identical generation requests are idempotent.
 
 ## Execution stages
 
@@ -111,6 +113,90 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Expected artifacts: `capture_multifile_upload_report.json`, served-build Playwright report, host E2E report and updated canonical plan.
 - Recovery/fallback: preserve the existing data volume and do not remove user data; if Docker resource restrictions prevent rebuilding, keep the current-repo LAN server active and classify the desktop container as an environment/operations blocker only after recording evidence. Never claim the desktop and mobile origins match until browser reports prove the same revision.
 - Evidence: after the final synced checkpoint, desktop `http://127.0.0.1:5000` and LAN HTTPS `https://192.168.50.67:5001` were rebuilt/restarted from this repo. Served-build Playwright passed both origins: visible/header/meta revision matches Git HEAD and remote, `no-store`, no service worker, same inline-JS hash, current capture/project UI, 4 synthetic files selected together, queue removal, multi-file drop, concurrency 2, per-file cancel/retry, project propagation, and no raw chunks/browser errors (`artifacts/gates/served-build/capture_multifile_upload_report.json`). Mobile viewport suite passed at 390x844 (`capture_mobile_layout_report.json`). First browser attempt exposed test-only setup/assertion issues (modal overlay remained visible; assertion expected `Uploaded` while UI says `OK`); corrected both and reran successfully. First host gate attempt had one `ERR_CONNECTION_RESET` while server logged HTML/API/logo 200; inspected report and reran `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`, passing in 26.77s (`artifacts/gates/latest.json`). Desktop originally served a container from a separate checkout and mobile a stale Python process; Docker was rebuilt from this repo while preserving the existing data bind, and the Python server restarted from this checkout. No service worker or bundled static JS was present.
+
+### W28 - P0 scope reconciliation and baseline
+- Status: IN_PROGRESS
+- Objective: persist the added delivery scope in this canonical plan before implementation and reconcile prior PASS claims against current UI/code.
+- Dependencies: W27 PASS.
+- Implementation tasks: record current HEAD/remote/tree; audit capture UI/fragments/chunks/docs V2/upload transport and concurrency/video actions/states/metrics/tests/artifacts; define W29-W34 dependencies and acceptance.
+- Relevant files/modules: this plan; `dashboard.html`; `dashboard/app.py`; `live_capture/`; `documentation/`; tests; gate artifacts.
+- Acceptance criteria: this plan contains all P0.1/P0.2, upload concurrency/streaming, separate regenerate/reprocess, versioning, metrics, states, and test matrix; current gaps and HEAD/remote are recorded; update is committed before code changes.
+- Required tests: none; source/plan consistency and `git diff --check`.
+- Validation commands: Git status/head/remote; focused source/artifact inspection; `git diff --check`.
+- Expected artifacts: committed plan update and baseline entry in Progress Log.
+- Recovery/fallback: preserve history, append corrections in this file, and never use backend-only evidence to claim UI acceptance.
+
+### W29 - Live Capture / transmission stability
+- Status: PENDING
+- Objective: revalidate and repair the complete mobile capture journey against current code.
+- Dependencies: W28 PASS.
+- Implementation tasks: camera preview uses recording stream; timer/start/stop; 10-30s MediaRecorder fragments; durable incremental ACK; server 10-15 minute processing chunks; IndexedDB offline/reload retry; playlist/title confirmation/logical boundaries; project inheritance; cancel/retry; responsive controls; no chunks displayed.
+- Relevant files/modules: `dashboard.html`; `dashboard/app.py`; `live_capture/{models,service,store,assembly,playlist,titles,pipeline}.py`; capture tests/artifacts.
+- Acceptance criteria: project flows through session/fragments/chunks/logical videos; continuous capture spans title boundaries; multi-frame evidence confirms titles; ACK/retry is idempotent; camera/status/actions usable at 390x844; only user-level video/session rows appear.
+- Required tests: focused live-capture/API tests; mobile Playwright camera/capture/offline/playlist/cancellation using synthetic media.
+- Validation commands: focused `pytest`; `capture_mobile_layout.py`; `capture_new_recording.py`; `capture_chunking.py`; `capture_offline_retry.py`; `capture_playlist.py`; `capture_cancellation.py`.
+- Expected artifacts: capture/offline/playlist/cancellation browser reports and focused test logs.
+- Recovery/fallback: repair each root cause once, reassess and use one different repair if needed; document physical-device camera UAT as unperformed if hardware is unavailable.
+
+### W30 - Streamed multi-file upload concurrency
+- Status: PENDING
+- Objective: configure bulk uploads at default concurrency 4 and maximum 6 without whole-file memory buffering.
+- Dependencies: W28 PASS; retain W27 multiselect foundation.
+- Implementation tasks: add validated configurable concurrency; clarify `Ready` as pending/ready-to-upload; show per-file Ready/Uploading/Processing/Completed/Failed; preserve per-file cancel/retry/remove/project_id; keep unique identity/idempotent retry; prove browser File and server request streams remain bounded before increasing concurrency.
+- Relevant files/modules: `dashboard.html`; `dashboard/app.py`; settings/config; upload tests; `tests/e2e/capture_multifile_upload.py`.
+- Acceptance criteria: default 4 active; configured 6 yields at most 6; six fixtures selected together; one failed/cancelled request does not block others; retry creates no duplicate destination; project_id is preserved; measured memory remains bounded for concurrent large synthetic fixtures; processing concurrency is unchanged.
+- Required tests: config/unit tests; streamed API upload test; Playwright 6-file batch at 4 and 6; cancel/retry/failure/project tests; bounded-memory check.
+- Validation commands: focused upload tests; `capture_multifile_upload.py`; synthetic memory probe; inline-JS syntax check.
+- Expected artifacts: upload concurrency/API report, Playwright report, memory measurement.
+- Recovery/fallback: if profiling shows buffering, retain concurrency 2 and fix/verify streaming first; do not relax memory assertions.
+
+### W31 - Documentation V2 regeneration vs media reprocessing
+- Status: PENDING
+- Objective: expose separate video-detail actions for Documentation Synthesis V2 regeneration and full video reprocessing.
+- Dependencies: W28 PASS; existing Docs V2 pipeline/evidence formats.
+- Implementation tasks: rename detail actions; wire `Regenerate Documentation` to V2 from saved transcript/OCR/frame mapping/evidence; wire `Reprocess Video` to media pipeline and then docs; expose user-level states/errors; reject duplicate in-flight generation.
+- Relevant files/modules: dashboard detail modal/API; `documentation/regenerate_v2.py`; `documentation/pipeline_v2.py`; media-processing pipeline and Docs V2 tests.
+- Acceptance criteria: both actions are distinct and invokable from video detail; docs-only regeneration does not invoke FFmpeg/Whisper/OCR/vision when evidence exists; reprocess explicitly runs media evidence generation; latest V2 output is visibly shown; no duplicate documentation stack.
+- Required tests: unit/integration spies prohibit upstream media work in regeneration; V2 pipeline invocation; Playwright action separation/output.
+- Validation commands: Docs V2 regenerate/grounding/real-flow tests; dashboard API tests; video-detail docs Playwright.
+- Expected artifacts: regeneration/reprocess report and generated synthetic doc fixture.
+- Recovery/fallback: retain legacy step-edit API for compatibility, but never label legacy regeneration as V2.
+
+### W32 - Documentation version history and idempotency
+- Status: PENDING
+- Objective: persist documentation provenance/version metadata and safely preserve previous outputs.
+- Dependencies: W31 PASS.
+- Implementation tasks: store documentation_version, pipeline_version, generated_at, source_video_id/evidence references, status, previous-version relation; archive prior output; expose current/history/restore-or-select; deduplicate retries and publish only complete good versions.
+- Relevant files/modules: documentation writers/output store; `documentation/evidence.py`; dashboard docs API/modal; version tests.
+- Acceptance criteria: changed evidence/pipeline produces a new version; identical retry is idempotent; old versions remain viewable/selectable; failed generation cannot replace last-good output; provenance references resolve.
+- Required tests: version create/list/select/restore, identical request idempotency, failed generation preservation, provenance, Playwright current/previous version flow.
+- Validation commands: Docs V2 version/regenerate tests; integration suite; video detail documentation Playwright.
+- Expected artifacts: version manifest fixture and API/browser reports.
+- Recovery/fallback: snapshot outputs atomically; if restoring risks evidence corruption, support read-only prior-version viewing first.
+
+### W33 - User-level states and duration metrics
+- Status: PENDING
+- Objective: expose clear video/job states and record useful upload/media/docs/end-to-end timings.
+- Dependencies: W29-W32 PASS.
+- Implementation tasks: map states to READY, UPLOADING, QUEUED, PROCESSING_MEDIA, GENERATING_DOCUMENTATION, COMPLETED, FAILED, CANCEL_REQUESTED, CANCELLED; retain internal chunk hiding; persist upload, media, documentation and total durations in existing records; show concise state/timings in video detail/list.
+- Relevant files/modules: job/session records, dashboard status and metrics APIs/templates, docs version manifest.
+- Acceptance criteria: transitions and actions are scoped to one logical video/job; no cancel on completed/finalized jobs; timing survives reload and upload/media concurrency remain separate.
+- Required tests: state transition unit tests; timing persistence/API integration; Playwright state/action visibility.
+- Validation commands: focused state/metrics tests; video detail docs Playwright; host dashboard smoke.
+- Expected artifacts: state/timing integration report.
+- Recovery/fallback: derive UI from persisted job/session state; keep metrics minimal, no second observability service.
+
+### W34 - P0 acceptance matrix and final readiness
+- Status: PENDING
+- Objective: validate all requested P0 scope through UI/API/unit/host and applicable Docker gates; commit and sync final plan.
+- Dependencies: W29-W33 PASS; W23 PASS or justified external ENV_BLOCKED.
+- Implementation tasks: run required matrices, fix within two distinct root-cause attempts, update stage evidence, restart actual services and compare served revision with HEAD/remote.
+- Relevant files/modules: changed source/tests, canonical plan, gate runner/artifacts, Docker gate.
+- Acceptance criteria: P0 features usable in real UI; all Global Definition of Done items pass; remote equals HEAD and tree clean; no deployment.
+- Required tests: unit/integration; capture mobile/playlist; six-file concurrency at 4/6; docs detail/version Playwright; host E2E; Docker/heavy gate.
+- Validation commands: focused tests; `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`; Docker/heavy only if RAM gate permits; `git diff --check`; Git status/remote.
+- Expected artifacts: final test reports, memory measurement, docs history report, plan evidence.
+- Recovery/fallback: continue independent stages after failures; only genuine external constraints are ENV_BLOCKED; never accept fixed-but-not-rerun.
 
 ### W4 - Mobile MediaRecorder
 - Status: PASS
@@ -401,7 +487,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 
 ## Global Definition of Done
 
-Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access works over HTTPS with camera and upload; mobile capture sends 10-30 second acknowledged fragments and bounded offline retry; server creates ~10-15 minute processing chunks; playlist detection confirms titles across frames and creates reviewable logical videos independent of physical boundaries; logical videos use existing Videos/Date/Docs pipeline; cancellation, crop, audio-missing, late transcript and advisory GC work. Every user-facing feature has a passing main-journal Playwright report. Required unit/integration/host gates pass; Docker/heavy gates pass or have a justified environment-only blocker. Plan, implementation and tests are committed and remote-synchronized; worktree clean. No deployment.
+Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access works over HTTPS with camera and upload; mobile capture sends 10-30 second acknowledged fragments and bounded offline retry; server creates ~10-15 minute processing chunks; playlist detection confirms titles across frames and creates reviewable logical videos independent of physical boundaries; logical videos use existing Videos/Date/Docs pipeline; cancellation, crop, audio-missing, late transcript and advisory GC work. Bulk upload supports 4 by default / 6 maximum without whole-file RAM buffering. Video detail exposes distinct Regenerate Documentation (Docs V2 from saved evidence) and Reprocess Video actions. Documentation versions preserve prior outputs and provenance, repeated generation is idempotent, and current/previous versions are viewable. User-level states and upload/media/docs/total timings persist. Every user-facing feature has a passing real-UI Playwright report. Required unit/integration/host gates pass; Docker/heavy gates pass or have a justified environment-only blocker. Plan, implementation and tests are committed and remote-synchronized; worktree clean. No deployment.
 
 ## Test Matrix
 
@@ -414,6 +500,11 @@ Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access work
 | PLAYWRIGHT | Videos -> New Recording, preview, modes, timer, fragment ACK/progress, stop | W3-W5/W21 | PASS; 51/51 capture checks and 8/8 mobile layout checks at 390x844 |
 | MOBILE/LAN E2E | same-Wi-Fi HTTPS origin, ONLINE health, camera preview, recording, fragment upload | W25 | PASS; 16/16 previously, local CA trust required on phone |
 | PLAYWRIGHT | offline retry/buffer warning, local-copy OFF default, cancellation controls | W7-W8/W21 | PASS; offline/cancellation synthetic journeys |
+| UNIT/INTEGRATION | upload concurrency default/max, bounded streaming memory, unique retry/idempotency, project retention, cancel one while others continue | W30 | PENDING |
+| UNIT/INTEGRATION | documentation regeneration idempotency, no media reprocessing, versions/provenance/last-good preservation | W31-W32 | PENDING |
+| UNIT/INTEGRATION | video state transitions and upload/media/docs/end-to-end timing persistence | W33 | PENDING |
+| PLAYWRIGHT | six-file multiselect; default 4/configured 6 active; per-file cancel/retry; UI state and project_id | W30/W34 | PENDING |
+| PLAYWRIGHT | detail: Regenerate Documentation vs Reprocess Video; latest V2 output/current/history and prior-version preservation | W31-W34 | PENDING |
 | PLAYWRIGHT | crop, playlist Session1->Session2, low confidence, review rename/date/split/merge/confirm | W9-W15/W21 | PASS; crop 5/5, playlist 18/18 after serialized manifest mutation fix |
 | PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PASS; audio/transcript, logical Videos documentation action, GC review UI and Date sort exercised |
 | HOST E2E | dashboard critical path, Projects, Videos Date sorting, no browser errors | W2/W22 | PASS after UI work, 31.29s |
@@ -430,10 +521,12 @@ Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access work
 - Existing capture modal controls are not proof of required Videos entry or playlist usability.
 - LAN camera capture requires HTTPS and a phone-trusted certificate; untrusted self-signed TLS will not grant camera access.
 - Norton Web/Mail Shield replaces locally served certificates; host trust checks are explicitly skipped there. The generated CA/server chain is validated offline; the phone must trust the CA once.
+- Concurrent browser uploads are bounded by configuration; verify Werkzeug disk-spooling and measured memory before raising the current limit.
+- Documentation V2 currently writes stable output paths; version archives must be atomic and must keep the last-good current output if synthesis fails.
 
 ## Model / Executor Policy
 
-Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/DeepSeek Flash, then local Ollama/DeepSeek. Do not choose DeepSeek Pro for routine coding. GPT/Claude/Codex are not routine implementers when a configured approved worker is callable. Do not expose credentials. Before code work inspect current router/provider availability; if no approved executor is callable, record the evidence and use the lowest permitted available fallback. No nested agents unless the repository's approved GLM routing explicitly requires delegation.
+Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/DeepSeek Flash, then local Ollama/DeepSeek. Do not choose DeepSeek Pro for routine coding. GPT/Claude/Codex are not routine implementers when a configured approved worker is callable. At baseline, `opencode models` exposed `opencode-go/glm-5.3-flash`; use that GLM route for routine code. Do not expose credentials. If GLM invocation fails, record only the failure class and use the stated fallback. No nested agents unless the repository's approved GLM routing explicitly requires delegation.
 
 ## Progress Log
 
@@ -462,10 +555,11 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: W24 PASS. Implementation, tests, reports, canonical plan and phone UAT guide committed; code/report commit `01c3b55` is pushed and remote SHA matched. This final plan checkpoint records W23 as the only environment blocker (aggregate RAM below enforced threshold); standalone Docker E2E passed.
 - 2026-10-16: UAT reopened W3/W21/W22/W24 and added W27. HEAD and remote were both `91513caa`. Process inspection found stale repo Python server on 5001 (started Oct 15 before later commits) and desktop port 5000 served a separate Docker image built from `C:\Dev\Zo\whisper-zmi-docker`; its HTML lacks New Recording. Current template has inline HTML/JS but no cache/build identity, and its upload input lacked `multiple` and uploads serialized after clearing the queue. No service worker is registered. Preserve Docker's existing data bind while rebuilding from this repository; make both browser origins report one build identity.
 - 2026-10-16: W27 accepted. Rebuilt Docker port 5000 from this repository without changing its user-data bind; restarted current-repo LAN HTTPS server on 5001. Desktop + 390x844 Playwright verified latest revision, matching inline JS, no stale cache/SW, project selector, four-file selection, queue/drop/remove, concurrency 2, independent failure/cancel/retry, project_id, and no chunk rows. Mobile layout passed; host E2E rerun passed in 26.77s after inspecting and retrying one transient `ERR_CONNECTION_RESET`. Initial E2E harness issues were corrected and rerun. Final commit/push and post-checkpoint served-build verification complete; W3/W21/W22/W24/W27 PASS; W23 remains the documented RAM-only blocker.
+- 2026-10-16: New P0 scope opened in the same plan. Baseline HEAD/remote `6bafdef476c70753c99a4f5a0112b1dee06eb36f`, clean tree. Current bulk upload is fixed at concurrency 2, sends the browser File via FormData, and server uses Werkzeug request.files then file.save; no JavaScript whole-file arrayBuffer path. Video detail's “Regenerate” calls legacy `regenerate_from_steps`, separate V2 CLI/API generation exists, and version-history/detail reprocess UI is not yet exposed. Current Videos API has 13 user rows (11 COMPLETED, 2 QUEUED); staging has 3 distinct MP4s. Plan W28-W34 added before implementation. OpenCode exposes `opencode-go/glm-5.3-flash`; use it as primary coding executor.
 
 ## Final Delivery Checklist
 
-- [x] W0-W27 statuses and evidence current
+- [ ] W0-W34 statuses and evidence current
 - [x] User-level capture jobs hide physical chunks/fragments and synthetic sessions; project ownership and session cancellation pass mobile Playwright
 - [x] Camera preview, playlist review and mobile layout pass synthetic 390x844 Playwright; real-device procedure documented
 - [x] Same-Wi-Fi phone opens HTTPS, reports ONLINE, completes camera capture and fragment upload
