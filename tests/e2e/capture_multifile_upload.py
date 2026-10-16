@@ -98,7 +98,7 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         check(f"{url}_capture_project_selector", bool(project_name), str(project_name))
         project_before_title = page.locator("#captureProject").evaluate("el => el.getBoundingClientRect().top < document.querySelector('#captureTitle').getBoundingClientRect().top")
         check(f"{url}_project_precedes_title", project_before_title)
-        page.locator("#captureModal .capture-modal").evaluate("el => el.classList.add('hidden')")
+        page.locator("#captureModal").evaluate("el => el.classList.add('hidden')")
 
         page.locator("#uploadProject").select_option(label=project.inner_text())
         is_multiple = page.locator("#fileInput").evaluate("el => el.multiple")
@@ -139,7 +139,7 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         requests = page.evaluate("window.__uploadHarness.requests")
         carries_project = bool(project_name) and all(row["projectId"] == project_name for row in requests)
         check(f"{url}_each_file_keeps_selected_project", carries_project, json.dumps(requests))
-        check(f"{url}_one_file_failure_does_not_block_batch", page.locator('[data-upload-id]').filter(has_text="ok-one.mp4").inner_text().find("Uploaded") >= 0 and page.locator('[data-upload-id]').filter(has_text="fail-first.mp4").inner_text().find("Uploaded") >= 0, page.locator("#uploadQueue").inner_text())
+        check(f"{url}_one_file_failure_does_not_block_batch", page.locator('[data-upload-id]').filter(has_text="ok-one.mp4").inner_text().find("OK ") >= 0 and page.locator('[data-upload-id]').filter(has_text="fail-first.mp4").inner_text().find("OK ") >= 0, page.locator("#uploadQueue").inner_text())
         videos_text = page.locator("#filesList").inner_text()
         check(f"{url}_no_raw_chunk_rows", "chunk-000000" not in videos_text and "fragment-000001" not in videos_text)
         check(f"{url}_no_browser_errors", not errors, " | ".join(errors))
