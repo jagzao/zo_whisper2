@@ -67,6 +67,7 @@ from transcript_pipeline.security import (
     SecurityError,
 )
 from transcript_pipeline.settings import SETTINGS
+from transcript_pipeline.processing_worker import ProcessingJobStore, ProcessingWorker
 
 load_env()
 
@@ -117,10 +118,33 @@ _LAN_HOST_ALLOWLIST: set[str] = set()
 if SETTINGS.lan_access:
     _LAN_HOST_ALLOWLIST.update(h.lower() for h in SETTINGS.lan_hosts)
     _LAN_HOST_ALLOWLIST.update(lan_access.local_ipv4_addresses())
-# Generated fresh per process, never persisted, never logged — the frontend
-# reads it from the page it was served (see index()) and echoes it back on
-# every mutating request via X-Local-Dashboard-Token.
-_DASHBOARD_TOKEN = secrets.token_urlsafe(32)
+# Shared across application workers and restarts, never logged — the frontend
+# reads it from the page it was served and echoes it on mutations. Host,
+# Origin and private-client checks remain independent authorization guards.
+def _load_dashboard_token(data_root: Path = DATA_ROOT) -> str:
+    """Share the anti-CSRF token across workers and dashboard restarts."""
+    configured = os.environ.get("WHISPER_DASHBOARD_TOKEN", "").strip()
+    if configured:
+        return configured
+    token_path = data_root / ".whisper" / "dashboard-token"
+    token_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        with token_path.open("x", encoding="ascii") as token_file:
+            token = secrets.token_urlsafe(32)
+            token_file.write(token)
+            token_file.flush()
+            os.fsync(token_file.fileno())
+            return token
+    except FileExistsError:
+        for _ in range(20):
+            token = token_path.read_text(encoding="ascii").strip()
+            if token:
+                return token
+            time.sleep(0.01)
+        raise RuntimeError("Dashboard token file is empty")
+
+
+_DASHBOARD_TOKEN = _load_dashboard_token()
 BUILD_REVISION = os.environ.get("WHISPER_BUILD_REVISION", "").strip()
 if not BUILD_REVISION:
     try:
@@ -147,6 +171,57 @@ _reprocess_inflight: set[str] = set()
 _capture_service: CaptureService | None = None
 _capture_service_root: Path | None = None
 _capture_service_lock = threading.Lock()
+_processing_worker: ProcessingWorker | None = None
+_processing_worker_root: Path | None = None
+_processing_worker_lock = threading.Lock()
+
+
+def _has_pending_processing() -> bool:
+    from transcript_pipeline.file_tracker import FileTracker
+
+    tracker = FileTracker(db_path=PROCESSED_DB)
+    for base in (VIDEO_COMPRESS, AUDIO_BASE, VIDEOS_BASE):
+        if not base.exists():
+            continue
+        for path in base.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in SUPPORTED_MEDIA:
+                continue
+            if base == VIDEOS_BASE and "live_capture" in path.relative_to(base).parts:
+                continue
+            if base == VIDEO_COMPRESS:
+                return True
+            if not tracker.is_file_processed(path):
+                return True
+    return False
+
+
+def _execute_processing_job(mode: str, cancel_check=lambda: False) -> None:
+    global _run_state
+    with _run_lock:
+        if not _run_state.get("running"):
+            _run_state.update(running=True, mode=mode, started_at=datetime.now().isoformat(),
+                              finished_at=None, error=None, log_tail="", stage="upload", stages=_fresh_stages())
+    try:
+        _run_pipeline(mode, cancel_check=cancel_check)
+    finally:
+        if _run_state.get("running"):
+            _run_state["running"] = False
+            _run_state["finished_at"] = datetime.now().isoformat()
+
+
+def _get_processing_worker() -> ProcessingWorker:
+    global _processing_worker, _processing_worker_root
+    root = ROOT.resolve()
+    with _processing_worker_lock:
+        if _processing_worker is None or _processing_worker_root != root:
+            store = ProcessingJobStore(root)
+            _processing_worker = ProcessingWorker(
+                store, _execute_processing_job, timezone_name=SETTINGS.processing_timezone,
+                scan_pending=lambda: not _run_state.get("running") and _has_pending_processing(),
+                executor_accepts_cancel=True,
+            )
+            _processing_worker_root = root
+        return _processing_worker
 
 
 def _get_capture_service() -> CaptureService:
@@ -189,7 +264,7 @@ def _enforce_local_only() -> Any:
         try:
             remote = ipaddress.ip_address(request.remote_addr or "")
         except ValueError:
-            return jsonify({"ok": False, "error": "Forbidden"}), 403
+            return jsonify({"ok": False, "error": "This dashboard is available only on the local network."}), 403
         if not remote.is_loopback and not remote.is_private:
             logger.warning("[SECURITY] Rejected non-private LAN client: %s", remote)
             return jsonify({"ok": False, "error": "Forbidden"}), 403
@@ -197,18 +272,18 @@ def _enforce_local_only() -> Any:
     host = _hostname_only(request.host or "")
     if host not in allowed:
         logger.warning("[SECURITY] Rejected request with non-local Host: %s", request.host)
-        return jsonify({"ok": False, "error": "Forbidden"}), 403
+        return jsonify({"ok": False, "error": "This dashboard host is not authorized."}), 403
 
     if request.method in _MUTATING_METHODS:
         origin = request.headers.get("Origin")
         if origin and (urlparse(origin).hostname or "").lower() not in allowed:
             logger.warning("[SECURITY] Rejected %s with non-local Origin: %s", request.method, origin)
-            return jsonify({"ok": False, "error": "Forbidden"}), 403
+            return jsonify({"ok": False, "error": "This request origin is not authorized."}), 403
 
         token = request.headers.get("X-Local-Dashboard-Token", "")
         if not secrets.compare_digest(token, _DASHBOARD_TOKEN):
             logger.warning("[SECURITY] Rejected %s with missing/invalid dashboard token", request.method)
-            return jsonify({"ok": False, "error": "Forbidden"}), 403
+            return jsonify({"ok": False, "error": "Dashboard authorization expired. Reload Whisper and try again."}), 403
 
     return None
 
@@ -811,7 +886,18 @@ def prevent_stale_browser_assets(response) -> Any:
 
 @app.route("/api/status")
 def api_status() -> Any:
-    return jsonify(_run_state)
+    state = dict(_run_state)
+    state["worker"] = _get_processing_worker().status()
+    return jsonify(state)
+
+
+@app.route("/api/worker/jobs/<job_id>/cancel", methods=["POST"])
+def api_worker_cancel_job(job_id: str) -> Any:
+    store = _get_processing_worker().store
+    if not store.cancel(job_id):
+        return jsonify({"ok": False, "error": "Processing job was not found."}), 404
+    job = next(item for item in store.list_jobs() if item["id"] == job_id)
+    return jsonify({"ok": True, "state": job["status"]})
 
 
 @app.route("/api/health")
@@ -1175,9 +1261,13 @@ def api_run(mode: str) -> Any:
     if mode not in ("full", "compress", "transcribe"):
         return jsonify({"ok": False, "error": "Invalid mode"}), 400
 
+    worker = _get_processing_worker()
     with _run_lock:
         if _run_state["running"]:
             return jsonify({"ok": False, "error": "A run is already in progress"}), 409
+        if any(job.get("status") in {"QUEUED", "PENDING", "ACTIVE", "CANCEL_REQUESTED"}
+               for job in worker.store.list_jobs()):
+            return jsonify({"ok": False, "error": "A processing job is already queued or active."}), 409
         _run_state.update(
             {
                 "running": True,
@@ -1190,8 +1280,17 @@ def api_run(mode: str) -> Any:
                 "stages": _fresh_stages(),
             }
         )
-    threading.Thread(target=_run_pipeline, args=(mode,), daemon=True).start()
-    return jsonify({"ok": True, "mode": mode})
+    try:
+        job = worker.store.enqueue(mode)
+        if app.config.get("TESTING"):
+            worker.run_pending_once()
+        else:
+            worker.start()
+    except Exception:
+        _run_state.update(running=False, error="Could not queue processing job")
+        logger.exception("[WORKER] Could not queue Run Full job")
+        return jsonify({"ok": False, "error": "Whisper could not queue this run. Check server storage and retry."}), 500
+    return jsonify({"ok": True, "mode": mode, "job_id": job["id"], "state": job["status"]})
 
 
 @app.route("/api/logs")
@@ -2176,7 +2275,11 @@ def api_metrics() -> Any:
 
 
 # ── Pipeline runner ─────────────────────────────────────────────────────
-def _run_pipeline(mode: str) -> None:
+class _ProcessingCancelled(Exception):
+    pass
+
+
+def _run_pipeline(mode: str, *, cancel_check=lambda: False) -> None:
     global _run_state
     logger.info("[RUN] Starting pipeline mode=%s", mode)
 
@@ -2200,18 +2303,26 @@ def _run_pipeline(mode: str) -> None:
         )
         assert process.stdout is not None
         for line in process.stdout:
+            if cancel_check():
+                process.terminate()
+                process.wait(timeout=10)
+                raise _ProcessingCancelled("Processing cancelled by request")
             append_log(line.rstrip("\n"))
         process.wait()
         return process.returncode
 
     try:
         if mode in ("full", "compress"):
+            if cancel_check():
+                raise _ProcessingCancelled("Processing cancelled by request")
             append_log("STEP 1: Compressing videos...")
             returncode = run_streaming([sys.executable, "-m", "transcript_pipeline.media.compressor"])
             if returncode != 0:
                 append_log(f"transcript_pipeline.media.compressor exited with code {returncode}")
 
         if mode in ("full", "transcribe"):
+            if cancel_check():
+                raise _ProcessingCancelled("Processing cancelled by request")
             append_log("STEP 2: Organization + transcription...")
             returncode = run_streaming([sys.executable, "-m", "transcript_pipeline.pipeline.master"])
             if returncode != 0:
@@ -2219,6 +2330,10 @@ def _run_pipeline(mode: str) -> None:
 
         append_log("PROCESS FINISHED")
         _mark_all_reached_completed()
+    except _ProcessingCancelled as e:
+        logger.info("[RUN] %s", e)
+        _run_state["error"] = None
+        _run_state["log_tail"] += f"{e}\n"
     except Exception as e:
         logger.error("[RUN] Error: %s", e)
         _run_state["error"] = str(e)
@@ -2255,8 +2370,9 @@ def main() -> None:
     # when ZMI_CONTAINER_MODE=true (container-internal bind; Compose publishes
     # the port on host loopback only). With LAN mode on, the owner asked for
     # same-Wi-Fi access, so the server binds all interfaces — the Host/Origin
-    # allowlist and per-process token still apply to every request.
+    # allowlist and shared dashboard token still apply to every request.
     _ensure_folders()
+    _get_processing_worker().start()
     host = "0.0.0.0" if SETTINGS.lan_access else SETTINGS.dashboard_host
     ssl_context = None
     if SETTINGS.dashboard_cert_file and SETTINGS.dashboard_key_file:

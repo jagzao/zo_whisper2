@@ -28,7 +28,7 @@ def _clean_env(monkeypatch):
             "RETENTION_DAYS", "DASHBOARD_HOST", "DASHBOARD_PORT", "UPLOAD_MAX_MB", "WHISPER_UPLOAD_CONCURRENCY",
             "ICECREAM_MUSIC", "ICECREAM_VIDEOS", "ZMI_DATA_ROOT", "ZMI_CONFIG_ENV",
             "ZMI_CONTAINER_MODE", "ZMI_ALLOWED_EXPORT_ROOTS",
-            "ZMI_LAN_ACCESS", "ZMI_LAN_HOSTS", "WHISPER_UPLOAD_CONCURRENCY",
+            "ZMI_LAN_ACCESS", "ZMI_LAN_HOSTS", "WHISPER_UPLOAD_CONCURRENCY", "WHISPER_TIMEZONE",
         }:
             monkeypatch.delenv(key, raising=False)
 
@@ -41,6 +41,18 @@ def test_defaults_are_privacy_conservative():
     assert s.allow_image_upload is False
     assert s.retention_days == 0
     assert s.upload_concurrency == 4
+    assert s.processing_timezone == "America/Mexico_City"
+
+
+def test_processing_timezone_is_configurable(monkeypatch):
+    monkeypatch.setenv("WHISPER_TIMEZONE", "America/Los_Angeles")
+    assert Settings.from_env().processing_timezone == "America/Los_Angeles"
+
+
+def test_invalid_processing_timezone_rejected(monkeypatch):
+    monkeypatch.setenv("WHISPER_TIMEZONE", "Not/A_Timezone")
+    with pytest.raises(ConfigurationError):
+        Settings.from_env()
 
 
 @pytest.mark.parametrize("value", ["1", "4", "6"])

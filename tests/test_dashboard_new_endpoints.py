@@ -20,6 +20,16 @@ from transcript_pipeline.security import MediaRoot, SafePathResolver
 AUTH_HEADERS = {"X-Local-Dashboard-Token": "test-dashboard-token"}
 
 
+@pytest.fixture(autouse=True)
+def reset_pipeline_run_state():
+    dashboard_app._run_state.update(
+        running=False, mode=None, started_at=None, finished_at=None, error=None,
+        log_tail="", stage=None, stages=dashboard_app._fresh_stages(),
+    )
+    yield
+    dashboard_app._run_state.update(running=False, mode=None)
+
+
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     audio = tmp_path / "audio"
@@ -129,7 +139,7 @@ def test_documentation_endpoint_returns_manual_and_manifest(client, env):
     resp = client.get(f"/api/documentation{q(video_id)}")
     data = resp.get_json()
 
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.get_json()
     assert data["ok"] is True
     assert "Click New Project" in data["manual_markdown"]
     assert data["manifest"]["procedures"][0]["id"] == "step-0001"
@@ -483,7 +493,7 @@ def test_run_rejects_second_run_while_one_in_progress(client, env, monkeypatch):
     monkeypatch.setattr(dashboard_app.subprocess, "Popen", slow_popen)
 
     first = client.post("/api/run/transcribe", headers=AUTH_HEADERS)
-    assert first.status_code == 200
+    assert first.status_code == 200, first.get_json()
 
     second = client.post("/api/run/transcribe", headers=AUTH_HEADERS)
     assert second.status_code == 409

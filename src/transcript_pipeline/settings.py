@@ -157,6 +157,7 @@ class Settings:
     dashboard_cert_file: Path | None = None
     dashboard_key_file: Path | None = None
     upload_concurrency: int = 4
+    processing_timezone: str = "America/Mexico_City"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -192,6 +193,7 @@ class Settings:
             dashboard_port=int(os.getenv("DASHBOARD_PORT", "5000")),
             upload_max_mb=int(os.getenv("UPLOAD_MAX_MB", "500")),
             upload_concurrency=int(os.getenv("WHISPER_UPLOAD_CONCURRENCY", "4")),
+            processing_timezone=os.getenv("WHISPER_TIMEZONE", "America/Mexico_City").strip() or "America/Mexico_City",
             icecream_music=Path(v) if (v := os.getenv("ICECREAM_MUSIC")) else None,
             icecream_videos=Path(v) if (v := os.getenv("ICECREAM_VIDEOS")) else None,
             container_mode=_bool("ZMI_CONTAINER_MODE", False),
@@ -254,6 +256,11 @@ class Settings:
             raise ConfigurationError(f"UPLOAD_MAX_MB must be positive: {self.upload_max_mb}")
         if not 1 <= self.upload_concurrency <= 6:
             raise ConfigurationError("WHISPER_UPLOAD_CONCURRENCY must be between 1 and 6")
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+        try:
+            ZoneInfo(self.processing_timezone)
+        except ZoneInfoNotFoundError as exc:
+            raise ConfigurationError(f"WHISPER_TIMEZONE is not a valid IANA timezone: {self.processing_timezone!r}") from exc
 
 
 SETTINGS = Settings.from_env()

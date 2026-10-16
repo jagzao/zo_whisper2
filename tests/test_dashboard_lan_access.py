@@ -9,6 +9,7 @@ hosts are accepted while the per-process token still gates mutating requests.
 from __future__ import annotations
 
 import dataclasses
+import time
 
 import pytest
 
@@ -101,6 +102,71 @@ def test_lan_mode_accepts_private_remote_client(client, monkeypatch):
     assert resp.status_code == 200
 
 
+def test_authorized_lan_run_full_starts_pipeline(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "_run_state", {
+        "running": False, "mode": None, "started_at": None, "finished_at": None,
+        "error": None, "log_tail": "", "stage": None, "stages": {},
+    })
+    monkeypatch.setattr(dashboard_app, "SETTINGS", dataclasses.replace(SETTINGS, lan_access=True))
+    monkeypatch.setattr(dashboard_app, "_LAN_HOST_ALLOWLIST", {"192.168.1.50"})
+    import threading
+    started = []
+    done = threading.Event()
+    def run(mode, **_kwargs):
+        started.append(mode)
+        done.set()
+    monkeypatch.setattr(dashboard_app, "_run_pipeline", run)
+    response = client.post(
+        "/api/run/full",
+        headers={**AUTH_HEADERS, "Host": "192.168.1.50", "Origin": "https://192.168.1.50:5001"},
+        environ_overrides={"REMOTE_ADDR": "192.168.1.22"},
+    )
+    assert response.status_code == 200
+    assert response.get_json()["ok"] is True
+    assert response.get_json()["mode"] == "full"
+    assert done.wait(1)
+    assert started == ["full"]
+    deadline = time.monotonic() + 1
+    while time.monotonic() < deadline and dashboard_app._run_state["running"]:
+        time.sleep(0.005)
+    assert dashboard_app._run_state["running"] is False
+
+
+def test_lan_run_full_still_rejects_missing_token(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "SETTINGS", dataclasses.replace(SETTINGS, lan_access=True))
+    monkeypatch.setattr(dashboard_app, "_LAN_HOST_ALLOWLIST", {"192.168.1.50"})
+    response = client.post(
+        "/api/run/full",
+        headers={"Host": "192.168.1.50", "Origin": "https://192.168.1.50:5001"},
+        environ_overrides={"REMOTE_ADDR": "192.168.1.22"},
+    )
+    assert response.status_code == 403
+    assert "Reload Whisper" in response.get_json()["error"]
+
+
+def test_worker_status_and_cancel_endpoint(client, env):
+    from transcript_pipeline.dashboard import app as dashboard_app
+
+    status = client.get("/api/status").get_json()["worker"]
+    assert status["state"] == "STOPPED"
+    assert {"pending_jobs", "active_jobs", "concurrency_limit", "next_scan", "last_scan"} <= set(status)
+    worker = dashboard_app._get_processing_worker()
+    job = worker.store.enqueue("full")
+    response = client.post(f"/api/worker/jobs/{job['id']}/cancel", headers=AUTH_HEADERS)
+    assert response.status_code == 200
+    assert response.get_json()["state"] == "CANCELLED"
+    repeated = client.post(f"/api/worker/jobs/{job['id']}/cancel", headers=AUTH_HEADERS)
+    assert repeated.status_code == 200
+    assert repeated.get_json()["state"] == "CANCELLED"
+
+
+def test_dashboard_token_is_shared_across_process_restarts(tmp_path):
+    first = dashboard_app._load_dashboard_token(tmp_path)
+    second = dashboard_app._load_dashboard_token(tmp_path)
+    assert first == second
+    assert len(first) >= 32
+
+
 def test_unrelated_host_still_rejected_with_lan_allowlist(client, monkeypatch):
     monkeypatch.setattr(dashboard_app, "_LAN_HOST_ALLOWLIST", {"192.168.1.50"})
     assert client.get("/api/status", headers={"Host": "evil.example.com"}).status_code == 403
@@ -186,7 +252,9 @@ def _capture_app_run(monkeypatch, settings):
 
 
 def test_main_binds_loopback_when_lan_off(monkeypatch):
-    captured = _capture_app_run(monkeypatch, dataclasses.replace(SETTINGS, lan_access=False))
+    captured = _capture_app_run(monkeypatch, dataclasses.replace(
+        SETTINGS, lan_access=False, dashboard_cert_file=None, dashboard_key_file=None,
+    ))
     assert captured["host"] == SETTINGS.dashboard_host
     assert captured["ssl_context"] is None
 

@@ -21,6 +21,7 @@ projects.json
 replacements.txt
 
 # ── Datos de entrada (archivos de usuario, no código) ───────────────────────
+.whisper/
 audio/
 Videos/
 Video_compress/

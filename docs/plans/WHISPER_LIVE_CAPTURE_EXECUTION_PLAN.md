@@ -514,11 +514,13 @@ Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access work
 | UNIT/INTEGRATION | upload concurrency default/max, bounded streaming memory, unique retry/idempotency, project retention, cancel one while others continue | W30 | PASS; 109 focused tests plus 6x24MiB memory probe |
 | UNIT/INTEGRATION | documentation regeneration idempotency, no media reprocessing, versions/provenance/last-good preservation | W31-W32 | PASS; 109-test focused matrix |
 | UNIT/INTEGRATION | video state transitions and upload/media/docs/end-to-end timing persistence | W33 | PASS; state/API/metric tests |
-| PLAYWRIGHT | six-file multiselect; default 4/configured 6 active; per-file cancel/retry; UI state and project_id | W30/W34 | PENDING |
+| PLAYWRIGHT | six-file multiselect; default 4/configured 6 active; per-file cancel/retry; UI state and project_id | W30/W34 | PASS; default 4/configured 6 served-build journeys |
 | PLAYWRIGHT | detail: Regenerate Documentation vs Reprocess Video; latest V2 output/current/history and prior-version preservation | W31-W34 | PASS; six synthetic detail checks |
 | PLAYWRIGHT | crop, playlist Session1->Session2, low confidence, review rename/date/split/merge/confirm | W9-W15/W21 | PASS; crop 5/5, playlist 18/18 after serialized manifest mutation fix |
 | PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PASS; audio/transcript, logical Videos documentation action, GC review UI and Date sort exercised |
 | HOST E2E | dashboard critical path, Projects, Videos Date sorting, no browser errors | W2/W22 | IN_PROGRESS; final rerun required at current HEAD |
+| UNIT/INTEGRATION | Run Full queueing, shared token, LAN authorization, worker timezone caps, atomic claims, hourly scans, recovery and cancellation | W35-W36 | PASS; 131 focused dashboard/worker/security tests |
+| PLAYWRIGHT | Run Full button, invalid-token rejection, useful error, worker RUNNING/pending/active/limit/scan visibility on desktop and LAN | W35-W36 | PASS; 10/10 synthetic checks against isolated data root |
 | DOCKER/MEDIA | Docker config/build/E2E; synthetic video/audio/OCR title fixtures only | W11-W23 | Current image build PASS; required heavy E2E ENV_BLOCKED at 3.56GiB (<6.0GiB); earlier standalone Docker E2E passed on its earlier revision |
 
 ## Known Risks
@@ -575,7 +577,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 
 ## Final Delivery Checklist
 
-- [x] W0-W34 statuses and evidence current; W23 is the sole ENV_BLOCKED gate
+- [ ] W0-W36 statuses and evidence current; W23 is the prior RAM-only ENV_BLOCKED gate
 - [x] User-level capture jobs hide physical chunks/fragments and synthetic sessions; project ownership and session cancellation pass mobile Playwright
 - [x] Camera preview, playlist review and mobile layout pass synthetic 390x844 Playwright; real-device procedure documented
 - [x] Same-Wi-Fi phone opens HTTPS, reports ONLINE, completes camera capture and fragment upload
@@ -593,21 +595,21 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 ## W35 — Run Full security and UI recovery
 
 - ID: W35
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: make the real Run Full button work from desktop and authorized LAN clients while retaining request authorization and showing actionable errors.
 - Dependencies: W0, W2, W25, W27, W34 PASS.
 - Implementation tasks: trace the browser request through `/api/run/full`; correct token validity across served workers/page reloads without weakening Host/Origin/private-client checks; keep unauthorized mutations rejected; return structured authorization and job-start errors; render HTTP and JSON errors in the dashboard; add real-button Playwright coverage for desktop and authorized LAN plus a negative unauthorized case.
 - Relevant files/modules: `src/transcript_pipeline/dashboard/app.py`, `src/transcript_pipeline/dashboard/templates/dashboard.html`, `tests/test_dashboard_lan_access.py`, `tests/test_dashboard_commands.py`, `tests/e2e/`.
 - Acceptance criteria: Run Full starts once from the real desktop UI and authorized LAN UI; invalid token/host/origin still receives 403; visible errors are useful and never raw HTML/Forbidden; no global security relaxation.
 - Required tests: endpoint token/host/origin cases; Run Full success; desktop and LAN Playwright button click; invalid authorization rejection.
-- Validation commands: targeted pytest files; targeted Playwright; `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`.
+- Validation commands: targeted pytest files; `tests/e2e/run_full_button.py`; `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`.
 - Expected artifacts: Run Full Playwright report and host gate report.
 - Recovery/fallback: inspect actual request headers, response JSON, and server logs; fix one root cause at a time, maximum two distinct repairs per failure; preserve security checks.
 
 ## W36 — Persistent scheduled processing worker
 
 - ID: W36
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: persist pending processing work and automatically scan hourly with timezone-aware day/night concurrency limits, duplicate-safe claims, cancellation and restart/stale recovery.
 - Dependencies: W35 PASS; compatible with W8 cancellation, W20 test matrix and W33 job state/metrics.
 - Implementation tasks: add durable job records and cross-process claim locking; define local timezone/day window 09:00–21:00 concurrency 1 and night window 21:00–09:00 concurrency 3; scan pending work hourly and on startup; claim jobs idempotently; recover stale claims to QUEUED without replaying terminal/cancelled jobs; honor cancellation between stages; ensure upload concurrency remains independent; expose RUNNING, pending/active counts, limit, next/last scan in admin/status UI.
@@ -620,5 +622,5 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 
 ### Progress Log — Run Full and processing worker UAT
 
-- 2026-10-16: W35/W36 opened. Baseline HEAD/remote `1897448c8f8aebeabb10d911afe39ca976f8a08e`, clean worktree. `/api/run/full` UI sends the dashboard token, while middleware requires private client, allowed Host/Origin and a process-random token; multi-process/stale-page token mismatch is a leading hypothesis to verify in browser. No persistent hourly worker for general pending processing jobs was found; existing pipeline execution is only a daemon thread initiated by `/api/run/<mode>`. W35 is IN_PROGRESS; W36 pending W35.
+- 2026-10-16: W35/W36 opened. Baseline HEAD/remote `1897448c8f8aebeabb10d911afe39ca976f8a08e`, clean worktree. `/api/run/full` UI sent the dashboard token, while middleware required private client, allowed Host/Origin and a process-random token. Persistent shared anti-CSRF token now fixes cross-worker/restart mismatch; host/origin/private-client authorization remains active; errors are useful JSON and Run Full queues a durable job. W35 API/security/command tests pass, including authorized LAN Run Full and invalid-token rejection. Real-button Playwright passed on desktop and LAN origins: current build, click/token forwarding, useful errors and worker status; invalid-token POST remained 403 (10/10 checks). First Playwright attempt intercepted the negative request in the success stub; the route was corrected and the full rerun passed. The initial combined test run inherited LAN/certificate settings from `scan_config.env`; the loopback test now clears those values, and 82 focused tests pass. W35 PASS; W36 IN_PROGRESS.
 

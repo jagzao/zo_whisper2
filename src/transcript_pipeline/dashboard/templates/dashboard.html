@@ -799,6 +799,7 @@
         <div class="row" style="margin:0;">
             <span id="serverHealth" class="status pending" title="Backend health">Checking…</span>
             <span id="runStatus" class="status pending">Ready</span>
+            <small id="workerStatus" class="status pending" aria-live="polite">Worker: checking</small>
             <button id="btnRunFull" onclick="run('full')">RUN Full</button>
             <button id="btnRunCompress" onclick="run('compress')">Compress Only</button>
             <button id="btnRunTranscribe" onclick="run('transcribe')">Transcribe Only</button>
@@ -1429,14 +1430,28 @@
         }
 
         async function run(mode) {
-            const res = await fetch(`/api/run/${mode}`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => r.json());
-            if (res.ok) showToast('Pipeline started');
-            else showToast(res.error || 'Error');
-            updateRunStatus();
+            try {
+                const response = await fetch(`/api/run/${mode}`, {
+                    method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }
+                });
+                const res = await response.json().catch(() => ({}));
+                if (!response.ok || !res.ok) {
+                    showToast(res.error || `Could not start pipeline (HTTP ${response.status}).`);
+                    return;
+                }
+                showToast('Pipeline started');
+                updateRunStatus();
+            } catch (error) {
+                showToast('Whisper could not reach the backend. Check the connection and retry.');
+            }
         }
 
         async function updateRunStatus() {
             const status = await api('/api/status');
+            const worker = status.worker || {};
+            const workerEl = document.getElementById('workerStatus');
+            workerEl.textContent = `Worker: ${worker.state || 'UNKNOWN'} · Pending: ${worker.pending_jobs ?? 0} · Active: ${worker.active_jobs ?? 0} · Limit: ${worker.concurrency_limit ?? '?'}`;
+            workerEl.title = `Next scan: ${worker.next_scan || 'starting'}; Last scan: ${worker.last_scan || 'none'}`;
             const el = document.getElementById('runStatus');
             const buttons = ['btnRunFull','btnRunCompress','btnRunTranscribe'];
             buttons.forEach(id => document.getElementById(id).disabled = status.running);
