@@ -153,10 +153,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: if profiling shows buffering, retain concurrency 2 and fix/verify streaming first; do not relax memory assertions.
 
 ### W31 - Documentation V2 regeneration vs media reprocessing
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: expose separate video-detail actions for Documentation Synthesis V2 regeneration and full video reprocessing.
 - Dependencies: W28 PASS; existing Docs V2 pipeline/evidence formats.
-- Implementation tasks: rename detail actions; wire `Regenerate Documentation` to V2 from saved transcript/OCR/frame mapping/evidence; wire `Reprocess Video` to media pipeline and then docs; expose user-level states/errors; reject duplicate in-flight generation.
+- Implementation tasks: rename detail actions; wire `Regenerate Documentation` to V2 from saved transcript/OCR/frame mapping/evidence; wire `Reprocess Video` to forced per-file media pipeline; expose user-level states/errors; reject duplicate in-flight generation.
 - Relevant files/modules: dashboard detail modal/API; `documentation/regenerate_v2.py`; `documentation/pipeline_v2.py`; media-processing pipeline and Docs V2 tests.
 - Acceptance criteria: both actions are distinct and invokable from video detail; docs-only regeneration does not invoke FFmpeg/Whisper/OCR/vision when evidence exists; reprocess explicitly runs media evidence generation; latest V2 output is visibly shown; no duplicate documentation stack.
 - Required tests: unit/integration spies prohibit upstream media work in regeneration; V2 pipeline invocation; Playwright action separation/output.
@@ -165,10 +165,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: retain legacy step-edit API for compatibility, but never label legacy regeneration as V2.
 
 ### W32 - Documentation version history and idempotency
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: persist documentation provenance/version metadata and safely preserve previous outputs.
 - Dependencies: W31 PASS.
-- Implementation tasks: store documentation_version, pipeline_version, generated_at, source_video_id/evidence references, status, previous-version relation; archive prior output; expose current/history/restore-or-select; deduplicate retries and publish only complete good versions.
+- Implementation tasks: store documentation_version, pipeline_version, generated_at, source_video_id/evidence references, status, previous-version relation; archive prior output; expose current/history/read-only selection; deduplicate retries and publish only complete good versions.
 - Relevant files/modules: documentation writers/output store; `documentation/evidence.py`; dashboard docs API/modal; version tests.
 - Acceptance criteria: changed evidence/pipeline produces a new version; identical retry is idempotent; old versions remain viewable/selectable; failed generation cannot replace last-good output; provenance references resolve.
 - Required tests: version create/list/select/restore, identical request idempotency, failed generation preservation, provenance, Playwright current/previous version flow.
@@ -177,11 +177,11 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: snapshot outputs atomically; if restoring risks evidence corruption, support read-only prior-version viewing first.
 
 ### W33 - User-level states and duration metrics
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: expose clear video/job states and record useful upload/media/docs/end-to-end timings.
 - Dependencies: W29-W32 PASS.
 - Implementation tasks: map states to READY, UPLOADING, QUEUED, PROCESSING_MEDIA, GENERATING_DOCUMENTATION, COMPLETED, FAILED, CANCEL_REQUESTED, CANCELLED; retain internal chunk hiding; persist upload, media, documentation and total durations in existing records; show concise state/timings in video detail/list.
-- Relevant files/modules: job/session records, dashboard status and metrics APIs/templates, docs version manifest.
+- Relevant files/modules: `dashboard/app.py`, `dashboard/templates/dashboard.html`, `transcription/processor.py`, `pipeline_metrics.py`, docs version manifest.
 - Acceptance criteria: transitions and actions are scoped to one logical video/job; no cancel on completed/finalized jobs; timing survives reload and upload/media concurrency remain separate.
 - Required tests: state transition unit tests; timing persistence/API integration; Playwright state/action visibility.
 - Validation commands: focused state/metrics tests; video detail docs Playwright; host dashboard smoke.
@@ -559,6 +559,9 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: W27 accepted. Rebuilt Docker port 5000 from this repository without changing its user-data bind; restarted current-repo LAN HTTPS server on 5001. Desktop + 390x844 Playwright verified latest revision, matching inline JS, no stale cache/SW, project selector, four-file selection, queue/drop/remove, concurrency 2, independent failure/cancel/retry, project_id, and no chunk rows. Mobile layout passed; host E2E rerun passed in 26.77s after inspecting and retrying one transient `ERR_CONNECTION_RESET`. Initial E2E harness issues were corrected and rerun. Final commit/push and post-checkpoint served-build verification complete; W3/W21/W22/W24/W27 PASS; W23 remains the documented RAM-only blocker.
 - 2026-10-16: New P0 scope opened in the same plan. Baseline HEAD/remote `6bafdef476c70753c99a4f5a0112b1dee06eb36f`, clean tree. Current bulk upload is fixed at concurrency 2, sends the browser File via FormData, and server uses Werkzeug request.files then file.save; no JavaScript whole-file arrayBuffer path. Video detail's “Regenerate” calls legacy `regenerate_from_steps`, separate V2 CLI/API generation exists, and version-history/detail reprocess UI is not yet exposed. Current Videos API has 13 user rows (11 COMPLETED, 2 QUEUED); staging has 3 distinct MP4s. Plan W28-W34 added before implementation. OpenCode exposes `opencode-go/glm-5.3-flash`; use it as primary coding executor.
 - 2026-10-16: W29 PASS. Ran the 256-test capture/API/Date matrix and six synthetic Playwright journeys against current dashboard; preview/recording stream, fragment ACK/stop drain, 10-30s configuration, chunking, IndexedDB offline reload/retry, playlist Session 1/2 multi-frame confirmation, in-chunk logical boundary, project inheritance, 390x844 layout, cancel/retry and raw-chunk hiding all passed. Evidence in `artifacts/gates/w29-live-capture/`. No real media was opened.
+- 2026-10-16: W30 implementation checkpoint. Added `WHISPER_UPLOAD_CONCURRENCY` (default 4, validated 1-6), server-to-template injection, and clarified queued UI as “Ready to upload · pending”; multiselect Playwright now selects six synthetic fixtures and expects four active requests. Settings tests pass 46/46. First Playwright run against both running origins proves those services are stale: both served build `6bafdef` while HEAD was `d62da1b`, and both stayed at concurrency 2. Thus W30 remains IN_PROGRESS until rebuild/restart and rerun; no claim that fixed code passed.
+- 2026-10-16: W31/W32 implementation checkpoint. Video detail now exposes distinct `Regenerate Documentation` (Docs V2 saved-evidence path) and `Reprocess Video` (forced single-file media pipeline) actions. Added version snapshots, provenance, fingerprint idempotency, last-good rollback, and read-only version selection in the detail UI. Synthetic Docs V2/versioning/dashboard tests pass 104/104; Python compilation and diff checks pass. Browser action/version acceptance remains pending and both stages stay IN_PROGRESS.
+- 2026-10-16: W33 implementation checkpoint. Added persisted upload/media-processing/documentation stage durations and total duration in a hidden Whisper metadata file; API returns user-level states and timings, and detail UI displays them. Synthetic metric persistence, settings, Docs V2 and dashboard API matrix passes 105/105; compile/diff checks pass. Live browser/rebuild acceptance is pending. W30-W33 remain IN_PROGRESS until served-UI acceptance.
 
 ## Final Delivery Checklist
 

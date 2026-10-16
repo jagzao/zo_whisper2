@@ -789,12 +789,13 @@ class SimpleScanProcessor:
 
         logger.info(f"[SAVE] {txt_path.name}")
 
-    def process_file(self, audio_path: Path) -> bool:
+    def process_file(self, audio_path: Path, *, force: bool = False) -> bool:
         """Processes a single file end to end"""
+        stage_started = time.perf_counter()
         capture = self._capture_context(audio_path)
         capture_started = False
         try:
-            if self.tracker.is_file_processed(audio_path):
+            if not force and self.tracker.is_file_processed(audio_path):
                 logger.info(f"[SKIP] Already processed: {audio_path.name}")
                 self.stats["already_processed"] += 1
                 return True
@@ -846,6 +847,15 @@ class SimpleScanProcessor:
             logger.error(f"[ERROR] Failed processing {audio_path.name}: {str(e)}")
             self.stats["errors"] += 1
             return False
+        finally:
+            try:
+                from transcript_pipeline.pipeline_metrics import record_stage
+
+                project = self._capture_project(capture) or self._find_project(audio_path)
+                record_stage(project.get("name") if project else None, audio_path.name,
+                             "processing_media", time.perf_counter() - stage_started)
+            except Exception:
+                logger.exception("[METRICS] Could not persist media timing for %s", audio_path.name)
 
     def _capture_service_and_chunk(self, capture):
         if capture is None or capture.chunk_index is None:

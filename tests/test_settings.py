@@ -25,9 +25,10 @@ def _clean_env(monkeypatch):
             "MEETING_KEEP_FRAMES", "LLM_API_KEY", "LLM_MODEL", "LLM_BASE_URL",
             "LLM_PROVIDER_TYPE", "ALLOW_EXTERNAL_LLM", "FRAME_DESCRIPTIONS",
             "FRAME_DESCRIPTION_MAX", "ALLOW_IMAGE_UPLOAD", "ALLOW_FRAME_UPLOAD",
-            "RETENTION_DAYS", "DASHBOARD_HOST", "DASHBOARD_PORT", "UPLOAD_MAX_MB",
+            "RETENTION_DAYS", "DASHBOARD_HOST", "DASHBOARD_PORT", "UPLOAD_MAX_MB", "WHISPER_UPLOAD_CONCURRENCY",
             "ICECREAM_MUSIC", "ICECREAM_VIDEOS", "ZMI_DATA_ROOT", "ZMI_CONFIG_ENV",
             "ZMI_CONTAINER_MODE", "ZMI_ALLOWED_EXPORT_ROOTS",
+            "ZMI_LAN_ACCESS", "ZMI_LAN_HOSTS", "WHISPER_UPLOAD_CONCURRENCY",
         }:
             monkeypatch.delenv(key, raising=False)
 
@@ -39,6 +40,20 @@ def test_defaults_are_privacy_conservative():
     assert s.frame_descriptions is False
     assert s.allow_image_upload is False
     assert s.retention_days == 0
+    assert s.upload_concurrency == 4
+
+
+@pytest.mark.parametrize("value", ["1", "4", "6"])
+def test_upload_concurrency_configurable_through_six(monkeypatch, value):
+    monkeypatch.setenv("WHISPER_UPLOAD_CONCURRENCY", value)
+    assert Settings.from_env().upload_concurrency == int(value)
+
+
+@pytest.mark.parametrize("value", ["0", "7"])
+def test_upload_concurrency_out_of_range_rejected(monkeypatch, value):
+    monkeypatch.setenv("WHISPER_UPLOAD_CONCURRENCY", value)
+    with pytest.raises(ConfigurationError):
+        Settings.from_env()
 
 
 def test_llm_provider_type_inferred_local_from_base_url(monkeypatch):

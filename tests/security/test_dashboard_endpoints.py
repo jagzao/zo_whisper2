@@ -13,6 +13,9 @@ _REAL_IS_VALID_MEDIA_FILE = dashboard_app._is_valid_media_file
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
+    from transcript_pipeline import pipeline_metrics
+
+    monkeypatch.setattr(pipeline_metrics, "_PATH", tmp_path / ".whisper" / "pipeline_metrics.json")
     audio = tmp_path / "audio"
     videos = tmp_path / "Videos"
     video_compress = tmp_path / "Video_compress"
@@ -482,3 +485,42 @@ def test_upload_accepts_file_ffprobe_confirms_as_media(client, env, monkeypatch)
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 200
     assert (env["video_compress"] / "real.mp3").exists()
+
+
+def test_v2_regenerate_uses_saved_evidence_without_media_processing(client, env, monkeypatch):
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    frames = env["transcriptions"] / "sample_Frames" / "sample"
+    frames.mkdir(parents=True)
+    (frames / "frame_mapping.json").write_text('{"frames": []}', encoding="utf-8")
+    calls = []
+    monkeypatch.setattr(dashboard_app, "_effective_project", lambda *args: ({"name": "Demo"}, "test"))
+    from transcript_pipeline.documentation import regenerate_v2
+    monkeypatch.setattr(regenerate_v2, "regenerate_documentation_v2", lambda path, **kwargs: calls.append((path, kwargs)) or {"status": "EVIDENCE_READY"})
+    response = client.post("/api/documentation/v2/regenerate" + q(mid(MediaRoot.VIDEOS, "sample.mp4")), headers=AUTH_HEADERS)
+    assert response.status_code == 200
+    assert response.get_json()["pipeline"] == "documentation-v2"
+    assert calls == [(frames, {"project_config": {"name": "Demo"}})]
+
+
+def test_v2_regenerate_requires_existing_evidence(client, env):
+    (env["videos"] / "sample.mp4").write_bytes(b"synthetic video")
+    response = client.post("/api/documentation/v2/regenerate" + q(mid(MediaRoot.VIDEOS, "sample.mp4")), headers=AUTH_HEADERS)
+    assert response.status_code == 409
+
+
+def test_documentation_versions_are_selectable_from_video_detail_api(client, env):
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    frames = env["transcriptions"] / "sample_Frames" / "sample"
+    version = frames / "documentation_versions" / "000001"
+    (version / "manual").mkdir(parents=True)
+    (version / "manual" / "MANUAL.md").write_text("Synthetic version one", encoding="utf-8")
+    (version / "version.json").write_text(
+        '{"documentation_version": 1, "pipeline_version": "documentation-v2", "status": "COMPLETED"}',
+        encoding="utf-8",
+    )
+    listing = client.get("/api/documentation/versions" + q(mid(MediaRoot.VIDEOS, "sample.mp4")))
+    selected = client.get("/api/documentation/versions" + q(mid(MediaRoot.VIDEOS, "sample.mp4")) + "&version=1")
+    assert listing.get_json()["versions"][0]["documentation_version"] == 1
+    assert selected.get_json()["manual"] == "Synthetic version one"

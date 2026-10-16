@@ -108,10 +108,12 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
             {"name": "fail-first.mp4", "mimeType": "video/mp4", "buffer": b"synthetic"},
             {"name": "cancel-first.wav", "mimeType": "audio/wav", "buffer": b"synthetic"},
             {"name": "remove-before-upload.mp3", "mimeType": "audio/mpeg", "buffer": b"synthetic"},
+            {"name": "batch-five.mp4", "mimeType": "video/mp4", "buffer": b"synthetic"},
+            {"name": "batch-six.wav", "mimeType": "audio/wav", "buffer": b"synthetic"},
         ]
         page.locator("#fileInput").set_input_files(files)
         selected_names = page.locator("#uploadQueue .upload-file-name").all_inner_texts()
-        check(f"{url}_four_files_visible_before_upload", len(selected_names) == 4 and all(f["name"] in " ".join(selected_names) for f in files), " | ".join(selected_names))
+        check(f"{url}_six_files_visible_before_upload", len(selected_names) == 6 and all(f["name"] in " ".join(selected_names) for f in files), " | ".join(selected_names))
         remove_row = page.locator('[data-upload-id]').filter(has_text="remove-before-upload.mp3")
         remove_row.get_by_role("button", name="Remove").click()
         check(f"{url}_remove_single_queued_file", page.locator("#uploadQueue").inner_text().count("remove-before-upload.mp3") == 0)
@@ -131,11 +133,11 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         check(f"{url}_per_file_cancel_and_retry_available", True)
         fail_row.get_by_role("button", name="Retry").click()
         cancel_row.get_by_role("button", name="Retry").click()
-        page.wait_for_function("""() => ['ok-one.mp4','fail-first.mp4','cancel-first.wav'].every(name => {
+        page.wait_for_function("""() => ['ok-one.mp4','fail-first.mp4','cancel-first.wav','batch-five.mp4','batch-six.wav'].every(name => {
           const row = [...document.querySelectorAll('[data-upload-id]')].find(el => el.innerText.includes(name));
           return row && row.innerText.includes('OK ');
         })""", timeout=15000)
-        check(f"{url}_upload_concurrency_bounded", page.evaluate("window.__uploadHarness.maxActive") == 2, f"maxActive={page.evaluate('window.__uploadHarness.maxActive')}")
+        check(f"{url}_upload_concurrency_default_four", page.evaluate("window.__uploadHarness.maxActive") == 4, f"maxActive={page.evaluate('window.__uploadHarness.maxActive')}")
         requests = page.evaluate("window.__uploadHarness.requests")
         carries_project = bool(project_name) and all(row["projectId"] == project_name for row in requests)
         check(f"{url}_each_file_keeps_selected_project", carries_project, json.dumps(requests))

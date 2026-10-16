@@ -24,6 +24,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -138,6 +139,7 @@ if not BUILD_REVISION:
 # second "Generate Documentation" for the same video is rejected, not queued).
 _doc_generation_lock = threading.Lock()
 _doc_generation_inflight: set[str] = set()
+_reprocess_inflight: set[str] = set()
 
 # CaptureService is bound to the *current* VIDEOS_BASE (monkeypatchable in
 # tests) — recreated only when the resolved root changes, so per-session locks
@@ -582,6 +584,17 @@ def _file_status(path: Path) -> str:
         return "pending"
 
 
+def _user_video_state(path: Path) -> str:
+    status = _file_status(path).lower()
+    if status in {"completed", "processed", "success", "auto_detected", "existing_transcription"}:
+        return "COMPLETED"
+    if status in {"failed", "error", "failed_routed"}:
+        return "FAILED"
+    if status in {"processing", "running"}:
+        return "PROCESSING_MEDIA"
+    return "READY"
+
+
 def _resolve_transcription(media_path: Path) -> dict | None:
     """Finds the transcription matching an audio/video file."""
     try:
@@ -784,6 +797,7 @@ def index() -> str:
         "dashboard.html",
         dashboard_token=_DASHBOARD_TOKEN,
         build_revision=BUILD_REVISION,
+        upload_concurrency=SETTINGS.upload_concurrency,
     )
 
 
@@ -911,6 +925,13 @@ def api_files() -> Any:
             transcription = _resolve_transcription(path)
             media_id = _to_media_id(root, path)
             project, project_source = _effective_project(media_id, path.name)
+            from transcript_pipeline.pipeline_metrics import get_metrics
+
+            user_state = _user_video_state(path)
+            if media_id in _doc_generation_inflight:
+                user_state = "GENERATING_DOCUMENTATION"
+            elif media_id in _reprocess_inflight:
+                user_state = "PROCESSING_MEDIA"
             file_row = {
                     "media_id": media_id,
                     "relative": str(path.relative_to(ROOT)),
@@ -919,6 +940,8 @@ def api_files() -> Any:
                     "date": media_date.astimezone().isoformat(timespec="seconds"),
                     "date_epoch": media_date.timestamp(),
                     "status": _file_status(path),
+                    "user_state": user_state,
+                    "timings": get_metrics(project.get("name") if project else None, path.name),
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,
                     "project_source": project_source,
@@ -1075,6 +1098,7 @@ def api_projects_update() -> Any:
 
 @app.route("/api/upload", methods=["POST"])
 def api_upload() -> Any:
+    upload_started = time.perf_counter()
     if "file" not in request.files:
         return jsonify({"ok": False, "error": "No file sent"}), 400
 
@@ -1122,7 +1146,12 @@ def api_upload() -> Any:
         return jsonify({"ok": False, "error": "Uploaded file is not a valid media file"}), 400
 
     logger.info("[UPLOAD] %s → %s", filename, destination)
-    return jsonify({"ok": True, "name": destination.name, "project_id": project_id or None})
+    from transcript_pipeline.pipeline_metrics import record_stage
+
+    upload_seconds = time.perf_counter() - upload_started
+    record_stage(chosen_project.get("name") if chosen_project else project_id, destination.name, "upload", upload_seconds)
+    return jsonify({"ok": True, "name": destination.name, "project_id": project_id or None,
+                    "upload_duration_seconds": round(upload_seconds, 3)})
 
 
 @app.route("/api/run/<mode>", methods=["POST"])
@@ -1500,6 +1529,89 @@ def api_documentation_regenerate() -> Any:
 
     result = regenerate_from_steps(frames_parent / "manual", frames_parent / "ai-package", frames_parent, target.name)
     return jsonify({"ok": True, **result})
+
+
+@app.route("/api/documentation/v2/regenerate", methods=["POST"])
+def api_documentation_v2_regenerate() -> Any:
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None or not (frames_parent / "frame_mapping.json").exists():
+        return jsonify({"ok": False, "error": "Saved frame mapping is required; reprocess the video first."}), 409
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    media_id = _to_media_id(root, target)
+    project, _source = _effective_project(media_id, target.name)
+    with _doc_generation_lock:
+        if media_id in _doc_generation_inflight:
+            return jsonify({"ok": False, "error": "Documentation is already generating for this video."}), 409
+        _doc_generation_inflight.add(media_id)
+    try:
+        from transcript_pipeline.documentation.regenerate_v2 import regenerate_documentation_v2
+        from transcript_pipeline.documentation.versioning import regenerate_versioned
+
+        docs_started = time.perf_counter()
+        result = regenerate_versioned(
+            frames_parent, media_id, regenerate_documentation_v2, project_config=project
+        )
+        from transcript_pipeline.pipeline_metrics import record_stage
+
+        record_stage(project.get("name") if project else None, target.name, "documentation",
+                     time.perf_counter() - docs_started)
+        return jsonify({"ok": True, "pipeline": "documentation-v2", "result": result,
+                        "documentation": _resolve_documentation(target, root)})
+    except Exception as e:
+        logger.exception("[DOCS V2] regenerate failed for %s", target.name)
+        return jsonify({"ok": False, "error": f"Documentation V2 regeneration failed: {e}"}), 500
+    finally:
+        with _doc_generation_lock:
+            _doc_generation_inflight.discard(media_id)
+
+
+@app.route("/api/documentation/versions")
+def api_documentation_versions() -> Any:
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None:
+        return jsonify({"ok": False, "error": "No documentation available"}), 404
+    from transcript_pipeline.documentation.versioning import list_versions
+
+    versions = list_versions(frames_parent)
+    selected = request.args.get("version", type=int)
+    if selected is None:
+        return jsonify({"ok": True, "versions": versions})
+    version_dir = frames_parent / "documentation_versions" / f"{selected:06d}"
+    manifest = version_dir / "version.json"
+    manual = version_dir / "manual" / "MANUAL.md"
+    if not manifest.is_file():
+        return jsonify({"ok": False, "error": "Documentation version not found"}), 404
+    return jsonify({"ok": True, "version": json.loads(manifest.read_text(encoding="utf-8")),
+                    "manual": manual.read_text(encoding="utf-8") if manual.is_file() else ""})
+
+
+@app.route("/api/video/reprocess", methods=["POST"])
+def api_video_reprocess() -> Any:
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    media_id = _to_media_id(root, target)
+    with _run_lock:
+        if media_id in _reprocess_inflight or _run_state["running"] or _reprocess_inflight:
+            return jsonify({"ok": False, "error": "Media processing is already active."}), 409
+        _reprocess_inflight.add(media_id)
+
+    def run() -> None:
+        try:
+            from transcript_pipeline.transcription.processor import SimpleScanProcessor
+
+            processor = SimpleScanProcessor()
+            if not processor.process_file(target, force=True):
+                logger.error("[REPROCESS] pipeline failed for %s", target.name)
+        except Exception:
+            logger.exception("[REPROCESS] pipeline failed for %s", target.name)
+        finally:
+            with _run_lock:
+                _reprocess_inflight.discard(media_id)
+
+    threading.Thread(target=run, name="whisper-video-reprocess", daemon=True).start()
+    return jsonify({"ok": True, "state": "PROCESSING_MEDIA"}), 202
 
 
 @app.route("/api/documentation/generate", methods=["POST"])
