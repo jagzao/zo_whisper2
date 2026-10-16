@@ -74,10 +74,14 @@ def main() -> int:
                 json.dumps(mobile_geometry),
             )
             page.locator("#captureModePlaylist").check()
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             page.locator("#captureStartBtn").click()
             page.wait_for_function("document.getElementById('captureState').textContent === 'Recording'")
             session_id = page.evaluate("window.__captureSnapshot().sessionId")
             all_ok &= check("playlist_capture_started_once", bool(session_id))
+            preview = page.locator("#capturePreview").evaluate("el => ({width:el.videoWidth, inline:el.playsInline, autoplay:el.autoplay, sameStream:el.srcObject === capture.recorder.stream})")
+            all_ok &= check("mobile_camera_preview_uses_recording_stream", preview["width"] > 0 and preview["inline"] and preview["autoplay"] and preview["sameStream"], json.dumps(preview))
             page.wait_for_function(
                 "Array.from(document.querySelectorAll('#captureLogicalVideos .capture-logical-row')).some(row => row.innerText.includes('Session 1'))",
                 timeout=90000,
@@ -108,6 +112,10 @@ def main() -> int:
                 json.dumps(mobile_rows),
             )
             logical = page.evaluate("async id => (await (await fetch(`/api/capture/sessions/${id}/logical-videos`)).json()).logicalVideos", session_id)
+            project_id = page.locator("#captureProject").input_value()
+            all_ok &= check("playlist_videos_inherit_project", len(logical) >= 2 and all(item.get("projectId") == project_id for item in logical[:2]), json.dumps(logical[:2]))
+            jobs_text = page.locator("#captureJobs").inner_text()
+            all_ok &= check("internal_chunks_hidden_from_jobs", "chunk-" not in jobs_text and "FINALIZED" not in jobs_text and "fragment-" not in jobs_text, jobs_text)
             all_ok &= check(
                 "stable_boundary_within_same_processing_chunk",
                 len(logical) >= 2
@@ -158,6 +166,8 @@ def main() -> int:
             page.locator("#captureModal .close-x").click()
             api_logical = page.evaluate("fetch('/api/files').then(r => r.json()).then(d => d.files.filter(f => f.logical_video))")
             all_ok &= check("logical_videos_returned_by_files_api", len(api_logical) >= 2, json.dumps(api_logical))
+            api_internal = page.evaluate("fetch('/api/files').then(r => r.json()).then(d => d.files.filter(f => String(f.name).startsWith('chunk-') || (String(f.relative).includes('live_capture') && !f.logical_video && !f.capture_session_id)))")
+            all_ok &= check("videos_api_hides_internal_capture_chunks", not api_internal, json.dumps(api_internal))
             page.locator("#fileFilter").fill("AMS KAP Compliance Session 1")
             page.evaluate("async () => { await loadFiles(); applyFileFilters(); }")
             page.wait_for_function("document.getElementById('filesList').innerText.includes('AMS KAP Compliance Session 1')")

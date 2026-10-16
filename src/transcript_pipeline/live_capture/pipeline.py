@@ -29,6 +29,7 @@ class CaptureContext:
     audio_availability: models.AudioAvailability | None
     source: str = "live_capture_manifest"
     logical_videos: tuple[dict, ...] = ()
+    project_id: str | None = None
 
     @property
     def audio_missing(self) -> bool:
@@ -52,6 +53,7 @@ class CaptureContext:
         return {
             "source": "live_capture",
             "sessionId": self.session_id,
+            "projectId": self.project_id,
             "chunkIndex": self.chunk_index,
             "crop": self.crop.to_manifest() if self.crop else None,
             "audioAvailability": self.audio_availability.value if self.audio_availability else None,
@@ -108,6 +110,7 @@ def resolve_capture_context(media_path: Path, *, videos_root: Path | None = None
                 {key: value for key, value in video.items() if key in {
                     "id", "title", "category", "sessionNumber", "recordedAt", "confidence",
                     "status", "startOffsetMs", "endOffsetMs", "processingChunkIds",
+                    "projectId",
                 }}
                 for video in playlist.get("logicalVideos", [])
                 if video.get("status") == "CONFIRMED"
@@ -120,6 +123,7 @@ def resolve_capture_context(media_path: Path, *, videos_root: Path | None = None
             transcript=session.transcript,
             audio_availability=chunk.audio_availability,
             logical_videos=logical_videos,
+            project_id=session.project_id,
         )
     except Exception:
         return None

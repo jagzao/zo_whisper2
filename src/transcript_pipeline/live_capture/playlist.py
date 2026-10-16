@@ -3,8 +3,10 @@ from __future__ import annotations
 import re
 import os
 import uuid
+from functools import wraps
 from io import BytesIO
 from pathlib import Path
+from threading import RLock
 
 from transcript_pipeline.live_capture import models
 from transcript_pipeline.live_capture.atomic import atomic_write_json, read_json
@@ -13,6 +15,14 @@ from transcript_pipeline.live_capture.titles import parse_title_text
 
 PLAYLIST_SCHEMA = 1
 STABLE_SAMPLES = 2
+
+
+def _synchronized(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return wrapped
 
 
 def _empty(session_id: str) -> dict:
@@ -32,6 +42,7 @@ def _empty(session_id: str) -> dict:
 class PlaylistService:
     def __init__(self, capture_service):
         self.capture = capture_service
+        self._lock = RLock()
 
     def _file(self, session_id: str) -> Path:
         return self.capture.store.session_dir(models.validate_session_id(session_id)) / "playlist.json"
@@ -46,11 +57,14 @@ class PlaylistService:
             raise ValidationError("playlist manifest is malformed")
         return data
 
+    @_synchronized
     def list(self, session_id: str) -> dict:
         return self._with_mappings(session_id, self._load(session_id))
 
     def _with_mappings(self, session_id: str, data: dict) -> dict:
         session = self.capture.get_session(session_id)
+        for item in [*data["logicalVideos"], *data["reviewCandidates"]]:
+            item["projectId"] = session.project_id
         current_offset = int(data.get("currentOffsetMs", 0))
         current_sequence = int(data.get("currentFragmentSequence", 0))
         for item in data["logicalVideos"]:
@@ -71,6 +85,7 @@ class PlaylistService:
             item["processingChunkIds"] = [models.chunk_id(index) for index in range(first, last + 1)]
         return data
 
+    @_synchronized
     def observe(self, session_id: str, text: str, confidence: float, offset_ms: int, fragment_sequence: int) -> dict:
         for name, value in (("offset_ms", offset_ms), ("fragment_sequence", fragment_sequence)):
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
@@ -102,6 +117,7 @@ class PlaylistService:
                         "signature": signature,
                         "offsetMs": offset_ms,
                         "fragmentSequence": fragment_sequence,
+                        "projectId": self.capture.get_session(session_id).project_id,
                     })
             data["candidateSignature"] = None
             data["candidateCount"] = 0
@@ -141,11 +157,13 @@ class PlaylistService:
                     "startFragmentSequence": boundary_sequence,
                     "endFragmentSequence": None,
                     "processingChunkIds": [],
+                    "projectId": self.capture.get_session(session_id).project_id,
                 })
                 data["currentSignature"] = signature
         atomic_write_json(self._file(session_id), data)
         return self._with_mappings(session_id, data)
 
+    @_synchronized
     def review(self, session_id: str, logical_id: str, action: str, payload: dict) -> dict:
         data = self._load(session_id)
         videos = data["logicalVideos"]
@@ -211,6 +229,7 @@ class PlaylistService:
         atomic_write_json(self._file(session_id), data)
         return self._with_mappings(session_id, data)
 
+    @_synchronized
     def confirm_candidate(self, session_id: str, candidate_id: str) -> dict:
         data = self._load(session_id)
         candidate = next((item for item in data["reviewCandidates"] if item["id"] == candidate_id), None)

@@ -189,6 +189,18 @@ def test_list_sessions_newest_first(service):
     assert [s.session_id for s in service.list_sessions()] == [b.session_id, a.session_id]
 
 
+def test_test_session_cleanup_requires_marker_and_explicit_confirmation(service):
+    user_session = service.create_session("user media")
+    test_session = service.create_session("synthetic fixture", is_test_session=True)
+    with pytest.raises(ValidationError):
+        service.store.delete_test_session(user_session.session_id, confirmed=True)
+    with pytest.raises(ValidationError):
+        service.store.delete_test_session(test_session.session_id, confirmed=False)
+    service.store.delete_test_session(test_session.session_id, confirmed=True)
+    assert service.store.session_file(user_session.session_id).exists()
+    assert not service.store.session_dir(test_session.session_id).exists()
+
+
 def test_list_sessions_skips_malformed(service, tmp_path):
     a = service.create_session("corruptible")
     b = service.create_session("intacta")

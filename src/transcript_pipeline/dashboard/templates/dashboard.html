@@ -1036,6 +1036,10 @@
                     Continuous Playlist
                 </label>
             </div>
+            <div class="row capture-project-row" style="align-items:center; margin-top:0;">
+                <label for="captureProject">Project:</label>
+                <select id="captureProject" required style="flex:1; min-width:0;"><option value="">Select existing Whisper project</option></select>
+            </div>
             <div class="row capture-title-row" style="align-items:center; margin-top:0;">
                 <label for="captureTitle">Title:</label>
                 <input type="text" id="captureTitle" value="Live capture" style="flex:1;">
@@ -2597,13 +2601,12 @@
         function currentCancelableProcessingChunk() {
             const session = currentSession();
             if (!session) return null;
-            return (session.chunks || []).find(c => c.state === 'FINALIZED' || c.state === 'PROCESSING') || null;
+            return (session.chunks || []).find(c => c.state === 'PROCESSING' || c.state === 'FINALIZED') || null;
         }
 
         function cancelCaptureProcessingCurrent() {
-            const chunk = currentCancelableProcessingChunk();
-            if (!chunk) return;
-            return cancelCaptureProcessing(capture.sessionId, chunk.index);
+            if (!currentCancelableProcessingChunk()) return;
+            return cancelCaptureSessionProcessing(capture.sessionId);
         }
 
         function renderCaptureStatus() {
@@ -2614,7 +2617,7 @@
                 : (capture.stalled ? 'paused' : 'idle');
             const session = currentSession();
             const processing = session ? (session.chunks || []).filter(c => c.state === 'PROCESSING').length : 0;
-            el.textContent = `Upload: ${uploadState} · pending ${capture.uploadQueue.length} · processing ${processing}`;
+            el.textContent = `Upload: ${uploadState} · ${capture.ackedFragmentIds.length} segments uploaded · pending ${capture.uploadQueue.length} · processing ${processing}`;
         }
 
         function renderLogicalVideos(data) {
@@ -2903,6 +2906,22 @@
         async function openCaptureModal() {
             document.getElementById('captureModal').classList.remove('hidden');
             document.getElementById('captureTitle').value = 'Live capture';
+            const projectSelect = document.getElementById('captureProject');
+            if (projectSelect) {
+                projectSelect.replaceChildren(new Option('Select existing Whisper project', ''));
+                try {
+                    const projects = await api('/api/projects');
+                    window._projects = projects.projects || [];
+                    for (const project of window._projects) {
+                        if (!project?.name) continue;
+                        projectSelect.add(new Option(project.name, project.name));
+                    }
+                    const defaults = window._projects.filter(p => p.default === true);
+                    if (defaults.length === 1) projectSelect.value = defaults[0].name;
+                } catch (err) {
+                    setCaptureState('error', 'Could not load Whisper projects. Close and reopen this window to retry.');
+                }
+            }
             capture.closed = false;
             capture.sessionId = null;
             capture.pendingCrop = null;
@@ -2985,18 +3004,42 @@
         function renderCaptureJobs(sessions) {
             const target = document.getElementById('captureJobs');
             if (!target) return;
-            const rows = [];
-            for (const session of sessions) for (const chunk of (session.chunks || [])) {
-                const state = chunk.state;
+            const userSessions = (sessions || []).filter(session => {
+                const title = String(session.title || '').toLowerCase();
+                return !session.isTestSession && !/\bsynthetic\b|\bfixture\b|\be2e test\b/.test(title);
+            });
+            const rows = userSessions.map(session => {
+                const states = (session.chunks || []).map(chunk => chunk.state);
+                const state = states.includes('CANCEL_REQUESTED') ? 'CANCEL_REQUESTED'
+                    : states.includes('PROCESSING') ? 'PROCESSING'
+                    : states.includes('FAILED') ? 'FAILED'
+                    : states.includes('CANCELLED') ? 'CANCELLED'
+                    : states.includes('FINALIZED') ? 'QUEUED'
+                    : states.length && states.every(value => value === 'PROCESSED') ? 'COMPLETED'
+                    : session.status === 'ACTIVE' ? 'CAPTURING'
+                    : session.status;
                 let action = '';
-                if (state === 'RECORDING') action = `<button onclick="cancelCaptureChunkUpload('${session.sessionId}',${chunk.index})">Cancelar subida</button>`;
-                else if (state === 'FINALIZED' || state === 'PROCESSING') action = `<button onclick="cancelCaptureProcessing('${session.sessionId}',${chunk.index})">Cancelar procesamiento</button>`;
+                if (state === 'QUEUED' || state === 'PROCESSING') action = `<button onclick="cancelCaptureSessionProcessing('${session.sessionId}')">Cancelar procesamiento</button>`;
                 else if (state === 'CANCEL_REQUESTED') action = '<button disabled>Cancelando</button>';
-                else if (state === 'CANCELLED') action = `<button onclick="retryCaptureProcessing('${session.sessionId}',${chunk.index})">Procesar de nuevo</button> <button class="danger" onclick="deleteCancelledCapture('${session.sessionId}',${chunk.index})">Eliminar</button>`;
-                else if (state === 'FAILED') action = `<button onclick="retryCaptureProcessing('${session.sessionId}',${chunk.index})">Reintentar</button>`;
-                rows.push(`<div class="row" style="justify-content:space-between;"><span>${escapeHtml(session.title)} · ${escapeHtml(chunk.chunkId)} · ${escapeHtml(state)}</span>${action}</div>`);
-            }
+                else if (state === 'CANCELLED' || state === 'FAILED') action = `<button onclick="retryCaptureSessionProcessing('${session.sessionId}')">${state === 'FAILED' ? 'Reintentar' : 'Procesar de nuevo'}</button>`;
+                const uploaded = Number(session.fragmentCount || 0);
+                const processing = states.filter(value => value === 'PROCESSING').length;
+                const progress = `${uploaded} segmentos subidos · ${processing} en proceso`;
+                return `<div class="row capture-job-row" data-session-id="${escapeHtml(session.sessionId)}" style="justify-content:space-between;"><span>${escapeHtml(session.title)} · ${escapeHtml(state)} · ${escapeHtml(progress)}</span>${action}</div>`;
+            });
             target.innerHTML = rows.join('');
+        }
+
+        async function cancelCaptureSessionProcessing(sessionId) {
+            const res = await captureFetch(`/api/capture/sessions/${sessionId}/cancel-processing`);
+            if (res.session?.chunks?.some(chunk => chunk.state === 'CANCEL_REQUESTED')) showToast('Cancelando');
+            await loadCaptureSessions();
+        }
+
+        async function retryCaptureSessionProcessing(sessionId) {
+            await captureFetch(`/api/capture/sessions/${sessionId}/retry-processing`);
+            await captureFetch('/api/run/transcribe');
+            await loadCaptureSessions();
         }
 
         async function cancelCaptureChunkUpload(sessionId, index) {
@@ -3162,6 +3205,13 @@
                 return;
             }
             if (capture.state === 'recording' || capture.state === 'stalled') return;
+            const projectId = document.getElementById('captureProject')?.value || '';
+            const project = (window._projects || []).find(item => item.name === projectId);
+            if (!project || !projectId) {
+                setCaptureState('error', 'Select an existing Whisper project before recording.');
+                document.getElementById('captureProject')?.focus();
+                return;
+            }
             setCaptureState('requesting');
             const requestAudio = document.getElementById('captureAudio').checked === true;
             let stream;
@@ -3206,7 +3256,34 @@
 
             const video = document.getElementById('capturePreview');
             video.srcObject = stream;
-            try { await video.play(); } catch (e) {}
+            video.autoplay = true;
+            video.playsInline = true;
+            try {
+                let previewTimeout;
+                const previewReady = new Promise((resolve, reject) => {
+                    const finish = () => {
+                        if (video.videoWidth > 0 && video.videoHeight > 0) {
+                            resolve();
+                        }
+                    };
+                    previewTimeout = setTimeout(() => reject(new Error('Camera preview did not start. Check browser camera access and try again.')), 5000);
+                    video.addEventListener('loadedmetadata', finish, { once: true });
+                    video.addEventListener('playing', finish, { once: true });
+                    video.addEventListener('error', () => {
+                        clearTimeout(previewTimeout);
+                        reject(new Error('Camera preview could not start. Check browser camera access and try again.'));
+                    }, { once: true });
+                });
+                await video.play();
+                if (!video.videoWidth) await previewReady;
+                clearTimeout(previewTimeout);
+            } catch (err) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                capture.stream = null;
+                setCaptureState('error', err?.message || 'Camera permission succeeded, but preview could not start.');
+                return;
+            }
 
             const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
             capture.fragmentDurationMs = resolveFragmentDurationMs();
@@ -3222,6 +3299,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         title,
+                        project_id: projectId,
                         recorded_at: new Date().toISOString(),
                         crop: capture.pendingCrop,
                         audio_availability: capture.audioAvailability,

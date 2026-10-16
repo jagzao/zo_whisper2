@@ -28,7 +28,7 @@ def main() -> int:
     all_ok = True
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, args=["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"])
-        context = browser.new_context(permissions=["camera"], viewport={"width": 1280, "height": 900})
+        context = browser.new_context(permissions=["camera"], viewport={"width": 390, "height": 844})
         page = context.new_page()
         errors = []
         page.on("pageerror", lambda exc: errors.append(str(exc)))
@@ -48,6 +48,8 @@ def main() -> int:
             page.locator('button[aria-label="Capture"]').click()
             page.wait_for_selector("#captureModal:not(.hidden)")
             page.locator("#captureChunkDuration").fill("1")
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             page.locator("#captureStartBtn").click()
             page.wait_for_function("document.getElementById('captureState').textContent === 'Recording'")
             page.wait_for_function("window.__uploadStarted === true", timeout=30000)
@@ -68,11 +70,11 @@ def main() -> int:
             )
             all_ok &= check("upload_retry_available", page.locator("#captureRetryBtn").is_visible())
 
-            unique_title = 'cancel queued synthetic ' + uuid.uuid4().hex[:8]
+            unique_title = 'cancel queued job ' + uuid.uuid4().hex[:8]
             created = page.evaluate("""async (title) => {
                 const token = DASHBOARD_TOKEN;
                 const post = (url, body) => fetch(url, {method:'POST', headers:{'X-Local-Dashboard-Token':token,'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json());
-                const session = (await post('/api/capture/sessions', {title})).session;
+                const session = (await post('/api/capture/sessions', {title, project_id:'Zo Interviews'})).session;
                 await post(`/api/capture/sessions/${session.sessionId}/chunks/start`, {});
                 await fetch(`/api/capture/sessions/${session.sessionId}/chunks/0/finalize`, {method:'POST', headers:{'X-Local-Dashboard-Token':token,'X-Media-Extension':'.webm','Content-Type':'application/octet-stream'}, body:new Blob(['synthetic video bytes'])});
                 return session.sessionId;
@@ -84,15 +86,15 @@ def main() -> int:
             job.get_by_text("CANCELLED").wait_for(timeout=10000)
             row_text = job.inner_text()
             buttons_text = job.locator("button").all_text_contents()
-            all_ok &= check("cancelled_retry_and_delete_visible", "Procesar de nuevo" in buttons_text and "Eliminar" in buttons_text, f"{row_text} :: {buttons_text}")
+            all_ok &= check("cancelled_retry_visible_without_chunk_details", "Procesar de nuevo" in buttons_text and "chunk-" not in row_text and "Eliminar" not in buttons_text, f"{row_text} :: {buttons_text}")
             final = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{created}", timeout=10).json()["session"]
             all_ok &= check("queued_job_cancelled", final["chunks"][0]["state"] == "CANCELLED")
 
-            active_title = 'cancel active synthetic ' + uuid.uuid4().hex[:8]
+            active_title = 'cancel active job ' + uuid.uuid4().hex[:8]
             active_id = page.evaluate("""async (title) => {
                 const token = DASHBOARD_TOKEN;
                 const post = (url, body) => fetch(url, {method:'POST', headers:{'X-Local-Dashboard-Token':token,'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json());
-                const session = (await post('/api/capture/sessions', {title})).session;
+                const session = (await post('/api/capture/sessions', {title, project_id:'Zo Interviews'})).session;
                 await post(`/api/capture/sessions/${session.sessionId}/chunks/start`, {});
                 await fetch(`/api/capture/sessions/${session.sessionId}/chunks/0/finalize`, {method:'POST', headers:{'X-Local-Dashboard-Token':token,'X-Media-Extension':'.webm','Content-Type':'application/octet-stream'}, body:new Blob(['synthetic active bytes'])});
                 return session.sessionId;
@@ -109,11 +111,11 @@ def main() -> int:
             def request_active_cancel(route):
                 payload = route.fetch().json()
                 mock_state["value"] = "CANCEL_REQUESTED"
-                payload["chunk"]["state"] = "CANCEL_REQUESTED"
+                payload["session"]["chunks"][0]["state"] = "CANCEL_REQUESTED"
                 route.fulfill(json=payload)
 
             page.route("**/api/capture/sessions", show_active_state)
-            page.route(f"**/api/capture/sessions/{active_id}/chunks/0/cancel-processing", request_active_cancel)
+            page.route(f"**/api/capture/sessions/{active_id}/cancel-processing", request_active_cancel)
             page.evaluate("loadCaptureSessions()")
             active_job = page.locator("#captureJobs .row").filter(has_text=active_title)
             active_job.get_by_role("button", name="Cancelar procesamiento").click()
@@ -123,6 +125,19 @@ def main() -> int:
             page.evaluate("loadCaptureSessions()")
             active_job.get_by_role("button", name="Procesar de nuevo").wait_for()
             all_ok &= check("active_cancel_reaches_cancelled", "CANCELLED" in active_job.inner_text())
+            completed_actions = page.evaluate("""() => {
+                renderCaptureJobs([{sessionId:'completed-check', title:'Completed check', status:'FINALIZED', chunks:[{state:'PROCESSED'}]}]);
+                return document.querySelector('#captureJobs').innerText;
+            }""")
+            all_ok &= check("completed_job_has_no_cancel_action", "COMPLETED" in completed_actions and "Cancelar" not in completed_actions)
+            filtered = page.evaluate("""() => {
+                renderCaptureJobs([
+                    {sessionId:'test-marked', title:'Visible only to maintainers', isTestSession:true, chunks:[{state:'FINALIZED'}]},
+                    {sessionId:'test-named', title:'synthetic fixture', chunks:[{state:'FAILED'}]},
+                ]);
+                return document.querySelector('#captureJobs').innerText;
+            }""")
+            all_ok &= check("test_sessions_hidden", filtered == "")
             all_ok &= check("no_browser_errors", not errors, "; ".join(errors))
         finally:
             page.close()

@@ -55,11 +55,12 @@ def test_files_api_uses_capture_recorded_at_and_sorts_all_rows(client, env):
     os.utime(legacy, (datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp(),) * 2)
 
     desc = client.get("/api/files?sort_by=date&order=desc").json["files"]
-    assert [item["name"] for item in desc] == [newer.name, older.name, legacy.name]
+    assert [item["name"] for item in desc] == ["newer.webm", "older.webm", legacy.name]
+    assert all(not item["name"].startswith("chunk-") for item in desc)
     assert desc[0]["date_epoch"] == datetime(2025, 1, 1, tzinfo=timezone.utc).timestamp()
     assert [item["name"] for item in client.get("/api/files").json["files"]] == [item["name"] for item in desc]
     asc = client.get("/api/files?sort_by=date&order=asc").json["files"]
-    assert [item["name"] for item in asc] == [legacy.name, older.name, newer.name]
+    assert [item["name"] for item in asc] == [legacy.name, "older.webm", "newer.webm"]
 
 
 def test_files_api_falls_back_to_created_at_when_capture_recorded_at_missing(client, env):
@@ -75,6 +76,7 @@ def test_files_api_falls_back_to_created_at_when_capture_recorded_at_missing(cli
     service.store.save_session(session)
     path = service.store.chunk_media_path(session.session_id, 0, ".webm")
     rows = client.get("/api/files").json["files"]
-    row = next(item for item in rows if item["name"] == path.name)
+    row = next(item for item in rows if item.get("capture_session_id") == session.session_id)
+    assert row["name"] == "created fallback.webm"
     assert row["date_epoch"] == datetime(2022, 2, 3, 4, 5, 6, tzinfo=timezone.utc).timestamp()
     assert service.get_session(session.session_id).get_chunk(0).state is ChunkState.FINALIZED

@@ -140,6 +140,8 @@ def main() -> int:
             page.wait_for_selector("#captureModal:not(.hidden)", timeout=TIMEOUT_MS)
             all_ok &= check("capture_preview_visible", page.locator("#capturePreview").is_visible())
             page.locator("#captureChunkDuration").fill("1")
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS

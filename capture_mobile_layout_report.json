@@ -3,12 +3,12 @@
     {
       "name": "mobile_layout_fits_viewport",
       "status": "PASS",
-      "detail": "{\"viewportWidth\": 390, \"documentWidth\": 390, \"modalWidth\": 388, \"modalScrollWidth\": 388, \"preview\": {\"top\": 248.765625, \"bottom\": 518.84375, \"width\": 364, \"height\": 270.078125}, \"actionsDirection\": \"column\", \"startVisible\": true}"
+      "detail": "{\"viewportWidth\": 390, \"documentWidth\": 390, \"modalWidth\": 388, \"modalScrollWidth\": 388, \"preview\": {\"top\": 294.359375, \"bottom\": 564.4375, \"width\": 364, \"height\": 270.078125}, \"actionsDirection\": \"column\", \"startVisible\": true}"
     },
     {
       "name": "camera_preview_visible_near_top",
       "status": "PASS",
-      "detail": "{\"top\": 248.765625, \"bottom\": 518.84375, \"width\": 364, \"height\": 270.078125}"
+      "detail": "{\"top\": 294.359375, \"bottom\": 564.4375, \"width\": 364, \"height\": 270.078125}"
     },
     {
       "name": "capture_actions_stacked_and_visible",
@@ -28,7 +28,7 @@
     {
       "name": "sticky_stop_action_accessible",
       "status": "PASS",
-      "detail": "{\"box\": {\"x\": 13, \"y\": 784.609375, \"width\": 364, \"height\": 46.390625}, \"scrollTop\": 120, \"maxScroll\": 263}"
+      "detail": "{\"box\": {\"x\": 13, \"y\": 784.609375, \"width\": 364, \"height\": 46.390625}, \"scrollTop\": 120, \"maxScroll\": 1859}"
     },
     {
       "name": "mobile_recording_stops",

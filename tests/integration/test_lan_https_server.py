@@ -164,7 +164,7 @@ def test_synthetic_fragment_upload_over_https(https_server):
 
     create = requests.post(
         f"{base}/api/capture/sessions",
-        json={"title": "LAN synthetic", "chunk_duration_sec": 10},
+        json={"title": "LAN synthetic", "chunk_duration_sec": 10, "project_id": "Zo Interviews"},
         headers=headers,
         verify=False,
         timeout=10,

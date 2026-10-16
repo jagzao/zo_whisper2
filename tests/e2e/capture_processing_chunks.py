@@ -135,6 +135,8 @@ def main() -> int:
                 f"resolved={resolved}",
             )
 
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS

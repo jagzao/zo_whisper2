@@ -122,6 +122,8 @@ class CaptureService:
         created_at: str | None = None,
         audio_availability: models.AudioAvailability = models.AudioAvailability.UNKNOWN,
         capture_mode: str = "normal",
+        project_id: str | None = None,
+        is_test_session: bool = False,
     ) -> models.Session:
         created_at = created_at or models.now_iso()
         session = models.Session(
@@ -134,6 +136,8 @@ class CaptureService:
             audio_availability=audio_availability,
             crop=crop,
             capture_mode=capture_mode,
+            project_id=project_id,
+            is_test_session=is_test_session,
         )
         self.store.create_session(session)
         return session
@@ -240,6 +244,7 @@ class CaptureService:
                 created_at=created,
                 recorded_at=recorded_at or created,
                 audio_availability=audio_availability,
+                project_id=session.project_id,
             )
             self.store.save_session(session.with_chunk(chunk))
             return chunk
@@ -632,6 +637,7 @@ class CaptureService:
                         duration_ms=duration_ms,
                         recorded_offset_ms=recorded_offset_ms,
                         recorded_at=recorded_at,
+                        project_id=self.store.load_session(session_id).project_id,
                     )
                     self.store.commit_staged_fragment(tmp_path, session_id, normalized_id, extension)
                     tmp_path = None
@@ -733,6 +739,7 @@ class CaptureService:
                 state=models.PROCESSING_STATE_PENDING,
                 created_at=models.now_iso(),
                 recorded_at=selected[0].recorded_at,
+                project_id=session.project_id,
             )
             self.store.save_processing_map(session_id, [*entries, entry])
             return entry
@@ -866,6 +873,7 @@ class CaptureService:
                 created_at=models.now_iso(),
                 recorded_at=recorded_at or models.now_iso(),
                 audio_availability=audio_availability,
+                project_id=session.project_id,
             )
             self.store.save_session(session.with_chunk(created))
         elif chunk.state is models.ChunkState.UPLOAD_CANCELLED:

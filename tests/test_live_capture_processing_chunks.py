@@ -66,6 +66,17 @@ def test_fragment_records_and_persists_recorded_timeline(service):
     assert reloaded[0].recorded_offset_ms == 0
 
 
+def test_project_id_inherits_to_fragments_processing_mapping_and_chunk(service):
+    session = service.create_session("project-owned", chunk_duration_sec=1, project_id="Zo Interviews")
+    fragment = _upload(service, session.session_id, 1, duration_ms=1000, offset_ms=0)
+    mapping = service.list_processing_chunks(session.session_id)[0]
+    chunk = service.get_session(session.session_id).chunks[0]
+    assert session.project_id == "Zo Interviews"
+    assert fragment.project_id == "Zo Interviews"
+    assert mapping.project_id == "Zo Interviews"
+    assert chunk.project_id == "Zo Interviews"
+
+
 def test_fragment_rejects_negative_duration(service):
     session = service.create_session("bad-duration")
     with pytest.raises(ValidationError):

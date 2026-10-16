@@ -120,6 +120,8 @@ def main() -> int:
                 and start_box["y"] + start_box["height"] <= 844,
                 json.dumps({"box": start_box, "scrollTop": start_scroll}),
             )
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             start.click()
             page.wait_for_function("document.getElementById('captureState').textContent === 'Recording'", timeout=30000)
             stop = page.locator("#captureStopBtn")

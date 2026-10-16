@@ -184,6 +184,8 @@ def main() -> int:
             page.locator("#captureBufferLimitMB").dispatch_event("change")
             page.evaluate("() => window.__captureSetAutoRetry(false)")
             page.locator("#captureChunkDuration").fill("1")
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS
@@ -260,7 +262,7 @@ def main() -> int:
                     const r = await fetch('/api/capture/sessions', {
                         method: 'POST',
                         headers: {'X-Local-Dashboard-Token': DASHBOARD_TOKEN, 'Content-Type': 'application/json'},
-                        body: JSON.stringify({title}),
+                        body: JSON.stringify({title, project_id: 'Zo Interviews'}),
                     });
                     return (await r.json()).session.sessionId;
                 }""",

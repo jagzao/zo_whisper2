@@ -61,7 +61,7 @@ def client(env):
 def _session_id(client, title="Sesion", audio_availability="MISSING"):
     resp = client.post(
         "/api/capture/sessions",
-        data=json.dumps({"title": title, "audio_availability": audio_availability}),
+        data=json.dumps({"title": title, "audio_availability": audio_availability, "project_id": "Zo Interviews"}),
         content_type="application/json",
         headers=AUTH_HEADERS,
     )

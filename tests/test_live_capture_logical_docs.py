@@ -6,7 +6,7 @@ from transcript_pipeline.live_capture.service import CaptureService
 
 def test_confirmed_logical_video_metadata_enters_existing_chunk_pipeline(tmp_path):
     capture = CaptureService(tmp_path / "Videos")
-    session = capture.create_session("Continuous", capture_mode="playlist")
+    session = capture.create_session("Continuous", capture_mode="playlist", project_id="Zo Interviews")
     playlist = PlaylistService(capture)
     capture.start_chunk(session.session_id)
     capture.finalize_chunk(session.session_id, 0, b"synthetic chunk")
@@ -22,6 +22,9 @@ def test_confirmed_logical_video_metadata_enters_existing_chunk_pipeline(tmp_pat
     assert context.logical_videos, (media_path, playlist._file(session.session_id).read_text())
     assert context.logical_videos[0]["id"] == result["logicalVideos"][0]["id"]
     assert context.logical_videos[0]["title"] == "AMS KAP Compliance Session 7"
+    assert context.project_id == "Zo Interviews"
+    assert context.provenance()["projectId"] == "Zo Interviews"
+    assert context.logical_videos[0]["projectId"] == "Zo Interviews"
     assert context.provenance()["logicalVideos"] == list(context.logical_videos)
     mapping = {}
     apply_capture_context(mapping, context)

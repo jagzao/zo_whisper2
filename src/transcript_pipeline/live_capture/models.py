@@ -207,6 +207,7 @@ class Chunk:
     media_extension: str | None = None
     media_size_bytes: int | None = None
     media_sha256: str | None = None
+    project_id: str | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.index, bool) or not isinstance(self.index, int) or self.index < 0:
@@ -247,6 +248,7 @@ class Chunk:
             "mediaExtension": self.media_extension,
             "mediaSizeBytes": self.media_size_bytes,
             "mediaSha256": self.media_sha256,
+            "projectId": self.project_id,
         }
 
     @classmethod
@@ -269,6 +271,7 @@ class Chunk:
                 media_extension=_optional_nonempty_str(data.get("mediaExtension")),
                 media_size_bytes=_optional_nonnegative_int(data.get("mediaSizeBytes")),
                 media_sha256=_optional_nonempty_str(data.get("mediaSha256")),
+                project_id=_optional_nonempty_str(data.get("projectId")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("chunk manifest is malformed") from exc
@@ -302,6 +305,7 @@ class Fragment:
     duration_ms: int | None = None
     recorded_offset_ms: int | None = None
     recorded_at: str | None = None
+    project_id: str | None = None
 
     def __post_init__(self) -> None:
         validate_fragment_id(self.fragment_id)
@@ -340,6 +344,7 @@ class Fragment:
             "durationMs": self.duration_ms,
             "recordedOffsetMs": self.recorded_offset_ms,
             "recordedAt": self.recorded_at,
+            "projectId": self.project_id,
         }
 
     @classmethod
@@ -358,6 +363,7 @@ class Fragment:
                 duration_ms=_optional_nonnegative_int(data.get("durationMs")),
                 recorded_offset_ms=_optional_nonnegative_int(data.get("recordedOffsetMs")),
                 recorded_at=_optional_nonempty_str(data.get("recordedAt")),
+                project_id=_optional_nonempty_str(data.get("projectId")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("fragment manifest is malformed") from exc
@@ -383,6 +389,7 @@ class ProcessingChunkMapping:
     finalized_at: str | None = None
     last_error: str | None = None
     chunk_extension: str | None = None
+    project_id: str | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.chunk_index, bool) or not isinstance(self.chunk_index, int) or self.chunk_index < 0:
@@ -428,6 +435,7 @@ class ProcessingChunkMapping:
             "finalizedAt": self.finalized_at,
             "lastError": self.last_error,
             "chunkExtension": self.chunk_extension,
+            "projectId": self.project_id,
         }
 
     @classmethod
@@ -449,6 +457,7 @@ class ProcessingChunkMapping:
                 finalized_at=_optional_nonempty_str(data.get("finalizedAt")),
                 last_error=_optional_nonempty_str(data.get("lastError")),
                 chunk_extension=_optional_nonempty_str(data.get("chunkExtension")),
+                project_id=_optional_nonempty_str(data.get("projectId")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("processing chunk manifest is malformed") from exc
@@ -518,6 +527,8 @@ class Session:
     chunks: tuple[Chunk, ...] = ()
     reason: str | None = None
     capture_mode: str = "normal"
+    project_id: str | None = None
+    is_test_session: bool = False
 
     def __post_init__(self) -> None:
         validate_session_id(self.session_id)
@@ -596,6 +607,8 @@ class Session:
             "chunks": [c.to_manifest() for c in self.chunks],
             "reason": self.reason,
             "captureMode": self.capture_mode,
+            "projectId": self.project_id,
+            "isTestSession": self.is_test_session,
         }
 
     @classmethod
@@ -625,6 +638,8 @@ class Session:
                 chunks=chunks,
                 reason=_optional_nonempty_str(data.get("reason")),
                 capture_mode=str(data.get("captureMode") or "normal"),
+                project_id=_optional_nonempty_str(data.get("projectId")),
+                is_test_session=bool(data.get("isTestSession", False)),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("session manifest is malformed") from exc

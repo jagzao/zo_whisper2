@@ -63,6 +63,7 @@ def context_from_session(
         crop=session.crop,
         transcript=session.transcript,
         audio_availability=audio_availability,
+        project_id=session.project_id,
     )
 
 

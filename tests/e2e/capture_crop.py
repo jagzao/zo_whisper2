@@ -105,6 +105,8 @@ def main() -> int:
             page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
             page.locator('button[aria-label="Capture"]').click()
             page.wait_for_selector("#captureModal:not(.hidden)", timeout=TIMEOUT_MS)
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording' && document.getElementById('capturePreview').videoWidth > 0",

@@ -16,6 +16,16 @@
       "detail": ""
     },
     {
+      "name": "project_required_before_title",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "start_blocked_without_project",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
       "name": "preview_visible",
       "status": "PASS",
       "detail": ""
@@ -106,6 +116,16 @@
       "detail": ""
     },
     {
+      "name": "live_preview_uses_recording_stream",
+      "status": "PASS",
+      "detail": "{\"width\": 640, \"inline\": true, \"autoplay\": true, \"sameStream\": true}"
+    },
+    {
+      "name": "capture_project_persisted",
+      "status": "PASS",
+      "detail": "Zo Interviews"
+    },
+    {
       "name": "stop_button_visible_while_recording",
       "status": "PASS",
       "detail": ""
@@ -149,6 +169,16 @@
       "name": "fragment_sequence_ordered",
       "status": "PASS",
       "detail": "[1, 2]"
+    },
+    {
+      "name": "user_level_segment_progress_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "internal_fragment_and_chunk_ids_hidden",
+      "status": "PASS",
+      "detail": "Live capture \u00b7 CAPTURING \u00b7 1 segmentos subidos \u00b7 0 en proceso"
     },
     {
       "name": "playlist_mode_persisted",

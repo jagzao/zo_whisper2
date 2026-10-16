@@ -8,7 +8,7 @@
     {
       "name": "upload_aborted_no_durable_fragment",
       "status": "PASS",
-      "detail": "fragments=0 pending=2 stalled=True"
+      "detail": "fragments=0 pending=1 stalled=True"
     },
     {
       "name": "upload_retry_available",
@@ -21,9 +21,9 @@
       "detail": ""
     },
     {
-      "name": "cancelled_retry_and_delete_visible",
+      "name": "cancelled_retry_visible_without_chunk_details",
       "status": "PASS",
-      "detail": "cancel queued synthetic bfe2eb66 \u00b7 chunk-000000 \u00b7 CANCELLED\nProcesar de nuevo\nEliminar :: ['Procesar de nuevo', 'Eliminar']"
+      "detail": "cancel queued job 9250ca60 \u00b7 CANCELLED \u00b7 0 segmentos subidos \u00b7 0 en proceso\nProcesar de nuevo :: ['Procesar de nuevo']"
     },
     {
       "name": "queued_job_cancelled",
@@ -37,6 +37,16 @@
     },
     {
       "name": "active_cancel_reaches_cancelled",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "completed_job_has_no_cancel_action",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "test_sessions_hidden",
       "status": "PASS",
       "detail": ""
     },

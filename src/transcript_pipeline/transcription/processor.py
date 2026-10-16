@@ -196,6 +196,14 @@ class SimpleScanProcessor:
     def _find_project(self, audio_path: Path) -> dict | None:
         return match_project(audio_path, self._projects_config)
 
+    def _capture_project(self, capture) -> dict | None:
+        if capture is None or not capture.project_id:
+            return None
+        return next(
+            (project for project in self._projects_config if project.get("name") == capture.project_id),
+            None,
+        )
+
     def find_audio_files(self) -> list[Path]:
         """Finds all audio files in the target folders"""
         audio_files = []
@@ -344,7 +352,7 @@ class SimpleScanProcessor:
 
             # Detect language: prefix > lang.txt > projects.json > auto-detect
             detected_lang = self._language_detector.detect(audio_path.name, audio_path.parent)
-            project = self._find_project(audio_path)
+            project = self._capture_project(capture) or self._find_project(audio_path)
             project_lang = project.get("language") if project else None
             effective_lang = detected_lang or project_lang  # filename/folder takes priority
             lang_source = "prefix" if detected_lang else ("project" if project_lang else "auto")
@@ -506,7 +514,7 @@ class SimpleScanProcessor:
             "language": None,
             "duration": float(frame_info.get("video_duration", 0.0)) if frame_info else 0.0,
             "processing_time": 0.0,
-            "project": None,
+            "project": self._capture_project(capture),
             "capture": capture,
         }
         if frame_info:

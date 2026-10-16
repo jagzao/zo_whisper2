@@ -103,6 +103,11 @@ def main() -> int:
             page.locator("#newRecordingBtn").click()
             page.wait_for_selector("#captureModal:not(.hidden)", timeout=TIMEOUT_MS)
             all_ok &= check("new_recording_opens_capture", page.locator("#captureModal:not(.hidden)").count() == 1)
+            all_ok &= check("project_required_before_title", page.locator("#captureProject").evaluate("el => el.compareDocumentPosition(document.querySelector('#captureTitle')) & Node.DOCUMENT_POSITION_FOLLOWING") != 0)
+            page.locator("#captureStartBtn").click()
+            all_ok &= check("start_blocked_without_project", "Select an existing Whisper project" in page.locator("#captureError").inner_text())
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
 
             # 2. Required controls exist in the capture shell.
             all_ok &= check("preview_visible", page.locator("#capturePreview").is_visible())
@@ -198,11 +203,17 @@ def main() -> int:
             # capture keeps running.
             page.locator("#captureChunkDuration").fill("1")
             page.locator("#captureModePlaylist").check()
+            page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
+            page.locator("#captureProject").select_option(index=1)
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS
             )
             all_ok &= check("recording_state", page.locator("#captureState").inner_text() == "Recording")
+            preview = page.locator("#capturePreview").evaluate("el => ({width:el.videoWidth, inline:el.playsInline, autoplay:el.autoplay, sameStream:el.srcObject === capture.recorder.stream})")
+            all_ok &= check("live_preview_uses_recording_stream", preview["width"] > 0 and preview["inline"] and preview["autoplay"] and preview["sameStream"], json.dumps(preview))
+            session_project = page.evaluate("async id => (await (await fetch(`/api/capture/sessions/${id}`)).json()).session.projectId", page.evaluate("window.__captureSnapshot().sessionId"))
+            all_ok &= check("capture_project_persisted", session_project == page.locator("#captureProject").input_value(), str(session_project))
             all_ok &= check("stop_button_visible_while_recording", page.locator("#captureStopBtn").is_visible())
             all_ok &= check(
                 "preview_has_stream",
@@ -269,6 +280,13 @@ def main() -> int:
                 sequences == sorted(sequences) and len(set(sequences)) == len(sequences),
                 str(sequences),
             )
+            current_session_id = mid.get("sessionId")
+            page.wait_for_function("id => { const row = document.querySelector(`#captureJobs [data-session-id=\"${id}\"]`); return !!row && row.innerText.includes('segmentos subidos'); }", arg=current_session_id, timeout=15000)
+            jobs_row = page.locator(f"#captureJobs [data-session-id='{current_session_id}']")
+            jobs_text = jobs_row.inner_text()
+            status_text = page.locator("#captureUploadStatus").inner_text()
+            all_ok &= check("user_level_segment_progress_visible", "segmentos subidos" in jobs_text and "segments uploaded" in status_text)
+            all_ok &= check("internal_fragment_and_chunk_ids_hidden", all(value not in jobs_text for value in ("chunk-", "fragment-", "FINALIZED")), jobs_text)
             server_session = requests.get(
                 f"{DASHBOARD_URL}/api/capture/sessions/{session_id}", timeout=10
             ).json()["session"]

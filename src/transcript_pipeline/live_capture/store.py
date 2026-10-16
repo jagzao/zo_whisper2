@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import shutil
 from pathlib import Path
 
 from transcript_pipeline.live_capture import models
@@ -137,6 +138,18 @@ class ManifestStore:
                 logger.warning("Skipping malformed live-capture session %s: %s", child.name, exc)
         sessions.sort(key=lambda s: s.created_at, reverse=True)
         return sessions
+
+    def delete_test_session(self, session_id: str, *, confirmed: bool) -> None:
+        if not confirmed:
+            raise ValidationError("explicit confirmation is required")
+        session = self.load_session(session_id)
+        if not session.is_test_session:
+            raise ValidationError("only explicitly marked test sessions can be cleaned up")
+        base = self.base_dir().resolve(strict=False)
+        target = self.session_dir(session_id).resolve(strict=False)
+        if target == base or base not in target.parents:
+            raise ValidationError("test session path is outside the capture store")
+        shutil.rmtree(target)
 
     # ── chunk media persistence ─────────────────────────────────────
 

@@ -62,7 +62,7 @@ def client(env):
 
 
 def _create_session(client, title="Sesion", **extra):
-    payload = {"title": title, **extra}
+    payload = {"title": title, "project_id": "Zo Interviews", **extra}
     return client.post(
         "/api/capture/sessions",
         data=json.dumps(payload),
@@ -117,13 +117,24 @@ def test_create_session_persists_continuous_playlist_mode(client, env):
     assert persisted.capture_mode == "playlist"
 
 
+def test_create_session_persists_existing_project(client):
+    missing_selection = _create_session(client, "No project", project_id="")
+    assert missing_selection.status_code == 400
+    missing = _create_session(client, "Invalid project", project_id="missing-project")
+    assert missing.status_code == 400
+    response = _create_session(client, "Project-owned", project_id="Zo Interviews")
+    assert response.status_code == 200
+    session = response.get_json()["session"]
+    assert session["projectId"] == "Zo Interviews"
+
+
 def test_create_session_rejects_invalid_capture_mode(client):
     response = _create_session(client, "Invalid mode", capture_mode="loop")
     assert response.status_code == 400
 
 
 def test_playlist_title_samples_confirm_boundary_and_persist_review_actions(client):
-    session_id = _create_session(client, "Playlist title sample", capture_mode="playlist").get_json()["session"]["sessionId"]
+    session_id = _create_session(client, "Playlist title sample", capture_mode="playlist", project_id="Zo Interviews").get_json()["session"]["sessionId"]
     url = f"/api/capture/sessions/{session_id}/title-samples"
     headers = {**AUTH_HEADERS, "Content-Type": "application/json"}
     one = "AMS KAP\nCompliance\nSession 1\n2026-08-05 12:29 UTC"
@@ -136,6 +147,7 @@ def test_playlist_title_samples_confirm_boundary_and_persist_review_actions(clie
     assert len(boundary["logicalVideos"]) == 2
     assert boundary["logicalVideos"][0]["endOffsetMs"] == 12000
     assert boundary["logicalVideos"][1]["processingChunkIds"] == ["chunk-000000"]
+    assert all(item["projectId"] == "Zo Interviews" for item in boundary["logicalVideos"])
     client.post(url, data=json.dumps({"ocr_text": "unclear slide", "confidence": 0.4, "offset_ms": 18000, "fragment_sequence": 2}), headers=headers)
     low = client.post(url, data=json.dumps({"ocr_text": "unclear slide", "confidence": 0.4, "offset_ms": 22000, "fragment_sequence": 2}), headers=headers).get_json()
     candidate = low["reviewCandidates"][0]
@@ -149,7 +161,7 @@ def test_playlist_title_samples_confirm_boundary_and_persist_review_actions(clie
 
 
 def test_confirmed_logical_video_is_listed_as_read_only_videos_entry(client):
-    session_id = _create_session(client, "Playlist listing", capture_mode="playlist").get_json()["session"]["sessionId"]
+    session_id = _create_session(client, "Playlist listing", capture_mode="playlist", project_id="Zo Interviews").get_json()["session"]["sessionId"]
     service = dashboard_app._get_capture_service()
     service.start_chunk(session_id)
     service.finalize_chunk(session_id, 0, b"synthetic video chunk")
@@ -165,6 +177,26 @@ def test_confirmed_logical_video_is_listed_as_read_only_videos_entry(client):
     logical = next(row for row in rows if row.get("logical_video", {}).get("title") == "AMS KAP Compliance Session 8")
     assert logical["logical_read_only"] is True
     assert logical["media_id"]
+    assert logical["project"] == "Zo Interviews"
+    assert not any(row["name"].startswith("chunk-") for row in rows if row.get("capture_session_id") == session_id)
+
+
+def test_video_listing_uses_session_rows_and_hides_marked_test_media(client):
+    session = _create_session(client, "User recording", project_id="Zo Interviews").get_json()["session"]
+    _start_chunk(client, session["sessionId"])
+    _finalize_chunk(client, session["sessionId"], 0, b"synthetic fixture video")
+    test_session = _create_session(
+        client, "Test fixture recording", project_id="Zo Interviews", is_test_session=True,
+    ).get_json()["session"]
+    _start_chunk(client, test_session["sessionId"])
+    _finalize_chunk(client, test_session["sessionId"], 0, b"synthetic fixture video")
+
+    rows = client.get("/api/files").get_json()["files"]
+    user_rows = [row for row in rows if row.get("capture_session_id") == session["sessionId"]]
+    assert len(user_rows) == 1
+    assert user_rows[0]["name"] == "User recording.webm"
+    assert user_rows[0]["status"] == "QUEUED"
+    assert not any(row.get("capture_session_id") == test_session["sessionId"] for row in rows)
 
 
 def test_create_session_requires_dashboard_token(client):

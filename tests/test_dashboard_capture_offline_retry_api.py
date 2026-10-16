@@ -70,7 +70,7 @@ def client(env):
 def _create_session(client, title="Sesion"):
     return client.post(
         "/api/capture/sessions",
-        data=json.dumps({"title": title}),
+        data=json.dumps({"title": title, "project_id": "Zo Interviews"}),
         content_type="application/json",
         headers=AUTH_HEADERS,
     ).get_json()["session"]["sessionId"]

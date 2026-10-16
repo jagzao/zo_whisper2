@@ -720,6 +720,27 @@ def _media_recorded_datetime(media_path: Path, root: MediaRoot, modified_at: flo
     return datetime.fromtimestamp(modified_at).astimezone()
 
 
+def _is_test_capture_session(session: capture_models.Session) -> bool:
+    return session.is_test_session or bool(re.search(r"\b(synthetic|fixture|e2e test)\b", session.title, re.IGNORECASE))
+
+
+def _capture_user_status(session: capture_models.Session) -> str:
+    states = [chunk.state for chunk in session.chunks]
+    if capture_models.ChunkState.CANCEL_REQUESTED in states:
+        return "CANCEL_REQUESTED"
+    if capture_models.ChunkState.PROCESSING in states:
+        return "PROCESSING"
+    if capture_models.ChunkState.FAILED in states:
+        return "FAILED"
+    if capture_models.ChunkState.CANCELLED in states:
+        return "CANCELLED"
+    if states and all(state is capture_models.ChunkState.PROCESSED for state in states):
+        return "COMPLETED"
+    if capture_models.ChunkState.FINALIZED in states:
+        return "QUEUED"
+    return "CAPTURING" if session.status is capture_models.SessionStatus.ACTIVE else session.status.value
+
+
 def _frame_media_url(frames_parent: Path, relative_to_frames_parent: str) -> str:
     """URL for a raw frame file (relative to frames_parent, where
     KeyframeExtractor wrote it — NOT manual_dir, whose assets/ only holds
@@ -825,6 +846,8 @@ def api_folders() -> Any:
 def api_files() -> Any:
     _ensure_folders()
     media_files: list[dict] = []
+    listed_capture_sessions: set[str] = set()
+    listed_logical_videos: set[tuple[str, str]] = set()
 
     for base, root in ((VIDEOS_BASE, MediaRoot.VIDEOS), (AUDIO_BASE, MediaRoot.AUDIO)):
         if not base.exists():
@@ -832,6 +855,17 @@ def api_files() -> Any:
         for path in base.rglob("*"):
             if not path.is_file() or path.suffix.lower() not in SUPPORTED_MEDIA:
                 continue
+            relative_parts = path.relative_to(base).parts
+            if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture":
+                if len(relative_parts) != 4 or relative_parts[2] != "chunks":
+                    continue
+                session_id = relative_parts[1]
+                try:
+                    session = _get_capture_service().get_session(session_id)
+                except (ValueError, OSError, capture_errors.ValidationError):
+                    continue
+                if _is_test_capture_session(session):
+                    continue
             media_stat = path.stat()
             media_date = _media_recorded_datetime(path, root, media_stat.st_mtime)
             transcription = _resolve_transcription(path)
@@ -851,41 +885,61 @@ def api_files() -> Any:
                     "transcription": transcription,
                     "documentation": _resolve_documentation(path, root),
                 }
-            media_files.append(file_row)
-            parts = path.parts
-            if root is MediaRoot.VIDEOS and "live_capture" in parts:
-                live_index = parts.index("live_capture")
-                if live_index + 3 < len(parts) and parts[live_index + 2] == "chunks":
-                    session_id = parts[live_index + 1]
-                    chunk_id = path.stem
+            if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture":
+                chunk_id = path.stem
+                logical_rows = []
+                all_logical_rows = []
+                if session.capture_mode == "playlist":
                     try:
                         playlist = _get_playlist_service().list(session_id)
-                        for logical in playlist.get("logicalVideos", []):
-                            if logical.get("status") != "CONFIRMED" or chunk_id not in logical.get("processingChunkIds", []):
-                                continue
-                            logical_row = dict(file_row)
-                            logical_row["logical_video"] = {
-                                key: logical.get(key) for key in (
-                                    "id", "title", "category", "sessionNumber", "recordedAt", "confidence",
-                                    "startOffsetMs", "endOffsetMs", "processingChunkIds",
-                                )
-                            }
-                            logical_row["logical_session_id"] = session_id
-                            logical_row["name"] = f"{logical.get('title') or path.stem}{path.suffix}"
-                            logical_row["logical_read_only"] = True
-                            displayed_at = logical.get("recordedAt")
-                            if displayed_at:
-                                try:
-                                    parsed = datetime.fromisoformat(str(displayed_at).replace(" UTC", "+00:00"))
-                                    if parsed.tzinfo is None:
-                                        parsed = parsed.replace(tzinfo=timezone.utc)
-                                    logical_row["date_epoch"] = parsed.timestamp()
-                                    logical_row["date"] = parsed.astimezone().isoformat(timespec="seconds")
-                                except ValueError:
-                                    pass
-                            media_files.append(logical_row)
+                        all_logical_rows = [
+                            logical for logical in playlist.get("logicalVideos", [])
+                            if logical.get("status") == "CONFIRMED"
+                        ]
+                        logical_rows = [
+                            logical for logical in all_logical_rows
+                            if chunk_id in logical.get("processingChunkIds", [])
+                            and (session_id, str(logical.get("id"))) not in listed_logical_videos
+                        ]
                     except (ValueError, OSError, capture_errors.ValidationError):
                         logger.exception("Could not list logical videos for %s", session_id)
+                for logical in logical_rows:
+                    logical_row = dict(file_row)
+                    logical_row["logical_video"] = {
+                        key: logical.get(key) for key in (
+                            "id", "title", "category", "sessionNumber", "recordedAt", "confidence",
+                            "startOffsetMs", "endOffsetMs", "processingChunkIds", "projectId",
+                        )
+                    }
+                    logical_row["logical_session_id"] = session_id
+                    logical_row["capture_status"] = _capture_user_status(session)
+                    logical_row["status"] = logical_row["capture_status"]
+                    logical_row["name"] = f"{logical.get('title') or session.title}{path.suffix}"
+                    logical_row["project"] = session.project_id
+                    logical_row["logical_read_only"] = True
+                    listed_logical_videos.add((session_id, str(logical.get("id"))))
+                    displayed_at = logical.get("recordedAt")
+                    if displayed_at:
+                        try:
+                            parsed = datetime.fromisoformat(str(displayed_at).replace(" UTC", "+00:00"))
+                            if parsed.tzinfo is None:
+                                parsed = parsed.replace(tzinfo=timezone.utc)
+                            logical_row["date_epoch"] = parsed.timestamp()
+                            logical_row["date"] = parsed.astimezone().isoformat(timespec="seconds")
+                        except ValueError:
+                            pass
+                    media_files.append(logical_row)
+                if not all_logical_rows and session_id not in listed_capture_sessions:
+                    file_row["name"] = f"{session.title}{path.suffix}"
+                    file_row["project"] = session.project_id
+                    file_row["capture_session_id"] = session_id
+                    file_row["capture_status"] = _capture_user_status(session)
+                    file_row["status"] = file_row["capture_status"]
+                    file_row["logical_read_only"] = True
+                    media_files.append(file_row)
+                listed_capture_sessions.add(session_id)
+                continue
+            media_files.append(file_row)
 
     sort_by = request.args.get("sort_by", "date").lower()
     direction = request.args.get("order", "desc").lower()
@@ -1460,7 +1514,11 @@ def serve_doc_asset() -> Any:
 # body for an existing RECORDING chunk, bounded by MAX_CONTENT_LENGTH.
 
 def _session_payload(session: capture_models.Session) -> dict[str, Any]:
-    return session.to_manifest()
+    payload = session.to_manifest()
+    service = _get_capture_service()
+    payload["fragmentCount"] = len(service.list_fragments(session.session_id))
+    payload["processingChunkCount"] = len(service.list_processing_chunks(session.session_id))
+    return payload
 
 
 def _parse_crop(value: object) -> capture_models.CropRegion | None:
@@ -1543,9 +1601,21 @@ def api_capture_create_session() -> Any:
     capture_mode = str(payload.get("capture_mode") or "normal").lower()
     if capture_mode not in {"normal", "playlist"}:
         return jsonify({"ok": False, "error": "capture_mode must be normal or playlist"}), 400
+    project_id = str(payload.get("project_id") or "").strip()
+    project_names = {str(project.get("name") or "").strip() for project in _load_projects()}
+    project_names.discard("")
+    if project_id and project_id not in project_names:
+        return jsonify({"ok": False, "error": "project_id must identify an existing Whisper project"}), 400
+    if not project_id:
+        default_projects = [p for p in _load_projects() if p.get("default") is True and p.get("name")]
+        if len(default_projects) == 1:
+            project_id = str(default_projects[0]["name"])
+    if not project_id:
+        return jsonify({"ok": False, "error": "Select an existing Whisper project before recording"}), 400
     session = _get_capture_service().create_session(
         title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop,
-        audio_availability=audio_availability, capture_mode=capture_mode,
+        audio_availability=audio_availability, capture_mode=capture_mode, project_id=project_id,
+        is_test_session=bool(payload.get("is_test_session")) and (app.testing or app.config.get("CAPTURE_TEST_MODE")),
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
 
@@ -1554,6 +1624,13 @@ def api_capture_create_session() -> Any:
 def api_capture_get_session(session_id: str) -> Any:
     session = _get_capture_service().get_session(session_id)
     return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/test-sessions/<session_id>/cleanup", methods=["POST"])
+def api_capture_cleanup_test_session(session_id: str) -> Any:
+    payload = request.get_json(silent=True) or {}
+    _get_capture_service().store.delete_test_session(session_id, confirmed=payload.get("confirm") is True)
+    return jsonify({"ok": True, "sessionId": session_id, "cleaned": True})
 
 
 # ── W5 upload fragments ──────────────────────────────────────────────────
@@ -1782,6 +1859,29 @@ def api_capture_cancel_processing(session_id: str, index: int) -> Any:
     return jsonify({"ok": True, "chunk": chunk.to_manifest()})
 
 
+@app.route("/api/capture/sessions/<session_id>/cancel-processing", methods=["POST"])
+def api_capture_cancel_session_processing(session_id: str) -> Any:
+    service = _get_capture_service()
+    session = service.get_session(session_id)
+    for chunk in session.chunks:
+        if chunk.state in {capture_models.ChunkState.FINALIZED, capture_models.ChunkState.PROCESSING,
+                           capture_models.ChunkState.CANCEL_REQUESTED}:
+            service.cancel_processing(session_id, chunk.index)
+    return jsonify({"ok": True, "session": _session_payload(service.get_session(session_id))})
+
+
+@app.route("/api/capture/sessions/<session_id>/retry-processing", methods=["POST"])
+def api_capture_retry_session_processing(session_id: str) -> Any:
+    service = _get_capture_service()
+    session = service.get_session(session_id)
+    for chunk in session.chunks:
+        if chunk.state is capture_models.ChunkState.CANCELLED:
+            service.retry_cancelled_processing(session_id, chunk.index)
+        elif chunk.state is capture_models.ChunkState.FAILED:
+            service.mark_processing(session_id, chunk.index)
+    return jsonify({"ok": True, "session": _session_payload(service.get_session(session_id))})
+
+
 @app.route("/api/capture/sessions/<session_id>/chunks/<int:index>/retry-processing", methods=["POST"])
 def api_capture_retry_processing(session_id: str, index: int) -> Any:
     service = _get_capture_service()
@@ -1789,6 +1889,8 @@ def api_capture_retry_processing(session_id: str, index: int) -> Any:
     chunk = (
         service.retry_cancelled_processing(session_id, index)
         if current.state is capture_models.ChunkState.CANCELLED
+        else service.mark_processing(session_id, index)
+        if current.state is capture_models.ChunkState.FAILED
         else current
     )
     return jsonify({"ok": True, "chunk": chunk.to_manifest()})
