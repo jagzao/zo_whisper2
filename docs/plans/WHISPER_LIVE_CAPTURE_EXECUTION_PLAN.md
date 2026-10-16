@@ -115,7 +115,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: after the final synced checkpoint, desktop `http://127.0.0.1:5000` and LAN HTTPS `https://192.168.50.67:5001` were rebuilt/restarted from this repo. Served-build Playwright passed both origins: visible/header/meta revision matches Git HEAD and remote, `no-store`, no service worker, same inline-JS hash, current capture/project UI, 4 synthetic files selected together, queue removal, multi-file drop, concurrency 2, per-file cancel/retry, project propagation, and no raw chunks/browser errors (`artifacts/gates/served-build/capture_multifile_upload_report.json`). Mobile viewport suite passed at 390x844 (`capture_mobile_layout_report.json`). First browser attempt exposed test-only setup/assertion issues (modal overlay remained visible; assertion expected `Uploaded` while UI says `OK`); corrected both and reran successfully. First host gate attempt had one `ERR_CONNECTION_RESET` while server logged HTML/API/logo 200; inspected report and reran `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`, passing in 26.77s (`artifacts/gates/latest.json`). Desktop originally served a container from a separate checkout and mobile a stale Python process; Docker was rebuilt from this repo while preserving the existing data bind, and the Python server restarted from this checkout. No service worker or bundled static JS was present.
 
 ### W28 - P0 scope reconciliation and baseline
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: persist the added delivery scope in this canonical plan before implementation and reconcile prior PASS claims against current UI/code.
 - Dependencies: W27 PASS.
 - Implementation tasks: record current HEAD/remote/tree; audit capture UI/fragments/chunks/docs V2/upload transport and concurrency/video actions/states/metrics/tests/artifacts; define W29-W34 dependencies and acceptance.
@@ -125,9 +125,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: Git status/head/remote; focused source/artifact inspection; `git diff --check`.
 - Expected artifacts: committed plan update and baseline entry in Progress Log.
 - Recovery/fallback: preserve history, append corrections in this file, and never use backend-only evidence to claim UI acceptance.
+- Evidence: scope and W28-W34 stages committed in `ce52a56`; HEAD and remote matched, worktree clean before implementation. Audit found upload concurrency fixed at 2; UI's “Regenerate” invokes the legacy step renderer; Docs V2 generation exists separately, without a video-detail V2 action/history. Baseline and remaining acceptance are recorded above.
 
 ### W29 - Live Capture / transmission stability
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: revalidate and repair the complete mobile capture journey against current code.
 - Dependencies: W28 PASS.
 - Implementation tasks: camera preview uses recording stream; timer/start/stop; 10-30s MediaRecorder fragments; durable incremental ACK; server 10-15 minute processing chunks; IndexedDB offline/reload retry; playlist/title confirmation/logical boundaries; project inheritance; cancel/retry; responsive controls; no chunks displayed.
