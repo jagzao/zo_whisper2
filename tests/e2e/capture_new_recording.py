@@ -112,6 +112,11 @@ def main() -> int:
             # 2. Required controls exist in the capture shell.
             all_ok &= check("preview_visible", page.locator("#capturePreview").is_visible())
             all_ok &= check(
+                "front_and_rear_camera_options",
+                page.locator("#captureCameraFacing option").all_text_contents() == ["Back camera", "Front camera"]
+                and page.locator("#captureCameraFacing").input_value() == "environment",
+            )
+            all_ok &= check(
                 "normal_mode_visible",
                 page.locator("#captureModeNormal").is_visible()
                 and "Normal Recording" in page.locator("label[for='captureModeNormal']").inner_text(),
@@ -205,11 +210,25 @@ def main() -> int:
             page.locator("#captureModePlaylist").check()
             page.wait_for_function("document.querySelectorAll('#captureProject option').length > 1")
             page.locator("#captureProject").select_option(index=1)
+            page.evaluate("""() => {
+                const mediaDevices = navigator.mediaDevices;
+                const original = mediaDevices.getUserMedia.bind(mediaDevices);
+                window.__captureRequestedFacingMode = null;
+                mediaDevices.getUserMedia = constraints => {
+                    window.__captureRequestedFacingMode = constraints.video.facingMode.ideal;
+                    return original(constraints);
+                };
+            }""")
             page.locator("#captureStartBtn").click()
             page.wait_for_function(
                 "document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS
             )
             all_ok &= check("recording_state", page.locator("#captureState").inner_text() == "Recording")
+            all_ok &= check(
+                "rear_camera_requested",
+                page.evaluate("() => window.__captureRequestedFacingMode") == "environment",
+                str(page.evaluate("() => window.__captureRequestedFacingMode")),
+            )
             preview = page.locator("#capturePreview").evaluate("el => ({width:el.videoWidth, inline:el.playsInline, autoplay:el.autoplay, sameStream:el.srcObject === capture.recorder.stream})")
             all_ok &= check("live_preview_uses_recording_stream", preview["width"] > 0 and preview["inline"] and preview["autoplay"] and preview["sameStream"], json.dumps(preview))
             session_project = page.evaluate("async id => (await (await fetch(`/api/capture/sessions/${id}`)).json()).session.projectId", page.evaluate("window.__captureSnapshot().sessionId"))

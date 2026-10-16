@@ -625,3 +625,21 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: W35/W36 opened. Baseline HEAD/remote `1897448c8f8aebeabb10d911afe39ca976f8a08e`, clean worktree. `/api/run/full` UI sent the dashboard token, while middleware required private client, allowed Host/Origin and a process-random token. Persistent shared anti-CSRF token now fixes cross-worker/restart mismatch; host/origin/private-client authorization remains active; errors are useful JSON and Run Full queues a durable job. W35 API/security/command tests pass, including authorized LAN Run Full and invalid-token rejection. Real-button Playwright passed on desktop and LAN origins: current build, click/token forwarding, useful errors and worker status; invalid-token POST remained 403 (10/10 checks). First Playwright attempt intercepted the negative request in the success stub; the route was corrected and the full rerun passed. The initial combined test run inherited LAN/certificate settings from `scan_config.env`; the loopback test now clears those values, and 82 focused tests pass. W35 PASS; W36 IN_PROGRESS.
 - 2026-10-16: W36 PASS. Persistent JSON job storage and cross-process OS locking provide durable idempotent claims; stale/dead-worker claims recover safely; cancelled jobs are not claimed; day/night limits derive from configured `WHISPER_TIMEZONE`; next/last scan and pending/active/limit are exposed in `/api/status` and the dashboard. Fresh targeted matrix: 131 passed in 17.26s. Run Full desktop/LAN Playwright: 10/10 passed. Required host gate `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`: PASS in 49.22s, `artifacts/gates/latest.json`, log `artifacts/gates/logs/e2e.log`. Docker health/status had already been verified on the implementation commit (`eecda050ab72375c1bce34b992344f78707b5257`), build marker matched the source revision, and existing data bind was preserved. A scheduled test job created during an earlier misconfigured run was cancelled and verified `CANCELLED`; no user media was removed. W35/W36 complete; no open code blocker.
 
+## W37 — Mobile front/rear camera selection
+
+- ID: W37
+- Status: PASS
+- Objective: let mobile users choose the rear camera as well as the front camera when recording.
+- Dependencies: W3/W4 PASS.
+- Implementation tasks: expose front/rear camera options before recording; default to the rear camera; pass the selected facing mode to `getUserMedia` while reusing the acquired stream for preview and recording.
+- Relevant files/modules: `src/transcript_pipeline/dashboard/templates/dashboard.html`, `tests/e2e/capture_new_recording.py`.
+- Acceptance criteria: both camera choices are visible; rear is selected by default; selecting rear requests `facingMode=environment`; capture preview, fragment upload and stop flow still pass.
+- Required tests: synthetic camera Playwright coverage for options/default and requested facing mode; host E2E.
+- Validation commands: isolated `tests/e2e/capture_new_recording.py`; `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`.
+- Expected artifacts: `capture_new_recording_report.json`; `artifacts/gates/latest.json`.
+- Recovery/fallback: keep camera selection optional on devices exposing one camera; surface browser permission/device errors without forcing a camera switch during recording.
+
+### Progress Log — mobile camera selector UAT
+
+- 2026-10-16: UAT reported that mobile capture only offered the front camera. Root cause: UI had no camera selector and called `getUserMedia({video:true})`, leaving the choice to browser defaults. Added Back camera (default) and Front camera choices; selected facing mode is requested as an ideal constraint so unsupported devices can still use their available camera. Isolated synthetic Playwright capture passed all checks, including both choices, rear constraint, preview on the recording stream, fragment ACKs, and clean stop. Host E2E passed in 54.96s (`artifacts/gates/latest.json`, `artifacts/gates/logs/e2e.log`). No real/private media used by these tests. W37 PASS.
+

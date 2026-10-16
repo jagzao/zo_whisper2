@@ -1052,6 +1052,13 @@
                 <label for="captureTitle">Title:</label>
                 <input type="text" id="captureTitle" value="Live capture" style="flex:1;">
             </div>
+            <div class="row capture-camera-row" style="align-items:center; margin-top:0;">
+                <label for="captureCameraFacing">Camera:</label>
+                <select id="captureCameraFacing" style="flex:1; min-width:0;">
+                    <option value="environment" selected>Back camera</option>
+                    <option value="user">Front camera</option>
+                </select>
+            </div>
             <div class="capture-preview-wrap" style="position:relative; margin:0.75rem 0; height:320px;">
                 <video id="capturePreview" autoplay playsinline muted style="width:100%; height:100%; object-fit:fill; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
                 <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem; z-index:2;">Idle</span>
@@ -3354,9 +3361,13 @@
             }
             setCaptureState('requesting');
             const requestAudio = document.getElementById('captureAudio').checked === true;
+            const facingMode = document.getElementById('captureCameraFacing')?.value === 'user' ? 'user' : 'environment';
             let stream;
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: requestAudio });
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: facingMode } },
+                    audio: requestAudio,
+                });
             } catch (err) {
                 const name = err && err.name;
                 if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
