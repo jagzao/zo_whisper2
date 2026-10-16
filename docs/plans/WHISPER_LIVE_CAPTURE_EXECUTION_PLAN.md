@@ -361,7 +361,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback evidence: each configured failed component was rerun independently after its fix and passed; aggregate-only rerun must wait until >6.0 GiB is available.
 
 ### W24 - Final readiness
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
 - Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
 - Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
@@ -371,7 +371,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `git diff --check`; targeted/full validation; `git status`; `git rev-parse HEAD`; `git ls-remote`.
 - Expected artifacts: final gate reports and committed plan evidence.
 - Recovery/fallback: do not claim PASS with an unrerun failure; report exact code vs environment blocker.
-- Evidence: UAT correction validated: mobile layout 8/8 and actual mobile title/playlist/Videos flow 18/18 at 390x844; final Host E2E 26.37s PASS; Python test syntax and `git diff --check` pass. Earlier unit/integration, Docs/GC, LAN, Docker evidence remains PASS; W23 retains the previously justified aggregate-only RAM blocker. W3/W21/W22 PASS. W24 final commit/push/clean-tree check is pending this checkpoint.
+- Evidence: UAT correction validated: mobile layout 8/8 and actual mobile title/playlist/Videos flow 18/18 at 390x844; final Host E2E 26.37s PASS; Python test syntax and `git diff --check` pass. Earlier unit/integration, Docs/GC, LAN, Docker evidence remains PASS; W23 retains the justified aggregate-only RAM blocker. W3/W21/W22 PASS. UAT code and reports are committed in `f655dc9`; this W24 plan checkpoint is pushed and remote/worktree verification follows.
 
 ## Global Definition of Done
 
@@ -430,6 +430,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: Revalidated stages. W11 is PASS, not BLOCKED: title/API suite and synthetic camera OCR/review Playwright passed 50 checks and 11/11. Host E2E rerun PASS in 27.37s. Mobile/LAN Playwright PASS 12/12 for HTTPS, ONLINE, camera preview, ACKed fragments, durable server state, and no browser errors. A direct title-playlist attempt against LAN HTTPS stopped at Chromium `ERR_CERT_AUTHORITY_INVALID` because that helper does not trust the locally generated CA; this does not invalidate the prior synthetic title run. Aggregate heavy runner retried at 4.99 GiB (<6.0 GiB); W23 remains ENV_BLOCKED. W12-W22 remain PASS; W24 PASS.
 - 2026-10-16: UAT reopened W3, W21, W22, and W24. Reported issue: New Recording modal is not mobile responsive; required 390x844 viewport-safe layout, no horizontal overflow, stacked controls, camera preview near top, sticky accessible Start/Stop, and readable playlist results. Existing capture functionality is retained; responsive layout and mobile Playwright evidence are pending.
 - 2026-10-16: Mobile UAT fix PASS. Root cause included intrinsic Videos table width expanding the mobile layout viewport (preventing the 640px breakpoint), an inline 900px modal max-width, settings arranged in one row, preview below advanced controls, and non-sticky actions. Contained Videos table scrolling, allowed zero-min grid tracks, added device-width mobile styles, full-screen safe-area modal, preview-first layout, grid form settings, stacked 44px playlist actions and sticky Start/Stop footer. Mobile layout Playwright passed 8/8; full synthetic OCR/review playlist Playwright passed 18/18 at 390x844; Host E2E rerun passed in 26.37s. An initial playlist rerun exposed a stale assertion expecting both original titles after renaming Session 2; corrected it to verify the filtered Session 1 and both current names after clearing the filter, then reran successfully. A separate desktop capture test attempt could not reach its preflight API because Requests rejected the locally self-signed HTTPS certificate; the existing desktop 23/23 result remains valid and current mobile HTTPS tests use explicit local browser certificate allowance. W3/W21/W22 PASS; W24 remains IN_PROGRESS pending final diff/commit/push checks.
+- 2026-10-16: UAT code/report checkpoint `f655dc9` pushed. W3/W21/W22 PASS; W24 PASS with W23's justified RAM-only blocker.
 
 ## Final Delivery Checklist
 
