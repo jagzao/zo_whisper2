@@ -128,7 +128,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Evidence: scope and W28-W34 stages committed in `ce52a56`; HEAD and remote matched, worktree clean before implementation. Audit found upload concurrency fixed at 2; UI's “Regenerate” invokes the legacy step renderer; Docs V2 generation exists separately, without a video-detail V2 action/history. Baseline and remaining acceptance are recorded above.
 
 ### W29 - Live Capture / transmission stability
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: revalidate and repair the complete mobile capture journey against current code.
 - Dependencies: W28 PASS.
 - Implementation tasks: camera preview uses recording stream; timer/start/stop; 10-30s MediaRecorder fragments; durable incremental ACK; server 10-15 minute processing chunks; IndexedDB offline/reload retry; playlist/title confirmation/logical boundaries; project inheritance; cancel/retry; responsive controls; no chunks displayed.
@@ -138,9 +138,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: focused `pytest`; `capture_mobile_layout.py`; `capture_new_recording.py`; `capture_chunking.py`; `capture_offline_retry.py`; `capture_playlist.py`; `capture_cancellation.py`.
 - Expected artifacts: capture/offline/playlist/cancellation browser reports and focused test logs.
 - Recovery/fallback: repair each root cause once, reassess and use one different repair if needed; document physical-device camera UAT as unperformed if hardware is unavailable.
+- Evidence: focused live-capture/dashboard/Date unit+integration matrix passed 256 tests. Current served UI Playwright passed: mobile layout 8/8; New Recording 44/44 (same-stream preview, selected project, 15s fragments, ACKs while recording and stop drain); chunking 11/11; offline/IndexedDB retry 22/22; playlist/title review 18/18; cancellation 11/11. Session 1/2 confirmed from synthetic frames, logical boundary remained inside one processing chunk, and both videos inherited the project. Raw internal chunks stayed hidden. Reports are saved under `artifacts/gates/w29-live-capture/`; synthetic fixtures only. Physical phone hardware was not operated.
 
 ### W30 - Streamed multi-file upload concurrency
-- Status: PENDING
+- Status: IN_PROGRESS
 - Objective: configure bulk uploads at default concurrency 4 and maximum 6 without whole-file memory buffering.
 - Dependencies: W28 PASS; retain W27 multiselect foundation.
 - Implementation tasks: add validated configurable concurrency; clarify `Ready` as pending/ready-to-upload; show per-file Ready/Uploading/Processing/Completed/Failed; preserve per-file cancel/retry/remove/project_id; keep unique identity/idempotent retry; prove browser File and server request streams remain bounded before increasing concurrency.
@@ -557,6 +558,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: UAT reopened W3/W21/W22/W24 and added W27. HEAD and remote were both `91513caa`. Process inspection found stale repo Python server on 5001 (started Oct 15 before later commits) and desktop port 5000 served a separate Docker image built from `C:\Dev\Zo\whisper-zmi-docker`; its HTML lacks New Recording. Current template has inline HTML/JS but no cache/build identity, and its upload input lacked `multiple` and uploads serialized after clearing the queue. No service worker is registered. Preserve Docker's existing data bind while rebuilding from this repository; make both browser origins report one build identity.
 - 2026-10-16: W27 accepted. Rebuilt Docker port 5000 from this repository without changing its user-data bind; restarted current-repo LAN HTTPS server on 5001. Desktop + 390x844 Playwright verified latest revision, matching inline JS, no stale cache/SW, project selector, four-file selection, queue/drop/remove, concurrency 2, independent failure/cancel/retry, project_id, and no chunk rows. Mobile layout passed; host E2E rerun passed in 26.77s after inspecting and retrying one transient `ERR_CONNECTION_RESET`. Initial E2E harness issues were corrected and rerun. Final commit/push and post-checkpoint served-build verification complete; W3/W21/W22/W24/W27 PASS; W23 remains the documented RAM-only blocker.
 - 2026-10-16: New P0 scope opened in the same plan. Baseline HEAD/remote `6bafdef476c70753c99a4f5a0112b1dee06eb36f`, clean tree. Current bulk upload is fixed at concurrency 2, sends the browser File via FormData, and server uses Werkzeug request.files then file.save; no JavaScript whole-file arrayBuffer path. Video detail's “Regenerate” calls legacy `regenerate_from_steps`, separate V2 CLI/API generation exists, and version-history/detail reprocess UI is not yet exposed. Current Videos API has 13 user rows (11 COMPLETED, 2 QUEUED); staging has 3 distinct MP4s. Plan W28-W34 added before implementation. OpenCode exposes `opencode-go/glm-5.3-flash`; use it as primary coding executor.
+- 2026-10-16: W29 PASS. Ran the 256-test capture/API/Date matrix and six synthetic Playwright journeys against current dashboard; preview/recording stream, fragment ACK/stop drain, 10-30s configuration, chunking, IndexedDB offline reload/retry, playlist Session 1/2 multi-frame confirmation, in-chunk logical boundary, project inheritance, 390x844 layout, cancel/retry and raw-chunk hiding all passed. Evidence in `artifacts/gates/w29-live-capture/`. No real media was opened.
 
 ## Final Delivery Checklist
 
