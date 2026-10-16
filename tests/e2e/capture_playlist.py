@@ -39,7 +39,13 @@ def main() -> int:
     all_ok = True
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1440, "height": 1000}, permissions=["camera"])
+        context = browser.new_context(
+            viewport={"width": 390, "height": 844},
+            is_mobile=True,
+            has_touch=True,
+            ignore_https_errors=True,
+            permissions=["camera"],
+        )
         page = context.new_page()
         page.add_init_script(SOURCE_SCRIPT)
         errors = []
@@ -49,6 +55,24 @@ def main() -> int:
             page.wait_for_selector("#filesList")
             page.locator("#newRecordingBtn").click()
             page.wait_for_selector("#captureModal:not(.hidden)")
+            mobile_geometry = page.evaluate("""() => ({
+                viewportWidth: innerWidth,
+                documentWidth: document.documentElement.scrollWidth,
+                modalWidth: document.querySelector('#captureModal .capture-modal').clientWidth,
+                modalScrollWidth: document.querySelector('#captureModal .capture-modal').scrollWidth,
+                actionsDirection: getComputedStyle(document.querySelector('#captureActions')).flexDirection,
+                previewBottom: document.querySelector('#capturePreview').getBoundingClientRect().bottom,
+                viewportHeight: innerHeight,
+            })""")
+            all_ok &= check(
+                "mobile_modal_viewport_safe",
+                mobile_geometry["documentWidth"] <= mobile_geometry["viewportWidth"] + 1
+                and mobile_geometry["modalWidth"] <= mobile_geometry["viewportWidth"]
+                and mobile_geometry["modalScrollWidth"] <= mobile_geometry["modalWidth"] + 1
+                and mobile_geometry["actionsDirection"] == "column"
+                and mobile_geometry["previewBottom"] <= 0.75 * mobile_geometry["viewportHeight"],
+                json.dumps(mobile_geometry),
+            )
             page.locator("#captureModePlaylist").check()
             page.locator("#captureStartBtn").click()
             page.wait_for_function("document.getElementById('captureState').textContent === 'Recording'")
@@ -68,6 +92,21 @@ def main() -> int:
             )
             session_two = page.locator("#captureLogicalVideos .capture-logical-row").filter(has_text="Session 2").first
             all_ok &= check("session2_automatically_detected", session_two.count() >= 1)
+            mobile_rows = page.evaluate("""() => {
+                const list = document.querySelector('#captureLogicalVideos');
+                return [...list.querySelectorAll('.capture-logical-row')].map(row => ({
+                    width: row.clientWidth,
+                    scrollWidth: row.scrollWidth,
+                    actionHeight: row.querySelector('button')?.getBoundingClientRect().height || 0,
+                    title: row.querySelector('span')?.innerText || '',
+                }));
+            }""")
+            all_ok &= check(
+                "mobile_playlist_rows_readable",
+                len(mobile_rows) >= 2
+                and all(row["scrollWidth"] <= row["width"] + 1 and row["actionHeight"] >= 44 for row in mobile_rows),
+                json.dumps(mobile_rows),
+            )
             logical = page.evaluate("async id => (await (await fetch(`/api/capture/sessions/${id}/logical-videos`)).json()).logicalVideos", session_id)
             all_ok &= check(
                 "stable_boundary_within_same_processing_chunk",
@@ -122,8 +161,20 @@ def main() -> int:
             page.locator("#fileFilter").fill("AMS KAP Compliance Session 1")
             page.evaluate("async () => { await loadFiles(); applyFileFilters(); }")
             page.wait_for_function("document.getElementById('filesList').innerText.includes('AMS KAP Compliance Session 1')")
-            video_rows = page.locator("#filesList tbody tr").filter(has_text="AMS KAP Compliance Session")
-            all_ok &= check("logical_videos_appear_in_videos_table", video_rows.count() >= 2)
+            video_rows = page.locator("#filesList tbody tr").filter(has_text="AMS KAP Compliance Session 1")
+            all_ok &= check("filtered_logical_video_appears_in_videos_table", video_rows.count() >= 1)
+            page.locator("#pageSize").select_option("50")
+            page.locator("#fileFilter").fill("")
+            page.evaluate("async () => { await loadFiles(); applyFileFilters(); }")
+            page.wait_for_function("""() => {
+                const rows = document.getElementById('filesList').innerText;
+                return rows.includes('AMS KAP Compliance Session 1') && rows.includes('Corrected Session 2');
+            }""")
+            all_ok &= check(
+                "logical_videos_appear_in_videos_table",
+                page.locator("#filesList tbody tr").filter(has_text="AMS KAP Compliance Session 1").count() >= 1
+                and page.locator("#filesList tbody tr").filter(has_text="Corrected Session 2").count() >= 1,
+            )
             session_one_row = page.locator("#filesList tbody tr").filter(has_text="Session 1").first
             all_ok &= check("logical_video_reuses_documentation_action", session_one_row.get_by_role("button", name="Generate Documentation").count() == 1)
             all_ok &= check("logical_video_cannot_delete_shared_physical_chunk", session_one_row.get_by_role("button", name="Delete").count() == 0)
