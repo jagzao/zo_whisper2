@@ -590,3 +590,35 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - [x] Code and canonical plan committed; remote SHA equals HEAD
 - [x] Worktree clean; no merge/deploy
 
+## W35 — Run Full security and UI recovery
+
+- ID: W35
+- Status: IN_PROGRESS
+- Objective: make the real Run Full button work from desktop and authorized LAN clients while retaining request authorization and showing actionable errors.
+- Dependencies: W0, W2, W25, W27, W34 PASS.
+- Implementation tasks: trace the browser request through `/api/run/full`; correct token validity across served workers/page reloads without weakening Host/Origin/private-client checks; keep unauthorized mutations rejected; return structured authorization and job-start errors; render HTTP and JSON errors in the dashboard; add real-button Playwright coverage for desktop and authorized LAN plus a negative unauthorized case.
+- Relevant files/modules: `src/transcript_pipeline/dashboard/app.py`, `src/transcript_pipeline/dashboard/templates/dashboard.html`, `tests/test_dashboard_lan_access.py`, `tests/test_dashboard_commands.py`, `tests/e2e/`.
+- Acceptance criteria: Run Full starts once from the real desktop UI and authorized LAN UI; invalid token/host/origin still receives 403; visible errors are useful and never raw HTML/Forbidden; no global security relaxation.
+- Required tests: endpoint token/host/origin cases; Run Full success; desktop and LAN Playwright button click; invalid authorization rejection.
+- Validation commands: targeted pytest files; targeted Playwright; `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`.
+- Expected artifacts: Run Full Playwright report and host gate report.
+- Recovery/fallback: inspect actual request headers, response JSON, and server logs; fix one root cause at a time, maximum two distinct repairs per failure; preserve security checks.
+
+## W36 — Persistent scheduled processing worker
+
+- ID: W36
+- Status: PENDING
+- Objective: persist pending processing work and automatically scan hourly with timezone-aware day/night concurrency limits, duplicate-safe claims, cancellation and restart/stale recovery.
+- Dependencies: W35 PASS; compatible with W8 cancellation, W20 test matrix and W33 job state/metrics.
+- Implementation tasks: add durable job records and cross-process claim locking; define local timezone/day window 09:00–21:00 concurrency 1 and night window 21:00–09:00 concurrency 3; scan pending work hourly and on startup; claim jobs idempotently; recover stale claims to QUEUED without replaying terminal/cancelled jobs; honor cancellation between stages; ensure upload concurrency remains independent; expose RUNNING, pending/active counts, limit, next/last scan in admin/status UI.
+- Relevant files/modules: new `src/transcript_pipeline/processing_worker.py` and persistence module as needed; `src/transcript_pipeline/dashboard/app.py`; `src/transcript_pipeline/settings.py`; dashboard template; Docker/startup configuration; focused worker/API/UI tests.
+- Acceptance criteria: queued/pending jobs resume after restart; one job cannot be claimed twice across concurrent workers; active count never exceeds the timezone-derived limit; cancellation is skipped/respected; hourly cadence and next/last scan are observable; transition at day/night boundaries uses configured local timezone; upload concurrency unchanged.
+- Required tests: daytime=1, nighttime=3, duplicate claim, hourly scan, restart recovery, cancelled-job skip, status endpoint/UI.
+- Validation commands: focused worker/API unit and integration tests; Playwright admin/status check; host E2E; applicable Docker startup check.
+- Expected artifacts: worker test report and host E2E report.
+- Recovery/fallback: retain durable QUEUED records and disable auto-claim only if a storage/runtime constraint is demonstrated; never emulate safety with an in-memory-only claim; continue W35 and independent validations.
+
+### Progress Log — Run Full and processing worker UAT
+
+- 2026-10-16: W35/W36 opened. Baseline HEAD/remote `1897448c8f8aebeabb10d911afe39ca976f8a08e`, clean worktree. `/api/run/full` UI sends the dashboard token, while middleware requires private client, allowed Host/Origin and a process-random token; multi-process/stale-page token mismatch is a leading hypothesis to verify in browser. No persistent hourly worker for general pending processing jobs was found; existing pipeline execution is only a daemon thread initiated by `/api/run/<mode>`. W35 is IN_PROGRESS; W36 pending W35.
+
