@@ -153,7 +153,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback: if profiling shows buffering, retain concurrency 2 and fix/verify streaming first; do not relax memory assertions.
 
 ### W31 - Documentation V2 regeneration vs media reprocessing
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: expose separate video-detail actions for Documentation Synthesis V2 regeneration and full video reprocessing.
 - Dependencies: W28 PASS; existing Docs V2 pipeline/evidence formats.
 - Implementation tasks: rename detail actions; wire `Regenerate Documentation` to V2 from saved transcript/OCR/frame mapping/evidence; wire `Reprocess Video` to forced per-file media pipeline; expose user-level states/errors; reject duplicate in-flight generation.
@@ -163,9 +163,10 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: Docs V2 regenerate/grounding/real-flow tests; dashboard API tests; video-detail docs Playwright.
 - Expected artifacts: regeneration/reprocess report and generated synthetic doc fixture.
 - Recovery/fallback: retain legacy step-edit API for compatibility, but never label legacy regeneration as V2.
+- Evidence: Docs V2 regenerate uses `regenerate_documentation_v2` with its no-upstream guard; media reprocess invokes `SimpleScanProcessor.process_file(force=True)` under a single media-processing lock. API tests verify saved-evidence prerequisites and forced per-file dispatch; Docs V2 no-transcription/FFmpeg/OCR/vision tests pass. Playwright video-detail test passes distinct action labels, V2 output and reprocess feedback.
 
 ### W32 - Documentation version history and idempotency
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: persist documentation provenance/version metadata and safely preserve previous outputs.
 - Dependencies: W31 PASS.
 - Implementation tasks: store documentation_version, pipeline_version, generated_at, source_video_id/evidence references, status, previous-version relation; archive prior output; expose current/history/read-only selection; deduplicate retries and publish only complete good versions.
@@ -175,6 +176,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: Docs V2 version/regenerate tests; integration suite; video detail documentation Playwright.
 - Expected artifacts: version manifest fixture and API/browser reports.
 - Recovery/fallback: snapshot outputs atomically; if restoring risks evidence corruption, support read-only prior-version viewing first.
+- Evidence: synthetic version tests verify provenance, generated time/pipeline/source refs, stable-input idempotency, changed-input version linkage, prior snapshot preservation, and rollback on generation failure. Dashboard API supports listing/selecting saved versions. Playwright views latest and previous V2 manuals from the detail modal.
 
 ### W33 - User-level states and duration metrics
 - Status: IN_PROGRESS
@@ -503,10 +505,10 @@ Live Capture is usable via Videos -> New Recording; same-Wi-Fi phone access work
 | MOBILE/LAN E2E | same-Wi-Fi HTTPS origin, ONLINE health, camera preview, recording, fragment upload | W25 | PASS; 16/16 previously, local CA trust required on phone |
 | PLAYWRIGHT | offline retry/buffer warning, local-copy OFF default, cancellation controls | W7-W8/W21 | PASS; offline/cancellation synthetic journeys |
 | UNIT/INTEGRATION | upload concurrency default/max, bounded streaming memory, unique retry/idempotency, project retention, cancel one while others continue | W30 | PENDING |
-| UNIT/INTEGRATION | documentation regeneration idempotency, no media reprocessing, versions/provenance/last-good preservation | W31-W32 | PENDING |
+| UNIT/INTEGRATION | documentation regeneration idempotency, no media reprocessing, versions/provenance/last-good preservation | W31-W32 | PASS; 109-test focused matrix |
 | UNIT/INTEGRATION | video state transitions and upload/media/docs/end-to-end timing persistence | W33 | PENDING |
 | PLAYWRIGHT | six-file multiselect; default 4/configured 6 active; per-file cancel/retry; UI state and project_id | W30/W34 | PENDING |
-| PLAYWRIGHT | detail: Regenerate Documentation vs Reprocess Video; latest V2 output/current/history and prior-version preservation | W31-W34 | PENDING |
+| PLAYWRIGHT | detail: Regenerate Documentation vs Reprocess Video; latest V2 output/current/history and prior-version preservation | W31-W34 | PASS; six synthetic detail checks |
 | PLAYWRIGHT | crop, playlist Session1->Session2, low confidence, review rename/date/split/merge/confirm | W9-W15/W21 | PASS; crop 5/5, playlist 18/18 after serialized manifest mutation fix |
 | PLAYWRIGHT | missing audio, late transcript, newest-first Date, docs normal flow, GC suggestion | W16-W19/W21 | PASS; audio/transcript, logical Videos documentation action, GC review UI and Date sort exercised |
 | HOST E2E | dashboard critical path, Projects, Videos Date sorting, no browser errors | W2/W22 | PASS after UI work, 31.29s |
@@ -559,9 +561,9 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: W27 accepted. Rebuilt Docker port 5000 from this repository without changing its user-data bind; restarted current-repo LAN HTTPS server on 5001. Desktop + 390x844 Playwright verified latest revision, matching inline JS, no stale cache/SW, project selector, four-file selection, queue/drop/remove, concurrency 2, independent failure/cancel/retry, project_id, and no chunk rows. Mobile layout passed; host E2E rerun passed in 26.77s after inspecting and retrying one transient `ERR_CONNECTION_RESET`. Initial E2E harness issues were corrected and rerun. Final commit/push and post-checkpoint served-build verification complete; W3/W21/W22/W24/W27 PASS; W23 remains the documented RAM-only blocker.
 - 2026-10-16: New P0 scope opened in the same plan. Baseline HEAD/remote `6bafdef476c70753c99a4f5a0112b1dee06eb36f`, clean tree. Current bulk upload is fixed at concurrency 2, sends the browser File via FormData, and server uses Werkzeug request.files then file.save; no JavaScript whole-file arrayBuffer path. Video detail's “Regenerate” calls legacy `regenerate_from_steps`, separate V2 CLI/API generation exists, and version-history/detail reprocess UI is not yet exposed. Current Videos API has 13 user rows (11 COMPLETED, 2 QUEUED); staging has 3 distinct MP4s. Plan W28-W34 added before implementation. OpenCode exposes `opencode-go/glm-5.3-flash`; use it as primary coding executor.
 - 2026-10-16: W29 PASS. Ran the 256-test capture/API/Date matrix and six synthetic Playwright journeys against current dashboard; preview/recording stream, fragment ACK/stop drain, 10-30s configuration, chunking, IndexedDB offline reload/retry, playlist Session 1/2 multi-frame confirmation, in-chunk logical boundary, project inheritance, 390x844 layout, cancel/retry and raw-chunk hiding all passed. Evidence in `artifacts/gates/w29-live-capture/`. No real media was opened.
-- 2026-10-16: W30 implementation checkpoint. Added `WHISPER_UPLOAD_CONCURRENCY` (default 4, validated 1-6), server-to-template injection, and clarified queued UI as “Ready to upload · pending”; multiselect Playwright now selects six synthetic fixtures and expects four active requests. Settings tests pass 46/46. First Playwright run against both running origins proves those services are stale: both served build `6bafdef` while HEAD was `d62da1b`, and both stayed at concurrency 2. Thus W30 remains IN_PROGRESS until rebuild/restart and rerun; no claim that fixed code passed.
-- 2026-10-16: W31/W32 implementation checkpoint. Video detail now exposes distinct `Regenerate Documentation` (Docs V2 saved-evidence path) and `Reprocess Video` (forced single-file media pipeline) actions. Added version snapshots, provenance, fingerprint idempotency, last-good rollback, and read-only version selection in the detail UI. Synthetic Docs V2/versioning/dashboard tests pass 104/104; Python compilation and diff checks pass. Browser action/version acceptance remains pending and both stages stay IN_PROGRESS.
-- 2026-10-16: W33 implementation checkpoint. Added persisted upload/media-processing/documentation stage durations and total duration in a hidden Whisper metadata file; API returns user-level states and timings, and detail UI displays them. Synthetic metric persistence, settings, Docs V2 and dashboard API matrix passes 105/105; compile/diff checks pass. Live browser/rebuild acceptance is pending. W30-W33 remain IN_PROGRESS until served-UI acceptance.
+- 2026-10-16: W30 implementation checkpoint. Added `WHISPER_UPLOAD_CONCURRENCY` (default 4, validated 1-6), server-to-template injection, and clarified queued UI as “Ready to upload · pending”; six-file multiselect is tested. Settings tests pass 46/46. Initial browser run proved the services stale (`6bafdef` vs HEAD), then current-repo rebuild restored matching served build. Default-4 Playwright reached four simultaneous uploads; configured-6 Playwright reached six. Six 24MiB synthetic WAV uploads peaked at +73.6MiB container memory (300MiB bound); all test files were removed. W30 remains IN_PROGRESS for stable upload-ID/retry validation against the next rebuilt revision.
+- 2026-10-16: W31/W32 PASS. Detail UI exposes separate `Regenerate Documentation` and `Reprocess Video`; Docs V2 reruns from saved evidence without media work. Version snapshots preserve old outputs/provenance and idempotently skip identical evidence. Focused Docs V2/version/dashboard unit+integration matrix passes 109 tests; browser detail journey passes six checks including latest/previous version viewing. W33 is IN_PROGRESS pending final served-build and host regression.
+- 2026-10-16: W33 implementation checkpoint. Added persisted upload/media-processing/documentation stage durations and total duration in hidden Whisper metadata; API returns user-level states and timings, and video detail displays them. API/metric unit tests and UI check pass in the 109-test matrix and six-check browser journey. W33 stays IN_PROGRESS pending final served-build and host regression.
 - 2026-10-16: Rebuilt the Docker Whisper service from this repository at `17e8f23`, preserving its existing `C:\Dev\Zo\whisper-zmi-docker\zmi-data` bind. Playwright then confirmed both 1440px and 390px browser contexts received the exact HEAD marker/HTML, selected six files together, retained project/cancel/retry behavior, and observed maxActive=4. This clears the earlier stale-service failure for default concurrency. W30 remains IN_PROGRESS for configured-6 and bounded-memory proof; W31-W33 browser proof remains pending.
 
 ## Final Delivery Checklist

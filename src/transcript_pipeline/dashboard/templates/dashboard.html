@@ -831,7 +831,7 @@
                 <select id="uploadProject"><option value="">Auto-detect</option></select>
             </div>
             <div id="uploadQueue" class="row" style="margin-top:0.75rem; flex-direction:column; align-items:stretch;" aria-live="polite"></div>
-            <button id="startUploadBatch" class="secondary" style="width:100%;" onclick="startUploadBatch()" disabled>Upload selected files (0)</button>
+            <button id="startUploadBatch" class="secondary" style="width:100%;" data-upload-concurrency="{{ upload_concurrency }}" onclick="startUploadBatch()" disabled>Upload selected files (0)</button>
         </div>
 
         <div class="card">
@@ -2198,6 +2198,7 @@
         async function uploadOneFile(item) {
             const form = new FormData();
             form.append('file', item.file);
+            form.append('upload_id', item.id);
             if (item.projectId) form.append('project_id', item.projectId);
             try {
                 const response = await fetch('/api/upload', {

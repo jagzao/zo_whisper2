@@ -1123,6 +1123,17 @@ def api_upload() -> Any:
         if chosen_project is None:
             return jsonify({"ok": False, "error": "Selected project does not exist", "project_id": project_id}), 400
 
+    upload_id = (request.form.get("upload_id") or "").strip()
+    if upload_id:
+        if len(upload_id) > 128:
+            return jsonify({"ok": False, "error": "Invalid upload id"}), 400
+        from transcript_pipeline.upload_idempotency import find_upload
+
+        previous = find_upload(upload_id, chosen_project.get("name") if chosen_project else project_id, VIDEO_COMPRESS)
+        if previous:
+            return jsonify({"ok": True, "name": previous["name"], "project_id": project_id or None,
+                            "duplicate": True})
+
     # If the file has no recognizable prefix and a project was chosen, apply its first prefix
     if chosen_project:
         rules = chosen_project.get("match", {})
@@ -1150,6 +1161,11 @@ def api_upload() -> Any:
 
     upload_seconds = time.perf_counter() - upload_started
     record_stage(chosen_project.get("name") if chosen_project else project_id, destination.name, "upload", upload_seconds)
+    if upload_id:
+        from transcript_pipeline.upload_idempotency import remember_upload
+
+        remember_upload(upload_id, chosen_project.get("name") if chosen_project else project_id,
+                        VIDEO_COMPRESS, destination.name, destination.stat().st_size)
     return jsonify({"ok": True, "name": destination.name, "project_id": project_id or None,
                     "upload_duration_seconds": round(upload_seconds, 3)})
 
@@ -1333,7 +1349,21 @@ def api_delete_file() -> Any:
 
     try:
         transcription = _resolve_transcription(target)
+        project, _source = _effective_project(deleted_id, target.name)
         target.unlink()
+        try:
+            from transcript_pipeline.pipeline_metrics import remove_metrics
+
+            remove_metrics(project.get("name") if project else None, target.name)
+        except Exception:
+            logger.exception("[DELETE] Could not clean up timing metadata for %s", target.name)
+        if target.is_relative_to(VIDEO_COMPRESS):
+            try:
+                from transcript_pipeline.upload_idempotency import remove_upload_records
+
+                remove_upload_records(VIDEO_COMPRESS, target.name)
+            except Exception:
+                logger.exception("[DELETE] Could not clean up upload idempotency metadata for %s", target.name)
         if transcription:
             tx_folder = _from_media_id(transcription["id"], [MediaRoot.TRANSCRIPTIONS]).parent
             stem = target.stem

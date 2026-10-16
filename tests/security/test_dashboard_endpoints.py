@@ -14,8 +14,10 @@ _REAL_IS_VALID_MEDIA_FILE = dashboard_app._is_valid_media_file
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     from transcript_pipeline import pipeline_metrics
+    from transcript_pipeline import upload_idempotency
 
     monkeypatch.setattr(pipeline_metrics, "_PATH", tmp_path / ".whisper" / "pipeline_metrics.json")
+    monkeypatch.setattr(upload_idempotency, "_PATH", tmp_path / ".whisper" / "upload_ids.json")
     audio = tmp_path / "audio"
     videos = tmp_path / "Videos"
     video_compress = tmp_path / "Video_compress"
@@ -524,3 +526,51 @@ def test_documentation_versions_are_selectable_from_video_detail_api(client, env
     selected = client.get("/api/documentation/versions" + q(mid(MediaRoot.VIDEOS, "sample.mp4")) + "&version=1")
     assert listing.get_json()["versions"][0]["documentation_version"] == 1
     assert selected.get_json()["manual"] == "Synthetic version one"
+
+
+def test_video_list_exposes_user_state_and_stage_metrics(client, env):
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    from transcript_pipeline.pipeline_metrics import record_stage
+    record_stage(None, video.name, "upload", 1.25)
+    response = client.get("/api/files")
+    row = next(item for item in response.get_json()["files"] if item["name"] == "sample.mp4")
+    assert row["user_state"] == "READY"
+    assert row["timings"]["stages"]["upload"]["duration_seconds"] == 1.25
+
+
+def test_reprocess_video_queues_one_forced_media_run(client, env, monkeypatch):
+    import threading
+    from transcript_pipeline.transcription import processor
+
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    finished = threading.Event()
+    calls = []
+
+    class FakeProcessor:
+        def process_file(self, target, *, force=False):
+            calls.append((target, force))
+            finished.set()
+            return True
+
+    monkeypatch.setattr(processor, "SimpleScanProcessor", FakeProcessor, raising=False)
+    response = client.post("/api/video/reprocess" + q(mid(MediaRoot.VIDEOS, "sample.mp4")), headers=AUTH_HEADERS)
+    assert response.status_code == 202
+    assert response.get_json()["state"] == "PROCESSING_MEDIA"
+    assert finished.wait(3)
+    assert calls == [(video, True)]
+
+
+def test_repeated_upload_id_returns_existing_file_without_duplicate(client, env):
+    first = client.post(
+        "/api/upload", data={"file": (__import__("io").BytesIO(b"first bytes"), "same.mp3"), "upload_id": "stable-test-upload-001"},
+        content_type="multipart/form-data", headers=AUTH_HEADERS,
+    ).get_json()
+    retry = client.post(
+        "/api/upload", data={"file": (__import__("io").BytesIO(b"different payload"), "same.mp3"), "upload_id": "stable-test-upload-001"},
+        content_type="multipart/form-data", headers=AUTH_HEADERS,
+    ).get_json()
+    assert first["name"] == retry["name"]
+    assert retry["duplicate"] is True
+    assert len(list(env["video_compress"].glob("same*.mp3"))) == 1

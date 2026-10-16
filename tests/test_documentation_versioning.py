@@ -45,3 +45,25 @@ def test_failed_generation_preserves_current_docs(tmp_path):
         regenerate_versioned(frames, "videos:sample.mp4", fail)
     assert (manual / "MANUAL.md").read_text() == "last good"
     assert list_versions(frames) == []
+
+
+def test_changed_evidence_creates_linked_version_and_preserves_previous(tmp_path):
+    frames = tmp_path / "frames"
+    frames.mkdir()
+    mapping = frames / "frame_mapping.json"
+    mapping.write_text('{"frames": []}', encoding="utf-8")
+
+    def generate(root, **kwargs):
+        manual = root / "manual"
+        manual.mkdir(exist_ok=True)
+        (manual / "MANUAL.md").write_text(mapping.read_text(encoding="utf-8"), encoding="utf-8")
+        return {"status": "MANUAL_READY"}
+
+    first = regenerate_versioned(frames, "videos:sample.mp4", generate)["version"]
+    mapping.write_text('{"frames": [{"id": 1}]}', encoding="utf-8")
+    second = regenerate_versioned(frames, "videos:sample.mp4", generate)["version"]
+    versions = list_versions(frames)
+    assert second["documentation_version"] == 2
+    assert second["previous_version"] == first["documentation_version"]
+    assert len(versions) == 2
+    assert (frames / "documentation_versions" / "000001" / "manual" / "MANUAL.md").read_text() == '{"frames": []}'

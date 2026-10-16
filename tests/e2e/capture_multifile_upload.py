@@ -49,9 +49,10 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         const body = init.body;
         const file = body.get('file');
         const projectId = body.get('project_id') || '';
+        const uploadId = body.get('upload_id') || '';
         const harness = window.__uploadHarness;
         const count = harness.attempts[file.name] = (harness.attempts[file.name] || 0) + 1;
-        harness.requests.push({name:file.name, projectId});
+        harness.requests.push({name:file.name, projectId, uploadId});
         harness.active += 1;
         harness.maxActive = Math.max(harness.maxActive, harness.active);
         let finished = false;
@@ -143,6 +144,9 @@ def exercise_url(playwright, url: str, mobile: bool, revision: str) -> bool:
         requests = page.evaluate("window.__uploadHarness.requests")
         carries_project = bool(project_name) and all(row["projectId"] == project_name for row in requests)
         check(f"{url}_each_file_keeps_selected_project", carries_project, json.dumps(requests))
+        for name in ("fail-first.mp4", "cancel-first.wav"):
+            ids = {row["uploadId"] for row in requests if row["name"] == name}
+            check(f"{url}_{name}_retry_keeps_idempotency_key", len(ids) == 1 and bool(next(iter(ids), "")))
         check(f"{url}_one_file_failure_does_not_block_batch", page.locator('[data-upload-id]').filter(has_text="ok-one.mp4").inner_text().find("OK ") >= 0 and page.locator('[data-upload-id]').filter(has_text="fail-first.mp4").inner_text().find("OK ") >= 0, page.locator("#uploadQueue").inner_text())
         videos_text = page.locator("#filesList").inner_text()
         check(f"{url}_no_raw_chunk_rows", "chunk-000000" not in videos_text and "fragment-000001" not in videos_text)
