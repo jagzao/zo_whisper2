@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="whisper-build" content="{{ build_revision }}">
     <title>Zo Media Intelligence</title>
     <style>
         :root {
@@ -52,6 +53,7 @@
             align-items: center;
             gap: 0.75rem;
         }
+        .build-version { color: var(--muted); display: block; font-size: 0.65rem; line-height: 1.1; }
         .brand img {
             height: 2.25rem;
             width: auto;
@@ -99,6 +101,10 @@
         }
         .dropzone:hover { border-color: var(--accent); box-shadow: 0 0 20px rgba(0,229,255,0.12) inset; }
         .dropzone.dragover { background: rgba(0,229,255,0.08); border-color: var(--accent); }
+        .upload-file-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 0.5rem; width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 0.5rem; }
+        .upload-file-name { min-width: 0; overflow-wrap: anywhere; }
+        .upload-file-state { color: var(--muted); font-size: 0.8rem; }
+        @media (max-width: 640px) { .upload-file-row { grid-template-columns: minmax(0, 1fr) auto; } .upload-file-state { grid-column: 1; } .upload-file-row button { grid-column: 2; grid-row: 1 / span 2; min-height: 2.75rem; } }
         select, button, input, textarea {
             background: var(--panel-2);
             color: var(--text);
@@ -788,7 +794,7 @@
     <header>
         <div class="brand">
             <img src="/static/logo.png" alt="ZO Systems">
-            <h1>Zo Media <span>Intelligence</span></h1>
+            <div><h1>Zo Media <span>Intelligence</span></h1><small id="buildVersion" class="build-version">Build {{ build_revision[:12] }}</small></div>
         </div>
         <div class="row" style="margin:0;">
             <span id="serverHealth" class="status pending" title="Backend health">Checking…</span>
@@ -818,13 +824,14 @@
                 <svg viewBox="0 0 24 24" width="36" height="36" fill="var(--accent)" style="margin-bottom:0.5rem;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
                 <div>Drop audio/video here</div>
                 <small style="color:var(--muted)">or click to select</small>
-                <input type="file" id="fileInput" class="hidden" accept="video/*,audio/*">
+                <input type="file" id="fileInput" class="hidden" accept="video/*,audio/*" multiple>
             </div>
             <div class="row" style="margin-top:1rem;">
                 <label for="uploadProject">Project (optional):</label>
                 <select id="uploadProject"><option value="">Auto-detect</option></select>
             </div>
-            <div id="uploadQueue" class="row" style="margin-top:0.75rem; flex-direction:column; align-items:stretch;"></div>
+            <div id="uploadQueue" class="row" style="margin-top:0.75rem; flex-direction:column; align-items:stretch;" aria-live="polite"></div>
+            <button id="startUploadBatch" class="secondary" style="width:100%;" onclick="startUploadBatch()" disabled>Upload selected files (0)</button>
         </div>
 
         <div class="card">
@@ -2046,7 +2053,7 @@
         // Drop area
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('fileInput');
-        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('click', event => { if (event.target !== fileInput) fileInput.click(); });
         dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
         dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
         dropzone.addEventListener('drop', e => {
@@ -2056,40 +2063,116 @@
         });
         fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
+        const UPLOAD_CONCURRENCY = 2;
+        const uploadItems = [];
+        let activeUploadCount = 0;
+        let uploadBatchStarted = false;
+
         async function handleFiles(files) {
-            const queue = document.getElementById('uploadQueue');
-            queue.innerHTML = '';
-            for (const file of files) {
-                const row = document.createElement('div');
-                const status = document.createElement('span');
-                const controller = new AbortController();
-                row.append(status);
-                const cancel = document.createElement('button');
-                cancel.textContent = 'Cancelar subida';
-                cancel.onclick = () => controller.abort();
-                row.append(cancel);
-                queue.append(row);
-                const form = new FormData();
-                form.append('file', file);
-                form.append('project', document.getElementById('uploadProject').value);
-                try {
-                    const res = await fetch('/api/upload', { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: form, signal: controller.signal }).then(r => r.json());
-                    status.textContent = res.ok ? `OK ${res.name}` : `Error ${file.name}: ${res.error}`;
-                    cancel.remove();
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        status.textContent = `UPLOAD_CANCELLED: ${file.name}`;
-                        cancel.textContent = 'Retry';
-                        cancel.onclick = () => handleFiles([file]);
-                    } else {
-                        status.textContent = `Error ${file.name}: ${error.message}`;
-                        cancel.remove();
-                    }
-                }
+            const selectedFiles = Array.from(files || []);
+            const projectId = document.getElementById('uploadProject').value;
+            for (const file of selectedFiles) {
+                const duplicate = uploadItems.some(item => item.file.name === file.name && item.file.size === file.size && item.file.lastModified === file.lastModified && item.state !== 'REMOVED');
+                if (!duplicate) uploadItems.push({ id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, file, projectId, state: 'QUEUED', attempts: 0, controller: null });
             }
-            loadFolders();
-            loadMetrics();
-            showToast('Files queued');
+            fileInput.value = '';
+            renderUploadQueue();
+        }
+
+        function renderUploadQueue() {
+            const queue = document.getElementById('uploadQueue');
+            queue.innerHTML = uploadItems.filter(item => item.state !== 'REMOVED').map(item => {
+                const action = item.state === 'QUEUED'
+                    ? `<button class="secondary" onclick="removeUploadItem('${item.id}')">Remove</button>`
+                    : item.state === 'UPLOADING'
+                        ? `<button class="danger" onclick="cancelUploadItem('${item.id}')">Cancelar subida</button>`
+                        : ['FAILED', 'UPLOAD_CANCELLED'].includes(item.state)
+                            ? `<button class="secondary" onclick="retryUploadItem('${item.id}')">Retry</button>` : '';
+                const state = item.state === 'UPLOADING' ? `Uploading · intento ${item.attempts}`
+                    : item.state === 'UPLOADED' ? `OK ${item.resultName || item.file.name}`
+                        : item.state === 'FAILED' ? `Failed · ${item.error || 'upload error'}`
+                            : item.state === 'UPLOAD_CANCELLED' ? 'Upload cancelled' : 'Ready';
+                return `<div class="upload-file-row" data-upload-id="${item.id}" data-project-id="${escapeHtml(item.projectId)}">
+                    <span class="upload-file-name">${escapeHtml(item.file.name)} · ${Number(item.file.size).toLocaleString()} bytes</span>
+                    <span class="upload-file-state">${escapeHtml(state)}${item.projectId ? ` · ${escapeHtml(item.projectId)}` : ''}</span>${action}
+                </div>`;
+            }).join('');
+            const pending = uploadItems.filter(item => item.state === 'QUEUED').length;
+            const start = document.getElementById('startUploadBatch');
+            start.disabled = pending === 0;
+            start.textContent = `Upload selected files (${pending})`;
+        }
+
+        function removeUploadItem(id) {
+            const item = uploadItems.find(row => row.id === id);
+            if (item && item.state === 'QUEUED') item.state = 'REMOVED';
+            renderUploadQueue();
+        }
+
+        function cancelUploadItem(id) {
+            const item = uploadItems.find(row => row.id === id);
+            if (item && item.state === 'UPLOADING') item.controller.abort();
+        }
+
+        function retryUploadItem(id) {
+            const item = uploadItems.find(row => row.id === id);
+            if (item && ['FAILED', 'UPLOAD_CANCELLED'].includes(item.state)) {
+                item.state = 'QUEUED';
+                item.error = '';
+                uploadBatchStarted = true;
+                renderUploadQueue();
+                pumpUploadQueue();
+            }
+        }
+
+        function startUploadBatch() {
+            uploadBatchStarted = true;
+            pumpUploadQueue();
+        }
+
+        function pumpUploadQueue() {
+            if (!uploadBatchStarted) return;
+            while (activeUploadCount < UPLOAD_CONCURRENCY) {
+                const item = uploadItems.find(row => row.state === 'QUEUED');
+                if (!item) break;
+                item.state = 'UPLOADING';
+                item.attempts += 1;
+                item.controller = new AbortController();
+                activeUploadCount += 1;
+                renderUploadQueue();
+                uploadOneFile(item).finally(() => {
+                    item.controller = null;
+                    activeUploadCount -= 1;
+                    renderUploadQueue();
+                    const active = uploadItems.some(row => row.state === 'UPLOADING' || row.state === 'QUEUED');
+                    if (!active) {
+                        uploadBatchStarted = false;
+                        if (uploadItems.some(row => row.state === 'UPLOADED')) { loadFolders(); loadMetrics(); }
+                    }
+                    pumpUploadQueue();
+                });
+            }
+        }
+
+        async function uploadOneFile(item) {
+            const form = new FormData();
+            form.append('file', item.file);
+            if (item.projectId) form.append('project_id', item.projectId);
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                    body: form,
+                    signal: item.controller.signal,
+                });
+                const result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+                item.state = 'UPLOADED';
+                item.resultName = result.name;
+            } catch (error) {
+                if (error.name === 'AbortError') item.state = 'UPLOAD_CANCELLED';
+                else { item.state = 'FAILED'; item.error = error.message; }
+            }
         }
 
         // Projects CRUD

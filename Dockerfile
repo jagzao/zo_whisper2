@@ -12,10 +12,12 @@
 ARG PYTHON_VERSION=3.12
 
 FROM python:${PYTHON_VERSION}-slim AS base
+ARG WHISPER_BUILD_REVISION=unknown
 
 # UTF-8 everywhere, unbuffered stdout/stderr (logs must stream), no pip cache.
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
+    WHISPER_BUILD_REVISION=${WHISPER_BUILD_REVISION} \
     PYTHONUTF8=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

@@ -112,3 +112,27 @@ def test_duplicate_upload_gets_unique_name(client, env, monkeypatch):
 
     assert (env["video_compress"] / "demo.mp4").exists()
     assert (env["video_compress"] / "demo_01.mp4").exists()
+
+
+def test_parallel_uploads_reserve_unique_paths(client, env, monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+
+    monkeypatch.setattr(dashboard_app, "_is_valid_media_file", lambda path: True)
+
+    def upload(content: bytes):
+        with dashboard_app.app.test_client() as thread_client:
+            return thread_client.post(
+                "/api/upload",
+                data={"file": (io.BytesIO(content), "parallel.mp4")},
+                headers=AUTH_HEADERS,
+                content_type="multipart/form-data",
+            )
+
+    payloads = [b"first", b"second", b"third"]
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        responses = list(pool.map(upload, payloads))
+
+    assert all(response.status_code == 200 for response in responses)
+    names = {response.get_json()["name"] for response in responses}
+    assert len(names) == 3
+    assert { (env["video_compress"] / name).read_bytes() for name in names } == set(payloads)

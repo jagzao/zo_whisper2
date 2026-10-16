@@ -120,6 +120,19 @@ if SETTINGS.lan_access:
 # reads it from the page it was served (see index()) and echoes it back on
 # every mutating request via X-Local-Dashboard-Token.
 _DASHBOARD_TOKEN = secrets.token_urlsafe(32)
+BUILD_REVISION = os.environ.get("WHISPER_BUILD_REVISION", "").strip()
+if not BUILD_REVISION:
+    try:
+        BUILD_REVISION = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=Path(__file__).resolve().parents[3],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        BUILD_REVISION = "unknown"
 
 # media_ids currently being documented (in-memory concurrency guard so a
 # second "Generate Documentation" for the same video is rejected, not queued).
@@ -417,6 +430,21 @@ def _find_matching_project(filename: str) -> dict | None:
             if keyword.lower() in name_lower:
                 return project
     return None
+
+
+def _reserve_upload_destination(directory: Path, filename: str) -> Path:
+    original = directory / filename
+    candidate = original
+    counter = 1
+    while True:
+        try:
+            descriptor = os.open(str(candidate), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666)
+        except FileExistsError:
+            candidate = original.with_name(f"{original.stem}_{counter:02d}{original.suffix}")
+            counter += 1
+            continue
+        os.close(descriptor)
+        return candidate
 
 
 def _project_overrides_path() -> Path:
@@ -752,7 +780,19 @@ def _frame_media_url(frames_parent: Path, relative_to_frames_parent: str) -> str
 # ── Endpoints ────────────────────────────────────────────────────────────
 @app.route("/")
 def index() -> str:
-    return render_template("dashboard.html", dashboard_token=_DASHBOARD_TOKEN)
+    return render_template(
+        "dashboard.html",
+        dashboard_token=_DASHBOARD_TOKEN,
+        build_revision=BUILD_REVISION,
+    )
+
+
+@app.after_request
+def prevent_stale_browser_assets(response) -> Any:
+    response.headers["X-Whisper-Build"] = BUILD_REVISION
+    if request.method == "GET":
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
 
 
 @app.route("/api/status")
@@ -1042,7 +1082,7 @@ def api_upload() -> Any:
     if not file.filename:
         return jsonify({"ok": False, "error": "Empty filename"}), 400
 
-    project_id = request.form.get("project", "").strip()
+    project_id = (request.form.get("project_id") or request.form.get("project") or "").strip()
     filename = secure_filename(Path(file.filename).name)
     if not filename:
         return jsonify({"ok": False, "error": "Invalid filename"}), 400
@@ -1053,9 +1093,11 @@ def api_upload() -> Any:
     chosen_project = None
     if project_id:
         for project in _load_projects():
-            if project.get("name") == project_id:
+            if project.get("id") == project_id or project.get("name") == project_id:
                 chosen_project = project
                 break
+        if chosen_project is None:
+            return jsonify({"ok": False, "error": "Selected project does not exist", "project_id": project_id}), 400
 
     # If the file has no recognizable prefix and a project was chosen, apply its first prefix
     if chosen_project:
@@ -1066,17 +1108,12 @@ def api_upload() -> Any:
             filename = f"{prefix}{filename}" if not filename.lower().startswith(prefix.lower()) else filename
 
     VIDEO_COMPRESS.mkdir(parents=True, exist_ok=True)
-    destination = VIDEO_COMPRESS / filename
-    counter = 1
-    stem = destination.stem
-    suffix = destination.suffix
-    while destination.exists():
-        destination = VIDEO_COMPRESS / f"{stem}_{counter:02d}{suffix}"
-        counter += 1
+    destination = _reserve_upload_destination(VIDEO_COMPRESS, filename)
 
     try:
         file.save(str(destination))
     except Exception:
+        destination.unlink(missing_ok=True)
         logger.exception("[UPLOAD] Error saving %s", filename)
         return jsonify({"ok": False, "error": "Could not process upload"}), 500
 
@@ -1085,7 +1122,7 @@ def api_upload() -> Any:
         return jsonify({"ok": False, "error": "Uploaded file is not a valid media file"}), 400
 
     logger.info("[UPLOAD] %s → %s", filename, destination)
-    return jsonify({"ok": True, "name": destination.name})
+    return jsonify({"ok": True, "name": destination.name, "project_id": project_id or None})
 
 
 @app.route("/api/run/<mode>", methods=["POST"])

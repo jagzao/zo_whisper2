@@ -299,6 +299,13 @@ def test_folders_response_has_no_absolute_paths(client, env):
     assert str(env["root"]) not in body
 
 
+def test_dashboard_exposes_current_build_and_disables_html_caching(client):
+    response = client.get("/")
+    assert response.headers["X-Whisper-Build"] == dashboard_app.BUILD_REVISION
+    assert "whisper-build" in response.get_data(as_text=True)
+    assert "no-store" in response.headers["Cache-Control"]
+
+
 # ── POST /api/upload ─────────────────────────────────────────────────────
 
 def test_upload_rejects_invalid_extension(client):
@@ -318,6 +325,22 @@ def test_upload_response_has_no_absolute_path(client, env):
     data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "clip2.mp3")}
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert "path" not in resp.get_json()
+
+
+def test_upload_preserves_selected_project_id(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "_load_projects", lambda: [{"name": "Zo Interviews", "match": {"prefix": ["zi_"]}}])
+    data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "meeting.mp3"), "project_id": "Zo Interviews"}
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    assert resp.get_json()["project_id"] == "Zo Interviews"
+    assert resp.get_json()["name"] == "zi_meeting.mp3"
+
+
+def test_upload_rejects_unknown_selected_project(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "_load_projects", lambda: [{"name": "Known project"}])
+    data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "meeting.mp3"), "project_id": "Missing project"}
+    response = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert response.status_code == 400
 
 
 # ── POST /api/projects (create/update reject malformed payloads) ────────

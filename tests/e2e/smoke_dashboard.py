@@ -671,6 +671,7 @@ def main() -> int:
                 check=True, capture_output=True, timeout=30,
             )
             page.set_input_files("#fileInput", str(upload_path))
+            page.locator("#startUploadBatch").click()
             try:
                 page.wait_for_function(
                     """() => {
