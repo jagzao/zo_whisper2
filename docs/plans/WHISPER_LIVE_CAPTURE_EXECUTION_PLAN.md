@@ -374,7 +374,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Recovery/fallback evidence: each configured failed component was rerun independently after its fix and passed; aggregate-only rerun must wait until >6.0 GiB is available.
 
 ### W24 - Final readiness
-- Status: IN_PROGRESS
+- Status: PASS
 - Objective: verify complete UI acceptance, plan accuracy, commits, remote sync and clean tree.
 - Dependencies: W20-W22 PASS; W23 PASS or justified ENV_BLOCKED.
 - Implementation tasks: update evidence/statuses, verify Date and all feature journeys, commit plan+code, push branch, verify remote SHA and clean status.
@@ -384,7 +384,7 @@ Status values: `PENDING | IN_PROGRESS | PASS | BLOCKED`. A user-facing stage pas
 - Validation commands: `git diff --check`; targeted/full validation; `git status`; `git rev-parse HEAD`; `git ls-remote`.
 - Expected artifacts: final gate reports and committed plan evidence.
 - Recovery/fallback: do not claim PASS with an unrerun failure; report exact code vs environment blocker.
-- Evidence: final UAT matrix: 288 focused unit/API/Date tests; mobile New Recording 51/51, layout 8/8, playlist 18/18, cancellation 11/11; host E2E 26.24s PASS; `py_compile`, inline JS syntax and `git diff --check` PASS. Prior LAN/Docker component evidence remains PASS; W23 retains the enforced >6 GiB aggregate RAM blocker. W3/W21/W22/W26 PASS. Physical phone was not available; its UAT procedure is documented. Final commit/push/clean-tree verification remains.
+- Evidence: final UAT matrix: 288 focused unit/API/Date tests; mobile New Recording 51/51, layout 8/8, playlist 18/18, cancellation 11/11; host E2E 26.24s PASS; `py_compile`, inline JS syntax and `git diff --check` PASS. Prior LAN/Docker component evidence remains PASS; W23 retains the enforced >6 GiB aggregate RAM blocker. W3/W21/W22/W26 PASS. Physical phone was not available; its UAT procedure is documented. Code/report checkpoint `01c3b55` was pushed to `origin/feat/zmi-documentation-synthesis-v2`; remote SHA matched and worktree was clean before this plan-only delivery checkpoint.
 
 ## Global Definition of Done
 
@@ -446,6 +446,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: UAT code/report checkpoint `f655dc9` pushed. W3/W21/W22 PASS; W24 PASS with W23's justified RAM-only blocker.
 - 2026-10-16: UAT reopened W3/W5/W6/W8/W14/W15/W18/W21/W22/W24 and added W26. Regressions: raw chunk rows exposed, cancellation applied at chunk scope, mobile preview unreliable, and capture lacks mandatory project ownership. Investigate repeated `chunk-000000 FINALIZED` records before any cleanup; preserve ambiguous/historical media. Require mobile Playwright and documented real-device UAT before marking user-facing acceptance PASS.
 - 2026-10-16: W3/W5/W6/W8/W14/W15/W18/W21/W22/W26 revalidated after UAT corrections. API now exposes session/logical-video rows only, filters marked/synthetic sessions, scopes cancel/retry to the owning capture session, validates mandatory project selection, and propagates project ownership through fragments/chunks/logical videos/docs. Inventory found 31 manifests (17 finalized/14 failed): 10 title-marked synthetic, 0 explicitly flagged test, 21 ambiguous; repeated `chunk-000000` were per-session first chunks, not within-session duplicates. No media deleted. Mobile evidence at 390x844: New Recording 51/51, layout 8/8, playlist 18/18, cancellation 11/11. One playlist rerun exposed concurrent OCR/review writes to `playlist.json` causing Windows `PermissionError` during `os.replace`; synchronized per-service mutations, reran complete playlist journey PASS. Focused unit/API/Date matrix 288 passed, host E2E 26.24s passed, syntax and diff checks pass. Real-device UAT is documented but not claimed as performed. W23 remains blocked only on enforced aggregate RAM >6 GiB; independent Docker E2E already passed.
+- 2026-10-16: W24 PASS. Implementation, tests, reports, canonical plan and phone UAT guide committed; code/report commit `01c3b55` is pushed and remote SHA matched. This final plan checkpoint records W23 as the only environment blocker (aggregate RAM below enforced threshold); standalone Docker E2E passed.
 
 ## Final Delivery Checklist
 
