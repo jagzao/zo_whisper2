@@ -643,3 +643,21 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 
 - 2026-10-16: UAT reported that mobile capture only offered the front camera. Root cause: UI had no camera selector and called `getUserMedia({video:true})`, leaving the choice to browser defaults. Added Back camera (default) and Front camera choices; selected facing mode is requested as an ideal constraint so unsupported devices can still use their available camera. Isolated synthetic Playwright capture passed all checks, including both choices, rear constraint, preview on the recording stream, fragment ACKs, and clean stop. Host E2E passed in 54.96s (`artifacts/gates/latest.json`, `artifacts/gates/logs/e2e.log`). No real/private media used by these tests. W37 PASS.
 
+## W38 — Live Capture camera/audio UX and JM recording audit
+
+- ID: W38
+- Status: IN_PROGRESS
+- Objective: improve crop controls and recording timer placement, support safe live camera switching and microphone-only capture, and audit the newest JM recording without modifying it.
+- Dependencies: W3, W4, W5, W6, W7, W9, W18, W37 PASS.
+- Implementation tasks: place Clear crop with crop selection; show REC elapsed timer over preview; enumerate/choose front and rear cameras, default to a rear device when available, and switch safely without losing the active capture timeline; add distinct Camera and Audio modes; in Audio mode acquire only microphone, preserve project/title/fragment queue and persist media kind; preserve Camera mode optional microphone; retain recording reset and stop/cancel/retry semantics.
+- Relevant files/modules: `src/transcript_pipeline/dashboard/templates/dashboard.html`, `src/transcript_pipeline/live_capture/models.py`, `src/transcript_pipeline/live_capture/service.py`, `src/transcript_pipeline/dashboard/app.py`, `tests/e2e/` and focused Live Capture tests.
+- Acceptance criteria: crop label/clear button are adjacent and responsive; rear/front choices work and can switch during an active preview without stopping or losing capture; recording timer is prominent over preview and resets; Camera mode records video with optional mic; Audio mode has only an audio track and retains project ID through fragment/chunk/final media; mobile controls do not overflow; synthetic Playwright proves the journeys.
+- Required tests: crop/clear adjacency, rear default/request, front↔rear switching, timer, Camera and Audio modes, Audio project inheritance, mobile viewport and recording continuity; focused API/domain tests; host E2E.
+- Validation commands: focused capture pytest; synthetic camera/audio Playwright; `.venv-validation\\Scripts\\python.exe scripts/gate_runner.py e2e`.
+- Expected artifacts: capture Playwright report, host E2E report, read-only JM recording audit evidence in Progress Log.
+- Recovery/fallback: if a device has no rear camera, retain its available camera and show a clear notice; if live track replacement fails, preserve old stream and recording, roll selector back, and surface an error. Never modify/delete the inspected recording.
+
+### Progress Log — JM recording audit
+
+- 2026-10-16: Read-only inspection found latest JM session `sess-d313658ad200`, created 2026-10-16 18:24 local / 2026-10-17T00:24:22Z, recorded 18:25:59 local. It is FINALIZED, project_id JM, normal camera capture, title `Live capture`; crop metadata is present. Five fragments are ACKED with contiguous offsets/durations totaling 72.072s; one processing chunk is FINALIZED and maps all five fragments, no assembly error. The assembled 11,075,969-byte WebM streams as HTTP 200 and decodes five VP8 frames at 480x640, proving usable video despite the UI/preview report. No audio track exists (manifest MISSING; ffprobe shows only VP8 video). File listing reports READY/QUEUED; processing has not started and documentation is absent. Camera source is not stored in the session manifest, so cannot be verified retroactively. This session was inspected without mutation; physical-device view/camera source remains unverified.
+
