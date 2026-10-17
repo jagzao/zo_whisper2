@@ -19,7 +19,7 @@ from pathlib import Path
 
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
-from transcript_pipeline.live_capture.assembly import assemble_media
+from transcript_pipeline.live_capture.assembly import assemble_media, ensure_seekable_audio
 from transcript_pipeline.live_capture.audio import transcript_required
 from transcript_pipeline.live_capture.errors import (
     AssemblyError,
@@ -212,18 +212,27 @@ class CaptureService:
                 raise AssemblyError("a processing chunk is missing; source media was preserved")
             staging = self.store.final_staging_path(session_id, extension)
             staging.unlink(missing_ok=True)
+            duration_seconds = None
             try:
                 self._assembler(sources, staging)
+                if session.capture_kind == "audio" and self._assembler is assemble_media:
+                    normalized = self.store.final_normalized_path(session_id, extension)
+                    duration_seconds = ensure_seekable_audio(staging, normalized)
+                    if normalized.is_file():
+                        staging.unlink(missing_ok=True)
+                        os.replace(normalized, staging)
                 final_path.parent.mkdir(parents=True, exist_ok=True)
                 os.replace(staging, final_path)
             except Exception:
                 staging.unlink(missing_ok=True)
+                self.store.final_normalized_path(session_id, extension).unlink(missing_ok=True)
                 raise
             metadata = {
                 "relativePath": final_path.relative_to(self.store.session_dir(session_id)).as_posix(),
                 "extension": extension,
                 "sizeBytes": final_path.stat().st_size,
                 "sha256": _sha256_file(final_path),
+                "durationSec": duration_seconds,
                 "createdAt": existing.get("createdAt") or models.now_iso(),
                 "processingChunkIds": [models.chunk_id(chunk.index) for chunk in chunks],
                 "fragmentIds": [fid for entry in mappings for fid in entry.fragment_ids],

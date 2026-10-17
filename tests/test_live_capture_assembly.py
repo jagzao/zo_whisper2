@@ -39,6 +39,15 @@ def _make_segment(path, duration=1):
     return path
 
 
+def _make_live_audio_segment(path):
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=duration=1",
+         "-c:a", "libopus", "-b:a", "64k", "-f", "webm", "-live", "1", str(path)],
+        capture_output=True, check=True, timeout=120,
+    )
+    return path
+
+
 def _probe_streams(path) -> list[dict]:
     result = subprocess.run(
         ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", str(path)],
@@ -98,3 +107,24 @@ def test_service_aggregates_real_segments_into_processing_chunk(tmp_path):
     assert len(mapping) == 1 and mapping[0].state == "FINALIZED"
     # Source fragments are retained after a successful assembly.
     assert len(service.list_fragments(session.session_id)) == 3
+
+
+@requires_ffmpeg
+def test_audio_capture_finalization_adds_duration_for_native_player(tmp_path):
+    service = CaptureService(videos_root=tmp_path / "Videos")
+    session = service.create_session("audio-only", capture_kind="audio", capture_source="microphone")
+    fragment_path = _make_live_audio_segment(tmp_path / "live-audio.webm")
+    service.upload_fragment(session.session_id, "fragment-000001", 1, io.BytesIO(fragment_path.read_bytes()),
+                            media_extension=".webm", duration_ms=1000, recorded_offset_ms=0)
+    service.drain_processing_chunks(session.session_id)
+    service.finalize_session(session.session_id)
+    final = service.finalize_session_media(session.session_id)
+    path = service.store.final_media_path(session.session_id, ".webm")
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)],
+        capture_output=True, text=True, check=True, timeout=60,
+    )
+    duration = float(json.loads(probe.stdout)["format"]["duration"])
+    assert 0 < duration < 3
+    assert final["durationSec"] == pytest.approx(duration, abs=0.2)
+    assert any(stream.get("codec_type") == "audio" for stream in _probe_streams(path))

@@ -82,6 +82,9 @@ class ManifestStore:
     def final_staging_path(self, session_id: str, extension: str) -> Path:
         return self.session_dir(session_id) / f".final.assembling{normalize_extension(extension)}"
 
+    def final_normalized_path(self, session_id: str, extension: str) -> Path:
+        return self.session_dir(session_id) / f".final.normalized{normalize_extension(extension)}"
+
     def chunk_media_path(self, session_id: str, index: int, extension: str) -> Path:
         return self.chunks_dir(session_id) / f"{models.chunk_id(index)}{normalize_extension(extension)}"
 

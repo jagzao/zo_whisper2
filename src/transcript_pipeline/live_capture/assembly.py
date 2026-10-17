@@ -14,6 +14,7 @@ This module never deletes source fragments: it only reads them.
 from __future__ import annotations
 
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -167,3 +168,48 @@ def assemble_media(paths: list[Path], dest: Path) -> None:
         _concatenate_bytes(paths, dest)
 
     _validate_output(dest, extension)
+
+
+def ensure_seekable_audio(path: Path, normalized_path: Path) -> float:
+    """Ensure an audio-only WebM has finite duration metadata for native players."""
+    path = Path(path)
+    normalized_path = Path(normalized_path)
+    if path.suffix.lower() != ".webm" or not ffprobe_available():
+        return 0.0
+
+    def duration_of(candidate: Path) -> float:
+        try:
+            result = subprocess.run(
+                ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(candidate)],
+                capture_output=True, text=True, timeout=60,
+            )
+            value = json.loads(result.stdout or "{}").get("format", {}).get("duration")
+            duration = float(value)
+            return duration if result.returncode == 0 and math.isfinite(duration) and duration > 0 else 0.0
+        except (OSError, ValueError, TypeError, json.JSONDecodeError, subprocess.SubprocessError):
+            return 0.0
+
+    duration = duration_of(path)
+    if duration:
+        return duration
+    if not ffmpeg_available():
+        raise AssemblyError("audio recording has no finite duration and FFmpeg is unavailable")
+    normalized_path.parent.mkdir(parents=True, exist_ok=True)
+    normalized_path.unlink(missing_ok=True)
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-v", "error", "-i", str(path), "-map", "0:a:0", "-vn",
+             "-c:a", "libopus", "-b:a", "128k", "-f", "webm", str(normalized_path)],
+            capture_output=True, text=True, timeout=_FFMPEG_TIMEOUT_SEC,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        normalized_path.unlink(missing_ok=True)
+        raise AssemblyError(f"audio output could not be normalized for playback: {exc}") from exc
+    if result.returncode != 0 or not normalized_path.is_file():
+        normalized_path.unlink(missing_ok=True)
+        raise AssemblyError(f"audio output could not be normalized for playback: {result.stderr.strip()[:300]}")
+    duration = duration_of(normalized_path)
+    if not duration:
+        normalized_path.unlink(missing_ok=True)
+        raise AssemblyError("normalized audio has no playable duration")
+    return duration

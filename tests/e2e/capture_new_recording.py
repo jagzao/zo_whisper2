@@ -86,7 +86,7 @@ def main() -> int:
         page.on("pageerror", lambda exc: browser_errors.append(f"pageerror: {exc}"))
 
         try:
-            page.goto(DASHBOARD_URL, timeout=TIMEOUT_MS)
+            page.goto(DASHBOARD_URL, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
             page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
 
             # 1. Videos -> New Recording entry.
@@ -393,7 +393,7 @@ def main() -> int:
                           if f.get("capture_session_id") == session_id]
             all_ok &= check("one_user_video_row_for_session", len(video_rows) == 1, str(len(video_rows)))
             if video_session.get("finalMedia"):
-                video_stream = requests.get(f"{DASHBOARD_URL}/stream", params={"id": f"Videos:live_capture/{session_id}/{video_session['finalMedia']['relativePath']}"}, timeout=20)
+                video_stream = requests.get(f"{DASHBOARD_URL}/stream", params={"id": video_rows[0]["media_id"]}, timeout=20)
                 all_ok &= check("final_video_stream_available", video_stream.status_code == 200 and len(video_stream.content) > 0,
                                 f"HTTP {video_stream.status_code}, {len(video_stream.content)} bytes")
 
@@ -480,12 +480,14 @@ def main() -> int:
                             and final_audio_session["finalMedia"].get("extension") in {".webm", ".m4a", ".wav", ".ogg"},
                             json.dumps(final_audio_session.get("finalMedia")))
             page.locator("#captureModal .close-x").click()
+            page.evaluate("() => loadFiles()")
             page.wait_for_function("() => Array.isArray(window._allFiles) && window._allFiles.some(f => f.capture_session_id)", timeout=TIMEOUT_MS)
             if video_rows:
                 video_id = video_rows[0]["media_id"]
                 row = page.locator(f'tr[data-media-id="{video_id}"]')
                 row.locator(".btn-view").click()
                 page.wait_for_selector("#editorMedia[controls]", timeout=TIMEOUT_MS)
+                page.wait_for_function("() => { const m=document.getElementById('editorMedia'); return m && m.readyState >= 1 && Number.isFinite(m.duration) && m.duration > 0; }", timeout=15000)
                 all_ok &= check("show_opens_native_video_player", page.locator("#editorMedia").evaluate("el => el.tagName === 'VIDEO' && el.controls")
                                 and page.locator("#editorMedia").is_visible())
                 page.locator("#previewModal .close-x").click()
@@ -493,6 +495,7 @@ def main() -> int:
                 audio_row = page.locator(f'tr[data-media-id="{audio_file["media_id"]}"]')
                 audio_row.locator(".btn-view").click()
                 page.wait_for_selector("#editorMedia[controls]", timeout=TIMEOUT_MS)
+                page.wait_for_function("() => { const m=document.getElementById('editorMedia'); return m && m.readyState >= 1 && Number.isFinite(m.duration) && m.duration > 0; }", timeout=15000)
                 all_ok &= check("show_opens_native_audio_player", page.locator("#editorMedia").evaluate("el => el.tagName === 'AUDIO' && el.controls")
                                 and page.locator("#editorMedia").is_visible())
                 page.locator("#previewModal .close-x").click()
