@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import threading
 import time
+import shutil
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -34,6 +35,13 @@ def test_duplicate_worker_claim_prevention(tmp_path):
     for thread in threads:
         thread.join()
     assert sum(result is not None for result in results) == 1
+
+
+def test_shared_queue_lock_recreates_removed_state_directory(tmp_path):
+    store = ProcessingJobStore(tmp_path)
+    shutil.rmtree(store.directory)
+    assert store.claim_next(1) is None
+    assert store.directory.is_dir()
 
 
 def test_hourly_scan_enqueues_pending_work(tmp_path):

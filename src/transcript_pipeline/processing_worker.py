@@ -36,6 +36,7 @@ class ProcessingJobStore:
         deadline = time.monotonic() + 30
         while True:
             try:
+                self.directory.mkdir(parents=True, exist_ok=True)
                 descriptor = os.open(self.lease_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
                 with os.fdopen(descriptor, "w", encoding="ascii") as handle:
                     handle.write(token)
@@ -50,6 +51,8 @@ class ProcessingJobStore:
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Timed out waiting for shared processing queue lock")
                 time.sleep(0.01)
+            except FileNotFoundError:
+                self.directory.mkdir(parents=True, exist_ok=True)
         try:
             yield
         finally:
