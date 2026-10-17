@@ -10,7 +10,9 @@ media atomically and flips the chunk RECORDING -> FINALIZED. Incomplete
 from __future__ import annotations
 
 import io
+import hashlib
 import logging
+import os
 import threading
 from dataclasses import replace
 from pathlib import Path
@@ -37,6 +39,14 @@ from transcript_pipeline.media.utils import media_has_audio_stream
 STREAM_BLOCK_SIZE = 64 * 1024
 
 logger = logging.getLogger(__name__)
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as source:
+        for block in iter(lambda: source.read(STREAM_BLOCK_SIZE), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def _optional_nonnegative_ms(value: int | None, label: str) -> int | None:
@@ -162,6 +172,8 @@ class CaptureService:
     ) -> models.Session:
         with self._lock_for(session_id):
             session = self.store.load_session(session_id)
+            if session.status is models.SessionStatus.FINALIZED:
+                return session
             updated = session.transition_to(models.SessionStatus.FINALIZED)
             updated = replace(
                 updated,
@@ -171,6 +183,74 @@ class CaptureService:
             )
             self.store.save_session(updated)
             return updated
+
+    def finalize_session_media(self, session_id: str) -> dict:
+        """Create one durable, validated media file for the whole capture."""
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            if session.status is not models.SessionStatus.FINALIZED:
+                raise InvalidTransitionError("capture session must be finalized before media assembly")
+            chunks = sorted((c for c in session.chunks if c.media_extension), key=lambda c: c.index)
+            if not chunks:
+                raise AssemblyError("capture has no finalized processing chunks")
+            extensions = {chunk.media_extension for chunk in chunks}
+            if len(extensions) != 1:
+                raise AssemblyError("capture processing chunks use mixed media formats")
+            extension = next(iter(extensions))
+            final_path = self.store.final_media_path(session_id, extension)
+            existing = session.final_media or {}
+            if final_path.is_file() and existing.get("extension") == extension:
+                digest = _sha256_file(final_path)
+                if digest == existing.get("sha256") and final_path.stat().st_size == existing.get("sizeBytes"):
+                    return dict(existing)
+
+            mappings = self.store.load_processing_map(session_id)
+            if mappings and any(not entry.finalized for entry in mappings):
+                raise AssemblyError("processing chunks are not all finalized")
+            sources = [self.store.chunk_media_path(session_id, c.index, extension) for c in chunks]
+            if any(not path.is_file() for path in sources):
+                raise AssemblyError("a processing chunk is missing; source media was preserved")
+            staging = self.store.final_staging_path(session_id, extension)
+            staging.unlink(missing_ok=True)
+            try:
+                self._assembler(sources, staging)
+                final_path.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(staging, final_path)
+            except Exception:
+                staging.unlink(missing_ok=True)
+                raise
+            metadata = {
+                "relativePath": final_path.relative_to(self.store.session_dir(session_id)).as_posix(),
+                "extension": extension,
+                "sizeBytes": final_path.stat().st_size,
+                "sha256": _sha256_file(final_path),
+                "createdAt": existing.get("createdAt") or models.now_iso(),
+                "processingChunkIds": [models.chunk_id(chunk.index) for chunk in chunks],
+                "fragmentIds": [fid for entry in mappings for fid in entry.fragment_ids],
+            }
+            self.store.save_session(replace(session, final_media=metadata))
+            return metadata
+
+    def cleanup_temporary_media_if_safe(self, session_id: str) -> bool:
+        """Delete blobs only after validated final media and completed processing."""
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            metadata = session.final_media or {}
+            extension = metadata.get("extension")
+            final_path = self.store.final_media_path(session_id, extension) if extension else None
+            if not final_path or not final_path.is_file() or _sha256_file(final_path) != metadata.get("sha256"):
+                return False
+            if not session.chunks or any(c.state is not models.ChunkState.PROCESSED for c in session.chunks):
+                return False
+            mappings = self.store.load_processing_map(session_id)
+            if mappings and any(not entry.finalized for entry in mappings):
+                return False
+            for fragment in self.store.load_fragments(session_id):
+                self.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension).unlink(missing_ok=True)
+            for chunk in session.chunks:
+                if chunk.media_extension:
+                    self.store.chunk_media_path(session_id, chunk.index, chunk.media_extension).unlink(missing_ok=True)
+            return True
 
     def set_crop(self, session_id: str, crop: models.CropRegion | None) -> models.Session:
         with self._lock_for(session_id):

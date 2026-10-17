@@ -196,12 +196,30 @@ def test_drain_after_finalize_does_not_duplicate(client, env):
     _upload_fragment(client, session_id, "fragment-000001", 1, b"one", duration_ms=1000, offset_ms=0)
     first = client.post(f"/api/capture/sessions/{session_id}/drain", headers=AUTH_HEADERS)
     assert first.status_code == 200
-    # A second drain cannot re-finalize an already-FINALIZED session (409) and
-    # must not create a duplicate processing chunk.
+    first_final = first.get_json()["finalMedia"]
     second = client.post(f"/api/capture/sessions/{session_id}/drain", headers=AUTH_HEADERS)
-    assert second.status_code == 409
+    assert second.status_code == 200
+    assert second.get_json()["finalMedia"] == first_final
     assert len(_processing_chunks(client, session_id)) == 1
     assert len(_session(client, session_id)["chunks"]) == 1
+
+
+def test_many_fragments_create_one_final_user_video(client, env):
+    session_id = _create_session(client, "Live capture", chunk_duration_sec=2).get_json()["session"]["sessionId"]
+    for seq in range(1, 5):
+        assert _upload_fragment(client, session_id, f"fragment-{seq:06d}", seq, f"f{seq}".encode(),
+                               duration_ms=1000, offset_ms=(seq - 1) * 1000).status_code == 200
+    response = client.post(f"/api/capture/sessions/{session_id}/drain", headers=AUTH_HEADERS)
+    assert response.status_code == 200
+    payload = response.get_json()
+    assert len(payload["processingChunks"]) == 2
+    assert payload["finalMedia"]["processingChunkIds"] == ["chunk-000000", "chunk-000001"]
+    final_path = env["videos"] / "live_capture" / session_id / "final" / "recording.webm"
+    assert final_path.read_bytes() == b"f1f2f3f4"
+    rows = client.get("/api/files").get_json()["files"]
+    capture_rows = [row for row in rows if row.get("capture_session_id") == session_id]
+    assert len(capture_rows) == 1
+    assert capture_rows[0]["name"] == "Live capture.webm"
 
 
 # ── observability / validation ──────────────────────────────────────────

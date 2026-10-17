@@ -121,7 +121,9 @@ def main() -> int:
                 page.locator("#captureCropControls").evaluate("el => el.previousElementSibling.classList.contains('capture-preview-wrap')")
                 and page.locator("#cropClearBtn").evaluate("el => el.parentElement.id === 'captureCropControls'"),
             )
-            all_ok &= check("camera_and_audio_input_modes_visible", page.locator("#captureInputCamera").is_visible() and page.locator("#captureInputAudio").is_visible())
+            all_ok &= check("camera_and_audio_input_modes_visible", page.locator("#captureInputCamera").is_visible() and page.locator("#captureInputAudio").is_visible()
+                            and "📷 Camera" in page.locator("#captureInputCamera").inner_text()
+                            and "🎤 Audio" in page.locator("#captureInputAudio").inner_text())
             all_ok &= check(
                 "normal_mode_visible",
                 page.locator("#captureModeNormal").is_visible()
@@ -382,6 +384,18 @@ def main() -> int:
             if new_sessions:
                 all_ok &= check("capture_session_finalized", new_sessions[0]["status"] == "FINALIZED", new_sessions[0]["status"])
                 all_ok &= check("camera_source_persisted_after_switch", new_sessions[0].get("captureSource") == "environment", str(new_sessions[0].get("captureSource")))
+            video_session = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{session_id}", timeout=10).json()["session"]
+            all_ok &= check("one_validated_final_media_per_capture", bool(video_session.get("finalMedia"))
+                            and video_session["finalMedia"].get("sizeBytes", 0) > 0
+                            and len(video_session["finalMedia"].get("processingChunkIds", [])) >= 1,
+                            json.dumps(video_session.get("finalMedia")))
+            video_rows = [f for f in requests.get(f"{DASHBOARD_URL}/api/files", timeout=30).json().get("files", [])
+                          if f.get("capture_session_id") == session_id]
+            all_ok &= check("one_user_video_row_for_session", len(video_rows) == 1, str(len(video_rows)))
+            if video_session.get("finalMedia"):
+                video_stream = requests.get(f"{DASHBOARD_URL}/stream", params={"id": f"Videos:live_capture/{session_id}/{video_session['finalMedia']['relativePath']}"}, timeout=20)
+                all_ok &= check("final_video_stream_available", video_stream.status_code == 200 and len(video_stream.content) > 0,
+                                f"HTTP {video_stream.status_code}, {len(video_stream.content)} bytes")
 
             # Synthetic mobile viewport keeps the capture controls usable.
             page.set_viewport_size({"width": 390, "height": 844})
@@ -461,6 +475,27 @@ def main() -> int:
                 bool(audio_file) and audio_file.get("media_kind") == "audio" and audio_file.get("project") == audio_session["projectId"],
                 json.dumps({k:audio_file.get(k) for k in ("media_kind", "project", "user_state")} if audio_file else None),
             )
+            final_audio_session = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{audio_session_id}", timeout=10).json()["session"]
+            all_ok &= check("audio_mode_has_single_final_output", bool(final_audio_session.get("finalMedia"))
+                            and final_audio_session["finalMedia"].get("extension") in {".webm", ".m4a", ".wav", ".ogg"},
+                            json.dumps(final_audio_session.get("finalMedia")))
+            page.locator("#captureModal .close-x").click()
+            page.wait_for_function("() => Array.isArray(window._allFiles) && window._allFiles.some(f => f.capture_session_id)", timeout=TIMEOUT_MS)
+            if video_rows:
+                video_id = video_rows[0]["media_id"]
+                row = page.locator(f'tr[data-media-id="{video_id}"]')
+                row.locator(".btn-view").click()
+                page.wait_for_selector("#editorMedia[controls]", timeout=TIMEOUT_MS)
+                all_ok &= check("show_opens_native_video_player", page.locator("#editorMedia").evaluate("el => el.tagName === 'VIDEO' && el.controls")
+                                and page.locator("#editorMedia").is_visible())
+                page.locator("#previewModal .close-x").click()
+            if audio_file:
+                audio_row = page.locator(f'tr[data-media-id="{audio_file["media_id"]}"]')
+                audio_row.locator(".btn-view").click()
+                page.wait_for_selector("#editorMedia[controls]", timeout=TIMEOUT_MS)
+                all_ok &= check("show_opens_native_audio_player", page.locator("#editorMedia").evaluate("el => el.tagName === 'AUDIO' && el.controls")
+                                and page.locator("#editorMedia").is_visible())
+                page.locator("#previewModal .close-x").click()
             page.set_viewport_size({"width": 1280, "height": 900})
         finally:
             all_ok &= check("capture_no_browser_errors", not browser_errors, "; ".join(browser_errors)[:1000])

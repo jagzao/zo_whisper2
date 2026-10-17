@@ -531,6 +531,7 @@ class Session:
     is_test_session: bool = False
     capture_kind: str = "video"
     capture_source: str | None = None
+    final_media: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         validate_session_id(self.session_id)
@@ -548,6 +549,8 @@ class Session:
             raise ValidationError("captureKind must be video or audio")
         if self.capture_source not in {None, "environment", "user", "microphone"}:
             raise ValidationError("captureSource must be environment, user, microphone or null")
+        if self.final_media is not None and not isinstance(self.final_media, dict):
+            raise ValidationError("finalMedia must be a mapping or null")
 
     @property
     def next_chunk_index(self) -> int:
@@ -617,6 +620,7 @@ class Session:
             "isTestSession": self.is_test_session,
             "captureKind": self.capture_kind,
             "captureSource": self.capture_source,
+            "finalMedia": self.final_media,
         }
 
     @classmethod
@@ -650,6 +654,7 @@ class Session:
                 is_test_session=bool(data.get("isTestSession", False)),
                 capture_kind=str(data.get("captureKind") or "video"),
                 capture_source=_optional_nonempty_str(data.get("captureSource")),
+                final_media=data.get("finalMedia"),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("session manifest is malformed") from exc

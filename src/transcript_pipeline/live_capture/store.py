@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 import shutil
 from pathlib import Path
 
@@ -74,6 +75,12 @@ class ManifestStore:
 
     def chunks_dir(self, session_id: str) -> Path:
         return self.session_dir(session_id) / CHUNKS_DIR
+
+    def final_media_path(self, session_id: str, extension: str) -> Path:
+        return self.session_dir(session_id) / "final" / f"recording{normalize_extension(extension)}"
+
+    def final_staging_path(self, session_id: str, extension: str) -> Path:
+        return self.session_dir(session_id) / f".final.assembling{normalize_extension(extension)}"
 
     def chunk_media_path(self, session_id: str, index: int, extension: str) -> Path:
         return self.chunks_dir(session_id) / f"{models.chunk_id(index)}{normalize_extension(extension)}"

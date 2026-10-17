@@ -819,7 +819,7 @@ def _media_recorded_datetime(media_path: Path, root: MediaRoot, modified_at: flo
     if root is MediaRoot.VIDEOS:
         try:
             relative = media_path.relative_to(VIDEOS_BASE)
-            if len(relative.parts) == 4 and relative.parts[0] == "live_capture" and relative.parts[2] == "chunks":
+            if len(relative.parts) == 4 and relative.parts[0] == "live_capture" and relative.parts[2] in {"chunks", "final"}:
                 from transcript_pipeline.live_capture.pipeline import parse_chunk_index
 
                 service = _get_capture_service()
@@ -999,7 +999,7 @@ def api_files() -> Any:
             media_kind = "audio" if root is MediaRoot.AUDIO else "video"
             capture_session = None
             if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture":
-                if len(relative_parts) != 4 or relative_parts[2] != "chunks":
+                if len(relative_parts) != 4 or relative_parts[2] not in {"chunks", "final"}:
                     continue
                 session_id = relative_parts[1]
                 try:
@@ -1007,6 +1007,8 @@ def api_files() -> Any:
                 except (ValueError, OSError, capture_errors.ValidationError):
                     continue
                 if _is_test_capture_session(session):
+                    continue
+                if relative_parts[2] == "chunks" and session.final_media:
                     continue
                 capture_session = session
                 media_kind = session.capture_kind
@@ -1045,7 +1047,7 @@ def api_files() -> Any:
                 file_row["capture_session_id"] = capture_session.session_id
                 file_row["capture_kind"] = capture_session.capture_kind
                 file_row["capture_source"] = capture_session.capture_source
-            if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture":
+            if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture" and relative_parts[2] == "chunks":
                 chunk_id = path.stem
                 logical_rows = []
                 all_logical_rows = []
@@ -1098,6 +1100,17 @@ def api_files() -> Any:
                     file_row["logical_read_only"] = True
                     media_files.append(file_row)
                 listed_capture_sessions.add(session_id)
+                continue
+            if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture" and relative_parts[2] == "final":
+                file_row["name"] = f"{capture_session.title}{path.suffix}"
+                file_row["project"] = capture_session.project_id
+                file_row["capture_session_id"] = capture_session.session_id
+                file_row["capture_status"] = _capture_user_status(capture_session)
+                file_row["status"] = file_row["capture_status"]
+                file_row["logical_read_only"] = True
+                if session_id not in listed_capture_sessions:
+                    media_files.append(file_row)
+                    listed_capture_sessions.add(session_id)
                 continue
             media_files.append(file_row)
 
@@ -2097,17 +2110,22 @@ def api_capture_drain_session(session_id: str) -> Any:
     """
     payload = request.get_json(silent=True) or {}
     service = _get_capture_service()
-    service.drain_processing_chunks(session_id)
-    session = service.finalize_session(
-        session_id,
-        recorded_at=payload.get("recorded_at") or None,
-        ended_at=payload.get("ended_at") or None,
-        reason=payload.get("reason") or None,
-    )
+    try:
+        service.drain_processing_chunks(session_id)
+        session = service.finalize_session(
+            session_id,
+            recorded_at=payload.get("recorded_at") or None,
+            ended_at=payload.get("ended_at") or None,
+            reason=payload.get("reason") or None,
+        )
+        final_media = service.finalize_session_media(session_id)
+    except (capture_errors.AssemblyError, capture_errors.InvalidTransitionError) as exc:
+        return jsonify({"ok": False, "error": f"Capture finalization failed: {exc}"}), 422
     return jsonify(
         {
             "ok": True,
             "session": _session_payload(session),
+            "finalMedia": final_media,
             "processingChunks": [
                 entry.to_manifest() for entry in service.list_processing_chunks(session_id)
             ],

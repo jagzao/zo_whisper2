@@ -77,6 +77,29 @@ def test_project_id_inherits_to_fragments_processing_mapping_and_chunk(service):
     assert chunk.project_id == "Zo Interviews"
 
 
+def test_final_media_is_idempotent_and_cleanup_waits_for_processing(service):
+    session = service.create_session("one recording", chunk_duration_sec=2)
+    for seq in range(1, 5):
+        _upload(service, session.session_id, seq, duration_ms=1000, offset_ms=(seq - 1) * 1000)
+    service.drain_processing_chunks(session.session_id)
+    service.finalize_session(session.session_id)
+    final = service.finalize_session_media(session.session_id)
+    again = service.finalize_session_media(session.session_id)
+    assert again == final
+    assert final["fragmentIds"] == [f"fragment-{seq:06d}" for seq in range(1, 5)]
+    assert service.cleanup_temporary_media_if_safe(session.session_id) is False
+    assert len(service.list_fragments(session.session_id)) == 4
+    assert len(service.finalized_chunks(session.session_id)) == 2
+
+    for chunk in service.get_session(session.session_id).chunks:
+        service.mark_processing(session.session_id, chunk.index)
+        service.complete_processing(session.session_id, chunk.index, transcript_available=True)
+    assert service.cleanup_temporary_media_if_safe(session.session_id) is True
+    assert len(service.list_fragments(session.session_id)) == 4
+    assert service.finalized_chunks(session.session_id) == []
+    assert service.store.final_media_path(session.session_id, ".webm").is_file()
+
+
 def test_fragment_rejects_negative_duration(service):
     session = service.create_session("bad-duration")
     with pytest.raises(ValidationError):
