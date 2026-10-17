@@ -223,3 +223,26 @@ def test_negative_duration_is_rejected(client, env):
     session_id = _create_session(client, "neg").get_json()["session"]["sessionId"]
     resp = _upload_fragment(client, session_id, "fragment-000001", 1, b"x", duration_ms=-5)
     assert resp.status_code == 400
+
+
+def test_audio_capture_project_inherits_to_fragment_and_processing_chunk(client, env):
+    created = _create_session(
+        client, "Audio meeting", capture_kind="audio", capture_source="microphone",
+        project_id="Zo Interviews",
+    ).get_json()["session"]
+    session_id = created["sessionId"]
+    assert created["captureKind"] == "audio"
+    assert _upload_fragment(
+        client, session_id, "fragment-000001", 1, b"synthetic-audio",
+        duration_ms=1000, offset_ms=0,
+    ).status_code == 200
+    fragments = client.get(f"/api/capture/sessions/{session_id}/fragments").get_json()["fragments"]
+    assert fragments[0]["projectId"] == "Zo Interviews"
+    drained = client.post(
+        f"/api/capture/sessions/{session_id}/drain",
+        data=json.dumps({"ended_at": "2026-10-15T09:30:00+00:00"}),
+        content_type="application/json",
+        headers=AUTH_HEADERS,
+    ).get_json()
+    assert drained["session"]["projectId"] == "Zo Interviews"
+    assert drained["processingChunks"][0]["projectId"] == "Zo Interviews"

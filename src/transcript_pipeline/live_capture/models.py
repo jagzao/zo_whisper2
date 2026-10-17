@@ -529,6 +529,8 @@ class Session:
     capture_mode: str = "normal"
     project_id: str | None = None
     is_test_session: bool = False
+    capture_kind: str = "video"
+    capture_source: str | None = None
 
     def __post_init__(self) -> None:
         validate_session_id(self.session_id)
@@ -542,6 +544,10 @@ class Session:
             raise ValidationError("chunkDurationSec must be a positive integer")
         if self.capture_mode not in {"normal", "playlist"}:
             raise ValidationError("captureMode must be normal or playlist")
+        if self.capture_kind not in {"video", "audio"}:
+            raise ValidationError("captureKind must be video or audio")
+        if self.capture_source not in {None, "environment", "user", "microphone"}:
+            raise ValidationError("captureSource must be environment, user, microphone or null")
 
     @property
     def next_chunk_index(self) -> int:
@@ -609,6 +615,8 @@ class Session:
             "captureMode": self.capture_mode,
             "projectId": self.project_id,
             "isTestSession": self.is_test_session,
+            "captureKind": self.capture_kind,
+            "captureSource": self.capture_source,
         }
 
     @classmethod
@@ -640,6 +648,8 @@ class Session:
                 capture_mode=str(data.get("captureMode") or "normal"),
                 project_id=_optional_nonempty_str(data.get("projectId")),
                 is_test_session=bool(data.get("isTestSession", False)),
+                capture_kind=str(data.get("captureKind") or "video"),
+                capture_source=_optional_nonempty_str(data.get("captureSource")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise ValidationError("session manifest is malformed") from exc

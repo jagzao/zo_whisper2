@@ -77,7 +77,7 @@ def main() -> int:
         )
         context = browser.new_context(
             viewport={"width": 1280, "height": 900},
-            permissions=["camera"],
+            permissions=["camera", "microphone"],
         )
         page = context.new_page()
 
@@ -117,6 +117,12 @@ def main() -> int:
                 and page.locator("#captureCameraFacing").input_value() == "environment",
             )
             all_ok &= check(
+                "crop_clear_next_to_preview_selection",
+                page.locator("#captureCropControls").evaluate("el => el.previousElementSibling.classList.contains('capture-preview-wrap')")
+                and page.locator("#cropClearBtn").evaluate("el => el.parentElement.id === 'captureCropControls'"),
+            )
+            all_ok &= check("camera_and_audio_input_modes_visible", page.locator("#captureInputCamera").is_visible() and page.locator("#captureInputAudio").is_visible())
+            all_ok &= check(
                 "normal_mode_visible",
                 page.locator("#captureModeNormal").is_visible()
                 and "Normal Recording" in page.locator("label[for='captureModeNormal']").inner_text(),
@@ -131,8 +137,8 @@ def main() -> int:
             all_ok &= check("start_button_visible", page.locator("#captureStartBtn").is_visible())
             all_ok &= check("stop_button_hidden_initially", page.locator("#captureStopBtn").is_hidden())
             all_ok &= check(
-                "timer_visible_initial",
-                page.locator("#captureTimer").is_visible() and page.locator("#captureTimer").inner_text() == "00:00:00",
+                "timer_reset_initial",
+                page.locator("#captureTimer").inner_text() == "00:00:00" and page.locator("#captureTimerBadge").is_hidden(),
                 page.locator("#captureTimer").inner_text(),
             )
             all_ok &= check("upload_status_visible", page.locator("#captureUploadStatus").is_visible())
@@ -213,10 +219,19 @@ def main() -> int:
             page.evaluate("""() => {
                 const mediaDevices = navigator.mediaDevices;
                 const original = mediaDevices.getUserMedia.bind(mediaDevices);
-                window.__captureRequestedFacingMode = null;
+                window.__captureRequestedFacingModes = [];
                 mediaDevices.getUserMedia = constraints => {
-                    window.__captureRequestedFacingMode = constraints.video.facingMode.ideal;
-                    return original(constraints);
+                    const facing = constraints.video && constraints.video.facingMode;
+                    window.__captureRequestedFacingModes.push({
+                        ideal: facing && facing.ideal || null,
+                        exact: facing && facing.exact || null,
+                        video: constraints.video,
+                        audio: constraints.audio,
+                    });
+                    const video = facing && facing.exact
+                        ? Object.assign({}, constraints.video, {facingMode: {ideal: facing.exact}})
+                        : constraints.video;
+                    return original(Object.assign({}, constraints, {video}));
                 };
             }""")
             page.locator("#captureStartBtn").click()
@@ -225,9 +240,30 @@ def main() -> int:
             )
             all_ok &= check("recording_state", page.locator("#captureState").inner_text() == "Recording")
             all_ok &= check(
+                "recording_timer_over_preview",
+                page.locator("#captureTimerBadge").is_visible()
+                and page.locator("#captureTimerBadge").evaluate("el => el.parentElement.classList.contains('capture-preview-wrap')"),
+            )
+            all_ok &= check(
                 "rear_camera_requested",
-                page.evaluate("() => window.__captureRequestedFacingMode") == "environment",
-                str(page.evaluate("() => window.__captureRequestedFacingMode")),
+                page.evaluate("() => window.__captureRequestedFacingModes[0].ideal") == "environment",
+                str(page.evaluate("() => window.__captureRequestedFacingModes[0]")),
+            )
+            page.evaluate("() => { window.__captureStreamBeforeSwitch = capture.stream; }")
+            page.locator("#captureCameraFacing").select_option("user")
+            page.wait_for_function("() => { const s=window.__captureSnapshot(); return s.state==='recording' && !s.cameraSwitching && s.activeFacingMode==='user' && !!capture.recorder; }")
+            all_ok &= check(
+                "front_camera_switch_keeps_recording_stream",
+                page.evaluate("() => capture.stream !== window.__captureStreamBeforeSwitch && document.querySelector('#capturePreview').srcObject === capture.stream && capture.recorder.stream === capture.stream"),
+                str(page.evaluate("() => window.__captureSnapshot().activeFacingMode")),
+            )
+            all_ok &= check("front_facing_mode_requested", page.evaluate("() => window.__captureRequestedFacingModes.some(x => x.exact === 'user')"))
+            page.evaluate("() => { window.__captureStreamFront = capture.stream; }")
+            page.locator("#captureCameraFacing").select_option("environment")
+            page.wait_for_function("() => { const s=window.__captureSnapshot(); return s.state==='recording' && !s.cameraSwitching && s.activeFacingMode==='environment' && !!capture.recorder; }")
+            all_ok &= check(
+                "rear_switch_restores_preview_recording_stream",
+                page.evaluate("() => capture.stream !== window.__captureStreamFront && document.querySelector('#capturePreview').srcObject === capture.stream && capture.recorder.stream === capture.stream"),
             )
             preview = page.locator("#capturePreview").evaluate("el => ({width:el.videoWidth, inline:el.playsInline, autoplay:el.autoplay, sameStream:el.srcObject === capture.recorder.stream})")
             all_ok &= check("live_preview_uses_recording_stream", preview["width"] > 0 and preview["inline"] and preview["autoplay"] and preview["sameStream"], json.dumps(preview))
@@ -345,6 +381,7 @@ def main() -> int:
             all_ok &= check("capture_session_created", len(new_sessions) == 1, f"{len(new_sessions)} new sessions")
             if new_sessions:
                 all_ok &= check("capture_session_finalized", new_sessions[0]["status"] == "FINALIZED", new_sessions[0]["status"])
+                all_ok &= check("camera_source_persisted_after_switch", new_sessions[0].get("captureSource") == "environment", str(new_sessions[0].get("captureSource")))
 
             # Synthetic mobile viewport keeps the capture controls usable.
             page.set_viewport_size({"width": 390, "height": 844})
@@ -352,6 +389,78 @@ def main() -> int:
                 page.locator("#captureStartBtn").is_visible() or page.locator("#captureStopBtn").is_visible()
             )
             all_ok &= check("mobile_viewport_capture_controls", mobile_ok)
+            mobile_geometry = page.evaluate("""() => {
+                const modal=document.querySelector('#captureModal .capture-modal');
+                const crop=document.querySelector('#captureCropControls');
+                const clear=document.querySelector('#cropClearBtn');
+                return {width:innerWidth, documentWidth:document.documentElement.scrollWidth,
+                    modalWidth:modal.clientWidth, modalScrollWidth:modal.scrollWidth,
+                    cropWidth:crop.clientWidth, clearRight:clear.getBoundingClientRect().right,
+                    cropRight:crop.getBoundingClientRect().right,
+                    clearAdjacent:clear.parentElement===crop,
+                    timerParent:document.querySelector('#captureTimerBadge').parentElement.classList.contains('capture-preview-wrap')};
+            }""")
+            all_ok &= check(
+                "mobile_crop_and_timer_fit",
+                mobile_geometry["documentWidth"] <= mobile_geometry["width"] + 1
+                and mobile_geometry["modalScrollWidth"] <= mobile_geometry["modalWidth"] + 1
+                and mobile_geometry["clearAdjacent"] and mobile_geometry["clearRight"] <= mobile_geometry["cropRight"] + 1
+                and mobile_geometry["timerParent"],
+                json.dumps(mobile_geometry),
+            )
+            page.locator("#captureInputAudio").click()
+            audio_mode_controls = page.evaluate("""() => ({camera:document.querySelector('#captureCameraFacing').getBoundingClientRect().width > 0, crop:!document.querySelector('#captureCropControls').classList.contains('hidden'), preview:!document.querySelector('#captureAudioPreview').classList.contains('hidden'), kind:window.__captureSnapshot().captureKind})""")
+            all_ok &= check(
+                "audio_mode_hides_camera_crop_controls",
+                page.locator("#captureCameraFacing").is_hidden()
+                and page.locator("#captureCropControls").is_hidden()
+                and page.locator("#captureAudioPreview").is_visible(),
+                json.dumps(audio_mode_controls),
+            )
+            page.locator("#captureStartBtn").click()
+            page.wait_for_function("document.getElementById('captureState').textContent === 'Recording'", timeout=TIMEOUT_MS)
+            audio_state = page.evaluate("""() => ({snapshot:window.__captureSnapshot(),
+                videoTracks:capture.stream.getVideoTracks().length,
+                audioTracks:capture.stream.getAudioTracks().length,
+                videoHasStream:!!document.getElementById('capturePreview').srcObject,
+                audioPreviewVisible:!document.getElementById('captureAudioPreview').classList.contains('hidden'),
+                timerVisible:!document.getElementById('captureTimerBadge').classList.contains('hidden'),
+                constraints:window.__captureRequestedFacingModes[window.__captureRequestedFacingModes.length-1]})""")
+            all_ok &= check(
+                "audio_mode_microphone_only_and_timer_visible",
+                audio_state["snapshot"]["captureKind"] == "audio"
+                and audio_state["videoTracks"] == 0 and audio_state["audioTracks"] > 0
+                and not audio_state["videoHasStream"] and audio_state["audioPreviewVisible"] and audio_state["timerVisible"]
+                and audio_state["constraints"]["video"] is False and audio_state["constraints"]["audio"] is True,
+                json.dumps(audio_state),
+            )
+            page.wait_for_function("window.__captureSnapshot().timerSeconds >= 1", timeout=5000)
+            audio_session_id = page.evaluate("() => window.__captureSnapshot().sessionId")
+            audio_session = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{audio_session_id}", timeout=10).json()["session"]
+            all_ok &= check(
+                "audio_session_project_and_kind_persisted",
+                audio_session.get("projectId") == page.locator("#captureProject").input_value()
+                and audio_session.get("captureKind") == "audio"
+                and audio_session.get("captureSource") == "microphone",
+                json.dumps({k:audio_session.get(k) for k in ("projectId", "captureKind", "captureSource")}),
+            )
+            page.locator("#captureStopBtn").click()
+            page.wait_for_function("document.getElementById('captureState').textContent === 'Saved'", timeout=TIMEOUT_MS)
+            audio_fragments = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{audio_session_id}/fragments", timeout=10).json()["fragments"]
+            audio_map = requests.get(f"{DASHBOARD_URL}/api/capture/sessions/{audio_session_id}/processing-chunks", timeout=10).json()["processingChunks"]
+            all_ok &= check(
+                "audio_fragment_and_chunk_inherit_project",
+                bool(audio_fragments) and all(f.get("projectId") == audio_session["projectId"] for f in audio_fragments)
+                and bool(audio_map) and all(c.get("projectId") == audio_session["projectId"] for c in audio_map),
+                f"fragments={len(audio_fragments)} chunks={len(audio_map)}",
+            )
+            listed = requests.get(f"{DASHBOARD_URL}/api/files", timeout=30).json().get("files", [])
+            audio_file = next((f for f in listed if f.get("capture_session_id") == audio_session_id), None)
+            all_ok &= check(
+                "audio_capture_uses_normal_project_listing",
+                bool(audio_file) and audio_file.get("media_kind") == "audio" and audio_file.get("project") == audio_session["projectId"],
+                json.dumps({k:audio_file.get(k) for k in ("media_kind", "project", "user_state")} if audio_file else None),
+            )
             page.set_viewport_size({"width": 1280, "height": 900})
         finally:
             all_ok &= check("capture_no_browser_errors", not browser_errors, "; ".join(browser_errors)[:1000])

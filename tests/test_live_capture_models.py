@@ -57,6 +57,17 @@ def test_capture_mode_roundtrips_and_rejects_unknown_values():
         _session(capture_mode="unknown")
 
 
+def test_audio_capture_kind_and_source_roundtrip_and_validate():
+    audio = _session(capture_kind="audio", capture_source="microphone")
+    restored = Session.from_manifest(audio.to_manifest())
+    assert restored.capture_kind == "audio"
+    assert restored.capture_source == "microphone"
+    with pytest.raises(ValidationError, match="captureKind"):
+        _session(capture_kind="screen")
+    with pytest.raises(ValidationError, match="captureSource"):
+        _session(capture_source="device-id-secret")
+
+
 def test_cancelled_upload_can_retry_but_is_not_playable():
     cancelled = _chunk().transition_to(ChunkState.UPLOAD_CANCELLED)
     assert cancelled.state is ChunkState.UPLOAD_CANCELLED

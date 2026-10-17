@@ -133,6 +133,31 @@ def test_create_session_rejects_invalid_capture_mode(client):
     assert response.status_code == 400
 
 
+def test_audio_capture_session_persists_kind_source_and_project(client, env):
+    response = _create_session(
+        client, "Audio capture", project_id="Zo Interviews",
+        capture_kind="audio", capture_source="microphone",
+    )
+    assert response.status_code == 200
+    session = response.get_json()["session"]
+    assert session["captureKind"] == "audio"
+    assert session["captureSource"] == "microphone"
+    assert session["projectId"] == "Zo Interviews"
+    source = client.put(
+        f"/api/capture/sessions/{session['sessionId']}/source",
+        data=json.dumps({"capture_source": "user"}),
+        content_type="application/json",
+        headers=AUTH_HEADERS,
+    )
+    assert source.status_code == 200
+    assert source.get_json()["session"]["captureSource"] == "user"
+    stored = capture_models.Session.from_manifest(
+        json.loads((env["videos"] / "live_capture" / session["sessionId"] / "session.json").read_text())
+    )
+    assert stored.capture_kind == "audio"
+    assert stored.capture_source == "user"
+
+
 def test_playlist_title_samples_confirm_boundary_and_persist_review_actions(client):
     session_id = _create_session(client, "Playlist title sample", capture_mode="playlist", project_id="Zo Interviews").get_json()["session"]["sessionId"]
     url = f"/api/capture/sessions/{session_id}/title-samples"

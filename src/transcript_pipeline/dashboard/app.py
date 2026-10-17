@@ -996,6 +996,8 @@ def api_files() -> Any:
             if not path.is_file() or path.suffix.lower() not in SUPPORTED_MEDIA:
                 continue
             relative_parts = path.relative_to(base).parts
+            media_kind = "audio" if root is MediaRoot.AUDIO else "video"
+            capture_session = None
             if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture":
                 if len(relative_parts) != 4 or relative_parts[2] != "chunks":
                     continue
@@ -1006,6 +1008,8 @@ def api_files() -> Any:
                     continue
                 if _is_test_capture_session(session):
                     continue
+                capture_session = session
+                media_kind = session.capture_kind
             media_stat = path.stat()
             media_date = _media_recorded_datetime(path, root, media_stat.st_mtime)
             transcription = _resolve_transcription(path)
@@ -1027,6 +1031,7 @@ def api_files() -> Any:
                     "date_epoch": media_date.timestamp(),
                     "status": _file_status(path),
                     "user_state": user_state,
+                    "media_kind": media_kind,
                     "timings": get_metrics(project.get("name") if project else None, path.name),
                     "language": _detect_language(path.name, project),
                     "project": project.get("name") if project else None,
@@ -1034,6 +1039,12 @@ def api_files() -> Any:
                     "transcription": transcription,
                     "documentation": _resolve_documentation(path, root),
                 }
+            if capture_session is not None:
+                file_row["project"] = capture_session.project_id
+                file_row["project_source"] = "capture_session"
+                file_row["capture_session_id"] = capture_session.session_id
+                file_row["capture_kind"] = capture_session.capture_kind
+                file_row["capture_source"] = capture_session.capture_source
             if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture":
                 chunk_id = path.stem
                 logical_rows = []
@@ -1879,6 +1890,14 @@ def api_capture_create_session() -> Any:
     capture_mode = str(payload.get("capture_mode") or "normal").lower()
     if capture_mode not in {"normal", "playlist"}:
         return jsonify({"ok": False, "error": "capture_mode must be normal or playlist"}), 400
+    capture_kind = str(payload.get("capture_kind") or "video").lower()
+    if capture_kind not in {"video", "audio"}:
+        return jsonify({"ok": False, "error": "capture_kind must be video or audio"}), 400
+    capture_source = payload.get("capture_source")
+    if capture_source is not None and capture_source not in {"environment", "user", "microphone"}:
+        return jsonify({"ok": False, "error": "capture_source must be environment, user, microphone or null"}), 400
+    if capture_kind == "audio" and capture_mode == "playlist":
+        return jsonify({"ok": False, "error": "Audio-only capture does not support playlist mode"}), 400
     project_id = str(payload.get("project_id") or "").strip()
     project_names = {str(project.get("name") or "").strip() for project in _load_projects()}
     project_names.discard("")
@@ -1893,6 +1912,7 @@ def api_capture_create_session() -> Any:
     session = _get_capture_service().create_session(
         title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop,
         audio_availability=audio_availability, capture_mode=capture_mode, project_id=project_id,
+        capture_kind=capture_kind, capture_source=capture_source,
         is_test_session=bool(payload.get("is_test_session")) and (app.testing or app.config.get("CAPTURE_TEST_MODE")),
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
@@ -2041,6 +2061,16 @@ def api_capture_set_crop(session_id: str) -> Any:
     except capture_errors.ValidationError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     session = _get_capture_service().set_crop(session_id, crop)
+    return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/sessions/<session_id>/source", methods=["PUT"])
+def api_capture_set_source(session_id: str) -> Any:
+    payload = request.get_json(silent=True) or {}
+    source = payload.get("capture_source")
+    if source not in {"environment", "user", "microphone"}:
+        return jsonify({"ok": False, "error": "capture_source must be environment, user or microphone"}), 400
+    session = _get_capture_service().set_capture_source(session_id, source)
     return jsonify({"ok": True, "session": _session_payload(session)})
 
 

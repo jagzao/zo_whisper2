@@ -662,6 +662,34 @@
         }
 
         /* Live Capture / New Recording (W3) */
+        #captureTimerBadge {
+            position: absolute;
+            top: 0.65rem;
+            right: 0.65rem;
+            z-index: 4;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.65rem;
+            color: #fff;
+            background: rgba(120, 20, 20, 0.92);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.35);
+        }
+        #captureTimerBadge b { font-size: 0.72rem; letter-spacing: 0.08em; }
+        .capture-crop-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.6rem;
+            margin: -0.35rem 0 0.75rem;
+            flex-wrap: wrap;
+        }
+        .capture-record-modes button[aria-pressed="true"] { outline: 2px solid var(--accent); }
         .videos-header {
             justify-content: space-between;
             align-items: center;
@@ -692,12 +720,7 @@
             font-size: 0.85rem;
             color: var(--muted);
         }
-        #captureTimer {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: var(--accent);
-            letter-spacing: 0.04em;
-        }
+        #captureTimer { font: inherit; color: inherit; letter-spacing: 0.04em; }
         .capture-logical-videos {
             background: var(--panel-2);
             border: 1px solid var(--border);
@@ -751,6 +774,8 @@
             .capture-modal .modal-header h2 { font-size: 1.05rem; }
             .capture-modes { display: grid !important; grid-template-columns: 1fr; gap: 0.4rem; }
             .capture-mode { width: 100%; min-height: 2.75rem; justify-content: flex-start; }
+            .capture-record-modes { display: grid !important; grid-template-columns: auto 1fr 1fr; gap: 0.45rem; }
+            .capture-record-modes button { min-height: 2.75rem; }
             .capture-title-row { display: grid !important; grid-template-columns: 1fr; gap: 0.25rem; }
             .capture-title-row input { width: 100%; min-width: 0; }
             .capture-preview-wrap {
@@ -765,8 +790,12 @@
             .capture-config-checkbox { grid-column: 1 / -1; min-height: 2.75rem; margin: 0; }
             #captureChunkInfo { grid-column: 1 / -1; margin: 0; overflow-wrap: anywhere; }
             .capture-audio-row { margin-top: 0.35rem !important; min-height: 2.75rem; }
+            .capture-camera-row:not(.hidden) { display: grid !important; grid-template-columns: auto minmax(0, 1fr); gap: 0.5rem; }
+            #captureCameraFacing { min-height: 2.75rem; }
+            .capture-crop-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.45rem; align-items: center; margin-top: 0; }
+            #captureCropControls button { min-height: 2.6rem; }
             .capture-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.45rem; align-items: center; }
-            #captureUploadStatus, #cropInfo { grid-column: 1 / -1; min-width: 0; overflow-wrap: anywhere; }
+            #captureUploadStatus { grid-column: 1 / -1; min-width: 0; overflow-wrap: anywhere; }
             #captureServerHealth { justify-self: start; }
             #captureActions {
                 position: sticky;
@@ -1052,18 +1081,31 @@
                 <label for="captureTitle">Title:</label>
                 <input type="text" id="captureTitle" value="Live capture" style="flex:1;">
             </div>
+            <div class="row capture-record-modes" role="group" aria-label="Capture input" style="align-items:center; margin-top:0;">
+                <span>Input:</span>
+                <button type="button" id="captureInputCamera" class="secondary" aria-pressed="true" onclick="setCaptureKind('video')">Camera</button>
+                <button type="button" id="captureInputAudio" class="secondary" aria-pressed="false" onclick="setCaptureKind('audio')">Audio</button>
+            </div>
             <div class="row capture-camera-row" style="align-items:center; margin-top:0;">
                 <label for="captureCameraFacing">Camera:</label>
-                <select id="captureCameraFacing" style="flex:1; min-width:0;">
+                <select id="captureCameraFacing" style="flex:1; min-width:0;" onchange="switchCaptureCamera()">
                     <option value="environment" selected>Back camera</option>
                     <option value="user">Front camera</option>
                 </select>
             </div>
             <div class="capture-preview-wrap" style="position:relative; margin:0.75rem 0; height:320px;">
                 <video id="capturePreview" autoplay playsinline muted style="width:100%; height:100%; object-fit:fill; background:#000; border-radius:0.625rem; border:1px solid var(--border);"></video>
+                <div id="captureAudioPreview" class="hidden" style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--text); background:linear-gradient(145deg,#101a2b,#1b2a43); border-radius:0.625rem;">
+                    <span id="captureAudioState" role="status">Microphone ready</span>
+                </div>
                 <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem; z-index:2;">Idle</span>
+                <span id="captureTimerBadge" class="hidden" aria-live="off"><b>REC</b><span id="captureTimer" aria-label="Recording timer">00:00:00</span></span>
                 <div id="cropOverlay" title="Drag to select a crop region" style="position:absolute; inset:0; cursor:crosshair; z-index:1; border-radius:0.625rem;"></div>
                 <div id="cropBox" class="hidden" style="position:absolute; border:2px dashed var(--accent,#fff); background:rgba(255,255,255,0.12); z-index:1; pointer-events:none; border-radius:0.125rem;"></div>
+            </div>
+            <div id="captureCropControls" class="capture-crop-controls" aria-label="Crop selection">
+                <span id="cropInfo" style="color:var(--muted); font-size:0.85rem;">Crop: full frame</span>
+                <button id="cropClearBtn" class="secondary" onclick="clearCropRegion()">Clear crop</button>
             </div>
             <div class="capture-config-grid">
                 <label class="capture-config-field" for="captureChunkDuration"><span>Fragment duration (s)</span>
@@ -1079,7 +1121,7 @@
             </div>
             <div class="row capture-audio-row" style="align-items:center; margin-top:0;">
                 <label for="captureAudio" style="display:flex; align-items:center; gap:0.35rem;">
-                    <input type="checkbox" id="captureAudio"> Record audio (microphone)
+                    <input type="checkbox" id="captureAudio"> Record audio with camera (microphone)
                 </label>
             </div>
             <div id="captureNotice" class="ai-package-summary hidden"></div>
@@ -1096,11 +1138,8 @@
             </div>
             <div id="captureError" class="hidden" style="color:var(--danger); margin:0.5rem 0;"></div>
             <div class="row capture-status" style="margin-top:0;">
-                <span id="captureTimer" aria-label="Recording timer">00:00:00</span>
                 <span id="captureUploadStatus" aria-label="Upload status" style="flex:1;">Upload: idle · pending 0 · processing 0</span>
                 <span id="captureServerHealth" class="status pending" title="Backend health">Backend: checking…</span>
-                <span id="cropInfo" style="color:var(--muted); font-size:0.8rem;">Crop: full frame</span>
-                <button id="cropClearBtn" class="secondary" onclick="clearCropRegion()">Clear crop</button>
             </div>
             <div id="captureActions" class="row" style="justify-content:flex-end; margin-top:0.75rem;">
                 <button id="captureStartBtn" class="ok" onclick="startCapture()">Start Recording</button>
@@ -1535,9 +1574,11 @@
         async function preview(mediaIdEncoded, txIdEncoded, openDocsTab) {
             const mediaId = decodeURIComponent(mediaIdEncoded);
             const txId = txIdEncoded ? decodeURIComponent(txIdEncoded) : '';
+            const fileRow = (window._allFiles || []).find(file => file.media_id === mediaId) || {};
             document.getElementById('previewTitle').textContent = mediaId.split(/[\\/]/).pop();
             document.getElementById('modalPreviewBody').innerHTML = '<p style="color:var(--muted)">Loading...</p>';
-            const txRes = txId ? await api('/api/transcription?id=' + encodeURIComponent(txId)) : { ok: false };
+            const txRes = txId ? await api('/api/transcription?id=' + encodeURIComponent(txId))
+                : { ok: fileRow.media_kind === 'audio', insights: {}, segments: [] };
             if (!txRes.ok) {
                 document.getElementById('modalPreviewBody').innerHTML = '<p style="color:var(--danger)">Error loading transcription</p>';
                 document.getElementById('previewModal').classList.remove('hidden');
@@ -1546,7 +1587,7 @@
             document.getElementById('previewModal').classList.remove('hidden');
             const ext = mediaId.split('.').pop().toLowerCase();
             const streamPath = '/stream?id=' + encodeURIComponent(mediaId);
-            const isVideo = ['mp4','mkv','mov','avi','webm','m4v','flv','wmv'].includes(ext);
+            const isVideo = fileRow.media_kind !== 'audio' && ['mp4','mkv','mov','avi','webm','m4v','flv','wmv'].includes(ext);
             const mediaTag = isVideo ? 'video' : 'audio';
             const insights = txRes.insights || {};
             const segments = txRes.segments || [];
@@ -1556,7 +1597,6 @@
             const wordCount = insights.word_count != null ? insights.word_count.toLocaleString() : '-';
             const modelName = insights.model || '-';
             const processingTime = insights.processing_time_formatted || '-';
-            const fileRow = (window._allFiles || []).find(file => file.media_id === mediaId) || {};
             const timings = fileRow.timings || {};
             const timingSummary = Object.entries(timings.stages || {})
                 .map(([stage, value]) => `${escapeHtml(stage)} ${Number(value.duration_seconds || 0).toFixed(1)}s`)
@@ -2358,6 +2398,9 @@
         const CAPTURE_MIME_FALLBACKS = [
             'video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm', 'video/mp4',
         ];
+        const CAPTURE_AUDIO_MIME_FALLBACKS = [
+            'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg',
+        ];
 
         const capture = {
             stream: null,
@@ -2400,6 +2443,11 @@
             retryAttempts: 0,
             retryTimer: null,
             mode: 'normal',         // W3: 'normal' | 'playlist'
+            captureKind: 'video',
+            activeFacingMode: 'environment',
+            cameraAudioRequested: false,
+            cameraSwitching: false,
+            stopAfterCameraSwitch: false,
             timerSeconds: 0,        // W3: visible recording timer
             timerInterval: null,
             titleSampleTimer: null,
@@ -2455,6 +2503,11 @@
             if (cancelProcessing) cancelProcessing.classList.toggle('hidden', !currentCancelableProcessingChunk());
             document.getElementById('captureRetryBtn').classList.toggle('hidden', !stalled);
             document.getElementById('captureStartBtn').disabled = busy;
+            renderCaptureTimer();
+            const audioState = document.getElementById('captureAudioState');
+            if (audioState && capture.captureKind === 'audio') {
+                audioState.textContent = recording ? 'Microphone recording' : 'Microphone ready';
+            }
         }
 
         function captureSupported() {
@@ -2711,6 +2764,8 @@
         function renderCaptureTimer() {
             const el = document.getElementById('captureTimer');
             if (el) el.textContent = formatCaptureTimer(capture.timerSeconds);
+            const badge = document.getElementById('captureTimerBadge');
+            if (badge) badge.classList.toggle('hidden', capture.state !== 'recording');
         }
 
         function resetCaptureTimer() {
@@ -2738,6 +2793,102 @@
             const playlist = document.getElementById('captureModePlaylist');
             if (normal) normal.checked = capture.mode === 'normal';
             if (playlist) playlist.checked = capture.mode === 'playlist';
+        }
+
+        function setCaptureKind(kind) {
+            if (capture.state === 'recording' || capture.state === 'stalled' || capture.state === 'finalizing') return;
+            capture.captureKind = kind === 'audio' ? 'audio' : 'video';
+            const audio = capture.captureKind === 'audio';
+            if (audio && capture.mode === 'playlist') setCaptureMode('normal');
+            document.getElementById('captureModePlaylist').disabled = audio;
+            document.getElementById('captureInputCamera').setAttribute('aria-pressed', String(!audio));
+            document.getElementById('captureInputAudio').setAttribute('aria-pressed', String(audio));
+            document.querySelector('.capture-camera-row').classList.toggle('hidden', audio);
+            document.querySelector('.capture-audio-row').classList.toggle('hidden', audio);
+            document.getElementById('capturePreview').classList.toggle('hidden', audio);
+            document.getElementById('captureAudioPreview').classList.toggle('hidden', !audio);
+            document.getElementById('captureCropControls').classList.toggle('hidden', audio);
+            document.getElementById('cropOverlay').classList.toggle('hidden', audio);
+            document.getElementById('cropBox').classList.toggle('hidden', audio || !capture.pendingCrop);
+            document.getElementById('cropClearBtn').disabled = audio || !capture.pendingCrop;
+        }
+
+        async function attachCapturePreview(stream) {
+            const video = document.getElementById('capturePreview');
+            video.classList.remove('hidden');
+            document.getElementById('captureAudioPreview').classList.add('hidden');
+            video.srcObject = stream;
+            video.autoplay = true;
+            video.playsInline = true;
+            await video.play();
+            if (video.videoWidth && video.videoHeight) return;
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Camera preview did not start. Check browser camera access and try again.')), 5000);
+                const finish = () => {
+                    if (!video.videoWidth || !video.videoHeight) return;
+                    clearTimeout(timeout);
+                    video.removeEventListener('loadedmetadata', finish);
+                    video.removeEventListener('playing', finish);
+                    resolve();
+                };
+                video.addEventListener('loadedmetadata', finish);
+                video.addEventListener('playing', finish);
+                finish();
+            });
+        }
+
+        async function switchCaptureCamera() {
+            if (capture.captureKind !== 'video' || !capture.stream || capture.state !== 'recording' || capture.cameraSwitching) return;
+            const nextFacing = document.getElementById('captureCameraFacing').value === 'user' ? 'user' : 'environment';
+            if (nextFacing === capture.activeFacingMode) return;
+            const previousFacing = capture.activeFacingMode;
+            const previousStream = capture.stream;
+            const previousRecorder = capture.recorder;
+            capture.cameraSwitching = true;
+            clearTimeout(capture.rotateTimer);
+            document.getElementById('captureCameraFacing').disabled = true;
+            if (previousRecorder && previousRecorder.state !== 'inactive') {
+                capture.recorder = null;
+                await new Promise(resolve => {
+                    previousRecorder.addEventListener('stop', resolve, { once: true });
+                    try { previousRecorder.stop(); } catch (err) { resolve(); }
+                });
+            }
+            let nextStream = null;
+            try {
+                nextStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { exact: nextFacing } },
+                    audio: capture.cameraAudioRequested,
+                });
+                await attachCapturePreview(nextStream);
+                capture.stream = nextStream;
+                capture.activeFacingMode = nextFacing;
+                previousStream.getTracks().forEach(track => track.stop());
+                const sourceResult = await captureFetch(`/api/capture/sessions/${capture.sessionId}/source`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ capture_source: nextFacing }),
+                }).catch(() => null);
+                capture.cameraSwitching = false;
+                document.getElementById('captureCameraFacing').disabled = false;
+                maybeResume();
+                if (!sourceResult?.ok) setCaptureState('recording', 'Camera switched, but the selected source could not be saved to the session.');
+                showToast(nextFacing === 'environment' ? 'Rear camera selected' : 'Front camera selected');
+            } catch (err) {
+                if (nextStream) nextStream.getTracks().forEach(track => track.stop());
+                capture.stream = previousStream;
+                capture.activeFacingMode = previousFacing;
+                document.getElementById('capturePreview').srcObject = previousStream;
+                document.getElementById('captureCameraFacing').value = previousFacing;
+                capture.cameraSwitching = false;
+                document.getElementById('captureCameraFacing').disabled = false;
+                maybeResume();
+                setCaptureState('recording', `Could not switch camera; recording continued with the previous camera. ${err.message || ''}`.trim());
+            }
+            if (capture.stopAfterCameraSwitch) {
+                capture.stopAfterCameraSwitch = false;
+                stopCapture();
+            }
         }
 
         function currentSession() {
@@ -2927,6 +3078,9 @@
                 crop: capture.pendingCrop,
                 audioAvailability: capture.audioAvailability,
                 mode: capture.mode,
+                captureKind: capture.captureKind,
+                activeFacingMode: capture.activeFacingMode,
+                cameraSwitching: capture.cameraSwitching,
                 timerSeconds: capture.timerSeconds,
                 recordedOffsetMs: capture.recordedOffsetMs,
                 processingChunkSeconds: capture.requestedChunkDurationSec,
@@ -3080,6 +3234,12 @@
             clearTimeout(capture.retryTimer);
             capture.retryTimer = null;
             setCaptureMode('normal');
+            capture.activeFacingMode = 'environment';
+            capture.cameraSwitching = false;
+            capture.stopAfterCameraSwitch = false;
+            capture.captureKind = 'video';
+            document.getElementById('captureCameraFacing').value = 'environment';
+            setCaptureKind('video');
             resetCaptureTimer();
             const saveLocal = document.getElementById('captureSaveLocal');
             if (saveLocal) saveLocal.checked = false;
@@ -3225,15 +3385,18 @@
             if (session) updateAudioWarning(session.audioAvailability, session.transcriptRequired, session.transcriptAvailable);
         }
 
-        function pickCaptureMimeType() {
-            for (const mime of CAPTURE_MIME_FALLBACKS) {
+        function pickCaptureMimeType(kind = 'video') {
+            const candidates = kind === 'audio' ? CAPTURE_AUDIO_MIME_FALLBACKS : CAPTURE_MIME_FALLBACKS;
+            for (const mime of candidates) {
                 if (mediaRecorderSupportsMime(mime)) return mime;
             }
             return '';
         }
 
         function extensionForMime(mime) {
-            return (mime && mime.indexOf('mp4') !== -1) ? '.mp4' : '.webm';
+            if (mime && mime.indexOf('mp4') !== -1) return '.mp4';
+            if (mime && mime.indexOf('ogg') !== -1) return '.ogg';
+            return '.webm';
         }
 
         // ── Crop region selection (W6) ─────────────────────────────────────
@@ -3269,6 +3432,8 @@
             const box = cropBoxEl();
             const info = cropInfoEl();
             const region = capture.pendingCrop;
+            const clearButton = document.getElementById('cropClearBtn');
+            if (clearButton) clearButton.disabled = !region || capture.captureKind === 'audio';
             if (!region) {
                 if (box) box.classList.add('hidden');
                 if (info) info.textContent = 'Crop: full frame';
@@ -3360,24 +3525,29 @@
                 return;
             }
             setCaptureState('requesting');
-            const requestAudio = document.getElementById('captureAudio').checked === true;
+            const captureKind = capture.captureKind === 'audio' ? 'audio' : 'video';
+            const requestAudio = captureKind === 'audio' || document.getElementById('captureAudio').checked === true;
             const facingMode = document.getElementById('captureCameraFacing')?.value === 'user' ? 'user' : 'environment';
             let stream;
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: facingMode } },
+                    video: captureKind === 'video' ? { facingMode: { ideal: facingMode } } : false,
                     audio: requestAudio,
                 });
             } catch (err) {
                 const name = err && err.name;
                 if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-                    setCaptureState('error', requestAudio
-                        ? 'Camera or microphone permission denied. Allow access in your browser and try again.'
-                        : 'Camera permission denied. Allow camera access in your browser and try again.');
+                    setCaptureState('error', captureKind === 'audio'
+                        ? 'Microphone permission denied. Allow microphone access in your browser and try again.'
+                        : requestAudio
+                            ? 'Camera or microphone permission denied. Allow access in your browser and try again.'
+                            : 'Camera permission denied. Allow camera access in your browser and try again.');
                 } else if (name === 'NotFoundError') {
-                    setCaptureState('error', requestAudio
-                        ? 'No camera or microphone found on this device.'
-                        : 'No camera found on this device.');
+                    setCaptureState('error', captureKind === 'audio'
+                        ? 'No microphone found on this device.'
+                        : requestAudio
+                            ? 'No camera or microphone found on this device.'
+                            : 'No camera found on this device.');
                 } else if (name === 'NotReadableError') {
                     setCaptureState('error', 'Camera or microphone is in use by another application.');
                 } else {
@@ -3385,7 +3555,15 @@
                 }
                 return;
             }
+            if (captureKind === 'audio' && stream.getAudioTracks().length === 0) {
+                stream.getTracks().forEach(track => track.stop());
+                setCaptureState('error', 'Microphone access succeeded without an audio track. Choose another microphone and retry.');
+                return;
+            }
             capture.stream = stream;
+            capture.captureKind = captureKind;
+            capture.activeFacingMode = facingMode;
+            capture.cameraAudioRequested = captureKind === 'video' && requestAudio;
             // W7: persist audio availability from the observed audio-track
             // presence. Video-only (audio not requested) is MISSING, not
             // UNKNOWN — the absence is intentional and transcript-required.
@@ -3393,7 +3571,7 @@
             capture.audioAvailability = requestAudio
                 ? (audioTrackCount > 0 ? 'AVAILABLE' : 'MISSING')
                 : 'MISSING';
-            capture.mimeType = pickCaptureMimeType() || 'video/webm';
+            capture.mimeType = pickCaptureMimeType(captureKind) || (captureKind === 'audio' ? 'audio/webm' : 'video/webm');
             capture.extension = extensionForMime(capture.mimeType);
             capture.pendingParts = [];
             capture.uploadQueue = [];
@@ -3405,35 +3583,20 @@
             capture.stopRequested = false;
             capture.closed = false;
 
-            const video = document.getElementById('capturePreview');
-            video.srcObject = stream;
-            video.autoplay = true;
-            video.playsInline = true;
-            try {
-                let previewTimeout;
-                const previewReady = new Promise((resolve, reject) => {
-                    const finish = () => {
-                        if (video.videoWidth > 0 && video.videoHeight > 0) {
-                            resolve();
-                        }
-                    };
-                    previewTimeout = setTimeout(() => reject(new Error('Camera preview did not start. Check browser camera access and try again.')), 5000);
-                    video.addEventListener('loadedmetadata', finish, { once: true });
-                    video.addEventListener('playing', finish, { once: true });
-                    video.addEventListener('error', () => {
-                        clearTimeout(previewTimeout);
-                        reject(new Error('Camera preview could not start. Check browser camera access and try again.'));
-                    }, { once: true });
-                });
-                await video.play();
-                if (!video.videoWidth) await previewReady;
-                clearTimeout(previewTimeout);
-            } catch (err) {
-                stream.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-                capture.stream = null;
-                setCaptureState('error', err?.message || 'Camera permission succeeded, but preview could not start.');
-                return;
+            if (captureKind === 'video') {
+                try {
+                    await attachCapturePreview(stream);
+                } catch (err) {
+                    stream.getTracks().forEach(track => track.stop());
+                    capture.stream = null;
+                    setCaptureState('error', err?.message || 'Camera permission succeeded, but preview could not start.');
+                    return;
+                }
+            } else {
+                document.getElementById('capturePreview').classList.add('hidden');
+                document.getElementById('capturePreview').srcObject = null;
+                document.getElementById('captureAudioPreview').classList.remove('hidden');
+                document.getElementById('captureAudioState').textContent = 'Microphone ready';
             }
 
             const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
@@ -3451,8 +3614,10 @@
                     body: JSON.stringify({
                         title,
                         project_id: projectId,
+                        capture_kind: captureKind,
+                        capture_source: captureKind === 'audio' ? 'microphone' : facingMode,
                         recorded_at: new Date().toISOString(),
-                        crop: capture.pendingCrop,
+                        crop: captureKind === 'video' ? capture.pendingCrop : null,
                         audio_availability: capture.audioAvailability,
                         capture_mode: capture.mode,
                         // W6: aggregation threshold. Defaults to the server's
@@ -3477,7 +3642,7 @@
         }
 
         function startFragmentRecording() {
-            if (capture.starting || capture.stopRequested || capture.stalled || capture.closed) return;
+            if (capture.starting || capture.cameraSwitching || capture.stopRequested || capture.stalled || capture.closed) return;
             if (!capture.stream) return;
             capture.starting = true;
             try {
@@ -3596,7 +3761,7 @@
         }
 
         function maybeResume() {
-            if (capture.stopRequested || capture.stalled || capture.closed) return;
+            if (capture.cameraSwitching || capture.stopRequested || capture.stalled || capture.closed) return;
             if (capture.recorder && capture.recorder.state !== 'inactive') return;
             if (capture.uploadQueue.length >= CAPTURE_MAX_PENDING_FRAGMENTS) {
                 // Bounded queue: pause visibly instead of dropping fragments.
@@ -3768,6 +3933,10 @@
         }
 
         function stopCapture() {
+            if (capture.cameraSwitching) {
+                capture.stopAfterCameraSwitch = true;
+                return;
+            }
             if (capture.state !== 'recording' && capture.state !== 'stalled') return;
             capture.stopRequested = true;
             capture.stalled = false;

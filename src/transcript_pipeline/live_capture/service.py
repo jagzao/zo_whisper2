@@ -124,6 +124,8 @@ class CaptureService:
         capture_mode: str = "normal",
         project_id: str | None = None,
         is_test_session: bool = False,
+        capture_kind: str = "video",
+        capture_source: str | None = None,
     ) -> models.Session:
         created_at = created_at or models.now_iso()
         session = models.Session(
@@ -138,6 +140,8 @@ class CaptureService:
             capture_mode=capture_mode,
             project_id=project_id,
             is_test_session=is_test_session,
+            capture_kind=capture_kind,
+            capture_source=capture_source,
         )
         self.store.create_session(session)
         return session
@@ -182,6 +186,13 @@ class CaptureService:
         with self._lock_for(session_id):
             session = self.store.load_session(session_id)
             updated = replace(session, audio_availability=models.AudioAvailability(str(value)))
+            self.store.save_session(updated)
+            return updated
+
+    def set_capture_source(self, session_id: str, source: str) -> models.Session:
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            updated = replace(session, capture_source=source)
             self.store.save_session(updated)
             return updated
 
