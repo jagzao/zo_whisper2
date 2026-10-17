@@ -70,7 +70,7 @@ def test_rendered_row_contains_date_cell_and_status_stays_sixth():
     cells = re.findall(r"<td(?:\s|>)", markup)
     assert len(cells) == 10
     assert "${formatMediaDate(f.date)}" in markup
-    assert "${escapeHtml(f.duration || '—')}" in markup
+    assert "${escapeHtml(f.duration || (f.duration_pending ? 'Checking…' : '—'))}" in markup
     headers = re.findall(r"<th\b[^>]*>(.*?)</th>", TEMPLATE)
     labels = [_header_label(label) for label in headers]
     assert labels[5] == "Status"

@@ -39,10 +39,14 @@ services:
     environment:
       # Feature spec FEATURE-ZMI-DKR-002 required defaults.
       ZMI_CONTAINER_MODE: "true"       # permits the internal 0.0.0.0 bind
+      ZMI_LAN_ACCESS: "false"         # LAN HTTPS runs in the separate host process
+      ZMI_LAN_HOSTS: ""
       ZMI_DATA_ROOT: /data             # all mutable state under the bind mount
       ZMI_CONFIG_ENV: /data/scan_config.env  # optional; absent file is a no-op
       DASHBOARD_HOST: 0.0.0.0          # inside the container only, not on host
       DASHBOARD_PORT: "5000"
+      DASHBOARD_CERT: ""               # host certificate paths are not valid in this container
+      DASHBOARD_KEY: ""
       WHISPER_BUILD_REVISION: "${WHISPER_BUILD_REVISION:-unknown}"
       WHISPER_UPLOAD_CONCURRENCY: "${WHISPER_UPLOAD_CONCURRENCY:-4}"
       WHISPER_TIMEZONE: "${WHISPER_TIMEZONE:-America/Mexico_City}"

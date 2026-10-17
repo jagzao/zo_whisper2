@@ -1411,7 +1411,7 @@
                         <td><span class="status ${statusClass}">${statusLabel(shownState)}</span></td>
                         <td>${tx ? `<span class="status processed">Yes</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
                         <td>${formatMediaDate(f.date)}</td>
-                        <td>${escapeHtml(f.duration || '—')}</td>
+                    <td>${escapeHtml(f.duration || (f.duration_pending ? 'Checking…' : '—'))}</td>
                         <td>
                             <div class="action-btns">
                                 <button class="btn-view tooltip" onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="View" title="View">
@@ -4038,6 +4038,10 @@
         });
 
         setInterval(() => { updateRunStatus(); loadLogs(); updateServerHealth(); }, 3000);
+        const durationRefresh = setInterval(() => {
+            if ((window._allFiles || []).some(file => file.duration_pending)) loadFiles();
+            else clearInterval(durationRefresh);
+        }, 5000);
         loadFolders(); loadFiles(); loadProjects(); loadLogs(); loadMetrics(); updateRunStatus();
         updateServerHealth(); loadLanNetworkInfo();
         attachCropSelection();

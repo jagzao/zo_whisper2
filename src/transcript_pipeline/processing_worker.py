@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import os
+import socket
+import time
 import threading
 import time
 import uuid
@@ -25,33 +27,37 @@ class ProcessingJobStore:
         self.directory.mkdir(parents=True, exist_ok=True)
         self.path = self.directory / "processing_jobs.json"
         self.lock_path = self.directory / "processing_jobs.lock"
+        self.lease_path = self.directory / "processing_jobs.lease"
         self.stale_after = stale_after
 
     @contextmanager
     def _locked(self):
-        self.lock_path.touch(exist_ok=True)
-        handle = self.lock_path.open("r+b")
+        token = uuid.uuid4().hex
+        deadline = time.monotonic() + 30
+        while True:
+            try:
+                descriptor = os.open(self.lease_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                with os.fdopen(descriptor, "w", encoding="ascii") as handle:
+                    handle.write(token)
+                break
+            except FileExistsError:
+                try:
+                    if time.time() - self.lease_path.stat().st_mtime > 30:
+                        self.lease_path.unlink(missing_ok=True)
+                        continue
+                except OSError:
+                    continue
+                if time.monotonic() >= deadline:
+                    raise TimeoutError("Timed out waiting for shared processing queue lock")
+                time.sleep(0.01)
         try:
-            if self.lock_path.stat().st_size == 0:
-                handle.write(b"0")
-                handle.flush()
-            if os.name == "nt":
-                import msvcrt
-                handle.seek(0)
-                msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
-            else:
-                import fcntl
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
             yield
         finally:
-            if os.name == "nt":
-                import msvcrt
-                handle.seek(0)
-                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-            else:
-                import fcntl
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-            handle.close()
+            try:
+                if self.lease_path.read_text(encoding="ascii") == token:
+                    self.lease_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     def _read(self) -> dict[str, Any]:
         try:
@@ -89,7 +95,11 @@ class ProcessingJobStore:
                 elif job.get("status") == "ACTIVE":
                     pid = job.get("worker_pid")
                     dead_worker = False
-                    if isinstance(pid, int) and pid != os.getpid():
+                    worker_host = job.get("worker_host")
+                    same_process_namespace = worker_host == socket.gethostname() or (
+                        worker_host is None and os.name == "nt"
+                    )
+                    if same_process_namespace and isinstance(pid, int) and pid != os.getpid():
                         try:
                             os.kill(pid, 0)
                         except OSError:
@@ -110,7 +120,7 @@ class ProcessingJobStore:
                     self._write(data)
                 return None
             candidate.update(status="ACTIVE", started_at=now.isoformat(), heartbeat_at=now.isoformat(),
-                             updated_at=now.isoformat(), worker_pid=os.getpid(),
+                             updated_at=now.isoformat(), worker_pid=os.getpid(), worker_host=socket.gethostname(),
                              attempt=int(candidate.get("attempt", 0)) + 1)
             self._write(data)
             return dict(candidate)

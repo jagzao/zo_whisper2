@@ -80,6 +80,18 @@ def test_restart_recovers_dead_worker_claim(tmp_path):
     assert recovered["recovered_at"]
 
 
+def test_container_worker_does_not_treat_host_pid_as_dead(tmp_path):
+    store = ProcessingJobStore(tmp_path)
+    job = store.enqueue()
+    claimed = store.claim_next(1)
+    assert claimed and claimed["id"] == job["id"]
+    data = store._read()
+    data["jobs"][0].update(worker_pid=99999999, worker_host="other-runtime")
+    store._write(data)
+    assert ProcessingJobStore(tmp_path).claim_next(1) is None
+    assert ProcessingJobStore(tmp_path).list_jobs()[0]["attempt"] == 1
+
+
 def test_cancelled_jobs_are_not_claimed(tmp_path):
     store = ProcessingJobStore(tmp_path)
     job = store.enqueue()

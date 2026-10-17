@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from concurrent.futures import Future
 from dataclasses import replace
 from datetime import datetime, timezone
 
@@ -93,6 +94,23 @@ def test_files_api_exposes_actual_duration_and_sorts_it(client, env, monkeypatch
 
     assert [row["name"] for row in rows] == ["long.mp4", "short.mp4"]
     assert [row["duration"] for row in rows] == ["1:04:22", "00:14"]
+
+
+def test_duration_probe_is_nonblocking_and_cache_refreshes(tmp_path, monkeypatch):
+    path = tmp_path / "large.mp4"
+    path.write_bytes(b"media")
+    future = Future()
+
+    class DeferredExecutor:
+        def submit(self, _function, _path):
+            return future
+
+    monkeypatch.setattr(dashboard_app, "_MEDIA_DURATION_EXECUTOR", DeferredExecutor())
+    assert dashboard_app._probe_media_duration(path) is None
+    assert dashboard_app._media_duration_pending(path)
+    future.set_result(42.8)
+    assert dashboard_app._probe_media_duration(path) == 42.8
+    assert not dashboard_app._media_duration_pending(path)
 
 
 def test_capture_delete_action_is_explicit_and_state_based(client, env, monkeypatch):

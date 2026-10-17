@@ -146,7 +146,11 @@ def main() -> int:
         page.on("response", _capture_bad_response)
 
         page.goto(DASHBOARD_URL, wait_until="commit", timeout=TIMEOUT_MS)
-        page.wait_for_selector("#filesList table tbody tr", timeout=TIMEOUT_MS)
+        page.wait_for_load_state("domcontentloaded", timeout=TIMEOUT_MS)
+        page.wait_for_function(
+            "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
+            timeout=TIMEOUT_MS,
+        )
 
         # Home
         screenshot(page, "home")
@@ -462,16 +466,13 @@ def main() -> int:
                     f"before={state_before} after={state_after}",
                 )
 
-                # A fresh page in the same context preserves browser state but
-                # drops polling/fetch work bound to the edited page.
-                _close_safely(page)
-                page = context.new_page()
-                cleanup.callback(_close_safely, page)
-                page.on("dialog", _auto_accept_dialog)
-                page.on("console", _capture_console)
-                page.on("pageerror", _capture_page_error)
-                page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
-                page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
+                # Reuse the active page so old polling work is cancelled by
+                # navigation without racing fixture teardown against a new target.
+                page.goto(DASHBOARD_URL, wait_until="commit", timeout=TIMEOUT_MS)
+                page.wait_for_function(
+                    "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
+                    timeout=TIMEOUT_MS,
+                )
                 page.locator("#fileFilter").fill(stem)
                 page.wait_for_timeout(400)
                 row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")

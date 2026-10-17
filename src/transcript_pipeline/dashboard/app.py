@@ -26,6 +26,7 @@ import sys
 import tempfile
 import threading
 import time
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -94,7 +95,9 @@ RESOLVER = SafePathResolver(
 SUPPORTED_MEDIA = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".opus"}
 VIDEO_EXTS = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
 _MEDIA_DURATION_CACHE: dict[tuple[str, int, int], float | None] = {}
+_MEDIA_DURATION_FUTURES: dict[tuple[str, int, int], Future[float | None]] = {}
 _MEDIA_DURATION_CACHE_LOCK = threading.Lock()
+_MEDIA_DURATION_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="whisper-media-probe")
 
 RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
@@ -725,9 +728,19 @@ def _probe_media_duration(media_path: Path) -> float | None:
     except OSError:
         return None
     cache_key = (str(media_path.resolve()), stat.st_size, stat.st_mtime_ns)
+    new_future = None
     with _MEDIA_DURATION_CACHE_LOCK:
         if cache_key in _MEDIA_DURATION_CACHE:
             return _MEDIA_DURATION_CACHE[cache_key]
+        if cache_key not in _MEDIA_DURATION_FUTURES:
+            new_future = _MEDIA_DURATION_EXECUTOR.submit(_probe_media_duration_sync, media_path)
+            _MEDIA_DURATION_FUTURES[cache_key] = new_future
+    if new_future is not None:
+        new_future.add_done_callback(lambda completed, key=cache_key: _cache_media_duration(key, completed))
+    return None
+
+
+def _probe_media_duration_sync(media_path: Path) -> float | None:
     duration_result = None
     try:
         result = run_ffprobe(
@@ -746,11 +759,29 @@ def _probe_media_duration(media_path: Path) -> float | None:
                 break
     except (subprocess.SubprocessError, FileNotFoundError, ValueError, TypeError, json.JSONDecodeError):
         pass
+    return duration_result
+
+
+def _cache_media_duration(cache_key: tuple[str, int, int], future: Future[float | None]) -> None:
+    try:
+        result = future.result()
+    except Exception:
+        result = None
     with _MEDIA_DURATION_CACHE_LOCK:
         if len(_MEDIA_DURATION_CACHE) > 512:
             _MEDIA_DURATION_CACHE.clear()
-        _MEDIA_DURATION_CACHE[cache_key] = duration_result
-    return duration_result
+        _MEDIA_DURATION_CACHE[cache_key] = result
+        _MEDIA_DURATION_FUTURES.pop(cache_key, None)
+
+
+def _media_duration_pending(media_path: Path) -> bool:
+    try:
+        stat = media_path.stat()
+    except OSError:
+        return False
+    cache_key = (str(media_path.resolve()), stat.st_size, stat.st_mtime_ns)
+    with _MEDIA_DURATION_CACHE_LOCK:
+        return cache_key in _MEDIA_DURATION_FUTURES
 
 
 def _delete_action(user_state: str, *, capture_active: bool = False) -> tuple[bool, str | None]:
@@ -1105,6 +1136,9 @@ def api_files() -> Any:
                 file_row["duration_sec"] = (capture_session.final_media or {}).get("durationSec")
             if file_row.get("duration_sec") is None:
                 file_row["duration_sec"] = _probe_media_duration(path)
+                file_row["duration_pending"] = _media_duration_pending(path)
+            else:
+                file_row["duration_pending"] = False
             duration = file_row.get("duration_sec")
             file_row["duration"] = _format_media_duration(duration) if isinstance(duration, (int, float)) and math.isfinite(duration) and duration > 0 else None
             capture_active = capture_session is not None and capture_session.status is capture_models.SessionStatus.ACTIVE
