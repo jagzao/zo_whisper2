@@ -660,6 +660,14 @@ def _file_status(path: Path) -> str:
             return db[file_hash].get("status", "processed")
         if str(path.absolute()) in db:
             return db[str(path.absolute())].get("status", "processed")
+        relative = path.resolve().relative_to(ROOT.resolve()).as_posix().casefold()
+        suffix = f"/{relative}"
+        for key, entry in db.items():
+            if not isinstance(entry, dict):
+                continue
+            stored_path = str(entry.get("path") or key).replace("\\", "/").casefold()
+            if stored_path.endswith(suffix):
+                return entry.get("status", "processed")
         return "pending"
     except Exception:
         return "pending"

@@ -115,6 +115,19 @@ def test_metrics_computed_from_processed_db_and_metadata(client, env):
     assert data["avg_processing_time_seconds"] == pytest.approx(8.0)
 
 
+def test_file_status_matches_windows_database_path_on_posix_runtime(env):
+    video = env["videos"] / "shared.mp4"
+    video.write_bytes(b"same shared media")
+    dashboard_app.PROCESSED_DB.write_text(json.dumps({
+        "legacy-path": {
+            "path": r"C:\Dev\Zo\whisper\Videos\shared.mp4",
+            "status": "completed_routed",
+        }
+    }), encoding="utf-8")
+
+    assert dashboard_app._file_status(video) == "completed_routed"
+
+
 # ── /api/documentation ───────────────────────────────────────────────────
 
 def test_documentation_endpoint_returns_manual_and_manifest(client, env):
