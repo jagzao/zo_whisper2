@@ -29,6 +29,11 @@ from transcript_pipeline.live_capture.errors import AssemblyError
 _EBML_MAGIC = b"\x1a\x45\xdf\xa3"
 _MP4_FAMILY = frozenset({".mp4", ".mov", ".m4a", ".3gp"})
 _EBML_FAMILY = frozenset({".webm", ".mkv"})
+_OUTPUT_FORMATS = {
+    ".webm": "webm", ".mkv": "matroska", ".mp4": "mp4", ".mov": "mov",
+    ".m4a": "ipod", ".mp3": "mp3", ".wav": "wav", ".ogg": "ogg",
+    ".opus": "opus", ".flac": "flac",
+}
 
 _FFMPEG_TIMEOUT_SEC = 600
 
@@ -94,12 +99,15 @@ def _concatenate_bytes(paths: list[Path], dest: Path) -> None:
         raise
 
 
-def _assemble_with_ffmpeg(paths: list[Path], dest: Path) -> None:
+def _assemble_with_ffmpeg(paths: list[Path], dest: Path, durations_ms: list[int] | None = None) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     list_path = dest.parent / f".{dest.name}.concat.txt"
-    list_path.write_text(
-        "".join(f"file '{path.resolve().as_posix()}'\n" for path in paths), encoding="utf-8"
-    )
+    lines = []
+    for index, path in enumerate(paths):
+        lines.append(f"file '{path.resolve().as_posix()}'\n")
+        if durations_ms is not None:
+            lines.append(f"duration {durations_ms[index] / 1000:.6f}\n")
+    list_path.write_text("".join(lines), encoding="utf-8")
     tmp_out = _empty_temp(dest)
     try:
         result = subprocess.run(
@@ -108,6 +116,7 @@ def _assemble_with_ffmpeg(paths: list[Path], dest: Path) -> None:
                 "-f", "concat", "-safe", "0",
                 "-i", str(list_path),
                 "-c", "copy",
+                "-f", _OUTPUT_FORMATS.get(dest.suffix.lower(), dest.suffix.lstrip(".")),
                 str(tmp_out),
             ],
             capture_output=True,
@@ -124,9 +133,32 @@ def _assemble_with_ffmpeg(paths: list[Path], dest: Path) -> None:
         tmp_out.unlink(missing_ok=True)
 
 
-def _validate_output(dest: Path, extension: str) -> None:
+def probe_media_duration(path: Path) -> float | None:
+    """Return a finite duration from actual container/stream metadata."""
+    if not ffprobe_available():
+        return None
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=duration",
+             "-of", "json", str(path)],
+            capture_output=True, text=True, timeout=60,
+        )
+        data = json.loads(result.stdout or "{}")
+        values = [(data.get("format") or {}).get("duration")]
+        values.extend(stream.get("duration") for stream in data.get("streams", []))
+        for value in values:
+            duration = float(value)
+            if result.returncode == 0 and math.isfinite(duration) and duration > 0:
+                return duration
+    except (OSError, ValueError, TypeError, json.JSONDecodeError, subprocess.SubprocessError):
+        return None
+    return None
+
+
+def _validate_output(dest: Path, extension: str, expected_duration_sec: float | None = None) -> float | None:
     if not dest.is_file() or dest.stat().st_size == 0:
         raise AssemblyError("assembled media is empty")
+    duration = None
     if ffprobe_available():
         try:
             result = subprocess.run(
@@ -142,11 +174,21 @@ def _validate_output(dest: Path, extension: str) -> None:
         streams = json.loads(result.stdout or "{}").get("streams", [])
         if not streams:
             raise AssemblyError("assembled media has no streams")
+        duration = probe_media_duration(dest)
+    if expected_duration_sec is not None:
+        if duration is None:
+            raise AssemblyError("assembled media duration could not be verified; source fragments were preserved")
+        tolerance = max(2.0, expected_duration_sec * 0.05)
+        if abs(duration - expected_duration_sec) > tolerance:
+            raise AssemblyError(
+                f"assembled media duration {duration:.3f}s does not match expected "
+                f"{expected_duration_sec:.3f}s (tolerance {tolerance:.3f}s)"
+            )
     elif not _looks_like_container(dest, extension):
         raise AssemblyError("assembled media failed container validation")
 
 
-def assemble_media(paths: list[Path], dest: Path) -> None:
+def assemble_media(paths: list[Path], dest: Path, durations_ms: list[int] | None = None) -> None:
     """Assembles ordered fragments into `dest` (atomic) or raises.
 
     FFmpeg concat/remux (stream copy) is tried first when ffmpeg is present.
@@ -158,16 +200,23 @@ def assemble_media(paths: list[Path], dest: Path) -> None:
     dest = Path(dest)
     extension = dest.suffix
     _validate_segments(paths, extension)
+    if durations_ms is not None and (len(durations_ms) != len(paths) or any(value <= 0 for value in durations_ms)):
+        raise AssemblyError("fragment durations must be positive and match the assembly inputs")
 
     if ffmpeg_available():
         try:
-            _assemble_with_ffmpeg(paths, dest)
+            _assemble_with_ffmpeg(paths, dest, durations_ms)
         except AssemblyError:
+            if durations_ms is not None:
+                raise
             _concatenate_bytes(paths, dest)
+    elif durations_ms is not None:
+        raise AssemblyError("FFmpeg is required to preserve the acknowledged capture timeline")
     else:
         _concatenate_bytes(paths, dest)
 
-    _validate_output(dest, extension)
+    expected_duration = sum(durations_ms) / 1000 if durations_ms is not None else None
+    _validate_output(dest, extension, expected_duration)
 
 
 def ensure_seekable_audio(path: Path, normalized_path: Path) -> float:

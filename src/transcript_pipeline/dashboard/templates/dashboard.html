@@ -681,6 +681,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.35);
         }
         #captureTimerBadge b { font-size: 0.72rem; letter-spacing: 0.08em; }
+        #cropOverlay { touch-action: none; user-select: none; }
         .capture-crop-controls {
             display: flex;
             align-items: center;
@@ -780,7 +781,7 @@
             .capture-title-row input { width: 100%; min-width: 0; }
             .capture-preview-wrap {
                 width: 100%;
-                height: clamp(180px, 32dvh, 280px) !important;
+                height: clamp(160px, 26dvh, 230px) !important;
                 margin: 0.65rem 0 !important;
             }
             #capturePreview { object-fit: contain !important; }
@@ -1297,6 +1298,7 @@
                 else if (col === 'language') { va = (a.language || 'auto').toLowerCase(); vb = (b.language || 'auto').toLowerCase(); }
                 else if (col === 'status') { va = a.status.toLowerCase(); vb = b.status.toLowerCase(); }
                 else if (col === 'size') { va = (a.transcription ? a.transcription.size : 0); vb = (b.transcription ? b.transcription.size : 0); }
+                else if (col === 'duration') { va = Number(a.duration_sec) || 0; vb = Number(b.duration_sec) || 0; }
                 else if (col === 'date') {
                     va = Number.isFinite(Number(a.date_epoch)) ? Number(a.date_epoch) : (Date.parse(a.date) || 0);
                     vb = Number.isFinite(Number(b.date_epoch)) ? Number(b.date_epoch) : (Date.parse(b.date) || 0);
@@ -1381,6 +1383,7 @@
                     <th class="sortable" data-sort="status" onclick="sortFiles('status')">Status <span class="sort-icon">⇅</span></th>
                     <th class="sortable" data-sort="size" onclick="sortFiles('size')">Transcription <span class="sort-icon">⇅</span></th>
                     <th class="sortable" data-sort="date" onclick="sortFiles('date')">Date <span class="sort-icon">⇅</span></th>
+                    <th class="sortable" data-sort="duration" onclick="sortFiles('duration')">Duration <span class="sort-icon">⇅</span></th>
                     <th>Actions</th>
                 </tr></thead>
                 <tbody>
@@ -1408,6 +1411,7 @@
                         <td><span class="status ${statusClass}">${statusLabel(shownState)}</span></td>
                         <td>${tx ? `<span class="status processed">Yes</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
                         <td>${formatMediaDate(f.date)}</td>
+                        <td>${escapeHtml(f.duration || '—')}</td>
                         <td>
                             <div class="action-btns">
                                 <button class="btn-view tooltip" onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="View" title="View">
@@ -1423,7 +1427,7 @@
                                     : `<button class="btn-docs tooltip" data-tip="Generate Documentation" onclick="generateDocumentation('${encodeURIComponent(f.media_id)}', this)" aria-label="Generate Documentation" title="Generate Documentation">
                                         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                                     </button>`}
-                                ${f.logical_read_only ? '' : `<button class="btn-delete tooltip" onclick="deleteFile('${encodeURIComponent(f.media_id)}')" aria-label="Delete" title="Delete"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>`}
+                                <button class="btn-delete tooltip" ${f.delete_allowed === false ? 'disabled' : ''} onclick="deleteFile('${encodeURIComponent(f.media_id)}', ${f.capture_session_id ? 'true' : 'false'})" aria-label="Delete" title="${escapeHtml(f.delete_allowed === false ? (f.delete_reason || 'Cannot delete now') : (f.capture_session_id ? 'Delete capture session' : 'Delete'))}"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                             </div>
                         </td>
                     </tr>`;
@@ -2119,12 +2123,22 @@
             }
         }
 
-        async function deleteFile(idEncoded) {
+        async function deleteFile(idEncoded, captureSession = false) {
             const id = decodeURIComponent(idEncoded);
-            if (!confirm('Delete file and its transcription?')) return;
-            const res = await fetch('/api/file?id=' + encodeURIComponent(id), { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => r.json());
+            const message = captureSession
+                ? 'Delete this capture session, all its logical videos, and internal media?'
+                : 'Delete file and its transcription?';
+            if (!confirm(message)) return;
+            const suffix = captureSession ? '&confirm=true' : '';
+            const res = await fetch('/api/file?id=' + encodeURIComponent(id) + suffix, { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => r.json());
             if (res.ok) {
                 showToast('File deleted');
+                if (captureSession) {
+                    await loadFiles();
+                    loadFolders();
+                    loadMetrics();
+                    return;
+                }
                 window._allFiles = (window._allFiles || []).filter(f => f.media_id !== id);
                 window._filteredFiles = (window._filteredFiles || []).filter(f => f.media_id !== id);
                 applyFileFilters(window._currentPage);
@@ -3409,7 +3423,7 @@
         // with session creation and can be updated/cleared while a session is
         // active via PUT /api/capture/sessions/<id>/crop. Full frame (or a
         // too-small region) is stored as null (no crop).
-        const cropDrag = { active: false, startX: 0, startY: 0 };
+        const cropDrag = { active: false, pointerId: null, startX: 0, startY: 0 };
 
         function cropOverlayEl() { return document.getElementById('cropOverlay'); }
         function cropBoxEl() { return document.getElementById('cropBox'); }
@@ -3418,16 +3432,56 @@
         function clamp01(v) { return Math.max(0, Math.min(1, v)); }
         function round4(v) { return Math.round(v * 10000) / 10000; }
 
+        function cropContentRect() {
+            const overlay = cropOverlayEl();
+            const video = document.getElementById('capturePreview');
+            const overlayRect = overlay.getBoundingClientRect();
+            const bounds = video.getBoundingClientRect();
+            const sourceWidth = video.videoWidth || bounds.width;
+            const sourceHeight = video.videoHeight || bounds.height;
+            const fit = getComputedStyle(video).objectFit;
+            if (!sourceWidth || !sourceHeight || fit === 'fill') {
+                return { ...bounds, overlayLeft: overlayRect.left, overlayTop: overlayRect.top,
+                    sourceX: 0, sourceY: 0, sourceWidth: 1, sourceHeight: 1 };
+            }
+            const scale = fit === 'cover'
+                ? Math.max(bounds.width / sourceWidth, bounds.height / sourceHeight)
+                : Math.min(bounds.width / sourceWidth, bounds.height / sourceHeight);
+            const displayWidth = sourceWidth * scale;
+            const displayHeight = sourceHeight * scale;
+            if (fit === 'cover') {
+                const visibleWidth = bounds.width / displayWidth;
+                const visibleHeight = bounds.height / displayHeight;
+                return { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height,
+                    overlayLeft: overlayRect.left, overlayTop: overlayRect.top,
+                    sourceX: (1 - visibleWidth) / 2, sourceY: (1 - visibleHeight) / 2,
+                    sourceWidth: visibleWidth, sourceHeight: visibleHeight };
+            }
+            return { left: bounds.left + (bounds.width - displayWidth) / 2,
+                top: bounds.top + (bounds.height - displayHeight) / 2,
+                width: displayWidth, height: displayHeight,
+                overlayLeft: overlayRect.left, overlayTop: overlayRect.top,
+                sourceX: 0, sourceY: 0, sourceWidth: 1, sourceHeight: 1 };
+        }
+
+        function cropPoint(event) {
+            const rect = cropContentRect();
+            const x = (event.clientX - rect.left) / rect.width;
+            const y = (event.clientY - rect.top) / rect.height;
+            return { x: clamp01(rect.sourceX + x * rect.sourceWidth),
+                y: clamp01(rect.sourceY + y * rect.sourceHeight), rect };
+        }
+
         function readCropRegion() {
             const box = cropBoxEl();
             const overlay = cropOverlayEl();
             if (!box || !overlay || box.classList.contains('hidden')) return null;
-            const or = overlay.getBoundingClientRect();
+            const or = cropContentRect();
             const br = box.getBoundingClientRect();
-            const x = clamp01((br.left - or.left) / or.width);
-            const y = clamp01((br.top - or.top) / or.height);
-            const width = clamp01((br.right - or.left) / or.width - x);
-            const height = clamp01((br.bottom - or.top) / or.height - y);
+            const x = clamp01(or.sourceX + ((br.left - or.left) / or.width) * or.sourceWidth);
+            const y = clamp01(or.sourceY + ((br.top - or.top) / or.height) * or.sourceHeight);
+            const width = clamp01((br.width / or.width) * or.sourceWidth);
+            const height = clamp01((br.height / or.height) * or.sourceHeight);
             if (width < 0.005 || height < 0.005) return null;
             return { x: round4(x), y: round4(y), width: round4(width), height: round4(height) };
         }
@@ -3445,11 +3499,11 @@
             }
             const overlay = cropOverlayEl();
             if (box && overlay) {
-                const or = overlay.getBoundingClientRect();
-                box.style.left = (region.x * or.width) + 'px';
-                box.style.top = (region.y * or.height) + 'px';
-                box.style.width = (region.width * or.width) + 'px';
-                box.style.height = (region.height * or.height) + 'px';
+                const or = cropContentRect();
+                box.style.left = (or.left - or.overlayLeft + ((region.x - or.sourceX) / or.sourceWidth) * or.width) + 'px';
+                box.style.top = (or.top - or.overlayTop + ((region.y - or.sourceY) / or.sourceHeight) * or.height) + 'px';
+                box.style.width = (region.width / or.sourceWidth * or.width) + 'px';
+                box.style.height = (region.height / or.sourceHeight * or.height) + 'px';
                 box.classList.remove('hidden');
             }
             if (info) info.textContent = `Crop: ${Math.round(region.width * 100)}% × ${Math.round(region.height * 100)}%`;
@@ -3479,40 +3533,52 @@
             const overlay = cropOverlayEl();
             if (!overlay) return;
             overlay.addEventListener('pointerdown', e => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                e.preventDefault();
                 cropDrag.active = true;
-                const rect = overlay.getBoundingClientRect();
-                cropDrag.startX = clamp01((e.clientX - rect.left) / rect.width);
-                cropDrag.startY = clamp01((e.clientY - rect.top) / rect.height);
+                cropDrag.pointerId = e.pointerId;
+                const point = cropPoint(e);
+                cropDrag.startX = point.x;
+                cropDrag.startY = point.y;
                 overlay.setPointerCapture(e.pointerId);
                 const box = cropBoxEl();
                 box.classList.remove('hidden');
-                box.style.left = (cropDrag.startX * rect.width) + 'px';
-                box.style.top = (cropDrag.startY * rect.height) + 'px';
+                box.style.left = (point.rect.left - point.rect.overlayLeft + (cropDrag.startX - point.rect.sourceX) / point.rect.sourceWidth * point.rect.width) + 'px';
+                box.style.top = (point.rect.top - point.rect.overlayTop + (cropDrag.startY - point.rect.sourceY) / point.rect.sourceHeight * point.rect.height) + 'px';
                 box.style.width = '0px';
                 box.style.height = '0px';
             });
             overlay.addEventListener('pointermove', e => {
-                if (!cropDrag.active) return;
-                const rect = overlay.getBoundingClientRect();
-                const x = clamp01((e.clientX - rect.left) / rect.width);
-                const y = clamp01((e.clientY - rect.top) / rect.height);
+                if (!cropDrag.active || e.pointerId !== cropDrag.pointerId) return;
+                e.preventDefault();
+                updateCropPointer(e);
+            });
+            function updateCropPointer(e) {
+                const point = cropPoint(e);
+                const rect = point.rect;
+                const x = point.x;
+                const y = point.y;
                 const left = Math.min(cropDrag.startX, x);
                 const top = Math.min(cropDrag.startY, y);
                 const box = cropBoxEl();
-                box.style.left = (left * rect.width) + 'px';
-                box.style.top = (top * rect.height) + 'px';
-                box.style.width = (Math.abs(x - cropDrag.startX) * rect.width) + 'px';
-                box.style.height = (Math.abs(y - cropDrag.startY) * rect.height) + 'px';
-            });
-            const finish = () => {
+                box.style.left = (rect.left - rect.overlayLeft + (left - rect.sourceX) / rect.sourceWidth * rect.width) + 'px';
+                box.style.top = (rect.top - rect.overlayTop + (top - rect.sourceY) / rect.sourceHeight * rect.height) + 'px';
+                box.style.width = (Math.abs(x - cropDrag.startX) / rect.sourceWidth * rect.width) + 'px';
+                box.style.height = (Math.abs(y - cropDrag.startY) / rect.sourceHeight * rect.height) + 'px';
+            }
+            const finish = e => {
                 if (!cropDrag.active) return;
+                if (e && e.pointerId !== cropDrag.pointerId) return;
+                if (e && e.type === 'pointerup') updateCropPointer(e);
                 cropDrag.active = false;
+                cropDrag.pointerId = null;
                 capture.pendingCrop = readCropRegion();
                 renderCropRegion();
                 persistCrop();
             };
             overlay.addEventListener('pointerup', finish);
             overlay.addEventListener('pointercancel', finish);
+            overlay.addEventListener('lostpointercapture', finish);
         }
 
         async function startCapture() {

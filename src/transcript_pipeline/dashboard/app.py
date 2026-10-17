@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import ipaddress
 import logging
+import math
 import os
 import re
 import secrets
@@ -92,6 +93,8 @@ RESOLVER = SafePathResolver(
 
 SUPPORTED_MEDIA = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".mp3", ".wav", ".m4a", ".flac", ".ogg", ".opus"}
 VIDEO_EXTS = {".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
+_MEDIA_DURATION_CACHE: dict[tuple[str, int, int], float | None] = {}
+_MEDIA_DURATION_CACHE_LOCK = threading.Lock()
 
 RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
@@ -709,6 +712,56 @@ def _format_duration(seconds: float) -> str:
     return f"{mins}:{secs:02d}"
 
 
+def _format_media_duration(seconds: float) -> str:
+    total = max(0, int(seconds))
+    hrs, rem = divmod(total, 3600)
+    mins, secs = divmod(rem, 60)
+    return f"{hrs}:{mins:02d}:{secs:02d}" if hrs else f"{mins:02d}:{secs:02d}"
+
+
+def _probe_media_duration(media_path: Path) -> float | None:
+    try:
+        stat = media_path.stat()
+    except OSError:
+        return None
+    cache_key = (str(media_path.resolve()), stat.st_size, stat.st_mtime_ns)
+    with _MEDIA_DURATION_CACHE_LOCK:
+        if cache_key in _MEDIA_DURATION_CACHE:
+            return _MEDIA_DURATION_CACHE[cache_key]
+    duration_result = None
+    try:
+        result = run_ffprobe(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration:stream=duration", "-of", "json", str(media_path)],
+            timeout=5,
+            retries=0,
+            retry_on_timeout=False,
+        )
+        data = json.loads(result.stdout or "{}")
+        values = [(data.get("format") or {}).get("duration")]
+        values.extend(stream.get("duration") for stream in data.get("streams", []))
+        for value in values:
+            duration = float(value)
+            if math.isfinite(duration) and duration > 0:
+                duration_result = duration
+                break
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError, TypeError, json.JSONDecodeError):
+        pass
+    with _MEDIA_DURATION_CACHE_LOCK:
+        if len(_MEDIA_DURATION_CACHE) > 512:
+            _MEDIA_DURATION_CACHE.clear()
+        _MEDIA_DURATION_CACHE[cache_key] = duration_result
+    return duration_result
+
+
+def _delete_action(user_state: str, *, capture_active: bool = False) -> tuple[bool, str | None]:
+    state = (user_state or "READY").upper()
+    if capture_active or state == "CAPTURING":
+        return False, "Stop the recording before deleting"
+    if state in {"UPLOADING", "QUEUED", "PROCESSING", "PROCESSING_MEDIA", "GENERATING_DOCUMENTATION", "CANCEL_REQUESTED"}:
+        return False, "Stop processing before deleting"
+    return True, None
+
+
 def _format_timestamp(seconds: float) -> str:
     total = int(seconds)
     hrs, rem = divmod(total, 3600)
@@ -1047,6 +1100,17 @@ def api_files() -> Any:
                 file_row["capture_session_id"] = capture_session.session_id
                 file_row["capture_kind"] = capture_session.capture_kind
                 file_row["capture_source"] = capture_session.capture_source
+                file_row["capture_status"] = _capture_user_status(capture_session)
+                file_row["user_state"] = file_row["capture_status"]
+                file_row["duration_sec"] = (capture_session.final_media or {}).get("durationSec")
+            if file_row.get("duration_sec") is None:
+                file_row["duration_sec"] = _probe_media_duration(path)
+            duration = file_row.get("duration_sec")
+            file_row["duration"] = _format_media_duration(duration) if isinstance(duration, (int, float)) and math.isfinite(duration) and duration > 0 else None
+            capture_active = capture_session is not None and capture_session.status is capture_models.SessionStatus.ACTIVE
+            file_row["delete_allowed"], file_row["delete_reason"] = _delete_action(
+                file_row.get("user_state") or file_row.get("status"), capture_active=capture_active
+            )
             if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture" and relative_parts[2] == "chunks":
                 chunk_id = path.stem
                 logical_rows = []
@@ -1119,6 +1183,9 @@ def api_files() -> Any:
     reverse = direction != "asc"
     if sort_by == "name":
         media_files.sort(key=lambda item: item["name"].lower(), reverse=reverse)
+    elif sort_by == "duration":
+        media_files.sort(key=lambda item: (item.get("duration_sec") is not None,
+                                           item.get("duration_sec") or 0), reverse=reverse)
     else:
         media_files.sort(key=lambda item: (item["date_epoch"], item["name"].lower()), reverse=reverse)
     return jsonify({"files": media_files})
@@ -1455,6 +1522,20 @@ def api_delete_file() -> Any:
         deleted_id,
         [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS, MediaRoot.TRANSCRIPTIONS],
     )
+
+    try:
+        relative = target.relative_to(VIDEOS_BASE)
+    except ValueError:
+        relative = None
+    if relative is not None and len(relative.parts) >= 3 and relative.parts[0] == "live_capture":
+        session_id = relative.parts[1]
+        try:
+            _get_capture_service().delete_session(session_id, confirmed=request.args.get("confirm") == "true")
+        except capture_errors.InvalidTransitionError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 409
+        except capture_errors.ValidationError as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 400
+        return jsonify({"ok": True, "capture_session_deleted": True})
 
     overrides_path = _project_overrides_path()
     overrides_snapshot = _snapshot_text_file(overrides_path)

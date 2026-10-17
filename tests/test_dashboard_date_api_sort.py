@@ -80,3 +80,59 @@ def test_files_api_falls_back_to_created_at_when_capture_recorded_at_missing(cli
     assert row["name"] == "created fallback.webm"
     assert row["date_epoch"] == datetime(2022, 2, 3, 4, 5, 6, tzinfo=timezone.utc).timestamp()
     assert service.get_session(session.session_id).get_chunk(0).state is ChunkState.FINALIZED
+
+
+def test_files_api_exposes_actual_duration_and_sorts_it(client, env, monkeypatch):
+    short = env["videos"] / "short.mp4"
+    long = env["videos"] / "long.mp4"
+    short.write_bytes(b"synthetic")
+    long.write_bytes(b"synthetic")
+    monkeypatch.setattr(dashboard_app, "_probe_media_duration", lambda path: 14.2 if path.name == "short.mp4" else 3862.0)
+
+    rows = client.get("/api/files?sort_by=duration&order=desc").json["files"]
+
+    assert [row["name"] for row in rows] == ["long.mp4", "short.mp4"]
+    assert [row["duration"] for row in rows] == ["1:04:22", "00:14"]
+
+
+def test_capture_delete_action_is_explicit_and_state_based(client, env, monkeypatch):
+    service = CaptureService(env["videos"])
+    monkeypatch.setattr(dashboard_app, "_get_capture_service", lambda: service)
+    monkeypatch.setattr(dashboard_app, "_DASHBOARD_TOKEN", "unit-test-token")
+    headers = {"X-Local-Dashboard-Token": "unit-test-token"}
+    assert dashboard_app._delete_action("COMPLETED") == (True, None)
+    assert dashboard_app._delete_action("READY") == (True, None)
+    assert dashboard_app._delete_action("PROCESSING_MEDIA") == (False, "Stop processing before deleting")
+    assert dashboard_app._delete_action("CAPTURING", capture_active=True) == (False, "Stop the recording before deleting")
+
+    active = service.create_session("active session")
+    active_final = service.store.final_media_path(active.session_id, ".webm")
+    active_final.parent.mkdir(parents=True)
+    active_final.write_bytes(b"synthetic")
+    active_id = f"videos:live_capture/{active.session_id}/final/recording.webm"
+    blocked = client.delete(f"/api/file?id={active_id}&confirm=true", headers=headers)
+    assert blocked.status_code == 409
+    assert active_final.exists()
+    active_row = next(row for row in client.get("/api/files").json["files"]
+                      if row.get("capture_session_id") == active.session_id)
+    assert active_row["delete_allowed"] is False
+    assert active_row["delete_reason"] == "Stop the recording before deleting"
+
+    completed = service.create_session("completed session")
+    chunk = service.start_chunk(completed.session_id)
+    service.finalize_chunk(completed.session_id, chunk.index, b"synthetic")
+    stored = service.store.load_session(completed.session_id)
+    processed = replace(stored.chunks[0], state=ChunkState.PROCESSED)
+    service.store.save_session(replace(stored, chunks=(processed,)))
+    service.finalize_session(completed.session_id)
+    final_path = service.store.final_media_path(completed.session_id, ".webm")
+    final_path.parent.mkdir(parents=True)
+    final_path.write_bytes(b"synthetic")
+    media_id = f"videos:live_capture/{completed.session_id}/final/recording.webm"
+    completed_row = next(row for row in client.get("/api/files").json["files"]
+                         if row.get("capture_session_id") == completed.session_id)
+    assert completed_row["delete_allowed"] is True
+    deleted = client.delete(f"/api/file?id={media_id}&confirm=true", headers=headers)
+    assert deleted.status_code == 200
+    assert deleted.json["capture_session_deleted"] is True
+    assert not service.store.session_dir(completed.session_id).exists()

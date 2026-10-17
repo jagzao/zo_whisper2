@@ -18,16 +18,19 @@ def _header_label(markup: str) -> str:
     return re.sub(r"<[^>]+>", "", without_icon).strip()
 
 
-def test_date_header_is_sortable_and_immediately_before_actions():
+def test_date_and_duration_headers_are_sortable_before_actions():
     headers = re.findall(r"<th\b([^>]*)>(.*?)</th>", TEMPLATE)
     table_headers = [(_header_label(label), attrs) for attrs, label in headers]
     labels = [label for label, _ in table_headers]
-    assert labels[:9] == [
-        "Name", "Type", "Folder", "Project", "Language", "Status", "Transcription", "Date", "Actions"
+    assert labels[:10] == [
+        "Name", "Type", "Folder", "Project", "Language", "Status", "Transcription", "Date", "Duration", "Actions"
     ]
     date_attrs = table_headers[7][1]
     assert 'data-sort="date"' in date_attrs
     assert "sortFiles('date')" in date_attrs
+    duration_attrs = table_headers[8][1]
+    assert 'data-sort="duration"' in duration_attrs
+    assert "sortFiles('duration')" in duration_attrs
 
 
 def test_date_sort_uses_raw_timestamp_and_existing_sort_modes_remain():
@@ -42,6 +45,7 @@ def test_date_sort_uses_raw_timestamp_and_existing_sort_modes_remain():
     assert "if (col === 'name')" in TEMPLATE
     assert "else if (col === 'status')" in TEMPLATE
     assert "else if (col === 'size')" in TEMPLATE
+    assert "else if (col === 'duration')" in TEMPLATE
 
 
 def test_date_sort_uses_server_query_and_defaults_to_newest_first():
@@ -60,12 +64,13 @@ def test_date_format_is_localized_and_invalid_values_use_dash():
 
 
 def test_rendered_row_contains_date_cell_and_status_stays_sixth():
-    row = re.search(r"return `<tr>(.*?)</tr>`;", TEMPLATE, re.S)
+    row = re.search(r"return `<tr data-media-id=.*?>(.*?)</tr>`;", TEMPLATE, re.S)
     assert row
     markup = row.group(1)
     cells = re.findall(r"<td(?:\s|>)", markup)
-    assert len(cells) == 9
+    assert len(cells) == 10
     assert "${formatMediaDate(f.date)}" in markup
+    assert "${escapeHtml(f.duration || '—')}" in markup
     headers = re.findall(r"<th\b[^>]*>(.*?)</th>", TEMPLATE)
     labels = [_header_label(label) for label in headers]
     assert labels[5] == "Status"

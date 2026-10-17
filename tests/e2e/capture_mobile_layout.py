@@ -36,7 +36,8 @@ def main() -> int:
         page.on("console", lambda msg: browser_errors.append(msg.text) if msg.type == "error" else None)
         page.on("pageerror", lambda error: browser_errors.append(str(error)))
         try:
-            page.goto(DASHBOARD_URL, wait_until="domcontentloaded", timeout=30000)
+            page.goto(DASHBOARD_URL, wait_until="commit", timeout=30000)
+            page.wait_for_selector("#filesList", timeout=30000)
             page.wait_for_selector("#filesList", timeout=30000)
             page.locator("#newRecordingBtn").click()
             modal = page.locator("#captureModal .capture-modal")
@@ -76,13 +77,13 @@ def main() -> int:
                 f"direction={initial['actionsDirection']} visible={initial['startVisible']}",
             )
 
-            page.evaluate("""() => renderLogicalVideos({logicalVideos: [
-                {id:'mobile-1', title:'AMS KAP Compliance Session 1', confidence:0.98, status:'CONFIRMED'},
-                {id:'mobile-2', title:'AMS KAP Compliance Session 2', confidence:0.97, status:'CONFIRMED'}
-            ], reviewCandidates: [
-                {id:'mobile-review', title:'Unknown / Needs review', confidence:0.61, status:'NEEDS_TITLE_REVIEW'}
-            ]})""")
             playlist = page.evaluate("""() => {
+                renderLogicalVideos({logicalVideos: [
+                    {id:'mobile-1', title:'AMS KAP Compliance Session 1', confidence:0.98, status:'CONFIRMED'},
+                    {id:'mobile-2', title:'AMS KAP Compliance Session 2', confidence:0.97, status:'CONFIRMED'}
+                ], reviewCandidates: [
+                    {id:'mobile-review', title:'Unknown / Needs review', confidence:0.61, status:'NEEDS_TITLE_REVIEW'}
+                ]});
                 const list = document.querySelector('#captureLogicalVideos');
                 const rows = [...list.querySelectorAll('.capture-logical-row')];
                 return {
@@ -124,6 +125,29 @@ def main() -> int:
             page.locator("#captureProject").select_option(index=1)
             start.click()
             page.wait_for_function("document.getElementById('captureState').textContent === 'Recording'", timeout=30000)
+            crop_result = page.evaluate("""() => {
+                const overlay = document.querySelector('#cropOverlay');
+                const rect = overlay.getBoundingClientRect();
+                overlay.setPointerCapture = () => true;
+                const send = (type, x, y) => overlay.dispatchEvent(new PointerEvent(type, {
+                    bubbles: true, pointerId: 9, pointerType: 'touch', isPrimary: true,
+                    clientX: x, clientY: y, button: 0
+                }));
+                send('pointerdown', rect.left + rect.width * .2, rect.top + rect.height * .2);
+                send('pointermove', rect.left + rect.width * .75, rect.top + rect.height * .72);
+                send('pointerup', rect.left + rect.width * .75, rect.top + rect.height * .72);
+                const box = document.querySelector('#cropBox').getBoundingClientRect();
+                return { crop: window.__captureSnapshot().crop, box: { width: box.width, height: box.height },
+                    touchAction: getComputedStyle(overlay).touchAction };
+            }""")
+            all_ok &= check(
+                "touch_pointer_drag_creates_crop_rectangle",
+                crop_result["crop"] is not None
+                and crop_result["crop"]["width"] > .2 and crop_result["crop"]["height"] > .2
+                and crop_result["box"]["width"] > 20 and crop_result["box"]["height"] > 20
+                and crop_result["touchAction"] == "none",
+                json.dumps(crop_result),
+            )
             stop = page.locator("#captureStopBtn")
             modal.evaluate("el => { el.scrollTop = Math.min(120, el.scrollHeight - el.clientHeight); }")
             stop_box = stop.bounding_box()
@@ -136,9 +160,31 @@ def main() -> int:
                 and stop_box["y"] + stop_box["height"] <= 844,
                 json.dumps({"box": stop_box, **sticky_state}),
             )
+            session_id = page.evaluate("() => window.__captureSnapshot().sessionId")
             stop.click()
             page.wait_for_function("document.getElementById('captureState').textContent === 'Saved'", timeout=30000)
             all_ok &= check("mobile_recording_stops", True)
+            page.locator('button[aria-label="Close capture"]').click()
+            page.evaluate("loadFiles()")
+            page.wait_for_function(
+                "id => !!document.querySelector(`[data-media-id*=\"${id}\"]`)" , arg=session_id, timeout=30000
+            )
+            user_row = page.evaluate("""id => {
+                const row = document.querySelector(`[data-media-id*="${id}"]`);
+                const headers = [...document.querySelectorAll('#filesList th')];
+                const durationIndex = headers.findIndex(cell => cell.dataset.sort === 'duration');
+                const remove = row.querySelector('.btn-delete');
+                return {text: row.innerText, duration: row.cells[durationIndex]?.innerText,
+                    rawInternal: /chunk-\\d{6}|fragment-\\d{6}/i.test(row.innerText),
+                    deleteDisabled: remove.disabled, deleteReason: remove.title};
+            }""", session_id)
+            all_ok &= check(
+                "video_table_duration_and_state_based_delete",
+                bool(user_row["duration"] and user_row["duration"] != "—")
+                and not user_row["rawInternal"] and user_row["deleteDisabled"]
+                and user_row["deleteReason"] == "Stop processing before deleting",
+                json.dumps(user_row),
+            )
             all_ok &= check("no_mobile_browser_errors", not browser_errors, "; ".join(browser_errors))
         finally:
             context.close()

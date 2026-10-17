@@ -145,8 +145,8 @@ def main() -> int:
 
         page.on("response", _capture_bad_response)
 
-        page.goto(DASHBOARD_URL, timeout=TIMEOUT_MS)
-        page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
+        page.goto(DASHBOARD_URL, wait_until="commit", timeout=TIMEOUT_MS)
+        page.wait_for_selector("#filesList table tbody tr", timeout=TIMEOUT_MS)
 
         # Home
         screenshot(page, "home")

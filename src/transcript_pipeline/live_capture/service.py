@@ -13,13 +13,14 @@ import io
 import hashlib
 import logging
 import os
+import shutil
 import threading
 from dataclasses import replace
 from pathlib import Path
 
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
-from transcript_pipeline.live_capture.assembly import assemble_media, ensure_seekable_audio
+from transcript_pipeline.live_capture.assembly import assemble_media, ensure_seekable_audio, probe_media_duration
 from transcript_pipeline.live_capture.audio import transcript_required
 from transcript_pipeline.live_capture.errors import (
     AssemblyError,
@@ -190,42 +191,96 @@ class CaptureService:
             session = self.store.load_session(session_id)
             if session.status is not models.SessionStatus.FINALIZED:
                 raise InvalidTransitionError("capture session must be finalized before media assembly")
+            mappings = self.store.load_processing_map(session_id)
+            if mappings and any(not entry.finalized for entry in mappings):
+                raise AssemblyError("processing chunks are not all finalized")
+            fragments = sorted(self.store.load_fragments(session_id), key=lambda item: item.sequence)
             chunks = sorted((c for c in session.chunks if c.media_extension), key=lambda c: c.index)
-            if not chunks:
-                raise AssemblyError("capture has no finalized processing chunks")
-            extensions = {chunk.media_extension for chunk in chunks}
+            if not fragments and not chunks:
+                raise AssemblyError("capture has no finalized media")
+
+            if fragments:
+                fragment_ids = [fragment.fragment_id for fragment in fragments]
+                mapped_ids = [fragment_id for entry in sorted(mappings, key=lambda item: item.chunk_index)
+                              for fragment_id in entry.fragment_ids]
+                if mapped_ids != fragment_ids:
+                    raise AssemblyError("not all ACKed fragments are mapped exactly once; source media was preserved")
+                extensions = {fragment.media_extension for fragment in fragments}
+                sources = [self.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension)
+                           for fragment in fragments]
+                raw_durations = [fragment.duration_ms for fragment in fragments]
+                durations_ms = raw_durations if all(isinstance(value, int) and value > 0 for value in raw_durations) else None
+                timeline_values = [
+                    fragment.recorded_offset_ms + fragment.duration_ms
+                    for fragment in fragments
+                    if fragment.recorded_offset_ms is not None and fragment.duration_ms is not None
+                ]
+                expected_duration = max(timeline_values) / 1000 if len(timeline_values) == len(fragments) else None
+                fragment_ids_for_metadata = fragment_ids
+            else:
+                extensions = {chunk.media_extension for chunk in chunks}
+                sources = [self.store.chunk_media_path(session_id, chunk.index, chunk.media_extension)
+                           for chunk in chunks]
+                durations_ms = None
+                expected_duration = None
+                fragment_ids_for_metadata = [fid for entry in mappings for fid in entry.fragment_ids]
+
             if len(extensions) != 1:
-                raise AssemblyError("capture processing chunks use mixed media formats")
+                raise AssemblyError("capture media uses mixed formats")
             extension = next(iter(extensions))
+            if any(not path.is_file() for path in sources):
+                raise AssemblyError("a finalized source is missing; source media was preserved")
             final_path = self.store.final_media_path(session_id, extension)
             existing = session.final_media or {}
             if final_path.is_file() and existing.get("extension") == extension:
                 digest = _sha256_file(final_path)
-                if digest == existing.get("sha256") and final_path.stat().st_size == existing.get("sizeBytes"):
+                duration = probe_media_duration(final_path)
+                valid_duration = expected_duration is None or (
+                    duration is not None and abs(duration - expected_duration) <= max(2.0, expected_duration * 0.05)
+                )
+                if (digest == existing.get("sha256") and final_path.stat().st_size == existing.get("sizeBytes")
+                        and valid_duration):
+                    if existing.get("durationSec") is None and duration is not None:
+                        existing = {**existing, "durationSec": duration}
+                        self.store.save_session(replace(session, final_media=existing))
                     return dict(existing)
 
-            mappings = self.store.load_processing_map(session_id)
-            if mappings and any(not entry.finalized for entry in mappings):
-                raise AssemblyError("processing chunks are not all finalized")
-            sources = [self.store.chunk_media_path(session_id, c.index, extension) for c in chunks]
-            if any(not path.is_file() for path in sources):
-                raise AssemblyError("a processing chunk is missing; source media was preserved")
             staging = self.store.final_staging_path(session_id, extension)
             staging.unlink(missing_ok=True)
             duration_seconds = None
+            backup = self.store.final_recovery_backup_path(session_id, extension)
             try:
-                self._assembler(sources, staging)
+                if self._assembler is assemble_media:
+                    self._assembler(sources, staging, durations_ms)
+                else:
+                    self._assembler(sources, staging)
                 if session.capture_kind == "audio" and self._assembler is assemble_media:
                     normalized = self.store.final_normalized_path(session_id, extension)
                     duration_seconds = ensure_seekable_audio(staging, normalized)
                     if normalized.is_file():
                         staging.unlink(missing_ok=True)
                         os.replace(normalized, staging)
+                if self._assembler is assemble_media:
+                    duration_seconds = probe_media_duration(staging)
+                    if expected_duration is not None and (
+                        duration_seconds is None
+                        or abs(duration_seconds - expected_duration) > max(2.0, expected_duration * 0.05)
+                    ):
+                        raise AssemblyError("final media duration does not cover the acknowledged recording timeline")
                 final_path.parent.mkdir(parents=True, exist_ok=True)
+                if final_path.exists():
+                    backup.parent.mkdir(parents=True, exist_ok=True)
+                    backup_index = 2
+                    while backup.exists():
+                        backup = backup.with_name(f"previous-recording-{backup_index}{extension}")
+                        backup_index += 1
+                    os.replace(final_path, backup)
                 os.replace(staging, final_path)
             except Exception:
                 staging.unlink(missing_ok=True)
                 self.store.final_normalized_path(session_id, extension).unlink(missing_ok=True)
+                if not final_path.exists() and backup.exists():
+                    os.replace(backup, final_path)
                 raise
             metadata = {
                 "relativePath": final_path.relative_to(self.store.session_dir(session_id)).as_posix(),
@@ -235,7 +290,7 @@ class CaptureService:
                 "durationSec": duration_seconds,
                 "createdAt": existing.get("createdAt") or models.now_iso(),
                 "processingChunkIds": [models.chunk_id(chunk.index) for chunk in chunks],
-                "fragmentIds": [fid for entry in mappings for fid in entry.fragment_ids],
+                "fragmentIds": fragment_ids_for_metadata,
             }
             self.store.save_session(replace(session, final_media=metadata))
             self._cleanup_temporary_media_if_safe_locked(session_id)
@@ -245,6 +300,19 @@ class CaptureService:
         """Delete blobs only after validated final media and completed processing."""
         with self._lock_for(session_id):
             return self._cleanup_temporary_media_if_safe_locked(session_id)
+
+    def delete_session(self, session_id: str, *, confirmed: bool) -> None:
+        """Delete a user-confirmed, inactive capture and its internal media."""
+        if not confirmed:
+            raise ValidationError("explicit confirmation is required")
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            if session.status is models.SessionStatus.ACTIVE:
+                raise InvalidTransitionError("stop the recording before deleting")
+            if any(chunk.state in {models.ChunkState.FINALIZED, models.ChunkState.PROCESSING,
+                                   models.ChunkState.CANCEL_REQUESTED} for chunk in session.chunks):
+                raise InvalidTransitionError("stop processing before deleting")
+            shutil.rmtree(self.store.session_dir(session_id))
 
     def _cleanup_temporary_media_if_safe_locked(self, session_id: str) -> bool:
         session = self.store.load_session(session_id)
@@ -880,7 +948,12 @@ class CaptureService:
         assert extension is not None
         staging = self.store.assembly_staging_path(session_id, plan.chunk_index, extension)
         try:
-            self._assembler(paths, staging)
+            if self._assembler is assemble_media:
+                durations = [fragments[fid].duration_ms for fid in plan.fragment_ids]
+                durations = durations if all(isinstance(value, int) and value > 0 for value in durations) else None
+                self._assembler(paths, staging, durations)
+            else:
+                self._assembler(paths, staging)
         except AssemblyError as exc:
             staging.unlink(missing_ok=True)
             return self._mark_processing_retryable(session_id, plan, str(exc)[:300])

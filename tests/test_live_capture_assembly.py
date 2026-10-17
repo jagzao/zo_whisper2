@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import io
 import json
+import hashlib
 import shutil
 import subprocess
+from dataclasses import replace
 
 import pytest
 
@@ -43,6 +45,16 @@ def _make_live_audio_segment(path):
     subprocess.run(
         ["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=duration=1",
          "-c:a", "libopus", "-b:a", "64k", "-f", "webm", "-live", "1", str(path)],
+        capture_output=True, check=True, timeout=120,
+    )
+    return path
+
+
+def _make_live_video_segment(path, duration=15):
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i",
+         f"testsrc2=duration={duration}:size=64x64:rate=10", "-c:v", "libvpx", "-b:v", "200k",
+         "-f", "webm", "-live", "1", str(path)],
         capture_output=True, check=True, timeout=120,
     )
     return path
@@ -107,6 +119,54 @@ def test_service_aggregates_real_segments_into_processing_chunk(tmp_path):
     assert len(mapping) == 1 and mapping[0].state == "FINALIZED"
     # Source fragments are retained after a successful assembly.
     assert len(service.list_fragments(session.session_id)) == 3
+
+
+@requires_ffmpeg
+def test_three_15_second_live_fragments_finalize_as_one_complete_video(tmp_path):
+    service = CaptureService(videos_root=tmp_path / "Videos")
+    session = service.create_session("45 second synthetic capture", chunk_duration_sec=600)
+    for sequence in range(1, 4):
+        source = _make_live_video_segment(tmp_path / f"live-{sequence}.webm")
+        service.upload_fragment(
+            session.session_id, f"fragment-{sequence:06d}", sequence,
+            io.BytesIO(source.read_bytes()), duration_ms=15_000, recorded_offset_ms=(sequence - 1) * 15_000,
+        )
+
+    service.drain_processing_chunks(session.session_id)
+    service.finalize_session(session.session_id, ended_at="2026-10-16T12:00:45+00:00")
+    final = service.finalize_session_media(session.session_id)
+    path = service.store.final_media_path(session.session_id, ".webm")
+    probed = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)],
+        capture_output=True, text=True, check=True, timeout=60,
+    )
+    duration = float(json.loads(probed.stdout)["format"]["duration"])
+
+    assert len(service.list_fragments(session.session_id)) == 3
+    assert final["fragmentIds"] == ["fragment-000001", "fragment-000002", "fragment-000003"]
+    assert duration == pytest.approx(45, abs=2)
+    assert final["durationSec"] == pytest.approx(duration, abs=0.2)
+    assert service.finalize_session_media(session.session_id) == final
+
+    bad_bytes = b"".join(
+        service.store.fragment_media_path(session.session_id, fragment.fragment_id, fragment.media_extension).read_bytes()
+        for fragment in service.list_fragments(session.session_id)
+    )
+    path.write_bytes(bad_bytes)
+    stored = service.get_session(session.session_id)
+    bad_manifest = {**final, "sha256": hashlib.sha256(bad_bytes).hexdigest(),
+                    "sizeBytes": len(bad_bytes), "durationSec": None}
+    service.store.save_session(replace(stored, final_media=bad_manifest))
+
+    recovered = service.finalize_session_media(session.session_id)
+    backup = service.store.final_recovery_backup_path(session.session_id, ".webm")
+    recovered_probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)],
+        capture_output=True, text=True, check=True, timeout=60,
+    )
+    assert float(json.loads(recovered_probe.stdout)["format"]["duration"]) == pytest.approx(45, abs=2)
+    assert backup.read_bytes() == bad_bytes
+    assert recovered["durationSec"] == pytest.approx(45, abs=2)
 
 
 @requires_ffmpeg
