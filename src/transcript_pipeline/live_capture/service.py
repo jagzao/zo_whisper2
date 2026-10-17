@@ -238,28 +238,32 @@ class CaptureService:
                 "fragmentIds": [fid for entry in mappings for fid in entry.fragment_ids],
             }
             self.store.save_session(replace(session, final_media=metadata))
+            self._cleanup_temporary_media_if_safe_locked(session_id)
             return metadata
 
     def cleanup_temporary_media_if_safe(self, session_id: str) -> bool:
         """Delete blobs only after validated final media and completed processing."""
         with self._lock_for(session_id):
-            session = self.store.load_session(session_id)
-            metadata = session.final_media or {}
-            extension = metadata.get("extension")
-            final_path = self.store.final_media_path(session_id, extension) if extension else None
-            if not final_path or not final_path.is_file() or _sha256_file(final_path) != metadata.get("sha256"):
-                return False
-            if not session.chunks or any(c.state is not models.ChunkState.PROCESSED for c in session.chunks):
-                return False
-            mappings = self.store.load_processing_map(session_id)
-            if mappings and any(not entry.finalized for entry in mappings):
-                return False
-            for fragment in self.store.load_fragments(session_id):
-                self.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension).unlink(missing_ok=True)
-            for chunk in session.chunks:
-                if chunk.media_extension:
-                    self.store.chunk_media_path(session_id, chunk.index, chunk.media_extension).unlink(missing_ok=True)
-            return True
+            return self._cleanup_temporary_media_if_safe_locked(session_id)
+
+    def _cleanup_temporary_media_if_safe_locked(self, session_id: str) -> bool:
+        session = self.store.load_session(session_id)
+        metadata = session.final_media or {}
+        extension = metadata.get("extension")
+        final_path = self.store.final_media_path(session_id, extension) if extension else None
+        if not final_path or not final_path.is_file() or _sha256_file(final_path) != metadata.get("sha256"):
+            return False
+        if not session.chunks or any(c.state is not models.ChunkState.PROCESSED for c in session.chunks):
+            return False
+        mappings = self.store.load_processing_map(session_id)
+        if mappings and any(not entry.finalized for entry in mappings):
+            return False
+        for fragment in self.store.load_fragments(session_id):
+            self.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension).unlink(missing_ok=True)
+        for chunk in session.chunks:
+            if chunk.media_extension:
+                self.store.chunk_media_path(session_id, chunk.index, chunk.media_extension).unlink(missing_ok=True)
+        return True
 
     def set_crop(self, session_id: str, crop: models.CropRegion | None) -> models.Session:
         with self._lock_for(session_id):
@@ -546,6 +550,8 @@ class CaptureService:
             else:
                 return chunk
             self.store.save_session(session.with_chunk(updated))
+            if updated.state is models.ChunkState.PROCESSED:
+                self._cleanup_temporary_media_if_safe_locked(session_id)
             return updated
 
     # ── audio detection (W7) ─────────────────────────────────────────

@@ -94,6 +94,10 @@ def test_final_media_is_idempotent_and_cleanup_waits_for_processing(service):
     for chunk in service.get_session(session.session_id).chunks:
         service.mark_processing(session.session_id, chunk.index)
         service.complete_processing(session.session_id, chunk.index, transcript_available=True)
+    assert all(not service.store.fragment_media_path(session.session_id, f"fragment-{seq:06d}", ".webm").exists()
+               for seq in range(1, 5))
+    assert service.list_fragments(session.session_id)[0].media_sha256
+    assert len(service.list_processing_chunks(session.session_id)) == 2
     assert service.cleanup_temporary_media_if_safe(session.session_id) is True
     assert len(service.list_fragments(session.session_id)) == 4
     assert service.finalized_chunks(session.session_id) == []
