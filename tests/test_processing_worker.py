@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
+import shutil
 import threading
 import time
-import shutil
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from transcript_pipeline.processing_worker import ProcessingJobStore, ProcessingWorker, processing_limit
@@ -42,6 +44,23 @@ def test_shared_queue_lock_recreates_removed_state_directory(tmp_path):
     shutil.rmtree(store.directory)
     assert store.claim_next(1) is None
     assert store.directory.is_dir()
+
+
+def test_shared_queue_lock_retries_cross_runtime_create_collision(tmp_path, monkeypatch):
+    store = ProcessingJobStore(tmp_path)
+    original_open = os.open
+    collisions = 0
+
+    def open_with_collision(path, flags, *args, **kwargs):
+        nonlocal collisions
+        if Path(path) == store.lease_path and collisions == 0:
+            collisions += 1
+            raise PermissionError(13, "cross-runtime exclusive-create race")
+        return original_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", open_with_collision)
+    assert store.enqueue()["status"] == "QUEUED"
+    assert collisions == 1
 
 
 def test_hourly_scan_enqueues_pending_work(tmp_path):

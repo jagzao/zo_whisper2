@@ -41,12 +41,18 @@ class ProcessingJobStore:
                 with os.fdopen(descriptor, "w", encoding="ascii") as handle:
                     handle.write(token)
                 break
-            except FileExistsError:
+            except (FileExistsError, PermissionError):
                 try:
-                    if time.time() - self.lease_path.stat().st_mtime > 30:
-                        self.lease_path.unlink(missing_ok=True)
-                        continue
+                    lease_mtime = self.lease_path.stat().st_mtime
+                except FileNotFoundError:
+                    lease_mtime = None
                 except OSError:
+                    lease_mtime = None
+                if lease_mtime is not None and time.time() - lease_mtime > 30:
+                    try:
+                        self.lease_path.unlink(missing_ok=True)
+                    except OSError:
+                        pass
                     continue
                 if time.monotonic() >= deadline:
                     raise TimeoutError("Timed out waiting for shared processing queue lock")
