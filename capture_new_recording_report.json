@@ -31,6 +31,21 @@
       "detail": ""
     },
     {
+      "name": "front_and_rear_camera_options",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "crop_clear_next_to_preview_selection",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "camera_and_audio_input_modes_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
       "name": "normal_mode_visible",
       "status": "PASS",
       "detail": ""
@@ -61,7 +76,7 @@
       "detail": ""
     },
     {
-      "name": "timer_visible_initial",
+      "name": "timer_reset_initial",
       "status": "PASS",
       "detail": "00:00:00"
     },
@@ -116,6 +131,31 @@
       "detail": ""
     },
     {
+      "name": "recording_timer_over_preview",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rear_camera_requested",
+      "status": "PASS",
+      "detail": "{'ideal': 'environment', 'exact': None, 'video': {'facingMode': {'ideal': 'environment'}}, 'audio': False}"
+    },
+    {
+      "name": "front_camera_switch_keeps_recording_stream",
+      "status": "PASS",
+      "detail": "user"
+    },
+    {
+      "name": "front_facing_mode_requested",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rear_switch_restores_preview_recording_stream",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
       "name": "live_preview_uses_recording_stream",
       "status": "PASS",
       "detail": "{\"width\": 640, \"inline\": true, \"autoplay\": true, \"sameStream\": true}"
@@ -123,7 +163,7 @@
     {
       "name": "capture_project_persisted",
       "status": "PASS",
-      "detail": "Zo Interviews"
+      "detail": "Synthetic UAT"
     },
     {
       "name": "stop_button_visible_while_recording",
@@ -143,7 +183,7 @@
     {
       "name": "two_fragment_acks_while_recording",
       "status": "PASS",
-      "detail": "acked=['fragment-000001', 'fragment-000002'] state=recording"
+      "detail": "acked=['fragment-000001', 'fragment-000002', 'fragment-000003'] state=recording"
     },
     {
       "name": "fragment_queue_drains_after_ack",
@@ -153,22 +193,22 @@
     {
       "name": "fragments_use_distinct_endpoint",
       "status": "PASS",
-      "detail": "fragments=2 legacyChunks=[]"
+      "detail": "fragments=3 legacyChunks=[]"
     },
     {
       "name": "fragments_durable_on_server",
       "status": "PASS",
-      "detail": "[{\"fragmentId\": \"fragment-000001\", \"sequence\": 1, \"state\": \"ACKED\", \"mediaSizeBytes\": 37546}, {\"fragmentId\": \"fragment-000002\", \"sequence\": 2, \"state\": \"ACKED\", \"mediaSizeBytes\": 38764}]"
+      "detail": "[{\"fragmentId\": \"fragment-000001\", \"sequence\": 1, \"state\": \"ACKED\", \"mediaSizeBytes\": 4834}, {\"fragmentId\": \"fragment-000002\", \"sequence\": 2, \"state\": \"ACKED\", \"mediaSizeBytes\": 5446}, {\"fragmentId\": \"fragment-000003\", \"sequence\": 3, \"state\": \"ACKED\", \"mediaSizeBytes\": 37644}]"
     },
     {
       "name": "acked_ids_match_server_order",
       "status": "PASS",
-      "detail": "server=['fragment-000001', 'fragment-000002'] acked=['fragment-000001', 'fragment-000002']"
+      "detail": "server=['fragment-000001', 'fragment-000002', 'fragment-000003'] acked=['fragment-000001', 'fragment-000002', 'fragment-000003']"
     },
     {
       "name": "fragment_sequence_ordered",
       "status": "PASS",
-      "detail": "[1, 2]"
+      "detail": "[1, 2, 3]"
     },
     {
       "name": "user_level_segment_progress_visible",
@@ -178,7 +218,7 @@
     {
       "name": "internal_fragment_and_chunk_ids_hidden",
       "status": "PASS",
-      "detail": "Live capture \u00b7 CAPTURING \u00b7 1 segmentos subidos \u00b7 0 en proceso"
+      "detail": "Live capture \u00b7 CAPTURING \u00b7 2 segmentos subidos \u00b7 0 en proceso"
     },
     {
       "name": "playlist_mode_persisted",
@@ -198,7 +238,7 @@
     {
       "name": "final_fragment_acked_on_stop",
       "status": "PASS",
-      "detail": "{\"ackedFragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\"], \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\"], \"pendingUploads\": 0}"
+      "detail": "{\"ackedFragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"pendingUploads\": 0}"
     },
     {
       "name": "no_legacy_chunk_finalize_from_browser",
@@ -216,7 +256,72 @@
       "detail": "FINALIZED"
     },
     {
+      "name": "camera_source_persisted_after_switch",
+      "status": "PASS",
+      "detail": "environment"
+    },
+    {
+      "name": "one_validated_final_media_per_capture",
+      "status": "PASS",
+      "detail": "{\"createdAt\": \"2026-10-17T01:44:27.082125+00:00\", \"durationSec\": null, \"extension\": \".webm\", \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\", \"fragment-000003\", \"fragment-000004\"], \"processingChunkIds\": [\"chunk-000000\"], \"relativePath\": \"final/recording.webm\", \"sha256\": \"ce4ccada2d413ac3283ef8adc37fb163c610ade93969cb38aefdd12d09a95601\", \"sizeBytes\": 78114}"
+    },
+    {
+      "name": "one_user_video_row_for_session",
+      "status": "PASS",
+      "detail": "1"
+    },
+    {
+      "name": "final_video_stream_available",
+      "status": "PASS",
+      "detail": "HTTP 200, 78114 bytes"
+    },
+    {
       "name": "mobile_viewport_capture_controls",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile_crop_and_timer_fit",
+      "status": "PASS",
+      "detail": "{\"width\": 390, \"documentWidth\": 390, \"modalWidth\": 388, \"modalScrollWidth\": 388, \"cropWidth\": 364, \"clearRight\": 377, \"cropRight\": 377, \"clearAdjacent\": true, \"timerParent\": true}"
+    },
+    {
+      "name": "audio_mode_hides_camera_crop_controls",
+      "status": "PASS",
+      "detail": "{\"camera\": false, \"crop\": false, \"preview\": true, \"kind\": \"audio\"}"
+    },
+    {
+      "name": "audio_mode_microphone_only_and_timer_visible",
+      "status": "PASS",
+      "detail": "{\"snapshot\": {\"state\": \"recording\", \"sessionId\": \"sess-958f4be020a8\", \"recordingFragmentSeq\": 1, \"ackedFragmentIds\": [], \"finalizedIndexes\": [], \"pendingUploads\": 0, \"stalled\": false, \"stopRequested\": false, \"chunkDurationSec\": 600, \"fragmentDurationMs\": 1000, \"fragmentSeq\": 0, \"fragmentIds\": [], \"maxPendingFragments\": 4, \"queueFull\": false, \"crop\": null, \"audioAvailability\": \"AVAILABLE\", \"mode\": \"normal\", \"captureKind\": \"audio\", \"activeFacingMode\": \"environment\", \"cameraSwitching\": false, \"timerSeconds\": 0, \"recordedOffsetMs\": 0, \"processingChunkSeconds\": null, \"saveLocal\": false, \"logicalVideos\": 0, \"bufferSupported\": true, \"bufferCount\": 0, \"bufferedBytes\": 0, \"bufferLimitBytes\": 67108864, \"bufferWarning\": \"none\", \"autoRetry\": true}, \"videoTracks\": 0, \"audioTracks\": 1, \"videoHasStream\": false, \"audioPreviewVisible\": true, \"timerVisible\": true, \"constraints\": {\"ideal\": null, \"exact\": null, \"video\": false, \"audio\": true}}"
+    },
+    {
+      "name": "audio_session_project_and_kind_persisted",
+      "status": "PASS",
+      "detail": "{\"projectId\": \"Synthetic UAT\", \"captureKind\": \"audio\", \"captureSource\": \"microphone\"}"
+    },
+    {
+      "name": "audio_fragment_and_chunk_inherit_project",
+      "status": "PASS",
+      "detail": "fragments=2 chunks=1"
+    },
+    {
+      "name": "audio_capture_uses_normal_project_listing",
+      "status": "PASS",
+      "detail": "{\"media_kind\": \"audio\", \"project\": \"Synthetic UAT\", \"user_state\": \"READY\"}"
+    },
+    {
+      "name": "audio_mode_has_single_final_output",
+      "status": "PASS",
+      "detail": "{\"createdAt\": \"2026-10-17T01:44:32.142020+00:00\", \"durationSec\": 0.981, \"extension\": \".webm\", \"fragmentIds\": [\"fragment-000001\", \"fragment-000002\"], \"processingChunkIds\": [\"chunk-000000\"], \"relativePath\": \"final/recording.webm\", \"sha256\": \"eba15c42003083ccabdd0d847e82422e8323af8ebdd903bca7b691bfe3d3c18b\", \"sizeBytes\": 11839}"
+    },
+    {
+      "name": "show_opens_native_video_player",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "show_opens_native_audio_player",
       "status": "PASS",
       "detail": ""
     },
