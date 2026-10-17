@@ -913,6 +913,11 @@
             </div>
             <div id="filesList"></div>
             <details style="margin-top:0.75rem;">
+                <summary>Optimized media &amp; cleanup status</summary>
+                <button type="button" onclick="loadCompressionRetention()">Refresh</button>
+                <div id="compressionRetention" class="muted" style="margin-top:0.5rem;">No optimized media recorded yet.</div>
+            </details>
+            <details style="margin-top:0.75rem;">
                 <summary>Media cleanup suggestions</summary>
                 <button type="button" onclick="loadCaptureGcCandidates()">Review stale processed captures</button>
                 <div id="captureGcCandidates" class="muted" style="margin-top:0.5rem;">No media is deleted automatically.</div>
@@ -1167,6 +1172,7 @@
         const api = path => fetch(path, { headers: { 'Accept': 'application/json' }}).then(r => r.json());
         const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: JSON.stringify(body) }).then(r => r.json());
         const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); };
+        let lastCompressionRefreshAt = null;
 
         async function loadMetrics() {
             const data = await api('/api/metrics');
@@ -1242,6 +1248,41 @@
                     : 'No stale processed captures with generated documentation.';
             } catch (error) {
                 target.textContent = `Could not load suggestions: ${error.message}`;
+            }
+        }
+
+        async function loadCompressionRetention() {
+            const target = document.getElementById('compressionRetention');
+            if (!target) return;
+            try {
+                const data = await api('/api/compression/provenance');
+                const records = data.records || [];
+                if (!records.length) {
+                    target.textContent = 'No optimized media recorded yet.';
+                    return;
+                }
+                target.innerHTML = `<table><thead><tr><th>Optimized output</th><th>Original size</th><th>Optimized size</th><th>Bytes saved</th><th>State</th><th>Reason</th><th></th></tr></thead><tbody>${
+                    records.map(r => {
+                        const original = Number(r.source_size || 0);
+                        const optimized = Number(r.output_size || 0);
+                        const saved = Number(r.bytes_saved || 0);
+                        const retry = r.retry_allowed
+                            ? `<button type="button" onclick="retryCompressionCleanup('${encodeURIComponent(r.output_relative || '')}')">Remove source</button>`
+                            : '';
+                        return `<tr><td>${escapeHtml(r.output_relative || '—')}</td><td>${original.toLocaleString()}</td><td>${optimized.toLocaleString()}</td><td>${saved.toLocaleString()}</td><td>${escapeHtml(r.cleanup_state || '')}</td><td>${escapeHtml(r.reason || '')}</td><td>${retry}</td></tr>`;
+                    }).join('')
+                }</tbody></table>`;
+            } catch (error) {
+                target.textContent = `Could not load retention: ${error.message}`;
+            }
+        }
+
+        async function retryCompressionCleanup(outputRelative) {
+            try {
+                await post('/api/compression/retry-cleanup', { output_relative: decodeURIComponent(outputRelative) });
+                await loadCompressionRetention();
+            } catch (error) {
+                document.getElementById('compressionRetention').textContent = `Cleanup retry failed: ${error.message}`;
             }
         }
 
@@ -1517,6 +1558,10 @@
             }
             if (!status.running && status.finished_at) {
                 loadFolders(); loadFiles(); loadMetrics();
+                if (lastCompressionRefreshAt !== status.finished_at) {
+                    lastCompressionRefreshAt = status.finished_at;
+                    loadCompressionRetention();
+                }
             }
             renderPipelineStepper(status);
         }
@@ -4043,6 +4088,7 @@
             else clearInterval(durationRefresh);
         }, 5000);
         loadFolders(); loadFiles(); loadProjects(); loadLogs(); loadMetrics(); updateRunStatus();
+        loadCompressionRetention();
         updateServerHealth(); loadLanNetworkInfo();
         attachCropSelection();
         // W7 reload recovery: pick up fragments that survived a reload/offline

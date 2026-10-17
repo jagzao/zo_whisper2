@@ -718,3 +718,94 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - 2026-10-16: W40 PASS. Committed/pushed path normalization as `210fdc740f2ceae3a568d72ec65b096300888876`; rebuilt Docker incrementally from source, restarted desktop and HTTPS LAN on the shared repository root. `served_ui_revision.py` PASS for `http://localhost:5000` and `https://192.168.50.67:5001`: response header and HTML meta match SHA; mobile width 390, no overflow/service worker, Camera and Audio visible, rear default and secure camera API present. Both APIs now return the same 45 media IDs, per-media status/state/project/duration, seven projects, documentation/transcript presence, and worker state (RUNNING, 0 pending, 0 active, limit 3); shared job store has the same two records. Mobile Playwright pointer test passed on 390x844 with a 0.6842 x 0.5199 crop region, Clear Crop adjacent, duration and deterministic delete reason visible. Targeted pytest: 58 passed; Host E2E: PASS in 43.81s. JM `sess-4ee4a8f39d86`: expected 71.295 s, 5/5 ACKed and present, mapped once in order, validated final 71.25 s, playable; 5 source fragments retained. Synthetic 3-fragment 45 s assembly regression passed. Delete action is always shown and enabled for completed/ready media; active capture/upload/processing shows disabled action with a state-specific reason; internal chunks stay hidden. Desktop/LAN data counts and statuses agree; no private media was removed. Final plan-only commit will update served revision markers and trigger a final served-HEAD check.
 - 2026-10-16: Final restart exposed a second cross-runtime lock race: concurrent exclusive create on the Windows-mounted shared directory can raise `PermissionError` instead of `FileExistsError`; the LAN worker thread stopped while Docker remained active. Lock acquisition now treats that transient error as contention, checks/reaps only stale leases, and retries; regression test simulates the Windows collision. Targeted dashboard/worker/assembly tests: 59 passed; Host E2E: PASS in 39.95s. W40 reopened until both workers run concurrently on the committed fix and final served HEAD/data parity pass.
 - 2026-10-16: W40 PASS on `29335b58ab6b2aaedac7f871e63bed7dd3084ab1`. Rebuilt Docker from the committed lock-collision retry fix, restarted the LAN process, and confirmed both processing workers stay RUNNING without thread exceptions. Final HEAD serves on desktop and LAN; both HTML meta and `X-Whisper-Build` match. Normalizing OS-specific path separators and timezone representations yields identical 45 media records (IDs, statuses, user states, project, durations, documentation/transcript presence), seven projects, and worker status (0 pending/active; limit 3); both share the same repo-root bind and two durable queue records. Final UI Playwright: PASS on both origins, responsive 390px layout, no service worker/offline indicator, Camera/Audio and rear camera visible, secure camera API available. Previous mobile touch Playwright and host E2E remain green; targeted tests 59 passed and Host E2E 39.95s. After documentation-only commit `f4375d591d4a2cfc3b1133e0f8189efef8f643b3`, restarted both services and reran served-revision/API checks: desktop and LAN both return 200 and exactly match the final commit; 45 media entries, seven projects and worker/media/documentation parity PASS. Worktree and upstream are clean/aligned.
+
+## W41-W45 — Optimized media retention and documentation workflow
+
+### Goal and status boundary
+
+W40 completed the P0 recording-integrity, desktop/LAN shared-data, mobile-crop, duration, and delete-action work. This section plans the additional user-requested lifecycle: compress large originals, retain verified optimized media, clean temporary capture pieces safely, and make documentation regeneration easy to find and reliable. It does not reopen or replace the W40 acceptance evidence.
+
+Current source findings:
+
+- `src/transcript_pipeline/media/compressor.py` already moves successful compressed outputs into `Videos/<project>` and deletes the input under `Video_compress/`. Its success gate currently relies mainly on FFmpeg returning zero and the output existing; it does not sufficiently validate media streams, duration, playability, or size before removing the source.
+- Live Capture has a separate guarded cleanup path. It deletes server fragments/intermediate chunks only after a final exists, its manifest hash matches, all processing chunks are `PROCESSED`, and mappings are finalized. Failed or incomplete work must retain retry inputs. Browser-local fragments are deleted only after durable server ACK.
+- `/api/capture/gc-candidates` is advisory and `gc.py` does not delete user media. Do not turn this into broad or age-only deletion.
+- Documentation V2 already has distinct “Regenerate Documentation” and “Reprocess Video” actions. Regeneration uses stored evidence, retains version history, and should not invoke transcription/OCR/vision again. Preserve this behavior and add regression coverage rather than rebuilding it.
+- The last recorded heavy Docker gate was deferred for the >6 GiB RAM requirement. Recheck actual available RAM before running it; do not risk active user jobs.
+
+### Frozen lifecycle contract
+
+1. Keep the raw source until a staged optimized output is independently validated: readable container, video stream, positive duration, expected audio behavior, nonzero size, and duration within `max(2 seconds, 5%)` of the source. Require meaningful size reduction (initial acceptance: at least 1%); if validation or reduction fails, retain the source and expose the failure.
+2. Publish from a same-filesystem staging file atomically. Verify the published file/hash and its registered media record before deleting only the exact source linked by provenance. A retry must not overwrite a valid output or delete an unrelated path.
+3. Persist auditable source/output relative identifiers, hashes, sizes, measured durations, result, and source-cleanup status. Never store machine-specific absolute paths as the only provenance.
+4. Surface original size, optimized size, bytes saved, and cleanup result next to the compression result. For a cleanup failure show `CLEANUP_PENDING`; allow retry only when provenance still proves the source/output relationship.
+5. Keep Live Capture cleanup rules separate: after full processing succeeds, remove only that session’s acknowledged temporary fragments/intermediate chunks. Retain final playable media, manifests, and documentation. On failure/cancel/partial processing retain source pieces for recovery.
+6. Never expose temporary fragments or processing chunks as ordinary user videos or delete targets.
+
+### Coding roles and model budget
+
+- Codex/ChatGPT owns root-cause analysis, lifecycle design, review, data-integrity decisions, and acceptance evidence.
+- OpenCode Go is the economical primary implementation model; configured DeepSeek/economical alias is fallback through `scripts/model_router.py`. Resolve aliases at runtime. Do not commit credentials or private model identifiers.
+- Give the coding model one bounded work item at a time, with file ownership and explicit acceptance tests. Review every destructive-path diff before running it against user media.
+
+### W41 — Compression lifecycle contract and baseline (PENDING)
+
+- Trace all entry points that place files in `Video_compress/`, call the compressor, publish outputs, and report cleanup state.
+- Define the persisted provenance/state shape and migration/default behavior for existing records.
+- Make every failure path preserve the original: FFmpeg error, missing output, corrupt output, absent video stream, duration mismatch, output larger than source, collision, atomic publish failure, metadata/index write failure, and interrupted retry.
+- Add focused tests for these conditions and success-path state transitions. Use synthetic fixtures only.
+- Exit gate: documented state machine, no source removal before validated publication, existing successful compression behavior preserved.
+
+### W42 — Validate, publish, then remove source (PENDING)
+
+- Probe source and staged output with the existing media tooling; compare measured duration and required streams.
+- Enforce output size reduction before cleanup. Make tolerances explicit and centralized.
+- Publish atomically, persist provenance, reopen/probe the published output, and verify its hash before source unlink.
+- Make retries idempotent and safe when output already exists or a prior attempt stopped between publish and cleanup.
+- Exit gate: tests prove the source survives every injected failure and is removed only after complete verification; optimized media remains playable and registered.
+
+### W43 — Make cleanup outcome visible (PENDING)
+
+- Add deterministic API/UI states: `OPTIMIZED_SOURCE_REMOVED`, `OPTIMIZED_SOURCE_RETAINED`, `CLEANUP_PENDING`, and `FAILED` (or equivalent existing enums).
+- Show original/optimized sizes, bytes saved, and a plain-language cleanup reason beside the compression result.
+- If a retry control is needed, restrict it to a source path and hash validated against persisted provenance; use existing path-safety and authorization checks. Do not add a general-purpose raw-file delete control.
+- Add API and UI tests for success, retained-original, pending-cleanup, retry, and missing/corrupt provenance.
+- Exit gate: a user can tell which media is retained and why, without guessing from a missing row.
+
+### W44 — Capture cleanup and documentation regression (PENDING)
+
+- Add service tests covering local-fragment deletion only after durable ACK; server-fragment retention before full success; cleanup after all processing chunks complete; and retention of final media, manifest, and docs.
+- Exercise failed transcription, missing audio, cancellation, partial mappings, hash mismatch, and restart/retry. Each must retain recoverable inputs.
+- Add Docs V2 tests proving regeneration uses saved evidence, does not rerun expensive upstream extraction, creates/selects a version, and leaves “Reprocess Video” as the explicit action for new evidence.
+- Verify the regeneration action is available on desktop and narrow mobile layouts, with running/success/failure feedback.
+- Exit gate: cleanup is recoverable and bounded to the session; doc regeneration remains distinct from reprocessing.
+
+### W45 — End-to-end acceptance and served-app closure (PENDING)
+
+- Synthetic end-to-end: large source -> validated optimized media -> transcription/processing -> documentation -> regenerate/version history -> verified source cleanup state.
+- Synthetic Live Capture with at least three ACKed fragments: ordered full-duration playable final, then safe temporary cleanup only after processing completion.
+- Mobile real-browser coverage for capture/crop and documentation controls; use actual phone UAT when available because Playwright does not prove device/browser behavior completely.
+- Restart desktop and LAN services from the final committed HEAD. Confirm both origins share repository revision, data/database/media roots, media/project/job/docs/worker sets, and rendered UI behavior. Resolve LAN IP dynamically rather than assuming an old address.
+- Run focused tests first, then Host E2E. Run heavy Docker/soak gates only when the recorded RAM threshold is currently met and no active user job is at risk.
+- Exit gate: all checks link to artifacts/logs and current served revision; user data is unchanged except for explicitly generated synthetic fixtures; worktree clean and branch/upstream status recorded.
+
+### Implementation checkpoint — 2026-10-17
+
+- W41-W44 implementation is present: staged H.265/MP4 optimization validates streams, duration, size, published hash and provenance before deleting the exact source; cleanup-pending outcomes can be retried through an authenticated endpoint and are visible with saved-byte counts in the dashboard. The retention state refreshes when a processing run completes.
+- Regression coverage includes encoder/validation/publish/cleanup failures, retry eligibility, source mutation, WebM-to-MP4 compatibility, capture temporary cleanup invariants, provenance API states, shared data-root derivation and build revision markers.
+- Targeted pytest: 168 passed, 4 skipped (Windows symlink privilege). Ruff and `git diff --check` passed. Mobile docs regeneration Playwright and crop-touch E2E had passed against the prior W40 runtime; final rerun remains part of W45.
+- RAM gate on 2026-10-17: 2.11 GiB available, threshold strictly greater than 6.0 GiB. Full regression/security/smoke/authoritative E2E/Docker and production restart are deferred per PLV5. No live service, user media or production data was changed in this checkpoint.
+- W45 remains pending. Deployment requires the RAM gate and heavy gates to pass, then verification of the current served HEAD, desktop/LAN parity, mobile pointer interaction, documentation regeneration, full-duration playback and delete-state reasons.
+
+### Completion report fields
+
+`COMPRESSION_VALIDATION=`
+`SOURCE_CLEANUP_RULE=`
+`CLEANUP_STATUS_UI=`
+`CAPTURE_TEMP_CLEANUP=`
+`DOC_REGENERATION=`
+`MOBILE_UAT=`
+`DESKTOP_LAN_PARITY=`
+`TESTS=`
+`SERVED_HEAD=`
+`WORKTREE_CLEAN=`

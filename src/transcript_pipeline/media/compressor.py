@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
-"""
-Video Compressor & Mover - Compresses videos with high efficiency (H.265)
-and moves them to their destination folder.
+"""Video Compressor & Mover.
+
+Compresses videos with high efficiency (H.265) and moves them to their
+destination folder. Source deletion is delegated to
+`transcript_pipeline.media.optimize`, which validates and publishes the
+optimized output and records provenance before removing the exact source.
 """
 
 import json
-import shutil
 import subprocess
 import sys
-from datetime import datetime
 from pathlib import Path
 
 from transcript_pipeline.config import DATA_ROOT
+from transcript_pipeline.media.optimize import (
+    FAILED,
+    OPTIMIZED_SOURCE_REMOVED,
+    ProvenanceStore,
+    encode_h265,
+    optimize_media,
+)
 from transcript_pipeline.media.utils import run_ffprobe
-from transcript_pipeline.settings import SETTINGS
 
-_COMPRESSION_TIMEOUT_SECONDS = 2 * 60 * 60  # 2h — generous, catches a hung ffmpeg, not slow encoding
+_COMPRESSION_TIMEOUT_SECONDS = 2 * 60 * 60
 
 
 def get_video_info(video_path):
@@ -34,88 +41,36 @@ def get_video_info(video_path):
 
 
 def compress_video_high_efficiency(input_path, output_path):
-    """Compresses video with H.265 using a configurable CRF (24-26 recommended)."""
+    """Compresses video with H.265 using a configurable CRF (24-26 recommended).
+
+    Thin compatibility wrapper: encoding only. Validation, publication and
+    source cleanup are the caller's responsibility via `optimize_media`.
+    """
     print(f"[INFO] Analyzing: {input_path.name}")
 
     info = get_video_info(input_path)
     if not info:
         return False
 
-    duration = float(info['format']['duration'])
-    current_size_mb = int(info['format']['size']) / (1024 * 1024)
-
     video_stream = next((s for s in info['streams'] if s['codec_type'] == 'video'), None)
     if not video_stream:
         print("[ERROR] No video stream found")
         return False
 
-    width = int(video_stream.get('width', 0))
-    height = int(video_stream.get('height', 0))
-    fps_str = video_stream.get('r_frame_rate', '30/1')
-    try:
-        if '/' in fps_str:
-            num, _, den = fps_str.partition('/')
-            fps = float(num) / float(den) if float(den) else 30.0
-        else:
-            fps = float(fps_str)
-    except Exception:
-        fps = 30.0
+    from transcript_pipeline.settings import SETTINGS
 
-    print(f"[INFO] Duration: {duration:.1f}s | Current size: {current_size_mb:.1f}MB")
-    print(f"[INFO] Resolution: {width}x{height} | FPS: {fps:.1f}")
-
-    # H.265 offers a better quality/size ratio than H.264.
-    # Recommended CRF range: 24 to 26.
     crf = max(24, min(26, SETTINGS.video_compress_crf))
-
-    cmd = [
-        'ffmpeg', '-i', str(input_path),
-        '-c:v', 'libx265',            # H.265/HEVC codec
-        '-preset', 'slow',            # Compression/time tradeoff for HEVC
-        '-crf', str(crf),             # Recommended range: 24-26
-        '-tag:v', 'hvc1',             # Better player compatibility
-        '-c:a', 'copy',               # Copy audio without re-encoding
-        '-movflags', '+faststart',   # Streaming optimization
-        '-pix_fmt', 'yuv420p',      # Compatible pixel format
-        '-y', str(output_path)       # Overwrite if it exists
-    ]
-
     print(f"[INFO] Compressing with H.265 + CRF {crf} + preset slow...")
 
-    try:
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
-        )
-
-        try:
-            # H.265 encoding is genuinely slow for large/long videos — this
-            # bounds a truly hung ffmpeg process, not normal compression time.
-            stdout, stderr = process.communicate(timeout=_COMPRESSION_TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.communicate()
-            print(f"[ERROR] FFmpeg compression timed out after {_COMPRESSION_TIMEOUT_SECONDS}s")
-            return False
-
-        if process.returncode != 0:
-            print(f"[ERROR] FFmpeg failed: {stderr}")
-            return False
-
-        if output_path.exists():
-            final_size_mb = output_path.stat().st_size / (1024 * 1024)
+    if encode_h265(Path(input_path), Path(output_path), crf=crf):
+        if Path(output_path).exists():
+            final_size_mb = Path(output_path).stat().st_size / (1024 * 1024)
+            current_size_mb = int(info['format']['size']) / (1024 * 1024)
             reduction = ((current_size_mb - final_size_mb) / current_size_mb * 100) if current_size_mb > 0 else 0
             print(f"[OK] Compressed: {current_size_mb:.1f}MB → {final_size_mb:.1f}MB ({reduction:.1f}% reduction)")
             return True
-        else:
-            print("[ERROR] Output file was not generated")
-            return False
-
-    except Exception as e:
-        print(f"[ERROR] Exception during compression: {e}")
-        return False
+    print("[ERROR] FFmpeg compression failed")
+    return False
 
 
 def get_target_folder(filename, base_path):
@@ -139,7 +94,7 @@ def get_target_folder(filename, base_path):
 
 
 def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
-    """Processes the Video_compress folder: compresses and moves files"""
+    """Processes the Video_compress folder: validates, publishes, cleans up."""
     compress_folder = base_path / "Video_compress"
 
     print("=" * 60)
@@ -164,6 +119,7 @@ def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
     print(f"[INFO] Found {len(video_files)} video(s) to compress")
     print()
 
+    provenance = ProvenanceStore(base_path / "compression_provenance.json")
     processed_count = 0
 
     for video_file in video_files:
@@ -173,32 +129,26 @@ def process_video_compress_folder(base_path: Path = DATA_ROOT) -> int:
         target_folder = get_target_folder(video_file.name, base_path)
         target_folder.mkdir(parents=True, exist_ok=True)
 
-        temp_compressed = compress_folder / f"temp_{video_file.name}"
+        result = optimize_media(
+            video_file,
+            target_folder,
+            base_path=base_path,
+            provenance=provenance,
+        )
 
-        try:
-            if compress_video_high_efficiency(video_file, temp_compressed):
-                final_path = target_folder / video_file.name
-
-                if final_path.exists():
-                    timestamp = datetime.now().strftime("%H%M%S")
-                    stem = video_file.stem
-                    suffix = video_file.suffix
-                    final_path = target_folder / f"{stem}_{timestamp}{suffix}"
-
-                shutil.move(str(temp_compressed), str(final_path))
-                video_file.unlink()
-
-                print(f"[OK] Moved to: {final_path}")
-                processed_count += 1
-            else:
-                if temp_compressed.exists():
-                    temp_compressed.unlink()
-                print(f"[ERROR] Could not compress {video_file.name}")
-
-        except Exception as e:
-            print(f"[ERROR] Processing {video_file.name}: {e}")
-            if temp_compressed.exists():
-                temp_compressed.unlink()
+        if result.cleanup_state == OPTIMIZED_SOURCE_REMOVED:
+            print(f"[OK] Moved to: {result.output}")
+            print(f"     size: {result.source_size} -> {result.output_size} bytes "
+                  f"(saved {result.bytes_saved})")
+            print("     cleanup: OPTIMIZED_SOURCE_REMOVED")
+            processed_count += 1
+        elif result.succeeded:
+            print(f"[WARN] Optimized output retained at {result.output}; source kept ({result.cleanup_state})")
+            print(f"     reason: {result.reason}")
+            processed_count += 1
+        else:
+            print(f"[ERROR] Could not compress {video_file.name}: {result.reason}")
+            print(f"     cleanup: {FAILED} (source retained at {video_file})")
 
     print()
     print("=" * 60)

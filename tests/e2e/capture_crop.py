@@ -55,6 +55,30 @@ def _drag_crop(page):
     page.mouse.up()
 
 
+def _drag_crop_touch(page, cdp):
+    """One-finger Pointer Events drag driven through Chromium's touch input.
+
+    Proves the overlay handles pointerType 'touch' with pointer capture, moving
+    the finger outside the overlay bounds while the captured pointer keeps
+    updating the selection.
+    """
+    box = page.locator("#cropOverlay").bounding_box()
+    assert box and box["width"] > 0 and box["height"] > 0, "crop overlay has no size"
+    start = (box["x"] + box["width"] * 0.2, box["y"] + box["height"] * 0.2)
+    mid = (box["x"] + box["width"] * 0.8, box["y"] + box["height"] * 0.8)
+    outside = (box["x"] + box["width"] * 1.1, box["y"] + box["height"] * 1.1)
+    cdp.send("Input.dispatchTouchEvent", {
+        "type": "touchStart", "touchPoints": [{"x": start[0], "y": start[1], "id": 1}],
+    })
+    cdp.send("Input.dispatchTouchEvent", {
+        "type": "touchMove", "touchPoints": [{"x": mid[0], "y": mid[1], "id": 1}],
+    })
+    cdp.send("Input.dispatchTouchEvent", {
+        "type": "touchMove", "touchPoints": [{"x": outside[0], "y": outside[1], "id": 1}],
+    })
+    cdp.send("Input.dispatchTouchEvent", {"type": "touchEnd", "touchPoints": []})
+
+
 def _valid_region(crop) -> bool:
     if not isinstance(crop, dict):
         return False
@@ -93,8 +117,10 @@ def main() -> int:
         context = browser.new_context(
             viewport={"width": 1280, "height": 900},
             permissions=["camera"],
+            has_touch=True,
         )
         page = context.new_page()
+        cdp = context.new_cdp_session(page)
 
         browser_errors: list[str] = []
         page.on("console", lambda msg: browser_errors.append(f"console: {msg.text}") if msg.type == "error" else None)
@@ -117,6 +143,15 @@ def main() -> int:
             _drag_crop(page)
             crop = _snapshot_crop(page)
             all_ok &= check("crop_region_selected", _valid_region(crop), json.dumps(crop))
+
+            # 1b. One-finger touch drag with pointer capture past the overlay.
+            _drag_crop_touch(page, cdp)
+            touch_crop = _snapshot_crop(page)
+            all_ok &= check(
+                "crop_region_selected_touch_capture",
+                _valid_region(touch_crop) and touch_crop != crop,
+                json.dumps(touch_crop),
+            )
 
             # 2. Clear/reset removes the region.
             page.locator("#cropClearBtn").click()

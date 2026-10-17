@@ -14,8 +14,8 @@ Features:
 
 from __future__ import annotations
 
-import json
 import ipaddress
+import json
 import logging
 import math
 import os
@@ -35,6 +35,7 @@ from urllib.parse import quote, urlparse
 from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
+from transcript_pipeline import lan_access
 from transcript_pipeline.config import (
     AUDIO_DIR,
     DATA_ROOT,
@@ -53,13 +54,13 @@ from transcript_pipeline.documentation.engine import (
     remove_step,
     update_step,
 )
-from transcript_pipeline import lan_access
 from transcript_pipeline.live_capture import CaptureService
 from transcript_pipeline.live_capture import errors as capture_errors
 from transcript_pipeline.live_capture import models as capture_models
 from transcript_pipeline.live_capture.playlist import PlaylistService, ocr_title_image
 from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.media.utils import run_ffprobe
+from transcript_pipeline.processing_worker import ProcessingJobStore, ProcessingWorker
 from transcript_pipeline.projects import validate_project
 from transcript_pipeline.security import (
     MediaRoot,
@@ -69,7 +70,6 @@ from transcript_pipeline.security import (
     SecurityError,
 )
 from transcript_pipeline.settings import SETTINGS
-from transcript_pipeline.processing_worker import ProcessingJobStore, ProcessingWorker
 
 load_env()
 
@@ -1231,6 +1231,63 @@ def api_files() -> Any:
     else:
         media_files.sort(key=lambda item: (item["date_epoch"], item["name"].lower()), reverse=reverse)
     return jsonify({"files": media_files})
+
+
+@app.route("/api/compression/provenance")
+def api_compression_provenance() -> Any:
+    """Auditable compression retention: sizes saved and cleanup outcome."""
+    from transcript_pipeline.media.optimize import CLEANUP_PENDING, ProvenanceStore
+
+    store = ProvenanceStore(ROOT / "compression_provenance.json")
+    records = []
+    for record in store.list():
+        state = record.get("cleanupState")
+        records.append({
+            "source_relative": record.get("sourceRelative"),
+            "output_relative": record.get("outputRelative"),
+            "source_size": record.get("sourceSize"),
+            "output_size": record.get("outputSize"),
+            "bytes_saved": record.get("bytesSaved"),
+            "source_duration": record.get("sourceDuration"),
+            "output_duration": record.get("outputDuration"),
+            "cleanup_state": state,
+            "reason": record.get("reason"),
+            "updated_at": record.get("updatedAt"),
+            "retry_allowed": state == CLEANUP_PENDING,
+        })
+    return jsonify({"ok": True, "records": records})
+
+
+@app.route("/api/compression/retry-cleanup", methods=["POST"])
+def api_compression_retry_cleanup() -> Any:
+    """Retry source removal for a provenance-matched optimized output only."""
+    from transcript_pipeline.media.optimize import CLEANUP_PENDING, ProvenanceStore, retry_source_cleanup
+
+    payload = request.get_json(force=True) or {}
+    output_relative = payload.get("output_relative")
+    if not isinstance(output_relative, str) or not output_relative:
+        return jsonify({"ok": False, "error": "output_relative is required"}), 400
+    store = ProvenanceStore(ROOT / "compression_provenance.json")
+    record = store.load().get(output_relative)
+    if record is None:
+        return jsonify({"ok": False, "error": "unknown provenance record"}), 404
+    # Only a cleanup that is still pending may be retried. A record whose source
+    # is already gone or was intentionally retained must never be removed here,
+    # even when its recorded hashes still match the files on disk.
+    if record.get("cleanupState") != CLEANUP_PENDING:
+        return jsonify({
+            "ok": False,
+            "error": "cleanup is not pending for this record",
+            "cleanup_state": record.get("cleanupState"),
+        }), 409
+    state = retry_source_cleanup(output_relative, base_path=ROOT, provenance=store)
+    record = store.load().get(output_relative, {})
+    return jsonify({
+        "ok": True,
+        "cleanup_state": state,
+        "reason": record.get("reason"),
+        "retry_allowed": state == "CLEANUP_PENDING",
+    })
 
 
 @app.route("/api/projects")
