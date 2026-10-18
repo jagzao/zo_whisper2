@@ -21,6 +21,7 @@ import math
 import os
 import re
 import secrets
+import socket
 import subprocess
 import sys
 import tempfile
@@ -979,7 +980,24 @@ def prevent_stale_browser_assets(response) -> Any:
 @app.route("/api/status")
 def api_status() -> Any:
     state = dict(_run_state)
-    state["worker"] = _get_processing_worker().status()
+    worker = _get_processing_worker()
+    jobs = worker.store.list_jobs()
+    active_jobs = [job for job in jobs if job.get("status") in {"ACTIVE", "CANCEL_REQUESTED"}]
+    active_job = max(active_jobs, key=lambda job: job.get("started_at") or "") if active_jobs else None
+    state["worker"] = worker.status()
+    state["running"] = active_job is not None
+    if active_job is not None:
+        state["mode"] = active_job.get("mode")
+        state["started_at"] = active_job.get("started_at")
+        state["finished_at"] = None
+        owns_job = (
+            active_job.get("worker_pid") == os.getpid()
+            and active_job.get("worker_host") == socket.gethostname()
+        )
+        if not owns_job:
+            state["stage"] = None
+            state["stages"] = {}
+            state["log_tail"] = ""
     return jsonify(state)
 
 

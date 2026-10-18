@@ -189,7 +189,7 @@ class ProcessingJobStore:
         jobs = self.list_jobs()
         return {"state": "RUNNING" if running else "STOPPED",
                 "pending_jobs": sum(j.get("status") in {"QUEUED", "PENDING"} for j in jobs),
-                "active_jobs": sum(j.get("status") == "ACTIVE" for j in jobs),
+                "active_jobs": sum(j.get("status") in {"ACTIVE", "CANCEL_REQUESTED"} for j in jobs),
                 "concurrency_limit": limit,
                 "next_scan": next_scan.isoformat() if next_scan else None,
                 "last_scan": last_scan.isoformat() if last_scan else None}

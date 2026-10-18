@@ -160,6 +160,32 @@ def test_worker_status_and_cancel_endpoint(client, env):
     assert repeated.get_json()["state"] == "CANCELLED"
 
 
+def test_status_uses_shared_active_queue_for_running_and_cancel_requested(client, env, monkeypatch):
+    from transcript_pipeline.dashboard import app as dashboard_app
+
+    monkeypatch.setitem(dashboard_app._run_state, "running", False)
+    monkeypatch.setitem(dashboard_app._run_state, "mode", None)
+    monkeypatch.setitem(dashboard_app._run_state, "started_at", None)
+    monkeypatch.setitem(dashboard_app._run_state, "stage", None)
+    worker = dashboard_app._get_processing_worker()
+    queued = worker.store.enqueue("full")
+    claimed = worker.store.claim_next(1)
+    assert claimed["id"] == queued["id"]
+
+    active = client.get("/api/status").get_json()
+    assert active["running"] is True
+    assert active["mode"] == "full"
+    assert active["started_at"] == claimed["started_at"]
+    assert active["worker"]["active_jobs"] == 1
+
+    assert worker.store.cancel(queued["id"])
+    cancelling = client.get("/api/status").get_json()
+    assert cancelling["running"] is True
+    assert cancelling["worker"]["active_jobs"] == 1
+
+    worker.store.finish(queued["id"], "CANCELLED")
+
+
 def test_dashboard_token_is_shared_across_process_restarts(tmp_path):
     first = dashboard_app._load_dashboard_token(tmp_path)
     second = dashboard_app._load_dashboard_token(tmp_path)
