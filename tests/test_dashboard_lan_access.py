@@ -245,7 +245,12 @@ def test_health_available_from_lan_host(client, monkeypatch):
 
 # ── Advertised LAN URLs ───────────────────────────────────────────────────
 
-def test_network_reports_disabled_by_default(client):
+def test_network_reports_disabled_by_default(client, monkeypatch):
+    monkeypatch.setattr(
+        dashboard_app,
+        "SETTINGS",
+        dataclasses.replace(SETTINGS, lan_access=False, dashboard_host="127.0.0.1"),
+    )
     data = client.get("/api/network").get_json()
     assert data["lan_access"] is False
     assert data["urls"] == []
