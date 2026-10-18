@@ -1208,15 +1208,47 @@ def api_files() -> Any:
                 listed_capture_sessions.add(session_id)
                 continue
             if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture" and relative_parts[2] == "final":
-                file_row["name"] = f"{capture_session.title}{path.suffix}"
-                file_row["project"] = capture_session.project_id
-                file_row["capture_session_id"] = capture_session.session_id
-                file_row["capture_status"] = _capture_user_status(capture_session)
-                file_row["status"] = file_row["capture_status"]
-                file_row["logical_read_only"] = True
-                if session_id not in listed_capture_sessions:
+                logical_videos = []
+                if capture_session.capture_mode == "playlist":
+                    try:
+                        logical_videos = [
+                            item for item in _get_playlist_service().list(session_id).get("logicalVideos", [])
+                            if item.get("status") == "CONFIRMED"
+                        ]
+                    except (ValueError, OSError, capture_errors.ValidationError):
+                        logger.exception("Could not list logical videos for %s", session_id)
+                for logical in logical_videos:
+                    logical_row = dict(file_row)
+                    logical_row["logical_video"] = {
+                        key: logical.get(key) for key in (
+                            "id", "title", "category", "sessionNumber", "recordedAt", "confidence",
+                            "startOffsetMs", "endOffsetMs", "processingChunkIds", "projectId",
+                        )
+                    }
+                    logical_row["logical_session_id"] = session_id
+                    logical_row["name"] = f"{logical.get('title') or capture_session.title}{path.suffix}"
+                    logical_row["project"] = capture_session.project_id
+                    logical_row["logical_read_only"] = True
+                    displayed_at = logical.get("recordedAt")
+                    if displayed_at:
+                        try:
+                            parsed = datetime.fromisoformat(str(displayed_at).replace(" UTC", "+00:00"))
+                            if parsed.tzinfo is None:
+                                parsed = parsed.replace(tzinfo=timezone.utc)
+                            logical_row["date_epoch"] = parsed.timestamp()
+                            logical_row["date"] = parsed.astimezone().isoformat(timespec="seconds")
+                        except ValueError:
+                            pass
+                    media_files.append(logical_row)
+                if not logical_videos and session_id not in listed_capture_sessions:
+                    file_row["name"] = f"{capture_session.title}{path.suffix}"
+                    file_row["project"] = capture_session.project_id
+                    file_row["capture_session_id"] = capture_session.session_id
+                    file_row["capture_status"] = _capture_user_status(capture_session)
+                    file_row["status"] = file_row["capture_status"]
+                    file_row["logical_read_only"] = True
                     media_files.append(file_row)
-                    listed_capture_sessions.add(session_id)
+                listed_capture_sessions.add(session_id)
                 continue
             media_files.append(file_row)
 

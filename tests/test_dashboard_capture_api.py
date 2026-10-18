@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import urllib.parse
+from dataclasses import replace
 
 import pytest
 
@@ -204,6 +205,24 @@ def test_confirmed_logical_video_is_listed_as_read_only_videos_entry(client):
     assert logical["media_id"]
     assert logical["project"] == "Zo Interviews"
     assert not any(row["name"].startswith("chunk-") for row in rows if row.get("capture_session_id") == session_id)
+
+    final_path = service.store.final_media_path(session_id, ".webm")
+    final_path.parent.mkdir(parents=True, exist_ok=True)
+    final_path.write_bytes(b"synthetic finalized video")
+    finalized = replace(
+        service.get_session(session_id),
+        status=capture_models.SessionStatus.FINALIZED,
+        final_media={"relativePath": "final/recording.webm", "durationSec": 4.0},
+    )
+    service.store.save_session(finalized)
+
+    finalized_rows = client.get("/api/files").get_json()["files"]
+    finalized_logical = [row for row in finalized_rows if row.get("logical_video")]
+    assert len(finalized_logical) == 1
+    assert finalized_logical[0]["logical_video"]["title"] == "AMS KAP Compliance Session 8"
+    assert finalized_logical[0]["logical_read_only"] is True
+    assert finalized_logical[0]["duration"] == "00:04"
+    assert not any(row["name"].startswith("chunk-") for row in finalized_rows)
 
 
 def test_video_listing_uses_session_rows_and_hides_marked_test_media(client):

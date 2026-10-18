@@ -8,7 +8,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from transcript_pipeline.processing_worker import ProcessingJobStore, ProcessingWorker, processing_limit
+from transcript_pipeline.processing_worker import (
+    PROCESS_STARTED_AT,
+    ProcessingJobStore,
+    ProcessingWorker,
+    processing_limit,
+)
 
 
 def test_processing_limit_uses_configured_local_timezone():
@@ -107,6 +112,24 @@ def test_restart_recovers_dead_worker_claim(tmp_path):
     assert recovered["recovered_at"]
 
 
+def test_restart_recovers_reused_pid_from_previous_process_instance(tmp_path):
+    store = ProcessingJobStore(tmp_path)
+    job = store.enqueue()
+    old_instance_claim = PROCESS_STARTED_AT - timedelta(seconds=1)
+    claimed = store.claim_next(1, now=old_instance_claim)
+    assert claimed and claimed["id"] == job["id"]
+
+    data = store._read()
+    data["jobs"][0].pop("worker_instance_id")
+    store._write(data)
+
+    recovered = store.claim_next(1, now=PROCESS_STARTED_AT + timedelta(seconds=1))
+    assert recovered and recovered["id"] == job["id"]
+    assert recovered["attempt"] == 2
+    assert recovered["worker_instance_id"]
+    assert recovered["recovered_at"]
+
+
 def test_container_worker_does_not_treat_host_pid_as_dead(tmp_path):
     store = ProcessingJobStore(tmp_path)
     job = store.enqueue()
@@ -125,42 +148,6 @@ def test_cancelled_jobs_are_not_claimed(tmp_path):
     assert store.cancel(job["id"])
     assert store.claim_next(3) is None
     assert store.list_jobs()[0]["status"] == "CANCELLED"
-
-
-def test_active_job_cancellation_is_observed(tmp_path):
-    store = ProcessingJobStore(tmp_path)
-    job = store.enqueue()
-    entered = threading.Event()
-
-    def execute(_mode, cancelled):
-        entered.set()
-        deadline = time.time() + 2
-        while time.time() < deadline and not cancelled():
-            time.sleep(0.01)
-        assert cancelled()
-
-    worker = ProcessingWorker(store, execute, executor_accepts_cancel=True)
-    assert worker.run_pending_once() == 1
-    assert entered.wait(1)
-    assert store.cancel(job["id"])
-    deadline = time.time() + 2
-    while time.time() < deadline and store.list_jobs()[0]["status"] != "CANCELLED":
-        time.sleep(0.01)
-    assert store.list_jobs()[0]["status"] == "CANCELLED"
-
-
-def test_daytime_worker_uses_one_slot(tmp_path):
-    store = ProcessingJobStore(tmp_path)
-    for _ in range(3):
-        store.enqueue()
-    started = threading.Event()
-    release = threading.Event()
-    worker = ProcessingWorker(store, lambda _: (started.set(), release.wait(1)), execution_limit=3)
-    now = datetime(2026, 10, 16, 10, tzinfo=ZoneInfo("America/Mexico_City"))
-    assert worker.run_pending_once(now) == 1
-    assert started.wait(1)
-    assert store.status(running=True, limit=1, next_scan=None, last_scan=None)["active_jobs"] == 1
-    release.set()
 
 
 def test_active_job_cancellation_is_observed(tmp_path):

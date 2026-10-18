@@ -11,6 +11,7 @@ TEMPLATE = (
     / "templates"
     / "dashboard.html"
 ).read_text(encoding="utf-8")
+VIDEOS_TABLE = re.search(r"el\.innerHTML = `(<table>.*?</table>)", TEMPLATE, re.S).group(1)
 
 
 def _header_label(markup: str) -> str:
@@ -19,7 +20,7 @@ def _header_label(markup: str) -> str:
 
 
 def test_date_and_duration_headers_are_sortable_before_actions():
-    headers = re.findall(r"<th\b([^>]*)>(.*?)</th>", TEMPLATE)
+    headers = re.findall(r"<th\b([^>]*)>(.*?)</th>", VIDEOS_TABLE)
     table_headers = [(_header_label(label), attrs) for attrs, label in headers]
     labels = [label for label, _ in table_headers]
     assert labels[:10] == [
@@ -64,13 +65,13 @@ def test_date_format_is_localized_and_invalid_values_use_dash():
 
 
 def test_rendered_row_contains_date_cell_and_status_stays_sixth():
-    row = re.search(r"return `<tr data-media-id=.*?>(.*?)</tr>`;", TEMPLATE, re.S)
+    row = re.search(r"return `<tr data-media-id=.*?>(.*?)</tr>`;", VIDEOS_TABLE, re.S)
     assert row
     markup = row.group(1)
     cells = re.findall(r"<td(?:\s|>)", markup)
     assert len(cells) == 10
     assert "${formatMediaDate(f.date)}" in markup
     assert "${escapeHtml(f.duration || (f.duration_pending ? 'Checking…' : '—'))}" in markup
-    headers = re.findall(r"<th\b[^>]*>(.*?)</th>", TEMPLATE)
+    headers = re.findall(r"<th\b[^>]*>(.*?)</th>", VIDEOS_TABLE)
     labels = [_header_label(label) for label in headers]
     assert labels[5] == "Status"

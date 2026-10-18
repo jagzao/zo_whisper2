@@ -9,6 +9,7 @@ is launched with deterministic fake devices and granted camera permission.
 from __future__ import annotations
 
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -45,6 +46,7 @@ def _snapshot_crop(page):
 
 
 def _drag_crop(page):
+    page.locator("#cropOverlay").scroll_into_view_if_needed()
     box = page.locator("#cropOverlay").bounding_box()
     assert box and box["width"] > 0 and box["height"] > 0, "crop overlay has no size"
     start = (box["x"] + box["width"] * 0.25, box["y"] + box["height"] * 0.25)
@@ -62,6 +64,7 @@ def _drag_crop_touch(page, cdp):
     the finger outside the overlay bounds while the captured pointer keeps
     updating the selection.
     """
+    page.locator("#cropOverlay").scroll_into_view_if_needed()
     box = page.locator("#cropOverlay").bounding_box()
     assert box and box["width"] > 0 and box["height"] > 0, "crop overlay has no size"
     start = (box["x"] + box["width"] * 0.2, box["y"] + box["height"] * 0.2)
@@ -96,6 +99,45 @@ def _valid_region(crop) -> bool:
     )
 
 
+def _crop_geometry_checks(page) -> list[str]:
+    failures = []
+    cases = (
+        ("fill-landscape", "fill", "640px", "360px"),
+        ("contain-landscape", "contain", "640px", "360px"),
+        ("cover-landscape", "cover", "640px", "360px"),
+        ("contain-portrait", "contain", "360px", "640px"),
+        ("cover-portrait", "cover", "360px", "640px"),
+    )
+    for name, fit, width, height in cases:
+        geometry = page.evaluate("""({fit, width, height}) => {
+            const video = document.getElementById('capturePreview');
+            video.style.setProperty('object-fit', fit, 'important');
+            video.style.width = width;
+            video.style.height = height;
+            const rect = cropContentRect();
+            const point = cropPoint({clientX: rect.left + rect.width / 2,
+                clientY: rect.top + rect.height / 2});
+            return {rect, point, fit: getComputedStyle(video).objectFit};
+        }""", {"fit": fit, "width": width, "height": height})
+        rect = geometry["rect"]
+        required = ("left", "top", "right", "bottom", "width", "height", "x", "y")
+        if not all(isinstance(rect.get(key), (int, float)) and math.isfinite(rect[key])
+                   for key in required):
+            failures.append(f"{name}: invalid rect {rect}")
+        if geometry["fit"] != fit or rect["width"] <= 0 or rect["height"] <= 0:
+            failures.append(f"{name}: fit/size mismatch {geometry['fit']} {rect}")
+        point = geometry["point"]
+        if not all(0 <= point.get(key, -1) <= 1 for key in ("x", "y")):
+            failures.append(f"{name}: invalid crop point {point}")
+    page.evaluate("""() => {
+        const video = document.getElementById('capturePreview');
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.setProperty('object-fit', 'fill', 'important');
+    }""")
+    return failures
+
+
 def main() -> int:
     try:
         from playwright.sync_api import sync_playwright
@@ -115,7 +157,9 @@ def main() -> int:
             ],
         )
         context = browser.new_context(
-            viewport={"width": 1280, "height": 900},
+            viewport={"width": 390, "height": 844},
+            device_scale_factor=3,
+            is_mobile=True,
             permissions=["camera"],
             has_touch=True,
         )
@@ -139,10 +183,22 @@ def main() -> int:
                 timeout=TIMEOUT_MS,
             )
 
+            geometry_failures = _crop_geometry_checks(page)
+            all_ok &= check("crop_fit_geometry", not geometry_failures, "; ".join(geometry_failures))
+
             # 1. Draw a crop region over the preview overlay.
             _drag_crop(page)
             crop = _snapshot_crop(page)
-            all_ok &= check("crop_region_selected", _valid_region(crop), json.dumps(crop))
+            diagnostics = page.evaluate("""() => {
+                const rect = el => { const r = el.getBoundingClientRect();
+                    return {left:r.left, top:r.top, width:r.width, height:r.height}; };
+                const snapshot = window.__captureSnapshot && window.__captureSnapshot();
+                return {crop: snapshot && snapshot.crop, content: cropContentRect(), overlay: rect(cropOverlayEl()),
+                    video: rect(document.getElementById('capturePreview')),
+                    box: rect(cropBoxEl()), boxStyle: cropBoxEl().getAttribute('style'),
+                    fit: getComputedStyle(document.getElementById('capturePreview')).objectFit};
+            }""")
+            all_ok &= check("crop_region_selected", _valid_region(crop), json.dumps(diagnostics))
 
             # 1b. One-finger touch drag with pointer capture past the overlay.
             _drag_crop_touch(page, cdp)

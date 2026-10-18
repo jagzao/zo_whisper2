@@ -161,7 +161,7 @@ def test_compose_e2e_service_uses_test_target_and_app_network():
     assert "network_mode: service:zmi" in compose
     assert "condition: service_healthy" in compose
     assert 'ZMI_BASE_URL: http://127.0.0.1:5000' in compose
-    assert "${ZMI_DATA_PATH:-./zmi-data}:/data" in compose
+    assert "${ZMI_DATA_PATH:-.}:/data" in compose
 
 
 def test_mock_data_generator_is_copied_into_playwright_image():

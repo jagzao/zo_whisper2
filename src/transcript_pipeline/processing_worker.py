@@ -5,15 +5,18 @@ from __future__ import annotations
 import json
 import os
 import socket
-import time
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 from zoneinfo import ZoneInfo
+
+PROCESS_STARTED_AT = datetime.now(timezone.utc)
+PROCESS_INSTANCE_ID = uuid.uuid4().hex
 
 
 def processing_limit(now: datetime, timezone_name: str = "America/Mexico_City") -> int:
@@ -108,6 +111,18 @@ class ProcessingJobStore:
                     same_process_namespace = worker_host == socket.gethostname() or (
                         worker_host is None and os.name == "nt"
                     )
+                    process_restarted = False
+                    if same_process_namespace and pid == os.getpid():
+                        try:
+                            owner_instance = job.get("worker_instance_id")
+                            claimed_at = datetime.fromisoformat(job.get("started_at", ""))
+                            process_restarted = (
+                                owner_instance != PROCESS_INSTANCE_ID
+                                if owner_instance is not None
+                                else claimed_at < PROCESS_STARTED_AT
+                            )
+                        except (TypeError, ValueError):
+                            process_restarted = True
                     if same_process_namespace and isinstance(pid, int) and pid != os.getpid():
                         try:
                             os.kill(pid, 0)
@@ -117,7 +132,7 @@ class ProcessingJobStore:
                         started = datetime.fromisoformat(job.get("heartbeat_at") or job["started_at"])
                     except (ValueError, KeyError):
                         started = now - self.stale_after - timedelta(seconds=1)
-                    if dead_worker or now - started > self.stale_after:
+                    if dead_worker or process_restarted or now - started > self.stale_after:
                         job.update(status="QUEUED", updated_at=now.isoformat(), recovered_at=now.isoformat())
                         job.pop("started_at", None)
                         job.pop("heartbeat_at", None)
@@ -130,6 +145,7 @@ class ProcessingJobStore:
                 return None
             candidate.update(status="ACTIVE", started_at=now.isoformat(), heartbeat_at=now.isoformat(),
                              updated_at=now.isoformat(), worker_pid=os.getpid(), worker_host=socket.gethostname(),
+                             worker_instance_id=PROCESS_INSTANCE_ID,
                              attempt=int(candidate.get("attempt", 0)) + 1)
             self._write(data)
             return dict(candidate)

@@ -1468,7 +1468,7 @@
                                     : `<button class="btn-docs tooltip" data-tip="Generate Documentation" onclick="generateDocumentation('${encodeURIComponent(f.media_id)}', this)" aria-label="Generate Documentation" title="Generate Documentation">
                                         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                                     </button>`}
-                                <button class="btn-delete tooltip" ${f.delete_allowed === false ? 'disabled' : ''} onclick="deleteFile('${encodeURIComponent(f.media_id)}', ${f.capture_session_id ? 'true' : 'false'})" aria-label="Delete" title="${escapeHtml(f.delete_allowed === false ? (f.delete_reason || 'Cannot delete now') : (f.capture_session_id ? 'Delete capture session' : 'Delete'))}"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                                ${f.logical_read_only ? '' : `<button class="btn-delete tooltip" ${f.delete_allowed === false ? 'disabled' : ''} onclick="deleteFile('${encodeURIComponent(f.media_id)}', ${f.capture_session_id ? 'true' : 'false'})" aria-label="Delete" title="${escapeHtml(f.delete_allowed === false ? (f.delete_reason || 'Cannot delete now') : (f.capture_session_id ? 'Delete capture session' : 'Delete'))}"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>`}
                             </div>
                         </td>
                     </tr>`;
@@ -2233,6 +2233,37 @@
         const uploadItems = [];
         let activeUploadCount = 0;
         let uploadBatchStarted = false;
+        let uploadWakeLock = null;
+        let uploadWakeLockRequest = null;
+
+        async function syncUploadWakeLock() {
+            const shouldStayAwake = activeUploadCount > 0 && document.visibilityState === 'visible';
+            if (!shouldStayAwake) {
+                if (uploadWakeLock) {
+                    const lock = uploadWakeLock;
+                    uploadWakeLock = null;
+                    await lock.release().catch(() => {});
+                }
+                return;
+            }
+            if (!navigator.wakeLock || uploadWakeLock || uploadWakeLockRequest) return;
+            try {
+                uploadWakeLockRequest = navigator.wakeLock.request('screen');
+                const lock = await uploadWakeLockRequest;
+                if (activeUploadCount === 0 || document.visibilityState !== 'visible') {
+                    await lock.release().catch(() => {});
+                    return;
+                }
+                uploadWakeLock = lock;
+                uploadWakeLock.addEventListener('release', () => { uploadWakeLock = null; });
+            } catch (_) {
+                uploadWakeLock = null;
+            } finally {
+                uploadWakeLockRequest = null;
+            }
+        }
+
+        document.addEventListener('visibilitychange', syncUploadWakeLock);
 
         async function handleFiles(files) {
             const selectedFiles = Array.from(files || []);
@@ -2305,10 +2336,12 @@
                 item.attempts += 1;
                 item.controller = new AbortController();
                 activeUploadCount += 1;
+                syncUploadWakeLock();
                 renderUploadQueue();
                 uploadOneFile(item).finally(() => {
                     item.controller = null;
                     activeUploadCount -= 1;
+                    syncUploadWakeLock();
                     renderUploadQueue();
                     const active = uploadItems.some(row => row.state === 'UPLOADING' || row.state === 'QUEUED');
                     if (!active) {
@@ -3485,8 +3518,12 @@
             const sourceWidth = video.videoWidth || bounds.width;
             const sourceHeight = video.videoHeight || bounds.height;
             const fit = getComputedStyle(video).objectFit;
+            const geometry = {
+                left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom,
+                width: bounds.width, height: bounds.height, x: bounds.x, y: bounds.y,
+            };
             if (!sourceWidth || !sourceHeight || fit === 'fill') {
-                return { ...bounds, overlayLeft: overlayRect.left, overlayTop: overlayRect.top,
+                return { ...geometry, overlayLeft: overlayRect.left, overlayTop: overlayRect.top,
                     sourceX: 0, sourceY: 0, sourceWidth: 1, sourceHeight: 1 };
             }
             const scale = fit === 'cover'
@@ -3497,13 +3534,15 @@
             if (fit === 'cover') {
                 const visibleWidth = bounds.width / displayWidth;
                 const visibleHeight = bounds.height / displayHeight;
-                return { left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height,
+                return { ...geometry,
                     overlayLeft: overlayRect.left, overlayTop: overlayRect.top,
                     sourceX: (1 - visibleWidth) / 2, sourceY: (1 - visibleHeight) / 2,
                     sourceWidth: visibleWidth, sourceHeight: visibleHeight };
             }
-            return { left: bounds.left + (bounds.width - displayWidth) / 2,
-                top: bounds.top + (bounds.height - displayHeight) / 2,
+            const left = bounds.left + (bounds.width - displayWidth) / 2;
+            const top = bounds.top + (bounds.height - displayHeight) / 2;
+            return { left, top, right: left + displayWidth, bottom: top + displayHeight,
+                x: left, y: top,
                 width: displayWidth, height: displayHeight,
                 overlayLeft: overlayRect.left, overlayTop: overlayRect.top,
                 sourceX: 0, sourceY: 0, sourceWidth: 1, sourceHeight: 1 };
