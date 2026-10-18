@@ -395,6 +395,8 @@
         .action-btns .btn-edit:hover { background: var(--ok); color: #050711; border-color: var(--ok); }
         .action-btns .btn-delete { background: var(--panel-2); color: var(--danger); border: 1px solid var(--border); }
         .action-btns .btn-delete:hover { background: var(--danger); color: white; border-color: var(--danger); }
+        .action-btns .btn-stop { background: var(--panel-2); color: var(--warn); border: 1px solid var(--border); }
+        .action-btns .btn-stop:hover { background: var(--warn); color: #050711; border-color: var(--warn); }
         .action-btns .btn-docs { background: var(--panel-2); color: var(--accent-2); border: 1px solid var(--border); }
         .action-btns .btn-docs:hover { background: var(--accent-2); color: white; border-color: var(--accent-2); }
         .action-btns button:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
@@ -1433,12 +1435,15 @@
                     const folder = relParts.length > 1 ? relParts.slice(0, -1).join('/') : 'root';
                     const shownState = f.user_state || f.status;
                     const statusClass = ['FAILED', 'CANCELLED'].includes(shownState) || shownState === 'failed_routed'
-                        ? 'error' : (['READY', 'UPLOADING', 'QUEUED', 'PROCESSING_MEDIA', 'GENERATING_DOCUMENTATION'].includes(shownState) || shownState === 'pending' ? 'pending' : 'processed');
+                        ? 'error' : (['READY', 'UPLOADING', 'QUEUED', 'PROCESSING', 'PROCESSING_MEDIA', 'CANCEL_REQUESTED', 'GENERATING_DOCUMENTATION'].includes(shownState) || shownState === 'pending' ? 'pending' : 'processed');
                     const tx = f.transcription;
                     const doc = f.documentation;
                     const lang = f.language || 'auto';
                     const ext = f.name.split('.').pop().toLowerCase();
                     const fileType = ['mp4','avi','mkv','mov','wmv','flv','webm','m4v'].includes(ext) ? 'Video' : 'Audio';
+                    const captureState = (f.capture_status || '').toUpperCase();
+                    const captureCancelPending = captureState === 'CANCEL_REQUESTED';
+                    const canCancelCapture = Boolean(f.capture_session_id) && ['QUEUED', 'PROCESSING', 'CANCEL_REQUESTED'].includes(captureState);
                     const projSource = f.project_source || 'none';
                     const projBadge = projSource === 'manual'
                         ? '<span class="proj-badge manual" title="Manual assignment">✎</span>'
@@ -1468,7 +1473,8 @@
                                     : `<button class="btn-docs tooltip" data-tip="Generate Documentation" onclick="generateDocumentation('${encodeURIComponent(f.media_id)}', this)" aria-label="Generate Documentation" title="Generate Documentation">
                                         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                                     </button>`}
-                                ${f.logical_read_only ? '' : `<button class="btn-delete tooltip" ${f.delete_allowed === false ? 'disabled' : ''} onclick="deleteFile('${encodeURIComponent(f.media_id)}', ${f.capture_session_id ? 'true' : 'false'})" aria-label="Delete" title="${escapeHtml(f.delete_allowed === false ? (f.delete_reason || 'Cannot delete now') : (f.capture_session_id ? 'Delete capture session' : 'Delete'))}"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>`}
+                                ${canCancelCapture ? `<button class="btn-stop tooltip" ${captureCancelPending ? 'disabled' : ''} onclick="cancelVideoCapture('${f.capture_session_id}', this)" aria-label="${captureCancelPending ? 'Canceling processing' : 'Stop processing'}" title="${captureCancelPending ? 'Cancellation requested; waiting for worker' : 'Stop processing for this capture'}"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></button>` : ''}
+                                <button class="btn-delete tooltip" ${f.delete_allowed === false ? 'disabled' : ''} onclick="deleteFile('${encodeURIComponent(f.media_id)}', ${f.capture_session_id ? 'true' : 'false'}, ${Number(f.logical_video_count || 0)})" aria-label="Delete" title="${escapeHtml(f.delete_allowed === false ? (f.delete_reason || 'Cannot delete now') : (f.capture_session_id ? 'Delete capture session' : 'Delete'))}"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
                             </div>
                         </td>
                     </tr>`;
@@ -2168,10 +2174,10 @@
             }
         }
 
-        async function deleteFile(idEncoded, captureSession = false) {
+        async function deleteFile(idEncoded, captureSession = false, logicalVideoCount = 0) {
             const id = decodeURIComponent(idEncoded);
             const message = captureSession
-                ? 'Delete this capture session, all its logical videos, and internal media?'
+                ? `Delete this capture session${logicalVideoCount ? ` and all ${logicalVideoCount} playlist video(s)` : ''}, including its internal media?`
                 : 'Delete file and its transcription?';
             if (!confirm(message)) return;
             const suffix = captureSession ? '&confirm=true' : '';
@@ -2191,6 +2197,30 @@
                 loadMetrics();
             } else {
                 showToast(res.error || 'Error deleting');
+            }
+        }
+
+        async function cancelVideoCapture(sessionId, button) {
+            if (!confirm('Stop processing for this capture? Its fragments will remain until the session is explicitly deleted.')) return;
+            if (button) button.disabled = true;
+            try {
+                const result = await captureFetch(`/api/capture/sessions/${encodeURIComponent(sessionId)}/cancel-processing`);
+                if (!result.ok) throw new Error(result.error || 'Could not stop processing');
+                const states = (result.session.chunks || []).map(chunk => chunk.state);
+                showToast(states.includes('CANCEL_REQUESTED') ? 'Cancellation requested; waiting for processing to stop' : 'Processing stopped');
+                await loadFiles();
+                if (states.includes('CANCEL_REQUESTED')) {
+                    let attempts = 0;
+                    const refresh = setInterval(async () => {
+                        attempts += 1;
+                        try { await loadFiles(); } catch {}
+                        const row = (window._allFiles || []).find(file => file.capture_session_id === sessionId);
+                        if (!row || row.capture_status !== 'CANCEL_REQUESTED' || attempts >= 60) clearInterval(refresh);
+                    }, 2000);
+                }
+            } catch (error) {
+                if (button) button.disabled = false;
+                showToast(error.message || 'Could not stop processing');
             }
         }
 

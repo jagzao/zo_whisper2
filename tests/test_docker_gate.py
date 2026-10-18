@@ -81,6 +81,16 @@ def test_named_gates_registered_with_bounded_timeouts():
     assert all(t > 0 for t in docker_gate.TIMEOUTS.values())
 
 
+def test_docker_builds_accept_optional_trusted_ca_without_disabling_tls():
+    compose = (ROOT / "compose.yml").read_text(encoding="utf-8")
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert compose.count("- docker-build-ca") == 2
+    assert "file: ${ZMI_DOCKER_CA_CERT:-docker/optional-ca.pem}" in compose
+    assert dockerfile.count("--mount=type=secret,id=docker-build-ca") == 2
+    assert dockerfile.count("update-ca-certificates") == 2
+    assert "trusted-host" not in dockerfile
+
+
 def test_config_gate_maps_to_compose_config_only(calls):
     rc = docker_gate.run_gate("docker-config", project=PROJECT)
 

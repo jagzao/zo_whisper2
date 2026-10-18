@@ -51,7 +51,12 @@ WORKDIR /app
 # Dependency metadata first so the locked dependency install only re-runs
 # when the pins change. README/LICENSE are required wheel-build inputs/metadata.
 COPY pyproject.toml README.md LICENSE requirements.runtime.lock.txt ./
-RUN pip install -r requirements.runtime.lock.txt
+RUN --mount=type=secret,id=docker-build-ca,target=/run/secrets/docker-build-ca.pem \
+    if grep -q 'BEGIN CERTIFICATE' /run/secrets/docker-build-ca.pem; then \
+        cp /run/secrets/docker-build-ca.pem /usr/local/share/ca-certificates/docker-build-ca.crt \
+        && update-ca-certificates; \
+    fi \
+    && pip install -r requirements.runtime.lock.txt
 
 # Application source/resources, then the project itself without deps:
 # every third-party pin already came from the lock above.
@@ -86,7 +91,12 @@ COPY requirements.lock.txt ./
 COPY scripts ./scripts
 COPY tests ./tests
 COPY docs/assets/generate_mock_data.py docs/assets/generate_mock_data.py
-RUN pip install -r requirements.lock.txt
+RUN --mount=type=secret,id=docker-build-ca,target=/run/secrets/docker-build-ca.pem \
+    if grep -q 'BEGIN CERTIFICATE' /run/secrets/docker-build-ca.pem; then \
+        cp /run/secrets/docker-build-ca.pem /usr/local/share/ca-certificates/docker-build-ca.crt \
+        && update-ca-certificates; \
+    fi \
+    && pip install -r requirements.lock.txt
 
 # Chromium for Playwright E2E. Browsers live in a shared path so any user
 # can run them; --with-deps installs the browser's own OS libraries.

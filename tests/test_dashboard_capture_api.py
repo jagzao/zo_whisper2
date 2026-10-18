@@ -225,6 +225,43 @@ def test_confirmed_logical_video_is_listed_as_read_only_videos_entry(client):
     assert not any(row["name"].startswith("chunk-") for row in finalized_rows)
 
 
+def test_playlist_row_can_be_stopped_then_delete_enabled_for_single_video(client):
+    session = _create_session(client, "Delete after stop", capture_mode="playlist").json["session"]
+    session_id = session["sessionId"]
+    _start_chunk(client, session_id)
+    _finalize_chunk(client, session_id, 0, b"synthetic playlist chunk")
+    playlist = dashboard_app._get_playlist_service()
+    title = "AMS KAP\nCompliance\nSession 8\n2026-08-05 12:29 UTC"
+    playlist.observe(session_id, title, 0.98, 1000, 1)
+    playlist.observe(session_id, title, 0.98, 5000, 1)
+    _finalize_session(client, session_id)
+
+    row = next(row for row in client.get("/api/files").json["files"] if row.get("capture_session_id") == session_id)
+    assert row["logical_read_only"] is True
+    assert row["logical_video_count"] == 1
+    assert row["capture_status"] == "QUEUED"
+    assert row["delete_allowed"] is False
+    template = client.get("/").get_data(as_text=True)
+    assert "cancelVideoCapture" in template
+    assert "f.delete_allowed === false ? 'disabled' : ''" in template
+    assert "Delete this capture session" in template
+
+    stopped = client.post(
+        f"/api/capture/sessions/{session_id}/cancel-processing", headers=AUTH_HEADERS,
+    )
+    assert stopped.status_code == 200
+    stopped_row = next(row for row in client.get("/api/files").json["files"] if row.get("capture_session_id") == session_id)
+    assert stopped_row["capture_status"] == "CANCELLED"
+    assert stopped_row["delete_allowed"] is True
+
+    deleted = client.delete(
+        f"/api/file?id={urllib.parse.quote(stopped_row['media_id'], safe='')}&confirm=true",
+        headers=AUTH_HEADERS,
+    )
+    assert deleted.status_code == 200
+    assert deleted.json["capture_session_deleted"] is True
+
+
 def test_video_listing_uses_session_rows_and_hides_marked_test_media(client):
     session = _create_session(client, "User recording", project_id="Zo Interviews").get_json()["session"]
     _start_chunk(client, session["sessionId"])
@@ -240,6 +277,7 @@ def test_video_listing_uses_session_rows_and_hides_marked_test_media(client):
     assert len(user_rows) == 1
     assert user_rows[0]["name"] == "User recording.webm"
     assert user_rows[0]["status"] == "QUEUED"
+    assert user_rows[0]["capture_session_fallback"] is True
     assert not any(row.get("capture_session_id") == test_session["sessionId"] for row in rows)
 
 

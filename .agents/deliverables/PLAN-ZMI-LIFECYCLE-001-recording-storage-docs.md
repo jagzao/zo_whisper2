@@ -83,3 +83,19 @@
 ## Rollback
 
 Keep the last known-good production image/SHA and configuration. If health, parity, or integrity checks fail, restore the previous image/config without touching shared data. Do not run cleanup or backfill against real originals during rollback.
+
+
+## Delivery Kanban - release recovery (2026-10-18)
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Stop and safe delete from Videos table | 🟨 TESTING | Cooperative capture stop, pending state, and confirmed session delete; 51 dashboard/capture tests pass | Mobile browser UAT after deploy | Codex |
+| Crop geometry and mobile touch | 🟨 TESTING | Isolated Playwright PASS for fill/contain/cover, portrait/landscape, touch capture, Clear Crop, roundtrip | Mobile capture and served UAT after deployment | Codex |
+| Job `f50a16874aeb40e38db4ba6e13382f89` | 🟩 COMPLETE | Persisted status COMPLETED, attempt 4 | Preserve job history | Codex |
+| Active job `f4afbebcadc245efae26bcd57ed679bd` | 🟦 IN PROGRESS | ACTIVE in persisted queue; owner PID 25024 alive; compressor child 48644 and FFmpeg PID 14084 are running; heartbeat timestamp is claim time | Wait for worker completion; do not restart | Worker |
+| LAN/PyPI TLS trust | 🟨 TESTING | Windows-verified LAN HTTPS 200; PyPI HTTPS 200; disposable-container CA probe and 56 Docker gate tests passed previously | Actual Docker build gate after RAM exceeds 6 GiB | Codex |
+| Shared desktop/LAN data | 🟨 TESTING | Docker bind maps `C:\Dev\Zo\whisper` to `/data`; both serve stale SHA `32b83feea8831c491b92f046b2c44a250ff0733c`; LAN lists 55; localhost `/api/files` timed out | Reconcile status/API latency after safe restart | Codex |
+| RAM and heavy release gates | 🟥 BLOCKED | 2.35 GiB free; two active FFmpeg encodes and unrelated Docker build consume memory | Preserve active work; recheck RAM | Codex |
+| Regression, mobile capture, Host E2E, heavy, Docker E2E | 🟨 TESTING | Crop Playwright and 51 assembly/fragment/API/worker tests passed previously; 51 dashboard/capture tests pass with new stop/delete; 56 Docker gate tests pass | Mobile capture and Host E2E after safe restart; heavy gates above threshold | Codex |
+| Desktop/LAN rebuild and UAT | PENDING | Both APIs serve stale `32b83feea8831c491b92f046b2c44a250ff0733c`; current source changes uncommitted; job `f4afbebcadc245efae26bcd57ed679bd` active | Wait for active processing, then run gates and deploy current HEAD | Codex |
+| Repeated AMS KAP playlist rows | 🟩 COMPLETE | Three distinct synthetic Playwright sessions; 1, 1, and 3 ACKed fragments; same fixture title; not optimized media | Preserve records; delete only through new stop/confirm UI after served | Codex |

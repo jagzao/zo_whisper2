@@ -1180,6 +1180,7 @@ def api_files() -> Any:
                         )
                     }
                     logical_row["logical_session_id"] = session_id
+                    logical_row["logical_video_count"] = len(all_logical_rows)
                     logical_row["capture_status"] = _capture_user_status(session)
                     logical_row["status"] = logical_row["capture_status"]
                     logical_row["name"] = f"{logical.get('title') or session.title}{path.suffix}"
@@ -1204,6 +1205,7 @@ def api_files() -> Any:
                     file_row["capture_status"] = _capture_user_status(session)
                     file_row["status"] = file_row["capture_status"]
                     file_row["logical_read_only"] = True
+                    file_row["capture_session_fallback"] = True
                     media_files.append(file_row)
                 listed_capture_sessions.add(session_id)
                 continue
@@ -1226,6 +1228,7 @@ def api_files() -> Any:
                         )
                     }
                     logical_row["logical_session_id"] = session_id
+                    logical_row["logical_video_count"] = len(logical_videos)
                     logical_row["name"] = f"{logical.get('title') or capture_session.title}{path.suffix}"
                     logical_row["project"] = capture_session.project_id
                     logical_row["logical_read_only"] = True
@@ -1246,7 +1249,9 @@ def api_files() -> Any:
                     file_row["capture_session_id"] = capture_session.session_id
                     file_row["capture_status"] = _capture_user_status(capture_session)
                     file_row["status"] = file_row["capture_status"]
-                    file_row["logical_read_only"] = True
+                    if capture_session.capture_mode == "playlist":
+                        file_row["logical_read_only"] = True
+                        file_row["capture_session_fallback"] = True
                     media_files.append(file_row)
                 listed_capture_sessions.add(session_id)
                 continue

@@ -30,6 +30,8 @@ services:
     build:
       context: .
       target: runtime
+      secrets:
+        - docker-build-ca
       args:
         WHISPER_BUILD_REVISION: ${WHISPER_BUILD_REVISION:-unknown}
     restart: unless-stopped
@@ -71,6 +73,8 @@ services:
     build:
       context: .
       target: test
+      secrets:
+        - docker-build-ca
     depends_on:
       zmi:
         condition: service_healthy
@@ -88,3 +92,7 @@ services:
 
 volumes:
   zmi-model-cache:
+
+secrets:
+  docker-build-ca:
+    file: ${ZMI_DOCKER_CA_CERT:-docker/optional-ca.pem}
