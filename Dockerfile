@@ -71,7 +71,8 @@ RUN chmod 0755 /usr/local/bin/entrypoint.sh
 # Writable data volume root (bind/named volume target in compose) and the
 # model-cache root; huggingface defaults resolve under XDG_CACHE_HOME.
 ENV ZMI_DATA_ROOT=/data \
-    XDG_CACHE_HOME=/cache
+    XDG_CACHE_HOME=/cache \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 USER zmi
 EXPOSE 5000
