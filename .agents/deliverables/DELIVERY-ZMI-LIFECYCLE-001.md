@@ -121,16 +121,16 @@ Completion is based on passing tests, Host Playwright evidence, and served deskt
 
 | Feature | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
-| Video Editor/mobile commit integration | 🟩 | `f09b5d9003975f4b1e06e54e08b7f1a20927e98e` is an ancestor of HEAD | Preserve integration | Agent |
-| Mobile HTTPS onboarding integration | 🟩 | Canonical commit `7a183368d500da0039f567722c50490372e42c38` is HEAD and ancestor; supplied hash had one extra zero | Preserve integration | Agent |
-| Manual review dependency | 🟩 | Canonical plan now defines repeatable automated release acceptance; no human approval handoff | Use objective gates | Agent |
-| Active jobs and RAM recovery | 🟥 | No active Whisper jobs. Terminated idle >1-hour Zavi Playwright test runner and headless browser tree; RAM briefly reached 5.85 GiB, later 5.01 GiB. No other safe stale test process identified | Recheck RAM; do not stop user apps or active services | Agent |
-| Focused regression | 🟩 | 167 passed, 1 skipped after fixes; `artifacts/gates/latest.json` and `artifacts/gates/logs/targeted.log` | Retain evidence | Agent |
-| Feature-scoped static checks | 🟩 | Ruff passes on changed Python files; Pyright passes on `black_video.py`, `lan_access.py`, and capture models; compile/import checks pass | Retain evidence | Agent |
-| Repository-wide quality | 🟥 | Full `quality` reports legacy Ruff/Pyright issues outside changed feature code; feature-scoped checks pass | Track baseline separately; do not report global quality as PASS | Agent |
-| Playwright and Host E2E | 🟥 | Canonical runner classifies these as heavy; RAM is below strict >6 GiB gate | Run feature E2E when RAM gate allows | Agent |
-| Full release gate | 🟥 | `scripts/ram_gate.py`: 5.01 GiB, threshold >6.0 GiB. The threshold is a conservative headroom guard for combined tests, Chromium/FFmpeg and Docker build; observed stale E2E tree used about 1.2 GiB across runner/server and Chromium processes | Rerun full ordered gates when RAM exceeds 6 GiB | Agent |
-| Desktop/LAN deploy and served UI | TODO | Currently served build is `ed33e4dcda250a62e370fcbba7822fe62bf8152e`; candidate HEAD is `7a183368d500da0039f567722c50490372e42c38 | Deploy only after automated gates pass; verify SHA/data/UI parity | Agent |
+| Video Editor/mobile commit integration | 🟩 COMPLETE | `f09b5d9003975f4b1e06e54e08b7f1a20927e98e` is an ancestor of HEAD | Preserve integration | Agent |
+| Mobile HTTPS onboarding integration | 🟩 COMPLETE | Canonical commit `7a183368d500da0039f567722c50490372e42c38` is HEAD and ancestor; supplied hash had one extra zero | Preserve integration | Agent |
+| Manual review dependency | 🟩 COMPLETE | Canonical plan now defines repeatable automated release acceptance; no human approval handoff | Use objective gates | Agent |
+| Active jobs and RAM recovery | 🟥 BLOCKED | No active Whisper jobs. Terminated idle >1-hour Zavi Playwright test runner and headless browser tree; RAM briefly reached 5.85 GiB, later 4.82 GiB. No other safe stale test process identified | Recheck RAM; do not stop user apps or active services | Agent |
+| Focused regression | 🟩 COMPLETE | 167 passed, 1 skipped after fixes; `artifacts/gates/latest.json` and `artifacts/gates/logs/targeted.log` | Retain evidence | Agent |
+| Feature-scoped static checks | 🟩 COMPLETE | Ruff passes on changed Python files; Pyright passes on `black_video.py`, `lan_access.py`, and capture models; compile/import checks pass | Retain evidence | Agent |
+| Repository-wide quality | 🟥 BLOCKED | Full `quality` reports legacy Ruff/Pyright issues outside changed feature code; feature-scoped checks pass | Track baseline separately; do not report global quality as PASS | Agent |
+| Playwright and Host E2E | 🟥 BLOCKED | Canonical runner classifies these as heavy; RAM is below strict >6 GiB gate | Run feature E2E when RAM gate allows | Agent |
+| Full release gate | 🟥 BLOCKED | `scripts/ram_gate.py`: 4.82 GiB, threshold >6.0 GiB. Threshold is a conservative headroom guard for combined tests, Chromium/FFmpeg and Docker build; observed stale E2E tree used about 1.2 GiB across runner/server and Chromium processes | Rerun full ordered gates when RAM exceeds 6 GiB | Agent |
+| Desktop/LAN deploy and served UI | TODO | Currently served build is `ed33e4dcda250a62e370fcbba7822fe62bf8152e`; candidate HEAD is `7a183368d500da0039f567722c50490372e42c38` | Deploy only after automated gates pass; verify SHA/data/UI parity | Agent |
 | `/setup`, QR and public CA download | TODO | Current desktop has no QR; LAN `/setup` HTTP connection refused and HTTPS returns 404 | Verify after deploy; confirm public certificate only | Agent |
 | Video Editor on served UI | TODO | Current deployed build predates editor/onboarding HEAD | Verify HH:MM:SS, crop handles/zoom, Apply Changes and landscape/quality controls | Agent |
 | Phone UAT | TODO | No physical Galaxy test performed | Owner validates after deployment | Owner |
