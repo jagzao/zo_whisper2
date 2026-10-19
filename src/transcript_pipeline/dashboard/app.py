@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import io
 import json
 import logging
 import math
@@ -34,7 +35,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlparse
 
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, jsonify, make_response, redirect, render_template, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 
 from transcript_pipeline import lan_access
@@ -138,7 +139,7 @@ _MUTATING_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 _LAN_HOST_ALLOWLIST: set[str] = set()
 if SETTINGS.lan_access:
     _LAN_HOST_ALLOWLIST.update(h.lower() for h in SETTINGS.lan_hosts)
-    _LAN_HOST_ALLOWLIST.update(lan_access.local_ipv4_addresses())
+    _LAN_HOST_ALLOWLIST.update(lan_access.advertised_lan_ipv4_addresses(SETTINGS.lan_hosts))
 # Shared across application workers and restarts, never logged — the frontend
 # reads it from the page it was served and echoes it on mutations. Host,
 # Origin and private-client checks remain independent authorization guards.
@@ -294,6 +295,15 @@ def _enforce_local_only() -> Any:
     if host not in allowed:
         logger.warning("[SECURITY] Rejected request with non-local Host: %s", request.host)
         return jsonify({"ok": False, "error": "This dashboard host is not authorized."}), 403
+
+    if SETTINGS.lan_access and not request.is_secure and host not in _LOCAL_HOSTNAMES:
+        if request.method not in {"GET", "HEAD"} or request.path not in {
+            "/setup",
+            "/setup/",
+            "/setup/certificate",
+            "/setup/qr.svg",
+        }:
+            return redirect(f"https://{host}:5001/", code=302)
 
     if request.method in _MUTATING_METHODS:
         origin = request.headers.get("Origin")
@@ -975,12 +985,79 @@ def _frame_media_url(frames_parent: Path, relative_to_frames_parent: str) -> str
 # ── Endpoints ────────────────────────────────────────────────────────────
 @app.route("/")
 def index() -> str:
+    addresses = lan_access.advertised_lan_ipv4_addresses(SETTINGS.lan_hosts) if SETTINGS.lan_access else []
+    setup_url = f"http://{addresses[0]}:5000/setup" if addresses else ""
     return render_template(
         "dashboard.html",
         dashboard_token=_DASHBOARD_TOKEN,
         build_revision=BUILD_REVISION,
         upload_concurrency=SETTINGS.upload_concurrency,
+        mobile_setup_url=setup_url,
     )
+
+
+@app.route("/setup")
+@app.route("/setup/")
+def mobile_setup() -> Any:
+    host = _hostname_only(request.host or "")
+    if not SETTINGS.lan_access or not lan_access.is_private_ipv4(host) or host not in _LAN_HOST_ALLOWLIST:
+        return jsonify({"ok": False, "error": "Mobile setup is available only at this computer's LAN IP."}), 404
+    secure_url = f"https://{host}:5001/"
+    if request.cookies.get("whisper_secure_setup") == "1":
+        return redirect(secure_url, code=302)
+    response = make_response(render_template("mobile_setup.html", secure_url=secure_url))
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
+
+
+@app.route("/setup/certificate")
+def mobile_setup_certificate() -> Any:
+    if not SETTINGS.lan_access:
+        return jsonify({"ok": False, "error": "LAN access is disabled."}), 404
+    ca_path = lan_access.default_runtime_dir() / lan_access.CA_FILE_NAME
+    if not ca_path.is_file():
+        return jsonify({"ok": False, "error": "Whisper LAN root certificate is not configured."}), 503
+    from cryptography import x509
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.x509.oid import NameOID
+
+    try:
+        root = x509.load_pem_x509_certificate(ca_path.read_bytes())
+    except ValueError:
+        return jsonify({"ok": False, "error": "Whisper LAN root certificate is invalid."}), 503
+    common_names = root.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+    try:
+        is_ca = root.extensions.get_extension_for_class(x509.BasicConstraints).value.ca
+    except x509.ExtensionNotFound:
+        is_ca = False
+    if not is_ca or not common_names or common_names[0].value != "Whisper LAN Local CA":
+        return jsonify({"ok": False, "error": "Whisper LAN root certificate is invalid."}), 503
+    public_root = root.public_bytes(serialization.Encoding.DER)
+    return send_file(
+        io.BytesIO(public_root),
+        mimetype="application/pkix-cert",
+        as_attachment=True,
+        download_name="Whisper-LAN-Local-CA.cer",
+        max_age=0,
+    )
+
+
+@app.route("/setup/qr.svg")
+def mobile_setup_qr() -> Any:
+    addresses = lan_access.advertised_lan_ipv4_addresses(SETTINGS.lan_hosts) if SETTINGS.lan_access else []
+    if not addresses:
+        return jsonify({"ok": False, "error": "No LAN address is available."}), 404
+    import qrcode
+    from qrcode.image.svg import SvgPathImage
+
+    qr = qrcode.QRCode(box_size=6, border=4)
+    qr.add_data(f"http://{addresses[0]}:5000/setup")
+    qr.make(fit=True)
+    image = qr.make_image(image_factory=SvgPathImage)
+    response = make_response(image.to_string())
+    response.headers["Content-Type"] = "image/svg+xml"
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
 
 
 @app.after_request
@@ -1051,7 +1128,8 @@ def api_network() -> Any:
     advertised: list[str] = []
     if lan_access_enabled:
         seen: set[str] = set()
-        for host in [*SETTINGS.lan_hosts, *lan_access.local_ipv4_addresses()]:
+        hosts = [*SETTINGS.lan_hosts, *lan_access.advertised_lan_ipv4_addresses(SETTINGS.lan_hosts)]
+        for host in hosts:
             normalized = lan_access.normalize_host(host)
             if not normalized or normalized in seen or normalized in {"localhost", "127.0.0.1"}:
                 continue

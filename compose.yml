@@ -36,13 +36,13 @@ services:
         WHISPER_BUILD_REVISION: ${WHISPER_BUILD_REVISION:-unknown}
     restart: unless-stopped
     ports:
-      # Host loopback only — the dashboard stays single-machine by design.
-      - "127.0.0.1:${ZMI_PORT:-5000}:5000"
+      # LAN publishing is opt-in; HTTP requests from LAN are bootstrap-only.
+      - "${ZMI_BIND_ADDRESS:-127.0.0.1}:${ZMI_PORT:-5000}:5000"
     environment:
       # Feature spec FEATURE-ZMI-DKR-002 required defaults.
       ZMI_CONTAINER_MODE: "true"       # permits the internal 0.0.0.0 bind
-      ZMI_LAN_ACCESS: "false"         # LAN HTTPS runs in the separate host process
-      ZMI_LAN_HOSTS: ""
+      ZMI_LAN_ACCESS: "${ZMI_LAN_ACCESS:-false}"
+      ZMI_LAN_HOSTS: "${ZMI_LAN_HOSTS:-}"
       ZMI_DATA_ROOT: /data             # all mutable state under the bind mount
       ZMI_CONFIG_ENV: /data/scan_config.env  # optional; absent file is a no-op
       DASHBOARD_HOST: 0.0.0.0          # inside the container only, not on host

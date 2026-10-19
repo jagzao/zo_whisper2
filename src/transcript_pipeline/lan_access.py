@@ -92,6 +92,28 @@ def local_ipv4_addresses() -> list[str]:
     return sorted(addresses)
 
 
+def advertised_lan_ipv4_addresses(configured: Iterable[str] = ()) -> list[str]:
+    """Prefer configured/certificate LAN IPs, then this process's LAN interfaces.
+
+    A dashboard running in Docker sees bridge addresses instead of host Wi-Fi
+    addresses; the shared host certificate SAN carries the correct IP.
+    """
+    candidates = [*configured]
+    server_cert = default_runtime_dir() / CERT_FILE_NAME
+    if server_cert.is_file():
+        try:
+            candidates.extend(certificate_sans(server_cert))
+        except Exception:
+            pass
+    candidates.extend(local_ipv4_addresses())
+    addresses: list[str] = []
+    for value in candidates:
+        normalized = normalize_host(value)
+        if normalized and is_private_ipv4(normalized) and normalized not in addresses:
+            addresses.append(normalized)
+    return addresses
+
+
 def normalize_host(value: str) -> str | None:
     """Normalizes a Host/SAN entry: strips brackets and trailing dots, lowercases.
 

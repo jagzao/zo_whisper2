@@ -44,6 +44,7 @@ colorama==0.4.6
     # via
     #   click
     #   pytest
+    #   qrcode
     #   tqdm
 coloredlogs==15.0.1
     # via onnxruntime
@@ -243,6 +244,8 @@ pyyaml==6.0.3
     # via
     #   ctranslate2
     #   huggingface-hub
+qrcode==8.2
+    # via transcript-pipeline (pyproject.toml)
 reportlab==5.0.1
     # via transcript-pipeline (pyproject.toml)
 requests==2.34.2

@@ -61,7 +61,23 @@ Set both or neither. Setting only one is a configuration error.
 
 ## 4. Start and open on the phone
 
-Start the dashboard as usual. It binds `0.0.0.0` and serves HTTPS.
+Start the HTTPS dashboard as usual. The local Docker dashboard stays loopback-only
+unless LAN setup is explicitly enabled. To publish only the bootstrap flow on
+HTTP, add these values to Compose's `.env` file beside `compose.yml`:
+
+```
+ZMI_BIND_ADDRESS=0.0.0.0
+ZMI_LAN_ACCESS=true
+```
+
+Rebuild/restart Compose. The HTTP listener serves `/setup` and the public CA
+download; other LAN HTTP paths redirect to HTTPS. The application still checks
+the private client address and the request host against configured/detected LAN
+addresses and the HTTPS leaf SAN. The default bind remains loopback-only.
+
+Open `http://<LAN-IP>:5000/setup` on the phone. It downloads only the public
+`Whisper-LAN-Local-CA.cer`; Android asks the user to confirm installation. Then
+tap **Open Whisper securely** to continue at `https://<LAN-IP>:5001/`.
 
 Open the phone URL printed by step 2, for example:
 
@@ -88,13 +104,13 @@ from step 2 before trusting it.
 
 ### Galaxy / current One UI
 
-Transfer only the public root certificate, `Whisper-LAN-Local-CA.cer` (DER),
-to the phone. The private key `dashboard-lan-key.pem` is never exported.
-On the Galaxy, open **Settings -> Security and privacy -> More security
-settings -> Credential storage -> Install from device storage -> CA
-certificate**, authenticate, and select the transferred `.cer` file. Menu
-labels vary by One UI version. Confirm the CA name is **Whisper LAN Local CA**.
-Then open `https://192.168.50.20:5001/` while the phone is on the same Wi-Fi.
+The setup page transfers only the public root certificate,
+`Whisper-LAN-Local-CA.cer` (DER). The private key `dashboard-lan-key.pem` is
+never exported. On the Galaxy, open **Settings -> Security and privacy -> More
+security settings -> Credential storage -> Install from device storage -> CA
+certificate**, authenticate, select the `.cer`, and confirm the Android
+security prompt. Menu labels vary by One UI version. Then tap **Open Whisper
+securely** while the phone is on the same Wi-Fi.
 
 ### Windows trust and Norton HTTPS scanning
 

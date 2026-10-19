@@ -336,6 +336,10 @@
         .video-crop-handle[data-handle="sw"] { left:-14px; bottom:-14px; cursor:nesw-resize; }
         .video-trim-timecode { width:8.5rem; font-variant-numeric:tabular-nums; }
         .capture-video-settings { color:var(--accent); font-size:.82rem; font-variant-numeric:tabular-nums; }
+        .mobile-setup-card { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin:0 0 1rem; padding:.8rem 1rem; border:1px solid var(--border); border-radius:.65rem; background:var(--panel); }
+        .mobile-setup-card img { width:112px; height:112px; padding:.3rem; background:#fff; border-radius:.35rem; }
+        .mobile-setup-card p { margin:.25rem 0; }
+        @media (max-width: 900px) { .mobile-setup-card { display:none; } }
         .video-trim-timeline { margin: 0.85rem 0; }
         .video-trim-track { height: 1rem; position: relative; border: 1px solid var(--border); border-radius: 0.3rem; background: var(--panel-2); overflow: visible; }
         .video-time-handle { position:absolute; z-index:4; top:-5px; width:16px; height:26px; min-height:26px; padding:0; transform:translateX(-50%); border:2px solid var(--accent); background:#06121c; border-radius:4px; touch-action:none; cursor:ew-resize; }
@@ -921,6 +925,14 @@
         </div>
     </header>
 
+    {% if mobile_setup_url %}
+    <section id="mobileSetupCard" class="mobile-setup-card" aria-label="Whisper phone setup">
+        <div><strong>Set up Whisper on your phone</strong><p>Scan to install the public certificate and open secure LAN access.</p><a href="{{ mobile_setup_url }}">{{ mobile_setup_url }}</a></div>
+        <img src="/setup/qr.svg" alt="QR code for Whisper phone setup">
+        <button class="secondary" type="button" onclick="dismissMobileSetup()">Dismiss</button>
+    </section>
+    {% endif %}
+
     <div class="grid">
         <div class="card">
             <h2>Drop Area</h2>
@@ -1337,6 +1349,12 @@
         // mutating request so this localhost-only dashboard can't be driven by
         // an unrelated page or process that merely reaches this port.
         const DASHBOARD_TOKEN = {{ dashboard_token | tojson }};
+        if (location.protocol === 'https:') document.cookie = 'whisper_secure_setup=1; Path=/; Max-Age=31536000; SameSite=Lax';
+        function dismissMobileSetup() {
+            localStorage.setItem('whisperMobileSetupDismissed', '1');
+            document.getElementById('mobileSetupCard')?.remove();
+        }
+        if (localStorage.getItem('whisperMobileSetupDismissed') === '1') document.getElementById('mobileSetupCard')?.remove();
         const api = path => fetch(path, { headers: { 'Accept': 'application/json' }}).then(r => r.json());
         const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: JSON.stringify(body) }).then(r => r.json());
         const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); };

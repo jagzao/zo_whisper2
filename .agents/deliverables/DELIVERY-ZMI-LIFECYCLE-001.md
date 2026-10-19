@@ -111,3 +111,7 @@ Completion is based on passing tests, Host Playwright evidence, and served deskt
 | Desktop/LAN deployment and served UI | TODO | Not restarted from this candidate HEAD; canonical RAM gate currently reports 5.38 GiB | After review and RAM >6 GiB, build/restart; verify served SHA and shared-data parity | Codex |
 | Physical-phone UAT | TODO | Exact checklist: `docs/ops/VIDEO_EDITOR_MOBILE_UAT.md`; synthetic Playwright is not phone evidence | Owner follows checklist after deployment | Owner |
 | Full repository heavy gate | 🟥 BLOCKED | `scripts/ram_gate.py`: 5.38 GiB available, threshold strictly >6 GiB | Rerun when RAM gate allows | Codex |
+| Mobile certificate onboarding | 🟨 TESTING | 65 tests pass (1 skipped); Host E2E Playwright verifies desktop QR, persistent dismiss, mobile layout and public-only CA download (`artifacts/gates/e2e-host-data/e2e_report.json`) | Deploy and verify served `/setup` | Agent |
+| Android CA installation | TODO | Playwright confirms only public root download and Samsung steps; no physical install performed | Confirm install on Galaxy phone | Juan |
+| Secure LAN access | TODO | HTTP allowlist/redirect tests pass; Compose LAN opt-in config passes; live restart/strict HTTPS not verified | Deploy after gate; verify certificate download and HTTPS on phone | Juan + Agent |
+| Mobile onboarding deployment gate | 🟥 BLOCKED | RAM gate reports 4.76 GiB; canonical deploy gate requires >6 GiB and review | Rerun gate, then rebuild/restart desktop and LAN services | Agent |

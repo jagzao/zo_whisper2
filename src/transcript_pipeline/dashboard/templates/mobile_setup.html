@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>Whisper secure mobile setup</title>
+    <style>
+        :root { color-scheme: dark; font: 16px system-ui, sans-serif; background: #101827; color: #f2f5fa; }
+        body { max-width: 38rem; margin: 0 auto; padding: 1.25rem; }
+        main { background: #1a2638; border: 1px solid #36445a; border-radius: 1rem; padding: 1.25rem; }
+        h1 { margin-top: 0; font-size: 1.55rem; }
+        a.button { display: block; box-sizing: border-box; min-height: 3rem; margin: 1rem 0; padding: .85rem 1rem; border-radius: .6rem; text-align: center; text-decoration: none; font-weight: 700; background: #44d7b6; color: #09201b; }
+        a.secure { background: #7aa8ff; color: #101827; }
+        li { margin: .6rem 0; }
+        .notice { color: #ffd37a; font-size: .92rem; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Set up secure Whisper access</h1>
+    <p>Install Whisper's public certificate on this phone, then open the secure site.</p>
+    <a class="button" href="/setup/certificate" download="Whisper-LAN-Local-CA.cer">Install Whisper certificate</a>
+    <h2>Samsung / Android</h2>
+    <ol>
+        <li>Go to <strong>Settings &gt; Security and privacy &gt; More security settings &gt; Credential storage &gt; Install from device storage &gt; CA certificate</strong>.</li>
+        <li>Authenticate, select <strong>Whisper-LAN-Local-CA.cer</strong>, then confirm installing it as a CA certificate.</li>
+        <li>Confirm Android's security prompt. Menu wording varies by version.</li>
+    </ol>
+    <p class="notice">Android requires your confirmation. Whisper does not install certificates silently.</p>
+    <a class="button secure" href="{{ secure_url }}">Open Whisper securely</a>
+</main>
+</body>
+</html>

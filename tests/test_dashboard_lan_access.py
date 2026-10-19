@@ -77,12 +77,12 @@ def test_lan_host_rejected_by_default(client):
 
 def test_lan_host_accepted_with_lan_allowlist(client, monkeypatch):
     monkeypatch.setattr(dashboard_app, "_LAN_HOST_ALLOWLIST", {"192.168.1.50"})
-    assert client.get("/api/status", headers={"Host": "192.168.1.50"}).status_code == 200
+    assert client.get("/api/status", headers={"Host": "192.168.1.50"}, environ_overrides={"wsgi.url_scheme": "https"}).status_code == 200
 
 
 def test_lan_hostname_accepted_with_lan_allowlist(client, monkeypatch):
     monkeypatch.setattr(dashboard_app, "_LAN_HOST_ALLOWLIST", {"whisper.local"})
-    assert client.get("/api/status", headers={"Host": "whisper.local"}).status_code == 200
+    assert client.get("/api/status", headers={"Host": "whisper.local"}, environ_overrides={"wsgi.url_scheme": "https"}).status_code == 200
 
 
 def test_lan_mode_rejects_public_remote_client(client, monkeypatch):
@@ -97,7 +97,7 @@ def test_lan_mode_accepts_private_remote_client(client, monkeypatch):
     resp = client.get(
         "/api/status",
         headers={"Host": "192.168.1.50"},
-        environ_overrides={"REMOTE_ADDR": "192.168.1.22"},
+        environ_overrides={"REMOTE_ADDR": "192.168.1.22", "wsgi.url_scheme": "https"},
     )
     assert resp.status_code == 200
 
@@ -119,7 +119,7 @@ def test_authorized_lan_run_full_starts_pipeline(client, monkeypatch):
     response = client.post(
         "/api/run/full",
         headers={**AUTH_HEADERS, "Host": "192.168.1.50", "Origin": "https://192.168.1.50:5001"},
-        environ_overrides={"REMOTE_ADDR": "192.168.1.22"},
+        environ_overrides={"REMOTE_ADDR": "192.168.1.22", "wsgi.url_scheme": "https"},
     )
     assert response.status_code == 200
     assert response.get_json()["ok"] is True
@@ -138,7 +138,7 @@ def test_lan_run_full_still_rejects_missing_token(client, monkeypatch):
     response = client.post(
         "/api/run/full",
         headers={"Host": "192.168.1.50", "Origin": "https://192.168.1.50:5001"},
-        environ_overrides={"REMOTE_ADDR": "192.168.1.22"},
+        environ_overrides={"REMOTE_ADDR": "192.168.1.22", "wsgi.url_scheme": "https"},
     )
     assert response.status_code == 403
     assert "Reload Whisper" in response.get_json()["error"]
@@ -225,6 +225,7 @@ def test_lan_host_still_requires_token_for_mutations(client, monkeypatch):
         "/api/projects",
         json={"action": "create", "project": {"name": "LAN"}},
         headers={"Host": "192.168.1.50"},
+        environ_overrides={"wsgi.url_scheme": "https"},
     )
     assert resp.status_code == 403
 
@@ -239,7 +240,7 @@ def test_health_reports_online(client):
 
 def test_health_available_from_lan_host(client, monkeypatch):
     monkeypatch.setattr(dashboard_app, "_LAN_HOST_ALLOWLIST", {"192.168.1.50"})
-    data = client.get("/api/health", headers={"Host": "192.168.1.50"}).get_json()
+    data = client.get("/api/health", headers={"Host": "192.168.1.50"}, environ_overrides={"wsgi.url_scheme": "https"}).get_json()
     assert data["status"] == "ONLINE"
 
 
