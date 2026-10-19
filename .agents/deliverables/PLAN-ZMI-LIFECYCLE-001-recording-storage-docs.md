@@ -139,3 +139,15 @@ Keep the last known-good production image/SHA and configuration. If health, pari
 | Black video Host E2E | 🟨 TESTING | Smoke UI passed; black tools script timed out waiting for `DOMContentLoaded` on its second browser. Changed to commit navigation plus bounded `#filesList` readiness wait. | Rerun full Host E2E when RAM is stable above 6 GiB | Codex |
 | Security, smoke, Docker build/E2E | 🟩 COMPLETE | Heavy runner: security PASS, smoke PASS, Docker build PASS (200.45 s), Docker E2E PASS (109.72 s). | Keep artifacts for release record | Codex |
 | Sonar, Jenkins, soak | 🟥 BLOCKED | Authoritative commands report `NOT_CONFIGURED`; not counted as PASS. | Configure only if part of the release environment | Codex |
+
+## Delivery Kanban — black video release verification, 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Temporal detection, review and non-destructive trim | 🟩 COMPLETE | Full pytest: 1226 passed, 13 skipped; Host Playwright passed preview, review, cancel/confirm, output and source preservation. | Preserve evidence | Codex |
+| Separate black-border crop | 🟩 COMPLETE | Letterbox/pillarbox unit coverage and Host Playwright crop flow pass. | Preserve evidence | Codex |
+| Live capture auto-stop | 🟩 COMPLETE | Host Playwright passed Off default, warning/countdown, content-return cancel, stop and mobile layout. | Preserve evidence | Codex |
+| Playwright / Host E2E | 🟩 COMPLETE | Full Host E2E and dashboard smoke pass; report and screenshots in `artifacts/gates/e2e-host-data/`. | Preserve evidence | Codex |
+| Security, smoke, Docker build/E2E | 🟩 COMPLETE | Canonical heavy runner reports all core gates PASS; `artifacts/gates/heavy-validation.json`. | Preserve evidence | Codex |
+| Sonar / Jenkins / soak | 🟥 BLOCKED | `NOT_CONFIGURED`; unavailable in this environment, separate from required core gates. | Keep marked ENV_BLOCKED | Codex |
+| Desktop/LAN rebuild and served UI | 🟩 COMPLETE | Both origins return 200 and match current build header/meta; live Playwright verified black-trim controls and mobile layout. Pre/post shared-data hashes and desktop/LAN media identity parity match. | Preserve evidence | Codex |

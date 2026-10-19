@@ -2,7 +2,7 @@
 
 ## Status
 
-`HEAVY_VALIDATION_REPAIR_PENDING`
+`READY_FOR_HUMAN_ACCEPTANCE`
 
 ## Implemented
 
@@ -67,12 +67,12 @@ RAM opened briefly at 6.33 GiB for the first heavy run, then fell during validat
 
 | Feature | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
-| Temporal preview, review gate, and non-destructive trim | 🟨 TESTING | Focused media/API tests pass; isolated Host Playwright passed preview ranges, removed duration, cancel, confirm, derivative output, and original preservation. | Rerun canonical full regression at stable RAM >6 GiB | Codex |
-| Separate black-border crop | 🟨 TESTING | Isolated Host Playwright passed separate crop confirmation and copy creation; unit cases cover letterbox and pillarbox. | Rerun canonical full regression at stable RAM >6 GiB | Codex |
-| Live capture auto-stop | 🟨 TESTING | Isolated Host Playwright passed Off default, warning/countdown, visible-content cancellation, auto-stop, and mobile layout. Screenshot: `artifacts/gates/e2e-host-data/black-video-tools.png`. | Rerun canonical full regression at stable RAM >6 GiB | Codex |
-| Playwright and Host E2E | 🟩 COMPLETE | Full `scripts/e2e.py` report PASS, including dashboard smoke and all black-video UI paths; isolated black-only run also PASS. Report: `artifacts/gates/e2e-host-data/e2e_report.json`. | Preserve evidence | Codex |
-| Full regression / release gates | 🟨 TESTING | Last full run: pytest 1225 passed, 1 failed, 13 skipped; failure was a 900-second floating-point bound, now fixed. Security, smoke, Docker build and Docker E2E passed. | Rerun canonical heavy runner after stable RAM >6 GiB | Codex |
-| Sonar / Jenkins / soak | 🟥 BLOCKED | Canonical runner reports `NOT_CONFIGURED`; services/commands are absent in this environment. | Record as ENV_BLOCKED; do not claim PASS | Codex |
-| Desktop/LAN deployment and served UI parity | TODO | Not restarted; both services still serve the prior build. Shared data unchanged so far. | After required gates pass, rebuild/restart from final HEAD; verify served SHA, shared data hash/parity and live black-trim controls | Codex |
+| Temporal preview, review gate, and non-destructive trim | 🟩 COMPLETE | Full pytest: 1226 passed, 13 skipped; isolated and full Host Playwright passed ranges, removed duration, cancel/confirm, derivative output, and original preservation. | Preserve evidence | Codex |
+| Separate black-border crop | 🟩 COMPLETE | Unit cases and Host Playwright passed separate letterbox/pillarbox crop confirmation and derivative creation. | Preserve evidence | Codex |
+| Live capture auto-stop | 🟩 COMPLETE | Host Playwright passed Off default, warning/countdown, visible-content cancellation, stop, and mobile layout. Screenshot: `artifacts/gates/e2e-host-data/black-video-tools.png`. | Preserve evidence | Codex |
+| Playwright and Host E2E | 🟩 COMPLETE | Full `scripts/e2e.py` PASS includes dashboard smoke and every black-video path. Report: `artifacts/gates/e2e-host-data/e2e_report.json`. | Preserve evidence | Codex |
+| Full regression / release gates | 🟩 COMPLETE | Canonical runner PASS: pytest, security, smoke, Host E2E, Docker build and Docker E2E. Report: `artifacts/gates/heavy-validation.json`. | Preserve evidence | Codex |
+| Sonar / Jenkins / soak | 🟥 BLOCKED | `NOT_CONFIGURED`; these tools are absent from the release environment and are not required core gates. | Keep explicitly ENV_BLOCKED | Codex |
+| Desktop/LAN deployment and served UI parity | 🟩 COMPLETE | Rebuilt desktop and started LAN from this checkout; both return 200 and matching HEAD header/meta. Playwright confirms temporal/crop controls, safe defaults and mobile layout. Shared data hashes and desktop/LAN media identity parity match. Evidence: `artifacts/gates/deployment-post.json`, `artifacts/gates/served-black-video-ui.json`. | Preserve evidence | Codex |
 
-No feature is marked COMPLETE from implementation alone. Production deployment remains gated on the canonical full rerun.
+Completion is based on passing tests, Host Playwright evidence, and served desktop/LAN verification. Final owner real-phone UAT remains the canonical acceptance step.
