@@ -53,8 +53,11 @@ def main() -> int:
             card.wait_for(state="visible")
             if "http://127.0.0.1:5000/setup" not in card.inner_text():
                 raise AssertionError("Desktop QR card shows the wrong bootstrap URL")
-            if not page.locator("#mobileSetupCard img").evaluate("img => img.complete && img.naturalWidth > 0"):
-                raise AssertionError("Desktop QR image did not render")
+            page.wait_for_function(
+                "(() => { const img = document.querySelector('#mobileSetupCard img'); "
+                "return !!img && img.complete && img.naturalWidth > 0; })()",
+                timeout=15_000,
+            )
             checks.append("desktop QR points to /setup")
             page.get_by_role("button", name="Dismiss").click()
             page.reload(wait_until="domcontentloaded")

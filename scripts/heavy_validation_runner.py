@@ -1,24 +1,23 @@
-﻿"""Heavy validation runner (PLV5).
+"""Resource-aware, sequential release validation runner.
 
-Deterministic, LLM-free orchestrator for heavy gates. It runs ONLY after
-ChatGPT /review authorizes heavy validation.
+Deterministic, LLM-free orchestrator for required release gates.
 
-Behavior (frozen):
+Behavior:
 1. run the RAM gate first;
-2. if available RAM <= 6.0 GiB, write a DEFERRED summary and exit without
-   starting any heavy child process;
-3. if allowed, run the configured heavy gates sequentially, continuing after
-   one failure so independent gates still execute;
+2. below 4 GiB, write an ENV_BLOCKED summary and start no gate;
+3. from 4 GiB, run configured heavy gates sequentially, rechecking RAM before
+   each gate in LOW_MEMORY_SERIAL mode; continue after failures so independent gates execute;
 4. emit a compact summary at artifacts/gates/heavy-validation.json;
 5. never modify product code;
 6. never invoke a model or LLM provider;
-7. terminal state is PASS / FAIL / DEFERRED / BLOCKED.
+7. terminal state is PASS / FAIL / ENV_BLOCKED / BLOCKED.
 
-Exit codes: 0 PASS, 1 FAIL, 3 DEFERRED_LOW_RAM, 5 BLOCKED, 2 config error.
+Exit codes: 0 PASS, 1 FAIL, 3 ENV_BLOCKED, 5 BLOCKED, 2 config error.
 """
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import subprocess
 import sys
@@ -102,17 +101,20 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
     ram_info = {
         "available_gib": round(available_gib, 2),
         "threshold_gib": ram_gate.THRESHOLD_GIB,
+        "minimum_gib": ram_gate.MINIMUM_GIB,
+        "ram_mode": ram_verdict,
         "heavy_validation": ram_verdict,
     }
 
-    if ram_verdict != ram_gate.ALLOWED:
+    if ram_verdict == ram_gate.ENV_BLOCKED:
         _write_summary(
             {
-                "terminal_state": "DEFERRED_LOW_RAM",
+                "terminal_state": "ENV_BLOCKED",
                 "ram": ram_info,
+                "ram_mode": ram_gate.ENV_BLOCKED,
                 "gates": [],
                 **_gate_summary_fields([]),
-                "reason": "available RAM <= 6.0 GiB; deferred to nighttime window",
+                "reason": "available RAM below 4.0 GiB",
                 "duration_seconds": round(time.monotonic() - started, 2),
             }
         )
@@ -133,8 +135,33 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
     results: list[dict] = []
     any_configured = False
     any_failed = False
+    effective_ram_mode = ram_verdict
     for gate in gate_list:
+        gate_ram = available_gib
+        gate_mode = ram_verdict
+        if available_gib_override is None:
+            try:
+                gate_ram = ram_gate.measure_available_bytes() / ram_gate.GIB
+            except OSError as exc:
+                _write_summary({"terminal_state": "BLOCKED", "ram": ram_info, "gates": results,
+                                **_gate_summary_fields(results),
+                                "reason": f"RAM measurement failed before {gate}: {exc}"})
+                return 5
+            gate_mode = ram_gate.evaluate(gate_ram)
+            if gate_mode == ram_gate.ENV_BLOCKED:
+                _write_summary({
+                    "terminal_state": "ENV_BLOCKED",
+                    "ram": {**ram_info, "available_gib": round(gate_ram, 2)},
+                    "ram_mode": gate_mode, "gates": results,
+                    **_gate_summary_fields(results),
+                    "reason": f"available RAM below 4.0 GiB before {gate}",
+                    "duration_seconds": round(time.monotonic() - started, 2),
+                })
+                return 3
+        if gate_mode == ram_gate.LOW_MEMORY_SERIAL:
+            effective_ram_mode = ram_gate.LOW_MEMORY_SERIAL
         code = _run_gate(gate)
+        gc.collect()
         if code == 4:
             status = "NOT_CONFIGURED"
         elif code == 0:
@@ -144,7 +171,8 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
             status = "FAIL"
             any_configured = True
             any_failed = True
-        results.append({"gate": gate, "status": status, "exit_code": code})
+        results.append({"gate": gate, "status": status, "exit_code": code,
+                        "ram_before_gib": round(gate_ram, 2), "ram_mode": gate_mode})
 
     if not any_configured:
         terminal_state = "BLOCKED"
@@ -160,6 +188,7 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
         {
             "terminal_state": terminal_state,
             "ram": ram_info,
+            "ram_mode": effective_ram_mode,
             "gates": results,
             **_gate_summary_fields(results),
             "duration_seconds": round(time.monotonic() - started, 2),
@@ -170,7 +199,7 @@ def run(available_gib_override: float | None = None, gates: list[str] | None = N
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    parser = argparse.ArgumentParser(description="PLV5 heavy validation runner (RAM-gated, LLM-free)")
+    parser = argparse.ArgumentParser(description="Resource-aware release validation runner (LLM-free)")
     parser.add_argument(
         "--available-ram-gib",
         type=float,

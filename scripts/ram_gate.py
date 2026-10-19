@@ -1,12 +1,7 @@
-﻿"""RAM gate for heavy validation (PLV5).
+"""Resource-aware RAM policy for release validation.
 
-Deterministic measurement of available physical RAM. Heavy validation may
-start only when available RAM is strictly greater than 6.0 GiB.
-
-Output JSON on stdout:
-    {"available_gib": 7.2, "threshold_gib": 6.0, "heavy_validation": "ALLOWED"}
-
-Exit codes: 0 ALLOWED, 3 DEFERRED_LOW_RAM, 2 measurement/config error.
+From 4 GiB onward gates may run sequentially; below 6 GiB the runner
+rechecks before each gate.
 """
 from __future__ import annotations
 
@@ -17,10 +12,13 @@ import os
 import sys
 
 THRESHOLD_GIB = 6.0
+MINIMUM_GIB = 4.0
 GIB = 1024 ** 3
 
-ALLOWED = "ALLOWED"
-DEFERRED_LOW_RAM = "DEFERRED_LOW_RAM"
+STANDARD = "STANDARD"
+ALLOWED = STANDARD
+LOW_MEMORY_SERIAL = "LOW_MEMORY_SERIAL"
+ENV_BLOCKED = "ENV_BLOCKED"
 MEASUREMENT_ERROR = "MEASUREMENT_ERROR"
 
 
@@ -62,8 +60,12 @@ def measure_available_bytes() -> int:
 
 
 def evaluate(available_gib: float, threshold_gib: float = THRESHOLD_GIB) -> str:
-    """Strict rule: > threshold -> ALLOWED; <= threshold -> DEFERRED_LOW_RAM."""
-    return ALLOWED if available_gib > threshold_gib else DEFERRED_LOW_RAM
+    """Choose standard, sequential low-memory, or blocked mode."""
+    if available_gib < MINIMUM_GIB:
+        return ENV_BLOCKED
+    if available_gib < threshold_gib:
+        return LOW_MEMORY_SERIAL
+    return ALLOWED
 
 
 def run(available_gib_override: float | None = None) -> int:
@@ -91,16 +93,18 @@ def run(available_gib_override: float | None = None) -> int:
             {
                 "available_gib": round(available_gib, 2),
                 "threshold_gib": THRESHOLD_GIB,
+                "minimum_gib": MINIMUM_GIB,
+                "ram_mode": verdict,
                 "heavy_validation": verdict,
             }
         )
     )
-    return 0 if verdict == ALLOWED else 3
+    return 3 if verdict == ENV_BLOCKED else 0
 
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    parser = argparse.ArgumentParser(description="PLV5 RAM gate for heavy validation")
+    parser = argparse.ArgumentParser(description="Resource-aware RAM gate for release validation")
     parser.add_argument(
         "--available-ram-gib",
         type=float,

@@ -809,3 +809,23 @@ Current source findings:
 `TESTS=`
 `SERVED_HEAD=`
 `WORKTREE_CLEAN=`
+
+
+## Release delivery Kanban — 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Resource-aware RAM policy (>=6 standard, 4–6 serial, <4 blocked) | 🟩 COMPLETE | Boundary, mode-transition, per-gate recheck tests pass; 25 focused runner/harness tests pass | Policy is enforced before every gate | Agent |
+| Playwright release coverage | 🟩 COMPLETE | `artifacts/gates/e2e-host-data/e2e_report.json`: smoke + black-video editor + mobile setup PASS; dedicated editor run PASS | Served UI check follows deployment | Agent |
+| Host E2E release gate | 🟩 COMPLETE | `artifacts/gates/e2e-host-data/e2e_report.json`: 3/3 scripts PASS | Served UI check follows deployment | Agent |
+| Docker/release validation | 🟥 BLOCKED | Build PASS (198.93 s); Docker E2E PASS (107.33 s), but ran while RAM had fallen to 1.45 GiB before the corrected per-gate guard; current RAM is below the authorized minimum | Rerun Docker E2E at >=4 GiB | Agent |
+| Desktop + LAN deployment parity | 🟥 BLOCKED | Old Whisper services stopped; current RAM <4 GiB, no safe unrelated service stop identified | Deploy and verify when RAM >=4 GiB | Agent |
+| Setup page, QR, public CA download | 🟥 BLOCKED | Host Playwright PASS for QR, `/setup`, CA download; deployment not yet safe | Verify actual served endpoints after deploy | Agent |
+| Video Editor and mobile capture controls | 🟥 BLOCKED | Host Playwright PASS for editor, crop/time/apply, mobile quality/layout; deployment not yet safe | Verify actual served UI after deploy | Agent |
+
+### Resource-aware release policy
+
+- >= 6 GiB available: standard validation mode.
+- 4–6 GiB available: `LOW_MEMORY_SERIAL`; no Playwright, Docker, and FFmpeg overlap; recheck RAM before each expensive gate and release each gate's browser/process before continuing.
+- < 4 GiB available: `ENV_BLOCKED` unless safe, task-specific RAM can be freed. Do not stop unrelated authenticated Jenkins/Sonar/Supabase services without confirming they are idle; their activity endpoints did not allow unauthenticated inspection.
+- Assertions and required functional coverage remain unchanged. The previous fixed >6 GiB refusal was conservative policy, not a demonstrated technical minimum, and is retired.

@@ -307,13 +307,28 @@ def main() -> int:
             "ok": ok,
         }
     finally:
-        if server is not None:
-            server.terminate()
+        if server is not None and server.poll() is None:
+            if os.name == "nt":
+                # The Windows venv launcher starts a second Python process;
+                # terminating only Popen's PID leaves the test server holding
+                # the isolated data-root files open.
+                stopped = subprocess.run(
+                    ["taskkill", "/PID", str(server.pid), "/T"],
+                    capture_output=True, check=False,
+                )
+                if stopped.returncode:
+                    subprocess.run(
+                        ["taskkill", "/PID", str(server.pid), "/T", "/F"],
+                        capture_output=True, check=False,
+                    )
+            else:
+                server.terminate()
             try:
                 server.wait(timeout=10)
-            except Exception:
+            except subprocess.TimeoutExpired:
                 if server.poll() is None:
                     server.kill()
+                    server.wait(timeout=10)
 
     _persist_report(REPORT_PATH, report)
     print(report["stdout"][-2000:])

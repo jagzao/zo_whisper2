@@ -1,4 +1,4 @@
-﻿"""Compact deterministic gate runner.
+"""Compact deterministic gate runner.
 
 Executes a named gate (an existing authoritative script/test) and emits a
 normalized machine-readable report at ``artifacts/gates/latest.json``. It
@@ -8,8 +8,8 @@ Gates are split into two PLV5 categories:
 
 - LIGHT (implementation phase): targeted, unit, lint, quality, typecheck.
   The local coder may run these before ChatGPT review.
-- HEAVY (post-review, RAM-gated): pytest, security, smoke, e2e, sonar,
-  docker-build, docker-e2e, jenkins, soak. Never run before /review.
+- HEAVY (resource-aware, sequential): pytest, security, smoke, e2e, sonar,
+  docker-build, docker-e2e, jenkins, soak.
 
 `e2e` is the single authoritative full-E2E gate. The former `playwright`
 alias was removed because it invoked the same command as `e2e`, which made
@@ -87,7 +87,7 @@ def validation_environment(gate: str, base: dict[str, str] | None = None) -> dic
             env["ZMI_TEST_DATA_ROOT"] = data_root
     return env
 
-# PLV5 gate categories: implementation/light vs heavy (post-review only).
+# Gate categories: implementation/light vs resource-aware heavy release gates.
 LIGHT_GATES: frozenset[str] = frozenset(
     {"targeted", "unit", "lint", "quality", "typecheck"}
 )
