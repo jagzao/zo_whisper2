@@ -830,3 +830,17 @@ Current source findings:
 - < 4 GiB available: `ENV_BLOCKED` unless safe, task-specific RAM can be freed. Do not stop unrelated authenticated Jenkins/Sonar/Supabase services without confirming they are idle; their activity endpoints did not allow unauthenticated inspection.
 - Assertions and required functional coverage remain unchanged. The previous fixed >6 GiB refusal was conservative policy, not a demonstrated technical minimum, and is retired.
 - Final resource check: 0.63 GiB available. No Whisper jobs, obsolete test browsers, or test containers remain. Remaining Docker RAM users include active Jenkins, SonarQube, Supabase, and Zo Motion services; their activity could not be verified safely, so they were left running. Deployment and the corrected Docker gate remain `ENV_BLOCKED` until >=4 GiB is available.
+
+## P0 mobile recording audio + real crop pipeline — 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| S43 real WebM audio audit | 🟥 BLOCKED | `sess-5c47d4d0cd07`: final WebM has VP8 video 480x640, 0 audio streams; `audioAvailability=MISSING`; `audioRequested` and permission state were never persisted | Historical requested/permission state cannot be recovered; report evidence limitation | Agent |
+| Camera microphone default and visible status | 🟨 TESTING | Playwright synthetic capture: Mic defaults ON, live status before record, missing requested audio blocks recording; 56 focused tests pass | Verify through deployed UI; physical phone UAT remains | Agent |
+| Preserve microphone through camera/orientation changes | 🟨 TESTING | Playwright: camera switch, 2 orientation changes, and quality change preserve live audio track | Verify on deployed UI and physical phone | Agent |
+| Crop into recorded video source | 🟨 TESTING | Playwright confirms canvas captureStream video + microphone track feed MediaRecorder; fragment/final ffprobe show VP8 + Opus | Verify through deployed UI; physical phone UAT remains | Agent |
+| Crop dimensions, preview mapping, size proof | 🟨 TESTING | Synthetic 1280x720 -> 636x360; cropped sample 111,147 B vs full 176,976 B (37.2% smaller) | Confirm actual camera alignment on phone; byte reduction depends on scene/codec | Agent |
+| Uploaded fragment and final audio validation | 🟨 TESTING | API and assembly tests: 56 passed; first fragment + final ffprobe metadata persist, missing requested audio flags `AUDIO_CAPTURE_FAILED` | Verify on deployed UI and physical phone | Agent |
+| P0 functional gates and deployed UI | 🟦 DEVELOPING | Playwright 77/77; Host E2E 4/4 scripts; focused pytest 56 passed; LAN/desktop currently stopped | Commit, deploy both origins, verify served HEAD and controls | Agent |
+
+- 2026-10-19 P0 update: located S43 outside source code at `Videos/live_capture/sess-5c47d4d0cd07/final/recording.webm`; read-only ffprobe found one VP8 480x640 video stream and no audio. The session manifest omitted `audioRequested` and microphone permission state, so the historical cause is indeterminate. Implemented mic-on default, visible/preflight live-track validation, audio preservation across camera/orientation/quality changes, canvas crop recording stream with mic track, and server fragment/final ffprobe checks. Focused tests 56/56; synthetic Playwright 77/77; Host E2E 4/4. Synthetic crop 1280x720 -> 636x360; 37.2% fewer bytes in this sample. Desktop/LAN deploy and physical phone UAT are pending; do not mark COMPLETE before served verification.

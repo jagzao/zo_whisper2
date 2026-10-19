@@ -270,9 +270,11 @@ def main() -> int:
             else
             ("black_video_tools.py",)
             if not EXTERNAL_SERVER and os.environ.get("ZMI_E2E_BLACK_VIDEO_ONLY", "") == "1"
+            else ("capture_new_recording.py",)
+            if not EXTERNAL_SERVER and os.environ.get("ZMI_E2E_CAPTURE_ONLY", "") == "1"
             else ("smoke_dashboard.py",)
             if EXTERNAL_SERVER
-            else ("smoke_dashboard.py", "black_video_tools.py", "mobile_setup.py")
+            else ("smoke_dashboard.py", "black_video_tools.py", "mobile_setup.py", "capture_new_recording.py")
         )
         for script in scripts:
             print(f"Running {script} against {DASHBOARD_URL}...")

@@ -1302,8 +1302,10 @@
             </div>
             <div class="row capture-audio-row" style="align-items:center; margin-top:0;">
                 <label for="captureAudio" style="display:flex; align-items:center; gap:0.35rem;">
-                    <input type="checkbox" id="captureAudio"> Record audio with camera (microphone)
+                    <input type="checkbox" id="captureAudio" checked> Record audio with camera (microphone)
                 </label>
+                <span id="captureMicStatus" role="status" aria-live="polite">🎤 Mic: ON · permission needed</span>
+                <span id="captureCropOutputStatus" role="status" aria-live="polite">Crop output: camera frame</span>
             </div>
             <label id="captureAutoStopBlackLabel" for="captureAutoStopBlack" style="display:flex; align-items:center; gap:0.4rem; color:var(--muted); font-size:0.82rem;">
                 Stop recording after a black preview:
@@ -3199,6 +3201,7 @@
             extension: '.webm',
             quality: 'auto',
             captureSettings: null,
+            recorderStream: null,
             orientationChanging: false,
             pendingParts: [],       // Blob parts for the fragment being recorded
             uploadQueue: [],        // [{id, sequence, blob, extension}] awaiting ACK (FIFO)
@@ -3221,6 +3224,16 @@
             blackWarningStartedMs: null,
             pendingCrop: null,      // W6: normalized {x,y,width,height} crop, or null
             audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
+            audioFailureDetected: false,
+            cropCanvas: null,
+            cropContext: null,
+            cropOutputStream: null,
+            cropOutputTrack: null,
+            cropFrameRequest: null,
+            cropOutputWidth: 0,
+            cropOutputHeight: 0,
+            cameraSwitchCount: 0,
+            orientationChangeCount: 0,
             transcriptSessions: [],
             uploadController: null,
             jobsPoller: null,
@@ -3270,6 +3283,118 @@
             }).then(r => r.json());
         }
 
+        function renderCaptureMicStatus(label, available = null) {
+            const el = document.getElementById('captureMicStatus');
+            if (!el) return;
+            el.textContent = `🎤 Mic: ${label}`;
+            el.dataset.state = available === false ? 'unavailable' : available === true ? 'on' : 'pending';
+        }
+
+        function liveCaptureAudioTracks(stream = capture.stream) {
+            return (stream?.getAudioTracks?.() || []).filter(track => track.readyState === 'live');
+        }
+
+        function stopCaptureCropOutput() {
+            if (capture.cropFrameRequest !== null) cancelAnimationFrame(capture.cropFrameRequest);
+            capture.cropFrameRequest = null;
+            capture.cropOutputStream?.getTracks().forEach(track => track.stop());
+            capture.cropOutputStream = null;
+            capture.cropOutputTrack = null;
+            capture.cropCanvas = null;
+            capture.cropContext = null;
+        }
+
+        function renderCaptureCropOutputStatus(width = 0, height = 0) {
+            const el = document.getElementById('captureCropOutputStatus');
+            if (!el) return;
+            el.textContent = width && height ? `Crop output: ${width}×${height}` : 'Crop output: camera frame';
+        }
+
+        function drawCaptureCropFrame() {
+            const video = document.getElementById('capturePreview');
+            const canvas = capture.cropCanvas;
+            const context = capture.cropContext;
+            if (!video || !canvas || !context) return;
+            if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                const region = capture.pendingCrop || { x:0, y:0, width:1, height:1 };
+                const sx = Math.max(0, Math.floor(region.x * video.videoWidth));
+                const sy = Math.max(0, Math.floor(region.y * video.videoHeight));
+                const sw = Math.max(2, Math.min(video.videoWidth - sx, Math.floor(region.width * video.videoWidth)));
+                const sh = Math.max(2, Math.min(video.videoHeight - sy, Math.floor(region.height * video.videoHeight)));
+                const width = Math.max(2, Math.floor(sw / 2) * 2);
+                const height = Math.max(2, Math.floor(sh / 2) * 2);
+                if (canvas.width !== width || canvas.height !== height) {
+                    canvas.width = width;
+                    canvas.height = height;
+                }
+                capture.cropOutputWidth = width;
+                capture.cropOutputHeight = height;
+                renderCaptureCropOutputStatus(width, height);
+                context.drawImage(video, sx, sy, sw, sh, 0, 0, width, height);
+            }
+            capture.cropFrameRequest = requestAnimationFrame(drawCaptureCropFrame);
+        }
+
+        async function startCaptureCropOutput() {
+            stopCaptureCropOutput();
+            const video = document.getElementById('capturePreview');
+            const region = capture.pendingCrop;
+            if (!video?.videoWidth || !video?.videoHeight) throw new Error('Camera preview has no frame to crop yet.');
+            if (typeof HTMLCanvasElement === 'undefined' || !HTMLCanvasElement.prototype.captureStream) {
+                if (region) throw new Error('This browser cannot encode the selected crop. Clear the crop or use current Android Chrome.');
+                renderCaptureCropOutputStatus();
+                return null;
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d', { alpha:false });
+            if (!context) {
+                if (region) throw new Error('Could not create a crop preview surface; the selected crop was not recorded.');
+                renderCaptureCropOutputStatus();
+                return null;
+            }
+            capture.cropCanvas = canvas;
+            capture.cropContext = context;
+            drawCaptureCropFrame();
+            try {
+                capture.cropOutputStream = canvas.captureStream(Math.max(1, Math.round(capture.captureSettings?.frameRate || 30)));
+            } catch (error) {
+                stopCaptureCropOutput();
+                if (region) throw new Error('Could not create a cropped camera stream; no full-frame fallback was recorded.');
+                renderCaptureCropOutputStatus();
+                return null;
+            }
+            capture.cropOutputTrack = capture.cropOutputStream.getVideoTracks()[0] || null;
+            if (!capture.cropOutputTrack) {
+                stopCaptureCropOutput();
+                throw new Error('The crop encoder did not provide a video track.');
+            }
+            return capture.cropOutputTrack;
+        }
+
+        async function buildCaptureRecorderStream() {
+            const audioTracks = capture.captureKind === 'audio' || capture.cameraAudioRequested ? liveCaptureAudioTracks() : [];
+            if (capture.cameraAudioRequested && audioTracks.length === 0) {
+                renderCaptureMicStatus('unavailable', false);
+                capture.audioAvailability = 'MISSING';
+                throw new Error('Microphone was requested but no live audio track is available. Recording stopped to avoid a silent video.');
+            }
+            if (capture.captureKind === 'audio') {
+                if (!audioTracks.length) throw new Error('Microphone has no live audio track.');
+                renderCaptureMicStatus('ON · live', true);
+                return new MediaStream(audioTracks);
+            }
+            const outputTrack = await startCaptureCropOutput();
+            const videoTracks = outputTrack ? [outputTrack] : (capture.stream?.getVideoTracks?.() || []).filter(track => track.readyState === 'live');
+            if (videoTracks.length !== 1) throw new Error('Camera video track is unavailable.');
+            if (capture.cameraAudioRequested && audioTracks.length === 0) throw new Error('Microphone audio track is unavailable.');
+            const recorderStream = new MediaStream([...videoTracks, ...audioTracks]);
+            if (capture.cameraAudioRequested && recorderStream.getAudioTracks().length === 0) throw new Error('Microphone track was not attached to the recording stream.');
+            renderCaptureMicStatus(capture.cameraAudioRequested ? 'ON · live' : 'OFF · disabled by user', capture.cameraAudioRequested);
+            return recorderStream;
+        }
+
         function setCaptureState(state, error) {
             capture.state = state;
             if (error) capture.lastError = error;
@@ -3288,6 +3413,10 @@
             const recording = state === 'recording';
             if (!recording) document.getElementById('captureBlackWarning')?.classList.add('hidden');
             const busy = state === 'requesting' || state === 'finalizing';
+            const cropOverlay = document.getElementById('cropOverlay');
+            if (cropOverlay) cropOverlay.style.pointerEvents = recording || busy ? 'none' : 'auto';
+            const micToggle = document.getElementById('captureAudio');
+            if (micToggle) micToggle.disabled = recording || busy || state === 'previewing';
             const stalled = state === 'stalled';
             document.getElementById('captureStartBtn').classList.toggle('hidden', recording || busy || stalled);
             document.getElementById('captureStopBtn').classList.toggle('hidden', !(recording || stalled));
@@ -3529,6 +3658,7 @@
                 capture.stream.getTracks().forEach(t => t.stop());
                 capture.stream = null;
             }
+            stopCaptureCropOutput();
             const video = document.getElementById('capturePreview');
             if (video) video.srcObject = null;
         }
@@ -3612,6 +3742,9 @@
             document.getElementById('cropOverlay').classList.toggle('hidden', audio);
             document.getElementById('cropBox').classList.toggle('hidden', audio || !capture.pendingCrop);
             document.getElementById('cropClearBtn').disabled = audio || !capture.pendingCrop;
+            const audioControl = document.getElementById('captureAudio');
+            if (audioControl) audioControl.disabled = audio;
+            renderCaptureMicStatus(audio ? 'ON · microphone mode' : audioControl?.checked ? 'ON · permission needed' : 'OFF · disabled by user', audio ? true : null);
         }
 
         async function attachCapturePreview(stream) {
@@ -3639,7 +3772,7 @@
         }
 
         async function switchCaptureCamera() {
-            if (capture.captureKind !== 'video' || !capture.stream || capture.state !== 'recording' || capture.cameraSwitching) return;
+            if (capture.captureKind !== 'video' || !capture.stream || !['previewing', 'recording'].includes(capture.state) || capture.cameraSwitching) return;
             const nextFacing = document.getElementById('captureCameraFacing').value === 'user' ? 'user' : 'environment';
             if (nextFacing === capture.activeFacingMode) return;
             const previousFacing = capture.activeFacingMode;
@@ -3656,17 +3789,32 @@
                     try { previousRecorder.stop(); } catch (err) { resolve(); }
                 });
             }
-            let nextStream = null;
+            let nextVideoStream = null;
+            let acquiredAudioStream = null;
             try {
-                nextStream = await navigator.mediaDevices.getUserMedia({
+                nextVideoStream = await navigator.mediaDevices.getUserMedia({
                     video: { ...captureTargetConstraints(capture.quality), facingMode: { exact: nextFacing } },
-                    audio: capture.cameraAudioRequested,
+                    audio: false,
                 });
+                let audioTracks = capture.cameraAudioRequested ? liveCaptureAudioTracks(previousStream) : [];
+                if (capture.cameraAudioRequested && audioTracks.length === 0) {
+                    acquiredAudioStream = await navigator.mediaDevices.getUserMedia({ audio:true, video:false });
+                    audioTracks = liveCaptureAudioTracks(acquiredAudioStream);
+                    if (!audioTracks.length) throw new Error('Camera changed, but the requested microphone has no live audio track.');
+                }
+                const nextStream = new MediaStream([...nextVideoStream.getVideoTracks(), ...audioTracks]);
                 await attachCapturePreview(nextStream);
                 capture.stream = nextStream;
                 capture.activeFacingMode = nextFacing;
                 await applyCaptureQuality(nextStream.getVideoTracks()[0]);
-                previousStream.getTracks().forEach(track => track.stop());
+                previousStream.getVideoTracks().forEach(track => track.stop());
+                previousStream.getAudioTracks().filter(track => !audioTracks.includes(track)).forEach(track => track.stop());
+                if (acquiredAudioStream) acquiredAudioStream.getTracks().filter(track => !audioTracks.includes(track)).forEach(track => track.stop());
+                capture.cameraSwitchCount += 1;
+                if (capture.sessionId) captureFetch(`/api/capture/sessions/${capture.sessionId}/capture-metadata`, {
+                    method:'PUT', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({ capture_metadata:{ cameraSwitches:capture.cameraSwitchCount, facingMode:nextFacing } }),
+                }).catch(() => {});
                 const sourceResult = await captureFetch(`/api/capture/sessions/${capture.sessionId}/source`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
@@ -3675,10 +3823,11 @@
                 capture.cameraSwitching = false;
                 document.getElementById('captureCameraFacing').disabled = false;
                 maybeResume();
-                if (!sourceResult?.ok) setCaptureState('recording', 'Camera switched, but the selected source could not be saved to the session.');
+                if (capture.sessionId && !sourceResult?.ok) setCaptureState('recording', 'Camera switched, but the selected source could not be saved to the session.');
                 showToast(nextFacing === 'environment' ? 'Rear camera selected' : 'Front camera selected');
             } catch (err) {
-                if (nextStream) nextStream.getTracks().forEach(track => track.stop());
+                nextVideoStream?.getTracks().forEach(track => track.stop());
+                acquiredAudioStream?.getTracks().filter(track => !liveCaptureAudioTracks(previousStream).includes(track)).forEach(track => track.stop());
                 capture.stream = previousStream;
                 capture.activeFacingMode = previousFacing;
                 document.getElementById('capturePreview').srcObject = previousStream;
@@ -3686,7 +3835,7 @@
                 capture.cameraSwitching = false;
                 document.getElementById('captureCameraFacing').disabled = false;
                 maybeResume();
-                setCaptureState('recording', `Could not switch camera; recording continued with the previous camera. ${err.message || ''}`.trim());
+                setCaptureState(capture.state === 'previewing' ? 'previewing' : 'recording', `Could not switch camera; previous camera remains active. ${err.message || ''}`.trim());
             }
             if (capture.stopAfterCameraSwitch) {
                 capture.stopAfterCameraSwitch = false;
@@ -3883,7 +4032,13 @@
                 mode: capture.mode,
                 captureKind: capture.captureKind,
                 activeFacingMode: capture.activeFacingMode,
+                micRequested: capture.cameraAudioRequested,
+                micStatus: document.getElementById('captureMicStatus')?.textContent || '',
+                cropOutputResolution: capture.cropOutputWidth && capture.cropOutputHeight ? `${capture.cropOutputWidth}x${capture.cropOutputHeight}` : null,
+                recorderAudioTracks: capture.recorderStream?.getAudioTracks?.().length || 0,
                 cameraSwitching: capture.cameraSwitching,
+                cameraSwitchCount: capture.cameraSwitchCount,
+                orientationChangeCount: capture.orientationChangeCount,
                 timerSeconds: capture.timerSeconds,
                 recordedOffsetMs: capture.recordedOffsetMs,
                 processingChunkSeconds: capture.requestedChunkDurationSec,
@@ -4030,6 +4185,7 @@
             capture.sessionId = null;
             capture.pendingCrop = null;
             capture.audioAvailability = 'UNKNOWN';
+            capture.audioFailureDetected = false;
             capture.requestedChunkDurationSec = null;
             capture.recordedOffsetMs = 0;
             capture.fragmentStartedAtMs = null;
@@ -4038,6 +4194,8 @@
             capture.retryTimer = null;
             setCaptureMode('normal');
             capture.activeFacingMode = 'environment';
+            capture.cameraSwitchCount = 0;
+            capture.orientationChangeCount = 0;
             capture.cameraSwitching = false;
             capture.stopAfterCameraSwitch = false;
             capture.captureKind = 'video';
@@ -4324,6 +4482,7 @@
             const overlay = cropOverlayEl();
             if (!overlay) return;
             overlay.addEventListener('pointerdown', e => {
+                if (capture.state === 'recording' || capture.state === 'stalled' || capture.state === 'finalizing') return;
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
                 e.preventDefault();
                 cropDrag.active = true;
@@ -4410,7 +4569,7 @@
             renderCaptureVideoSettings();
         }
 
-        async function handleCaptureOrientationChange() {
+        async function handleCaptureOrientationChange(reason = 'orientation') {
             if (!capture.stream || capture.captureKind !== 'video' || capture.cameraSwitching || capture.orientationChanging) return;
             const track = capture.stream.getVideoTracks()[0];
             if (!track) return;
@@ -4425,17 +4584,30 @@
                 await applyCaptureQuality(track);
                 await attachCapturePreview(capture.stream);
                 renderCropRegion();
+                if (reason === 'orientation') capture.orientationChangeCount += 1;
+                if (capture.sessionId) captureFetch(`/api/capture/sessions/${capture.sessionId}/capture-metadata`, {
+                    method:'PUT', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({ capture_metadata:{
+                        ...capture.captureSettings, orientationChanges:capture.orientationChangeCount,
+                        sourceWidth:capture.captureSettings.width, sourceHeight:capture.captureSettings.height,
+                        audioRequested:capture.cameraAudioRequested,
+                    } }),
+                }).catch(() => {});
             } finally {
                 capture.orientationChanging = false;
                 maybeResume();
             }
         }
-        document.getElementById('captureQuality')?.addEventListener('change', () => { if (capture.stream?.getVideoTracks().length) handleCaptureOrientationChange(); });
-        window.addEventListener('orientationchange', () => setTimeout(() => { lastCaptureOrientation = captureOrientation(); handleCaptureOrientationChange(); }, 150));
+        document.getElementById('captureQuality')?.addEventListener('change', () => { if (capture.stream?.getVideoTracks().length) handleCaptureOrientationChange('resolution'); });
+        window.__captureTestOrientationChange = () => handleCaptureOrientationChange('orientation');
+        document.getElementById('captureAudio')?.addEventListener('change', event => {
+            renderCaptureMicStatus(event.target.checked ? 'ON · permission needed' : 'OFF · disabled by user', null);
+        });
+        window.addEventListener('orientationchange', () => setTimeout(() => { lastCaptureOrientation = captureOrientation(); handleCaptureOrientationChange('orientation'); }, 150));
         let lastCaptureOrientation = '';
         const captureOrientation = () => screen.orientation?.type || (window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
         lastCaptureOrientation = captureOrientation();
-        window.addEventListener('resize', () => { const next = captureOrientation(); if (capture.stream && capture.captureKind === 'video' && next !== lastCaptureOrientation) { lastCaptureOrientation = next; handleCaptureOrientationChange(); } });
+        window.addEventListener('resize', () => { const next = captureOrientation(); if (capture.stream && capture.captureKind === 'video' && next !== lastCaptureOrientation) { lastCaptureOrientation = next; handleCaptureOrientationChange('orientation'); } });
 
         async function startCapture() {
             if (!captureSupported()) {
@@ -4450,55 +4622,83 @@
                 document.getElementById('captureProject')?.focus();
                 return;
             }
-            setCaptureState('requesting');
             const captureKind = capture.captureKind === 'audio' ? 'audio' : 'video';
             const requestAudio = captureKind === 'audio' || document.getElementById('captureAudio').checked === true;
-            const facingMode = document.getElementById('captureCameraFacing')?.value === 'user' ? 'user' : 'environment';
-            let stream;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: captureKind === 'video' ? { facingMode: { ideal: facingMode }, width:{ ideal:document.getElementById('captureQuality')?.value === '720p' ? 1280 : 1920 }, height:{ ideal:document.getElementById('captureQuality')?.value === '720p' ? 720 : 1080 }, frameRate:{ ideal:30 } } : false,
-                    audio: requestAudio,
-                });
-            } catch (err) {
-                const name = err && err.name;
-                if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-                    setCaptureState('error', captureKind === 'audio'
-                        ? 'Microphone permission denied. Allow microphone access in your browser and try again.'
-                        : requestAudio
-                            ? 'Camera or microphone permission denied. Allow access in your browser and try again.'
-                            : 'Camera permission denied. Allow camera access in your browser and try again.');
-                } else if (name === 'NotFoundError') {
-                    setCaptureState('error', captureKind === 'audio'
-                        ? 'No microphone found on this device.'
-                        : requestAudio
-                            ? 'No camera or microphone found on this device.'
-                            : 'No camera found on this device.');
-                } else if (name === 'NotReadableError') {
-                    setCaptureState('error', 'Camera or microphone is in use by another application.');
-                } else {
-                    setCaptureState('error', 'Could not access the camera: ' + (err && err.message ? err.message : String(err)));
+            const facingMode = capture.stream ? capture.activeFacingMode : (document.getElementById('captureCameraFacing')?.value === 'user' ? 'user' : 'environment');
+            if (!capture.stream) {
+                setCaptureState('requesting');
+                capture.cameraAudioRequested = requestAudio;
+                renderCaptureMicStatus(requestAudio ? 'checking permission…' : 'OFF · disabled by user', requestAudio ? null : false);
+                try {
+                    capture.stream = await navigator.mediaDevices.getUserMedia({
+                        video: captureKind === 'video' ? { facingMode:{ideal:facingMode}, width:{ideal:document.getElementById('captureQuality')?.value === '720p' ? 1280 : 1920}, height:{ideal:document.getElementById('captureQuality')?.value === '720p' ? 720 : 1080}, frameRate:{ideal:30} } : false,
+                        audio: requestAudio,
+                    });
+                } catch (err) {
+                    const name = err && err.name;
+                    if (requestAudio) renderCaptureMicStatus(`unavailable · ${name === 'NotAllowedError' || name === 'PermissionDeniedError' ? 'permission denied' : 'request failed'}`, false);
+                    const message = name === 'NotAllowedError' || name === 'PermissionDeniedError'
+                        ? 'Camera or microphone permission denied. Allow access in the browser and try again.'
+                        : name === 'NotFoundError' ? 'Requested camera or microphone was not found.'
+                            : name === 'NotReadableError' ? 'Camera or microphone is in use by another application.'
+                                : `Could not access camera/microphone: ${err?.message || String(err)}`;
+                    setCaptureState('error', message);
+                    return;
                 }
+                const audioTracks = liveCaptureAudioTracks();
+                if (requestAudio && audioTracks.length === 0) {
+                    capture.stream.getTracks().forEach(track => track.stop());
+                    capture.stream = null;
+                    renderCaptureMicStatus('unavailable · no live audio track', false);
+                    setCaptureState('error', 'Microphone was requested but the browser returned no live audio track. Recording was not started; allow access or turn Mic off explicitly.');
+                    return;
+                }
+                capture.captureKind = captureKind;
+                capture.activeFacingMode = facingMode;
+                renderCaptureMicStatus(requestAudio ? 'ON · live' : 'OFF · disabled by user', requestAudio);
+                if (captureKind === 'video') {
+                    try {
+                        await attachCapturePreview(capture.stream);
+                        await applyCaptureQuality(capture.stream.getVideoTracks()[0]);
+                    } catch (err) {
+                        capture.stream.getTracks().forEach(track => track.stop());
+                        capture.stream = null;
+                        setCaptureState('error', err?.message || 'Camera permission succeeded, but preview could not start.');
+                        return;
+                    }
+                } else {
+                    document.getElementById('capturePreview').classList.add('hidden');
+                    document.getElementById('capturePreview').srcObject = null;
+                    document.getElementById('captureAudioPreview').classList.remove('hidden');
+                    document.getElementById('captureAudioState').textContent = 'Microphone ready';
+                }
+                capture.audioAvailability = requestAudio ? 'AVAILABLE' : 'MISSING';
+                capture.stream.getAudioTracks().forEach(track => track.addEventListener('ended', () => {
+                    if (capture.stream?.getAudioTracks().includes(track) && capture.cameraAudioRequested && capture.state === 'recording') {
+                        renderCaptureMicStatus('unavailable · track ended', false);
+                        const warning = document.getElementById('captureAudioWarning');
+                        warning.textContent = 'Microphone track ended. Recording is stopping to prevent silent video.';
+                        warning.classList.remove('hidden');
+                        stopCapture();
+                    }
+                }));
+                setCaptureState('previewing');
+                renderCropRegion();
                 return;
             }
-            if (captureKind === 'audio' && stream.getAudioTracks().length === 0) {
-                stream.getTracks().forEach(track => track.stop());
-                setCaptureState('error', 'Microphone access succeeded without an audio track. Choose another microphone and retry.');
-                return;
-            }
-            capture.stream = stream;
-            capture.captureKind = captureKind;
-            capture.activeFacingMode = facingMode;
+
+            setCaptureState('requesting');
             capture.cameraAudioRequested = captureKind === 'video' && requestAudio;
+            if (requestAudio && liveCaptureAudioTracks().length === 0) {
+                renderCaptureMicStatus('unavailable · track ended', false);
+                setCaptureState('error', 'Microphone track is unavailable. Recording was not started.');
+                return;
+            }
+            renderCaptureMicStatus(requestAudio ? 'ON · live' : 'OFF · disabled by user', requestAudio);
+            capture.audioAvailability = requestAudio ? 'AVAILABLE' : 'MISSING';
+            capture.captureKind = captureKind;
             capture.quality = document.getElementById('captureQuality')?.value || 'auto';
             capture.codec = ''; capture.videoBitrate = 0;
-            // W7: persist audio availability from the observed audio-track
-            // presence. Video-only (audio not requested) is MISSING, not
-            // UNKNOWN — the absence is intentional and transcript-required.
-            const audioTrackCount = stream.getAudioTracks().length;
-            capture.audioAvailability = requestAudio
-                ? (audioTrackCount > 0 ? 'AVAILABLE' : 'MISSING')
-                : 'MISSING';
             capture.mimeType = pickCaptureMimeType(captureKind) || (captureKind === 'audio' ? 'audio/webm' : 'video/webm');
             capture.extension = extensionForMime(capture.mimeType);
             capture.pendingParts = [];
@@ -4510,23 +4710,6 @@
             capture.stalled = false;
             capture.stopRequested = false;
             capture.closed = false;
-
-            if (captureKind === 'video') {
-                try {
-                    await attachCapturePreview(stream);
-                    await applyCaptureQuality(stream.getVideoTracks()[0]);
-                } catch (err) {
-                    stream.getTracks().forEach(track => track.stop());
-                    capture.stream = null;
-                    setCaptureState('error', err?.message || 'Camera permission succeeded, but preview could not start.');
-                    return;
-                }
-            } else {
-                document.getElementById('capturePreview').classList.add('hidden');
-                document.getElementById('capturePreview').srcObject = null;
-                document.getElementById('captureAudioPreview').classList.remove('hidden');
-                document.getElementById('captureAudioState').textContent = 'Microphone ready';
-            }
 
             const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
             capture.fragmentDurationMs = resolveFragmentDurationMs();
@@ -4547,7 +4730,12 @@
                         capture_source: captureKind === 'audio' ? 'microphone' : facingMode,
                         recorded_at: new Date().toISOString(),
                         crop: captureKind === 'video' ? capture.pendingCrop : null,
-                        capture_metadata: captureKind === 'video' ? { ...capture.captureSettings, quality: capture.quality } : null,
+                        capture_metadata: captureKind === 'video' ? {
+                            ...capture.captureSettings, quality:capture.quality, audioRequested:requestAudio,
+                            micPermissionState:requestAudio ? 'granted' : 'not_requested', cameraSwitches:0,
+                            orientationChanges:0, sourceWidth:capture.captureSettings?.width || 0,
+                            sourceHeight:capture.captureSettings?.height || 0,
+                        } : { audioRequested:true, micPermissionState:'granted' },
                         audio_availability: capture.audioAvailability,
                         capture_mode: capture.mode,
                         // W6: aggregation threshold. Defaults to the server's
@@ -4568,22 +4756,30 @@
 
             resetCaptureTimer();
             ensureCaptureTimer();
-            startFragmentRecording();
+            await startFragmentRecording();
         }
 
-        function startFragmentRecording() {
+        async function startFragmentRecording() {
             if (capture.starting || capture.cameraSwitching || capture.stopRequested || capture.stalled || capture.closed) return;
             if (!capture.stream) return;
             capture.starting = true;
             try {
                 capture.pendingParts = [];
                 let recorder;
+                const recorderStream = await buildCaptureRecorderStream();
+                capture.recorderStream = recorderStream;
+                if (capture.captureKind === 'video' && recorderStream.getVideoTracks().length !== 1) {
+                    throw new Error('Video recording stream must contain exactly one live video track.');
+                }
+                if (capture.cameraAudioRequested && recorderStream.getAudioTracks().length < 1) {
+                    throw new Error('Mic was requested but the recorder would receive no audio track.');
+                }
                 try {
                     const targetBitrate = capture.quality === '720p' ? 5000000 : 8000000;
                     const options = { ...(capture.mimeType ? { mimeType:capture.mimeType } : {}), videoBitsPerSecond:targetBitrate, audioBitsPerSecond:128000 };
-                    recorder = new MediaRecorder(capture.stream, options);
+                    recorder = new MediaRecorder(recorderStream, options);
                 } catch (err) {
-                    recorder = new MediaRecorder(capture.stream);
+                    recorder = new MediaRecorder(recorderStream);
                 }
                 recorder.ondataavailable = e => { if (e.data && e.data.size > 0) capture.pendingParts.push(e.data); };
                 recorder.onstop = () => onFragmentStopped();
@@ -4597,14 +4793,24 @@
                 capture.codec = recorder.mimeType || capture.mimeType;
                 capture.videoBitrate = recorder.videoBitsPerSecond || 0;
                 renderCaptureVideoSettings();
-                if (capture.sessionId && capture.captureKind === 'video') captureFetch(`/api/capture/sessions/${capture.sessionId}/capture-metadata`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ capture_metadata:{ ...capture.captureSettings, quality:capture.quality, codec:capture.codec, videoBitsPerSecond:capture.videoBitrate } }) }).catch(() => {});
+                if (capture.sessionId) captureFetch(`/api/capture/sessions/${capture.sessionId}/capture-metadata`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ capture_metadata:{ ...capture.captureSettings, quality:capture.quality, codec:capture.codec, videoBitsPerSecond:capture.videoBitrate, audioRequested:capture.cameraAudioRequested || capture.captureKind === 'audio', micPermissionState:capture.cameraAudioRequested || capture.captureKind === 'audio' ? 'granted' : 'not_requested', sourceWidth:capture.captureSettings?.width || 0, sourceHeight:capture.captureSettings?.height || 0, cropOutputWidth:capture.captureKind === 'video' ? capture.cropOutputWidth : null, cropOutputHeight:capture.captureKind === 'video' ? capture.cropOutputHeight : null } }) }).catch(() => {});
                 capture.fragmentStartedAtMs = Date.now();
                 recorder.start(CAPTURE_FRAGMENT_TIMESLICE_MS);
                 setCaptureState('recording');
                 startBlackScreenMonitor();
                 scheduleRotation();
             } catch (err) {
-                setStalled(true, 'Could not start next fragment: ' + err.message);
+                if (capture.state === 'recording') {
+                    renderCaptureMicStatus(capture.cameraAudioRequested ? 'unavailable' : 'OFF · disabled by user', !capture.cameraAudioRequested);
+                    const warning = document.getElementById('captureAudioWarning');
+                    warning.textContent = err.message || 'Could not start the next fragment.';
+                    warning.classList.remove('hidden');
+                    showToast(warning.textContent);
+                    stopCapture();
+                } else {
+                    stopCaptureTracks();
+                    setCaptureState('error', err.message || 'Could not start the recorder.');
+                }
             } finally {
                 capture.starting = false;
             }
@@ -4802,6 +5008,15 @@
                                 signal: capture.uploadController.signal,
                             }).then(r => r.json());
                             if (!finRes.ok) throw new Error(finRes.error || 'Could not store fragment');
+                            if (finRes.captureStatus === 'AUDIO_CAPTURE_FAILED') {
+                                capture.audioFailureDetected = true;
+                                capture.audioAvailability = 'MISSING';
+                                const warning = document.getElementById('captureAudioWarning');
+                                warning.textContent = finRes.warning || 'AUDIO_CAPTURE_FAILED: requested microphone audio is missing from the uploaded video.';
+                                warning.classList.remove('hidden');
+                                renderCaptureMicStatus('unavailable · server found no audio', false);
+                                showToast('AUDIO_CAPTURE_FAILED · recording is stopping');
+                            }
                         } catch (err) {
                             if (err.name === 'AbortError') return;
                             capture.retryAttempts = (capture.retryAttempts || 0) + 1;
@@ -4823,7 +5038,8 @@
                         await captureBufferDelete(capture.sessionId, item.id);
                         await refreshCaptureBufferStats();
                         updateChunkInfo();
-                        maybeResume();
+                        if (capture.audioFailureDetected && !capture.stopRequested) stopCapture();
+                        else maybeResume();
                     }
                 } finally {
                     capture.uploading = false;

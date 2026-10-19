@@ -155,6 +155,54 @@ def probe_media_duration(path: Path) -> float | None:
     return None
 
 
+def probe_media_streams(path: Path) -> dict[str, object] | None:
+    """Return actual audio/video stream metadata for capture validation."""
+    if not ffprobe_available():
+        return None
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe", "-v", "error", "-show_entries",
+                "format=duration:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,channels,sample_rate",
+                "-of", "json", str(path),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=10,
+        )
+        data = json.loads(result.stdout)
+        streams = data.get("streams") or []
+        video = next((item for item in streams if item.get("codec_type") == "video"), None)
+        audio = next((item for item in streams if item.get("codec_type") == "audio"), None)
+        if video is None and audio is None:
+            return None
+        raw_fps = (video or {}).get("avg_frame_rate") or (video or {}).get("r_frame_rate")
+        try:
+            numerator, denominator = str(raw_fps).split("/", 1)
+            fps = float(numerator) / float(denominator)
+        except (TypeError, ValueError, ZeroDivisionError):
+            fps = None
+        try:
+            duration = float((data.get("format") or {}).get("duration"))
+        except (TypeError, ValueError):
+            duration = None
+        return {
+            "videoStreams": sum(item.get("codec_type") == "video" for item in streams),
+            "audioStreams": sum(item.get("codec_type") == "audio" for item in streams),
+            "width": (video or {}).get("width"),
+            "height": (video or {}).get("height"),
+            "fps": fps if fps and fps > 0 else None,
+            "videoCodec": (video or {}).get("codec_name"),
+            "audioCodec": (audio or {}).get("codec_name"),
+            "audioChannels": (audio or {}).get("channels"),
+            "audioSampleRate": (audio or {}).get("sample_rate"),
+            "durationSec": duration,
+        }
+    except (OSError, ValueError, TypeError, json.JSONDecodeError, subprocess.SubprocessError):
+        return None
+
+
 def _validate_output(dest: Path, extension: str, expected_duration_sec: float | None = None) -> float | None:
     if not dest.is_file() or dest.stat().st_size == 0:
         raise AssemblyError("assembled media is empty")

@@ -104,6 +104,57 @@ def test_fragment_upload_acks_and_persists_media(client, env):
     assert not list(media.parent.glob("*.tmp"))
 
 
+def test_requested_microphone_missing_in_first_fragment_is_flagged(client, monkeypatch):
+    session = _create_session(
+        client,
+        "Camera with mic",
+        capture_metadata={"audioRequested": True, "micPermissionState": "granted"},
+    ).get_json()["session"]
+    monkeypatch.setattr(
+        dashboard_app,
+        "_probe_capture_fragment",
+        lambda _path: {
+            "fragmentProbeStatus": "VALIDATED", "actualVideoStreams": 1,
+            "actualAudioStreams": 0, "videoCodec": "vp8", "width": 320,
+            "height": 240, "fps": 30.0,
+        },
+    )
+
+    response = _upload_fragment(client, session["sessionId"], data=b"synthetic video-only")
+
+    assert response.status_code == 200
+    assert response.get_json()["captureStatus"] == "AUDIO_CAPTURE_FAILED"
+    saved = client.get(f"/api/capture/sessions/{session['sessionId']}").get_json()["session"]
+    assert saved["audioAvailability"] == "MISSING"
+    assert saved["captureMetadata"]["captureStatus"] == "AUDIO_CAPTURE_FAILED"
+    assert saved["captureMetadata"]["firstFragmentProbe"]["actualAudioStreams"] == 0
+
+
+def test_requested_microphone_with_audio_fragment_is_persisted(client, monkeypatch):
+    session = _create_session(
+        client,
+        "Camera with audio",
+        capture_metadata={"audioRequested": True, "micPermissionState": "granted"},
+    ).get_json()["session"]
+    monkeypatch.setattr(
+        dashboard_app,
+        "_probe_capture_fragment",
+        lambda _path: {
+            "fragmentProbeStatus": "VALIDATED", "actualVideoStreams": 1,
+            "actualAudioStreams": 1, "videoCodec": "vp8", "audioCodec": "opus",
+            "width": 320, "height": 240, "fps": 30.0,
+            "audioChannels": 1, "audioSampleRate": "48000",
+        },
+    )
+
+    response = _upload_fragment(client, session["sessionId"], data=b"synthetic video and audio")
+
+    assert response.get_json().get("captureStatus") is None
+    saved = client.get(f"/api/capture/sessions/{session['sessionId']}").get_json()["session"]
+    assert saved["audioAvailability"] == "AVAILABLE"
+    assert saved["captureMetadata"]["firstFragmentProbe"]["audioCodec"] == "opus"
+
+
 def test_fragment_upload_requires_token(client, env):
     session_id = _create_session(client).get_json()["session"]["sessionId"]
     resp = client.post(

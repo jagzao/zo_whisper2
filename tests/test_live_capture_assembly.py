@@ -19,7 +19,7 @@ from dataclasses import replace
 
 import pytest
 
-from transcript_pipeline.live_capture.assembly import assemble_media
+from transcript_pipeline.live_capture.assembly import assemble_media, probe_media_streams
 from transcript_pipeline.live_capture.errors import AssemblyError
 from transcript_pipeline.live_capture.service import CaptureService
 
@@ -60,6 +60,17 @@ def _make_live_video_segment(path, duration=15):
     return path
 
 
+def _make_live_av_segment(path, duration=1):
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i",
+         f"testsrc2=duration={duration}:size=160x120:rate=15", "-f", "lavfi", "-i",
+         f"sine=frequency=440:duration={duration}", "-c:v", "libvpx", "-b:v", "250k",
+         "-c:a", "libopus", "-b:a", "48k", "-shortest", "-f", "webm", "-live", "1", str(path)],
+        capture_output=True, check=True, timeout=60,
+    )
+    return path
+
+
 def _probe_streams(path) -> list[dict]:
     result = subprocess.run(
         ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", str(path)],
@@ -88,6 +99,32 @@ def test_default_assembler_concats_real_webm_segments(tmp_path):
 
     assert dest.is_file() and dest.stat().st_size > 0
     assert any(s.get("codec_type") == "video" for s in _probe_streams(dest))
+
+
+@requires_ffmpeg
+def test_final_assembled_crop_stream_retains_audio_and_actual_dimensions(tmp_path):
+    service = CaptureService(videos_root=tmp_path / "Videos")
+    session = service.create_session(
+        "cropped camera with mic",
+        capture_metadata={"audioRequested":True,"cropOutputWidth":160,"cropOutputHeight":120},
+    )
+    source = _make_live_av_segment(tmp_path / "crop-av.webm")
+    service.upload_fragment(
+        session.session_id, "fragment-000001", 1, io.BytesIO(source.read_bytes()),
+        duration_ms=1000, recorded_offset_ms=0,
+    )
+    service.drain_processing_chunks(session.session_id)
+    service.finalize_session(session.session_id)
+
+    final = service.finalize_session_media(session.session_id)
+
+    assert final["streams"]["videoStreams"] == 1
+    assert final["streams"]["audioStreams"] == 1
+    assert final["streams"]["width"] == 160
+    assert final["streams"]["height"] == 120
+    assert final["streams"]["videoCodec"] == "vp8"
+    assert final["streams"]["audioCodec"] == "opus"
+    assert service.get_session(session.session_id).capture_metadata["finalMediaProbe"]["audioStreams"] == 1
 
 
 @requires_ffmpeg

@@ -20,7 +20,7 @@ from pathlib import Path
 
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
-from transcript_pipeline.live_capture.assembly import assemble_media, ensure_seekable_audio, probe_media_duration
+from transcript_pipeline.live_capture.assembly import assemble_media, ensure_seekable_audio, probe_media_duration, probe_media_streams
 from transcript_pipeline.live_capture.audio import transcript_required
 from transcript_pipeline.live_capture.errors import (
     AssemblyError,
@@ -284,6 +284,26 @@ class CaptureService:
                 if not final_path.exists() and backup.exists():
                     os.replace(backup, final_path)
                 raise
+            stream_info = probe_media_streams(final_path) if self._assembler is assemble_media else None
+            capture_metadata = dict(session.capture_metadata or {})
+            capture_status = capture_metadata.get("captureStatus")
+            if stream_info is not None:
+                audio_requested = capture_metadata.get("audioRequested") is True
+                if audio_requested and stream_info.get("audioStreams") == 0:
+                    capture_status = "AUDIO_CAPTURE_FAILED"
+                    session = replace(session, audio_availability=models.AudioAvailability.MISSING)
+                elif audio_requested and stream_info.get("audioStreams", 0) > 0:
+                    session = replace(session, audio_availability=models.AudioAvailability.AVAILABLE)
+                expected_width = capture_metadata.get("cropOutputWidth")
+                expected_height = capture_metadata.get("cropOutputHeight")
+                if expected_width and expected_height and (
+                    stream_info.get("width") != expected_width or stream_info.get("height") != expected_height
+                ):
+                    capture_status = capture_status or "CROP_OUTPUT_MISMATCH"
+            if capture_status:
+                capture_metadata["captureStatus"] = capture_status
+            if stream_info is not None:
+                capture_metadata["finalMediaProbe"] = stream_info
             metadata = {
                 "relativePath": final_path.relative_to(self.store.session_dir(session_id)).as_posix(),
                 "extension": extension,
@@ -293,8 +313,9 @@ class CaptureService:
                 "createdAt": existing.get("createdAt") or models.now_iso(),
                 "processingChunkIds": [models.chunk_id(chunk.index) for chunk in chunks],
                 "fragmentIds": fragment_ids_for_metadata,
+                "streams": stream_info,
             }
-            self.store.save_session(replace(session, final_media=metadata))
+            self.store.save_session(replace(session, final_media=metadata, capture_metadata=capture_metadata))
             self._cleanup_temporary_media_if_safe_locked(session_id)
             return metadata
 
@@ -362,7 +383,7 @@ class CaptureService:
     def set_capture_metadata(self, session_id: str, metadata: dict[str, object]) -> models.Session:
         with self._lock_for(session_id):
             session = self.store.load_session(session_id)
-            updated = replace(session, capture_metadata=dict(metadata))
+            updated = replace(session, capture_metadata={**(session.capture_metadata or {}), **metadata})
             self.store.save_session(updated)
             return updated
 

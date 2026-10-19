@@ -2436,6 +2436,58 @@ def _fragment_payload(fragment: capture_models.Fragment) -> dict[str, Any]:
     return fragment.to_manifest()
 
 
+def _probe_capture_fragment(path: Path) -> dict[str, Any]:
+    """Return actual first-fragment streams without trusting browser claims."""
+    try:
+        result = run_ffprobe(
+            [
+                "ffprobe", "-v", "error", "-show_entries",
+                "format=duration:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,channels,sample_rate",
+                "-of", "json", str(path),
+            ],
+            timeout=10,
+            retries=0,
+            retry_on_timeout=False,
+        )
+        data = json.loads(result.stdout)
+        streams = data.get("streams") or []
+        video = next((item for item in streams if item.get("codec_type") == "video"), None)
+        audio = next((item for item in streams if item.get("codec_type") == "audio"), None)
+        if video is None and audio is None:
+            return {"fragmentProbeStatus": "UNKNOWN"}
+
+        def frame_rate(item: dict[str, Any] | None) -> float | None:
+            if item is None:
+                return None
+            raw = item.get("avg_frame_rate") or item.get("r_frame_rate")
+            try:
+                numerator, denominator = str(raw).split("/", 1)
+                value = float(numerator) / float(denominator)
+                return round(value, 3) if value > 0 else None
+            except (TypeError, ValueError, ZeroDivisionError):
+                return None
+
+        try:
+            duration = float((data.get("format") or {}).get("duration"))
+        except (TypeError, ValueError):
+            duration = None
+        return {
+            "fragmentProbeStatus": "VALIDATED",
+            "actualVideoStreams": sum(item.get("codec_type") == "video" for item in streams),
+            "actualAudioStreams": sum(item.get("codec_type") == "audio" for item in streams),
+            "videoCodec": video.get("codec_name") if video else None,
+            "audioCodec": audio.get("codec_name") if audio else None,
+            "width": video.get("width") if video else None,
+            "height": video.get("height") if video else None,
+            "fps": frame_rate(video),
+            "audioChannels": audio.get("channels") if audio else None,
+            "audioSampleRate": audio.get("sample_rate") if audio else None,
+            "durationSec": duration,
+        }
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return {"fragmentProbeStatus": "UNKNOWN"}
+
+
 def _optional_upload_int(raw: object) -> int | None:
     """Parses optional integer upload metadata; blank/absent -> None.
 
@@ -2490,7 +2542,26 @@ def api_capture_upload_fragment(session_id: str) -> Any:
         recorded_offset_ms=recorded_offset_ms,
         recorded_at=recorded_at,
     )
-    return jsonify({"ok": True, "fragment": _fragment_payload(fragment)})
+    service = _get_capture_service()
+    session = service.get_session(session_id)
+    capture_metadata = session.capture_metadata or {}
+    capture_status = None
+    if len(service.list_fragments(session_id)) == 1 and capture_metadata.get("audioRequested") is not None:
+        media_path = service.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension)
+        probed = _probe_capture_fragment(media_path)
+        service.set_capture_metadata(session_id, {"firstFragmentProbe": probed})
+        actual_audio = probed.get("actualAudioStreams")
+        if actual_audio is not None:
+            availability = capture_models.AudioAvailability.AVAILABLE if actual_audio > 0 else capture_models.AudioAvailability.MISSING
+            service.set_audio_availability(session_id, availability)
+            if capture_metadata.get("audioRequested") is True and actual_audio == 0:
+                capture_status = "AUDIO_CAPTURE_FAILED"
+                service.set_capture_metadata(session_id, {"captureStatus": capture_status})
+    response = {"ok": True, "fragment": _fragment_payload(fragment)}
+    if capture_status:
+        response["captureStatus"] = capture_status
+        response["warning"] = "Microphone was requested, but the uploaded video fragment contains no audio stream. Recording is stopping."
+    return jsonify(response)
 
 
 @app.route("/api/capture/sessions/<session_id>/fragments", methods=["GET"])
@@ -2564,7 +2635,13 @@ def api_capture_set_metadata(session_id: str) -> Any:
     metadata = payload.get("capture_metadata")
     if not isinstance(metadata, dict):
         return jsonify({"ok": False, "error": "capture_metadata must be an object"}), 400
-    allowed = {"width", "height", "frameRate", "facingMode", "quality", "codec", "videoBitsPerSecond", "maxWidth", "maxHeight"}
+    allowed = {
+        "width", "height", "frameRate", "facingMode", "quality", "codec", "videoBitsPerSecond",
+        "maxWidth", "maxHeight", "audioRequested", "micPermissionState", "cameraSwitches",
+        "orientationChanges", "sourceWidth", "sourceHeight", "cropOutputWidth", "cropOutputHeight",
+        "firstFragmentProbe", "captureStatus", "actualVideoStreams", "actualAudioStreams",
+        "videoCodec", "audioCodec", "fps", "audioChannels", "audioSampleRate", "durationSec",
+    }
     if any(key not in allowed for key in metadata):
         return jsonify({"ok": False, "error": "Unsupported capture metadata field"}), 400
     session = _get_capture_service().set_capture_metadata(session_id, metadata)
