@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import re
 import subprocess
 import tempfile
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -224,3 +226,135 @@ def crop_black_borders(path: Path, crop: dict[str, int]) -> Path:
     if min(crop_width, crop_height) < 2 or x < 0 or y < 0 or x + crop_width > width or y + crop_height > height:
         raise ValueError("Invalid border crop")
     return _render_copy(path, f"[0:v:0]crop={crop_width}:{crop_height}:{x}:{y}[vout]", "cropped", duration)
+
+
+def apply_video_edits(
+    path: Path,
+    cuts: list[dict[str, float]],
+    *,
+    trim_start: float = 0.0,
+    trim_end: float | None = None,
+    crop: dict[str, int] | None = None,
+) -> tuple[Path, dict[str, Any]]:
+    """Create one validated derivative from reviewed temporal and spatial edits."""
+    info = _probe(path)
+    duration = info["duration"]
+    end_limit = duration if trim_end is None else float(trim_end)
+    start_limit = float(trim_start)
+    if not math.isfinite(start_limit) or not math.isfinite(end_limit):
+        raise ValueError("Trim boundaries must be finite")
+    if start_limit < 0 or end_limit > duration or end_limit <= start_limit:
+        raise ValueError("Trim boundaries are outside the video duration")
+    if start_limit == 0 and end_limit == duration and not cuts and not crop:
+        raise ValueError("No video edits were selected")
+
+    normalized: list[tuple[float, float]] = []
+    for item in cuts:
+        start, end = float(item["start"]), float(item["end"])
+        if not math.isfinite(start) or not math.isfinite(end):
+            raise ValueError("Cut values must be finite")
+        start, end = max(start_limit, start), min(end_limit, end)
+        if end > start:
+            normalized.append((start, end))
+    normalized.sort()
+    merged: list[list[float]] = []
+    for start, end in normalized:
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    if start_limit == 0 and end_limit == duration and not merged and not crop:
+        raise ValueError("No effective video edits were selected")
+
+    kept: list[tuple[float, float]] = []
+    cursor = start_limit
+    for start, end in merged:
+        if start > cursor:
+            kept.append((cursor, start))
+        cursor = max(cursor, end)
+    if cursor < end_limit:
+        kept.append((cursor, end_limit))
+    if not kept:
+        raise ValueError("Edits remove the entire video")
+
+    video = next(stream for stream in info["streams"] if stream.get("codec_type") == "video")
+    crop_values = None
+    if crop:
+        width, height = int(video["width"]), int(video["height"])
+        crop_width, crop_height = int(crop["width"]), int(crop["height"])
+        x, y = int(crop["x"]), int(crop["y"])
+        if (
+            min(crop_width, crop_height) < 2
+            or x < 0 or y < 0
+            or x + crop_width > width or y + crop_height > height
+            or any(value % 2 for value in (crop_width, crop_height, x, y))
+        ):
+            raise ValueError("Crop must be in bounds and use even pixel values")
+        crop_values = {"width": crop_width, "height": crop_height, "x": x, "y": y}
+
+    has_audio = any(stream.get("codec_type") == "audio" for stream in info["streams"])
+    filters = []
+    concat_inputs = []
+    for index, (start, end) in enumerate(kept):
+        video_filter = f"[0:v:0]trim=start={start:.3f}:end={end:.3f},setpts=PTS-STARTPTS"
+        if crop_values:
+            video_filter += (
+                f",crop={crop_values['width']}:{crop_values['height']}:{crop_values['x']}:{crop_values['y']}"
+            )
+        filters.append(f"{video_filter}[v{index}]")
+        concat_inputs.append(f"[v{index}]")
+        if has_audio:
+            filters.append(
+                f"[0:a:0]atrim=start={start:.3f}:end={end:.3f},asetpts=PTS-STARTPTS[a{index}]"
+            )
+            concat_inputs.append(f"[a{index}]")
+    concat = "".join(concat_inputs) + f"concat=n={len(kept)}:v=1:a={1 if has_audio else 0}"
+    if has_audio:
+        concat += "[vout][aout]"
+    else:
+        concat += "[vout]"
+    filters.append(concat)
+
+    removed = sum(end - start for start, end in merged)
+    expected_duration = end_limit - start_limit - removed
+    output = _render_copy(path, ";".join(filters), "edited", expected_duration, filtered_audio=has_audio)
+    provenance_path = output.with_suffix(".provenance.json")
+    temp_provenance: Path | None = None
+    try:
+        provenance = {
+            "schema_version": 1,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "source": path.name,
+            "source_sha256": _sha256(path),
+            "output": output.name,
+            "output_sha256": _sha256(output),
+            "source_duration_seconds": duration,
+            "output_duration_seconds": round(expected_duration, 3),
+            "trim_start_seconds": start_limit,
+            "trim_end_seconds": end_limit,
+            "cuts": [{"start": start, "end": end} for start, end in merged],
+            "crop": crop_values,
+            "validated": True,
+        }
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", prefix=f".{provenance_path.name}.",
+            suffix=".tmp", dir=path.parent, delete=False,
+        ) as tmp:
+            json.dump(provenance, tmp, indent=2)
+            tmp.write("\n")
+            temp_provenance = Path(tmp.name)
+        temp_provenance.replace(provenance_path)
+    except Exception:
+        output.unlink(missing_ok=True)
+        if temp_provenance is not None:
+            temp_provenance.unlink(missing_ok=True)
+        raise
+    return output, provenance
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()

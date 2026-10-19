@@ -59,6 +59,7 @@ from transcript_pipeline.live_capture import CaptureService
 from transcript_pipeline.live_capture import errors as capture_errors
 from transcript_pipeline.live_capture import models as capture_models
 from transcript_pipeline.live_capture.black_video import (
+    apply_video_edits,
     crop_black_borders,
     detect_black_borders,
     detect_black_intervals,
@@ -1645,6 +1646,41 @@ def api_video_remove_black() -> Any:
     except (RuntimeError, ValueError, KeyError, TypeError, subprocess.SubprocessError, FileNotFoundError) as exc:
         logger.warning("[VIDEO_CUT] Trim failed for %s: %s", target.name, exc)
         return jsonify({"ok": False, "error": "Could not create a trimmed copy"}), 422
+
+
+@app.route("/api/video/edit", methods=["POST"])
+def api_video_edit() -> Any:
+    """Apply reviewed time/frame edits to one validated derivative."""
+    payload = request.get_json(force=True) or {}
+    target = _from_media_id(payload.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS])
+    if target.suffix.lower() not in VIDEO_EXTS:
+        return jsonify({"ok": False, "error": "Choose a video file"}), 400
+    cuts = payload.get("cuts", [])
+    if not isinstance(cuts, list) or len(cuts) > 1000:
+        return jsonify({"ok": False, "error": "Invalid cut ranges"}), 400
+    crop = payload.get("crop")
+    if crop is not None and not isinstance(crop, dict):
+        return jsonify({"ok": False, "error": "Invalid crop rectangle"}), 400
+    try:
+        output, provenance = apply_video_edits(
+            target,
+            cuts,
+            trim_start=payload.get("trim_start", 0),
+            trim_end=payload.get("trim_end"),
+            crop=crop,
+        )
+        return jsonify({
+            "ok": True,
+            "name": output.name,
+            "duration_seconds": provenance["output_duration_seconds"],
+            "provenance": output.with_suffix(".provenance.json").name,
+            "validated": provenance["validated"],
+        })
+    except FileExistsError:
+        return jsonify({"ok": False, "error": "An edited copy already exists"}), 409
+    except (RuntimeError, ValueError, KeyError, TypeError, subprocess.SubprocessError, FileNotFoundError) as exc:
+        logger.warning("[VIDEO_EDIT] Edit failed for %s: %s", target.name, exc)
+        return jsonify({"ok": False, "error": "Could not create a validated edited copy"}), 422
 
 
 @app.route("/api/video/black-borders", methods=["POST"])

@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from transcript_pipeline.live_capture.black_video import (
+    apply_video_edits,
     crop_black_borders,
     detect_black_borders,
     detect_black_intervals,
@@ -130,6 +131,49 @@ def test_temporal_cut_preserves_audio_duration_and_original(tmp_path):
     types = [stream["codec_type"] for stream in json.loads(probe.stdout)["streams"]]
     assert types.count("video") == 1
     assert "audio" in types
+
+
+@requires_ffmpeg
+def test_reviewed_editor_edits_make_one_provenance_linked_valid_copy(tmp_path):
+    source = tmp_path / "editor-source.mp4"
+    _clip(source, [("blue", 2), ("black", 3), ("red", 2)], audio=True)
+    before = _sha(source)
+    output, provenance = apply_video_edits(
+        source,
+        [{"start": 2, "end": 5}],
+        trim_start=0.5,
+        trim_end=6.5,
+        crop={"x": 0, "y": 0, "width": 158, "height": 88},
+    )
+    assert output.name == "editor-source_edited.mp4"
+    assert _sha(source) == before
+    assert _duration(output) == pytest.approx(3, abs=0.5)
+    assert provenance["validated"] is True
+    assert provenance["source_sha256"] == before
+    assert provenance["output_sha256"] == _sha(output)
+    assert provenance["crop"] == {"width": 158, "height": 88, "x": 0, "y": 0}
+    sidecar = output.with_suffix(".provenance.json")
+    assert json.loads(sidecar.read_text(encoding="utf-8"))["validated"] is True
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "stream=codec_type,width,height", "-of", "json", str(output)],
+        capture_output=True, text=True, timeout=30, check=True,
+    )
+    streams = json.loads(probe.stdout)["streams"]
+    assert any(s.get("codec_type") == "audio" for s in streams)
+    assert next(s for s in streams if s.get("codec_type") == "video")["width"] == 158
+
+
+def test_editor_rejects_noop_and_out_of_bounds_crop(tmp_path, monkeypatch):
+    def probe(_path):
+        return {"duration": 10.0, "streams": [{"codec_type": "video", "width": 160, "height": 90}]}
+
+    monkeypatch.setattr("transcript_pipeline.live_capture.black_video._probe", probe)
+    with pytest.raises(ValueError, match="No video edits"):
+        apply_video_edits(tmp_path / "unused.mp4", [])
+    with pytest.raises(ValueError, match="Crop"):
+        apply_video_edits(
+            tmp_path / "unused.mp4", [], crop={"x": 3, "y": 0, "width": 160, "height": 90}
+        )
 
 
 def test_low_confidence_sensitive_scan_requires_review(monkeypatch, tmp_path):

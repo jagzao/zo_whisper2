@@ -319,6 +319,42 @@
         .video-col audio.hide-native-controls::-webkit-media-controls {
             display: none !important;
         }
+        .video-trim-modal { max-width: 1180px; }
+        .video-trim-workspace { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr); gap: 1rem; align-items: start; }
+        .video-trim-preview { min-width: 0; }
+        .video-trim-frame { position: relative; width: 100%; background: #000; overflow: hidden; aspect-ratio: 16 / 9; }
+        .video-trim-frame video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
+        .video-crop-box { position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 9999px rgba(0,0,0,0.52); cursor: move; touch-action: none; }
+        .video-crop-box::after { content: ''; position: absolute; right: -5px; bottom: -5px; width: 12px; height: 12px; border-radius: 2px; background: var(--accent); cursor: nwse-resize; }
+        .video-trim-timeline { margin: 0.85rem 0; }
+        .video-trim-track { height: 1rem; position: relative; border: 1px solid var(--border); border-radius: 0.3rem; background: var(--panel-2); overflow: hidden; }
+        .video-trim-range { position: absolute; top: 0; bottom: 0; background: rgba(255,61,110,0.68); border-left: 1px solid var(--danger); border-right: 1px solid var(--danger); }
+        .video-trim-range.manual { background: rgba(255,214,0,0.62); border-color: var(--warn); }
+        .video-trim-position { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--accent); z-index: 2; pointer-events: none; }
+        .video-trim-seek { width: 100%; margin: 0.35rem 0; accent-color: var(--accent); }
+        .video-trim-summary { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 0.5rem; margin: 0.75rem 0; }
+        .video-trim-summary > div { padding: 0.55rem 0.7rem; background: var(--panel-2); border: 1px solid var(--border); border-radius: 0.5rem; }
+        .video-trim-summary span { display:block; color: var(--muted); font-size: 0.75rem; }
+        .video-trim-summary strong { font-variant-numeric: tabular-nums; }
+        .video-trim-panel { min-width: 0; padding: 0.85rem; border: 1px solid var(--border); border-radius: 0.625rem; background: var(--panel); }
+        .video-trim-tabs { display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); margin: -0.1rem 0 0.75rem; }
+        .video-trim-tab[aria-selected="true"] { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .video-trim-list { display: grid; gap: 0.5rem; max-height: 35vh; overflow: auto; }
+        .video-trim-cut { display: grid; grid-template-columns: auto minmax(0,1fr) minmax(0,1fr) auto; gap: 0.35rem; align-items: center; padding: 0.45rem; border: 1px solid var(--border); border-radius: 0.45rem; }
+        .video-trim-cut input[type="number"], .video-trim-number { width: 100%; min-width: 0; padding: 0.45rem; }
+        .video-trim-label { color: var(--muted); font-size: 0.75rem; }
+        .video-trim-actions { display:flex; justify-content:space-between; gap:0.5rem; flex-wrap:wrap; margin-top: 0.9rem; }
+        .video-trim-actions button { min-height: 2.65rem; }
+        .video-trim-warning { color: var(--warn); min-height: 1.25rem; font-size: 0.85rem; }
+        @media (max-width: 760px) {
+            .video-trim-modal { max-height: 96vh; padding: 0.8rem; }
+            .video-trim-workspace { grid-template-columns: minmax(0,1fr); }
+            .video-trim-list { max-height: 22vh; }
+            .video-trim-cut { grid-template-columns: auto minmax(0,1fr) minmax(0,1fr) auto; }
+            .video-trim-summary { gap: 0.3rem; }
+            .video-trim-summary > div { padding: 0.45rem; }
+            .video-trim-summary strong { font-size: 0.85rem; }
+        }
         .transcript-col {
             display: flex;
             flex-direction: column;
@@ -927,18 +963,6 @@
                 </div>
                 <div id="filesPaginationTop" class="pagination top"></div>
             </div>
-            <details style="margin:0 0 0.75rem;">
-                <summary>Black video tools</summary>
-                <div class="row" style="align-items:center; flex-wrap:wrap;">
-                    <label for="blackDarknessThreshold">Darkness threshold</label>
-                    <select id="blackDarknessThreshold"><option value="0.03">Strict</option><option value="0.05" selected>Default</option><option value="0.12">Sensitive</option></select>
-                    <label for="blackMinDuration">Minimum black duration (seconds)</label>
-                    <input id="blackMinDuration" type="number" min="0.5" max="3600" step="0.5" value="2" style="width:5rem;">
-                    <label><input id="autoRemoveBlack" type="checkbox"> Automatically remove black sections</label>
-                    <label><input id="autoCropBlack" type="checkbox"> Auto crop black borders</label>
-                </div>
-                <p class="muted" style="margin:0;">Temporal black sections and persistent black borders are separate edits. Originals are retained.</p>
-            </details>
             <div id="filesList"></div>
             <details style="margin-top:0.75rem;">
                 <summary>Optimized media &amp; cleanup status</summary>
@@ -985,6 +1009,93 @@
                     <button class="danger" onclick="closeEdit()">Cancel</button>
                     <button class="ok" onclick="saveFile()">Save</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="videoTrimModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="videoTrimTitle" onclick="if (event.target === this) closeVideoTrimEditor()">
+        <div class="modal video-trim-modal">
+            <div class="modal-header">
+                <h2 id="videoTrimTitle">Edit video</h2>
+                <button type="button" class="close-x" aria-label="Close video editor" onclick="closeVideoTrimEditor()">&times;</button>
+            </div>
+            <div class="video-trim-workspace">
+                <section class="video-trim-preview" aria-label="Video preview">
+                    <div class="video-trim-frame" id="videoTrimFrame">
+                        <video id="videoTrimPlayer" playsinline preload="metadata"></video>
+                        <div id="videoCropBox" class="video-crop-box hidden" aria-label="Crop rectangle"></div>
+                    </div>
+                    <div class="row" style="justify-content:space-between; margin:0.45rem 0;">
+                        <button type="button" class="secondary" id="videoTrimPlayButton" onclick="toggleVideoTrimPlayback()">Play</button>
+                        <span id="videoTrimTime" class="muted">00:00 / 00:00</span>
+                        <span id="videoTrimAspect" class="muted">Aspect ratio —</span>
+                    </div>
+                    <div class="video-trim-timeline" aria-label="Video timeline with proposed cuts">
+                        <div id="videoTrimTrack" class="video-trim-track"><div id="videoTrimRanges"></div><div id="videoTrimPosition" class="video-trim-position"></div></div>
+                        <input id="videoTrimSeek" class="video-trim-seek" type="range" min="0" max="0" step="0.01" value="0" aria-label="Seek video">
+                    </div>
+                    <div class="video-trim-summary" aria-live="polite">
+                        <div><span>Original</span><strong id="videoTrimOriginal">00:00</strong></div>
+                        <div><span>Removed</span><strong id="videoTrimRemoved">00:00</strong></div>
+                        <div><span>Final</span><strong id="videoTrimFinal">00:00</strong></div>
+                    </div>
+                    <div id="videoTrimStatus" class="video-trim-warning" role="status" aria-live="polite">Scanning for black sections…</div>
+                </section>
+                <section class="video-trim-panel">
+                    <div class="video-trim-tabs" role="tablist" aria-label="Video edit sections">
+                        <button type="button" class="secondary video-trim-tab" id="videoTrimTabTime" role="tab" aria-selected="true" aria-controls="videoTrimTimePanel" onclick="showVideoTrimTab('time')">TIME</button>
+                        <button type="button" class="secondary video-trim-tab" id="videoTrimTabFrame" role="tab" aria-selected="false" aria-controls="videoTrimFramePanel" onclick="showVideoTrimTab('frame')">FRAME</button>
+                    </div>
+                    <div id="videoTrimTimePanel" role="tabpanel" aria-labelledby="videoTrimTabTime">
+                        <div class="row">
+                            <label for="videoTrimThreshold">Darkness</label>
+                            <select id="videoTrimThreshold"><option value="0.03">Strict</option><option value="0.05" selected>Default</option><option value="0.12">Sensitive</option></select>
+                        </div>
+                        <div class="row">
+                            <label for="videoTrimMinimum">Minimum black seconds</label>
+                            <input id="videoTrimMinimum" class="video-trim-number" type="number" min="0.5" max="3600" step="0.5" value="2">
+                        </div>
+                        <button type="button" class="secondary" onclick="detectVideoTrimBlack()">Auto detect black</button>
+                        <p class="video-trim-label">Detected ranges are optional cuts. Uncheck, adjust, or remove any range.</p>
+                        <div id="videoTrimCuts" class="video-trim-list"></div>
+                        <div class="row">
+                            <label for="videoTrimManualStart">Add cut from (seconds)</label>
+                            <input id="videoTrimManualStart" class="video-trim-number" type="number" min="0" step="0.1" placeholder="Start">
+                            <input id="videoTrimManualEnd" class="video-trim-number" type="number" min="0" step="0.1" placeholder="End">
+                            <button type="button" class="secondary" onclick="addVideoTrimCut()">Add cut</button>
+                        </div>
+                        <div class="row">
+                            <label for="videoTrimStart">Trim beginning (seconds)</label>
+                            <input id="videoTrimStart" class="video-trim-number" type="number" min="0" step="0.1" value="0">
+                            <label for="videoTrimEnd">Trim end (seconds)</label>
+                            <input id="videoTrimEnd" class="video-trim-number" type="number" min="0" step="0.1">
+                        </div>
+                    </div>
+                    <div id="videoTrimFramePanel" role="tabpanel" aria-labelledby="videoTrimTabFrame" class="hidden">
+                        <p class="video-trim-label">Crop the frame independently from time cuts. Drag the rectangle or edit its pixel bounds.</p>
+                        <button type="button" class="secondary" onclick="detectVideoTrimCrop()">Auto detect black borders</button>
+                        <button type="button" class="secondary" id="videoCropPreview" onclick="toggleVideoCropPreview()">Preview crop</button>
+                        <div class="row">
+                            <label for="videoCropX">X</label><input id="videoCropX" class="video-trim-number" type="number" min="0" step="2">
+                            <label for="videoCropY">Y</label><input id="videoCropY" class="video-trim-number" type="number" min="0" step="2">
+                        </div>
+                        <div class="row">
+                            <label for="videoCropWidth">Width</label><input id="videoCropWidth" class="video-trim-number" type="number" min="2" step="2">
+                            <label for="videoCropHeight">Height</label><input id="videoCropHeight" class="video-trim-number" type="number" min="2" step="2">
+                        </div>
+                        <button type="button" class="secondary" onclick="resetVideoTrimCrop()">Reset crop</button>
+                        <p id="videoCropRatio" class="muted">Crop aspect ratio —</p>
+                        <p class="video-trim-label">The outline previews the crop area. The original frame remains unchanged until Apply.</p>
+                    </div>
+                </section>
+            </div>
+            <div class="video-trim-actions">
+                <div class="row" style="margin:0;">
+                    <button type="button" class="danger" onclick="closeVideoTrimEditor()">Cancel</button>
+                    <button type="button" class="secondary" onclick="resetVideoTrimEditor()">Reset</button>
+                    <button type="button" class="secondary" id="videoTrimPreviewButton" onclick="previewVideoTrimResult()">Preview</button>
+                </div>
+                <button type="button" class="ok" id="videoTrimApplyButton" onclick="applyVideoTrimEdits()">Apply changes</button>
             </div>
         </div>
     </div>
@@ -1320,85 +1431,357 @@
             }
         }
 
-        async function removeBlackSections(encodedMediaId, button) {
+        let videoTrimEditorState = null;
+        const videoTrimClock = seconds => {
+            const value = Math.max(0, Math.floor(Number(seconds) || 0));
+            return `${String(Math.floor(value / 3600)).padStart(2, '0')}:${String(Math.floor(value % 3600 / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+        };
+
+        async function openVideoTrimEditor(encodedMediaId, encodedFileName) {
             const id = decodeURIComponent(encodedMediaId);
-            const originalLabel = button.textContent;
+            const fileName = decodeURIComponent(encodedFileName);
+            const player = document.getElementById('videoTrimPlayer');
+            videoTrimEditorState = { id, name: fileName, duration: 0, width: 0, height: 0, detected: [], cuts: [], crop: null, previewing: false, cropPreview: false };
+            document.getElementById('videoTrimTitle').textContent = `Edit video: ${fileName}`;
+            document.getElementById('videoTrimModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            document.getElementById('videoTrimCuts').innerHTML = '<p class="muted">Scanning black ranges…</p>';
+            document.getElementById('videoTrimRanges').innerHTML = '';
+            for (const idName of ['videoCropX', 'videoCropY', 'videoCropWidth', 'videoCropHeight']) document.getElementById(idName).value = '';
+            document.getElementById('videoTrimApplyButton').disabled = true;
+            document.getElementById('videoTrimApplyButton').textContent = 'Apply changes';
+            player.src = `/stream?id=${encodeURIComponent(id)}`;
+            player.load();
+            enableVideoCropDrag();
+            player.onloadedmetadata = () => {
+                if (!videoTrimEditorState || videoTrimEditorState.id !== id) return;
+                videoTrimEditorState.duration = player.duration;
+                videoTrimEditorState.width = player.videoWidth;
+                videoTrimEditorState.height = player.videoHeight;
+                document.getElementById('videoTrimEnd').value = player.duration.toFixed(2);
+                document.getElementById('videoTrimStart').value = '0';
+                document.getElementById('videoTrimSeek').max = player.duration;
+                document.getElementById('videoTrimOriginal').textContent = videoTrimClock(player.duration);
+                resetVideoTrimCrop();
+                updateVideoTrimView();
+            };
+            player.ontimeupdate = updateVideoTrimPosition;
+            player.onplay = () => { document.getElementById('videoTrimPlayButton').textContent = 'Pause'; };
+            player.onpause = () => { document.getElementById('videoTrimPlayButton').textContent = 'Play'; };
+            document.getElementById('videoTrimSeek').oninput = event => { player.currentTime = Number(event.target.value); };
+            document.getElementById('videoTrimStart').oninput = updateVideoTrimView;
+            document.getElementById('videoTrimEnd').oninput = updateVideoTrimView;
+            for (const idName of ['videoCropX', 'videoCropY', 'videoCropWidth', 'videoCropHeight']) {
+                document.getElementById(idName).oninput = readVideoCropInputs;
+            }
+            document.getElementById('videoTrimStatus').textContent = 'Scanning black sections…';
+            showVideoTrimTab('time');
+            try { await detectVideoTrimBlack(); }
+            catch (error) { document.getElementById('videoTrimStatus').textContent = `Black scan unavailable: ${error.message}`; }
+            finally { document.getElementById('videoTrimApplyButton').disabled = false; }
+        }
+
+        function closeVideoTrimEditor() {
+            const player = document.getElementById('videoTrimPlayer');
+            player.pause();
+            player.removeAttribute('src');
+            player.load();
+            document.getElementById('videoTrimModal').classList.add('hidden');
+            document.body.style.overflow = '';
+            videoTrimEditorState = null;
+        }
+
+        function showVideoTrimTab(tab) {
+            const isFrame = tab === 'frame';
+            document.getElementById('videoTrimTimePanel').classList.toggle('hidden', isFrame);
+            document.getElementById('videoTrimFramePanel').classList.toggle('hidden', !isFrame);
+            document.getElementById('videoTrimTabTime').setAttribute('aria-selected', String(!isFrame));
+            document.getElementById('videoTrimTabFrame').setAttribute('aria-selected', String(isFrame));
+            document.getElementById('videoCropBox').classList.toggle('hidden', !isFrame || !videoTrimEditorState || videoTrimEditorState.cropPreview);
+        }
+
+        async function detectVideoTrimBlack() {
+            if (!videoTrimEditorState) return;
+            const state = videoTrimEditorState;
+            const scan = await post('/api/video/black-intervals', {
+                id: state.id,
+                darkness_threshold: Number(document.getElementById('videoTrimThreshold').value),
+                minimum_duration_seconds: Number(document.getElementById('videoTrimMinimum').value),
+            });
+            if (!scan.ok) throw new Error(scan.error || 'Could not scan video');
+            state.duration = Number(scan.duration) || state.duration;
+            state.detected = (scan.intervals || []).map(range => ({ start: Number(range.start), end: Number(range.end), enabled: true, detected: true }));
+            state.cuts = state.detected.map(range => ({ ...range }));
+            if (!Number(document.getElementById('videoTrimEnd').value)) document.getElementById('videoTrimEnd').value = state.duration.toFixed(2);
+            document.getElementById('videoTrimStatus').textContent = scan.status === 'NEEDS_REVIEW'
+                ? `NEEDS_REVIEW - ${scan.confidence} confidence. Review each proposed range.`
+                : state.detected.length ? `${state.detected.length} black range(s) detected. Review before applying.` : 'No black ranges detected. You can add manual cuts.';
+            renderVideoTrimCuts();
+            updateVideoTrimView();
+        }
+
+        async function detectVideoTrimCrop() {
+            if (!videoTrimEditorState) return;
+            const button = document.getElementById('videoTrimApplyButton');
             button.disabled = true;
-            button.textContent = 'Scanning…';
+            document.getElementById('videoTrimStatus').textContent = 'Detecting frame borders…';
             try {
-                const auto = document.getElementById('autoRemoveBlack').checked;
-                const scan = await post('/api/video/black-intervals', {
-                    id,
-                    darkness_threshold: Number(document.getElementById('blackDarknessThreshold').value),
-                    minimum_duration_seconds: Number(document.getElementById('blackMinDuration').value),
+                const scan = await post('/api/video/black-borders', {
+                    id: videoTrimEditorState.id,
+                    darkness_threshold: Number(document.getElementById('videoTrimThreshold').value),
                 });
-                if (!scan.ok) throw new Error(scan.error || 'Could not scan video');
-                const intervals = scan.intervals || [];
-                if (!intervals.length) {
-                    showToast('No black sections met the selected threshold and duration');
-                    return;
-                }
-                const clock = seconds => {
-                    const value = Math.max(0, Math.floor(seconds));
-                    return `${String(Math.floor(value / 3600)).padStart(2, '0')}:${String(Math.floor(value % 3600 / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
-                };
-                const preview = intervals.slice(0, 8).map(item => `${clock(item.start)}–${clock(item.end)}`).join('\n');
-                const extra = intervals.length > 8 ? `\n…and ${intervals.length - 8} more` : '';
-                const review = `Status: ${scan.status} (${scan.confidence} confidence)\n${intervals.length} section(s), ${clock(scan.removed_seconds)} removed:\n\n${preview}${extra}`;
-                if (auto && scan.confidence !== 'high') {
-                    window.alert(`${review}\n\nNEEDS_REVIEW. Automatic trimming is disabled for this result.`);
-                    return;
-                }
-                if (auto) window.alert(`${review}\n\nCreating a trimmed copy. The original stays untouched.`);
-                else if (!window.confirm(`${review}\n\nCreate a trimmed copy? The original stays untouched.`)) return;
-                button.textContent = 'Cutting…';
-                const result = await post('/api/video/remove-black', { id, intervals, auto, confidence: scan.confidence });
-                if (!result.ok) throw new Error(result.error || 'Could not create trimmed video');
-                showToast(`Saved ${result.name}; original preserved`);
-                await loadFiles();
-            } catch (error) {
-                showToast(error.message || 'Could not remove black sections');
+                if (!scan.ok) throw new Error(scan.error || 'Could not scan frame borders');
+                if (!scan.frame) throw new Error('Video frame dimensions are unavailable');
+                videoTrimEditorState.width = Number(scan.frame.width);
+                videoTrimEditorState.height = Number(scan.frame.height);
+                const crop = scan.crop || { x: 0, y: 0, width: scan.frame.width, height: scan.frame.height };
+                setVideoCrop(crop);
+                document.getElementById('videoTrimStatus').textContent = scan.status === 'NEEDS_REVIEW'
+                    ? 'NEEDS_REVIEW - adjust the suggested crop rectangle.'
+                    : scan.crop ? `Border suggestion ready (${scan.confidence} confidence). Review the frame crop.` : 'No persistent black borders detected.';
+                showVideoTrimTab('frame');
             } finally {
                 button.disabled = false;
-                button.textContent = originalLabel;
             }
         }
 
-        async function cropBlackBorders(encodedMediaId, button) {
-            const id = decodeURIComponent(encodedMediaId);
-            const originalLabel = button.textContent;
+        function setVideoCrop(crop) {
+            videoTrimEditorState.crop = { x: Number(crop.x), y: Number(crop.y), width: Number(crop.width), height: Number(crop.height) };
+            for (const [key, id] of [['x', 'videoCropX'], ['y', 'videoCropY'], ['width', 'videoCropWidth'], ['height', 'videoCropHeight']]) {
+                document.getElementById(id).value = videoTrimEditorState.crop[key];
+            }
+            updateVideoCropPreview();
+        }
+
+        function readVideoCropInputs() {
+            if (!videoTrimEditorState) return;
+            const values = ['videoCropX', 'videoCropY', 'videoCropWidth', 'videoCropHeight'].map(id => Number(document.getElementById(id).value));
+            if (values.some(value => !Number.isFinite(value))) return;
+            videoTrimEditorState.crop = { x: values[0], y: values[1], width: values[2], height: values[3] };
+            updateVideoCropPreview();
+        }
+
+        function resetVideoTrimCrop() {
+            if (!videoTrimEditorState || !videoTrimEditorState.width || !videoTrimEditorState.height) return;
+            setVideoCrop({ x: 0, y: 0, width: videoTrimEditorState.width, height: videoTrimEditorState.height });
+        }
+
+        function updateVideoCropPreview() {
+            const state = videoTrimEditorState;
+            if (!state || !state.crop || !state.width || !state.height) return;
+            const { x, y, width, height } = state.crop;
+            const frame = document.getElementById('videoTrimFrame');
+            const player = document.getElementById('videoTrimPlayer');
+            const box = document.getElementById('videoCropBox');
+            const ratio = width > 0 && height > 0 ? width / height : 0;
+            document.getElementById('videoCropRatio').textContent = ratio ? `Crop aspect ratio ${ratio.toFixed(3)}:1 (${width} x ${height})` : 'Crop aspect ratio —';
+            document.getElementById('videoTrimAspect').textContent = state.width && state.height ? `Source ${state.width} x ${state.height} (${(state.width / state.height).toFixed(3)}:1)` : 'Aspect ratio —';
+            if (state.cropPreview && ratio) {
+                frame.style.aspectRatio = `${width} / ${height}`;
+                player.style.position = 'absolute';
+                player.style.objectFit = 'fill';
+                player.style.width = `${state.width / width * 100}%`;
+                player.style.height = `${state.height / height * 100}%`;
+                player.style.left = `${-x / width * 100}%`;
+                player.style.top = `${-y / height * 100}%`;
+                box.classList.add('hidden');
+            } else {
+                frame.style.aspectRatio = `${state.width} / ${state.height}`;
+                player.style.position = 'relative';
+                player.style.width = '100%';
+                player.style.height = '100%';
+                player.style.left = '0';
+                player.style.top = '0';
+                box.style.left = `${x / state.width * 100}%`;
+                box.style.top = `${y / state.height * 100}%`;
+                box.style.width = `${width / state.width * 100}%`;
+                box.style.height = `${height / state.height * 100}%`;
+                box.classList.toggle('hidden', document.getElementById('videoTrimFramePanel').classList.contains('hidden'));
+            }
+        }
+
+        function toggleVideoCropPreview() {
+            if (!videoTrimEditorState) return;
+            videoTrimEditorState.cropPreview = !videoTrimEditorState.cropPreview;
+            document.getElementById('videoCropPreview').textContent = videoTrimEditorState.cropPreview ? 'Show crop rectangle' : 'Preview crop';
+            updateVideoCropPreview();
+        }
+
+        function effectiveVideoCuts() {
+            if (!videoTrimEditorState) return [];
+            const duration = videoTrimEditorState.duration;
+            const start = Number(document.getElementById('videoTrimStart').value) || 0;
+            const end = Number(document.getElementById('videoTrimEnd').value) || duration;
+            return videoTrimEditorState.cuts.filter(cut => cut.enabled).map(cut => ({ start: Math.max(start, cut.start), end: Math.min(end, cut.end) })).filter(cut => cut.end > cut.start);
+        }
+
+        function renderVideoTrimCuts() {
+            const list = document.getElementById('videoTrimCuts');
+            if (!videoTrimEditorState || !videoTrimEditorState.cuts.length) {
+                list.innerHTML = '<p class="muted">No proposed cuts. Add a range or use Auto detect black.</p>';
+                return;
+            }
+            list.innerHTML = videoTrimEditorState.cuts.map((cut, index) => `<div class="video-trim-cut">
+                <input type="checkbox" aria-label="Enable cut ${index + 1}" ${cut.enabled ? 'checked' : ''} onchange="setVideoTrimCut(${index}, 'enabled', this.checked)">
+                <label class="video-trim-label">${cut.detected ? 'Detected' : 'Manual'} ${index + 1}<input type="number" min="0" step="0.1" value="${cut.start}" aria-label="Cut ${index + 1} start seconds" onchange="setVideoTrimCut(${index}, 'start', this.value)"></label>
+                <label class="video-trim-label">End seconds<input type="number" min="0" step="0.1" value="${cut.end}" aria-label="Cut ${index + 1} end seconds" onchange="setVideoTrimCut(${index}, 'end', this.value)"></label>
+                <button type="button" class="danger" aria-label="Remove cut ${index + 1}" onclick="removeVideoTrimCut(${index})">×</button>
+            </div>`).join('');
+        }
+
+        function setVideoTrimCut(index, key, value) {
+            const cut = videoTrimEditorState && videoTrimEditorState.cuts[index];
+            if (!cut) return;
+            cut[key] = key === 'enabled' ? Boolean(value) : Number(value);
+            updateVideoTrimView();
+        }
+
+        function removeVideoTrimCut(index) {
+            if (!videoTrimEditorState) return;
+            videoTrimEditorState.cuts.splice(index, 1);
+            renderVideoTrimCuts();
+            updateVideoTrimView();
+        }
+
+        function addVideoTrimCut() {
+            if (!videoTrimEditorState) return;
+            const start = Number(document.getElementById('videoTrimManualStart').value);
+            const end = Number(document.getElementById('videoTrimManualEnd').value);
+            if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start || end > videoTrimEditorState.duration) {
+                document.getElementById('videoTrimStatus').textContent = 'Enter a valid manual cut range within the video duration.';
+                return;
+            }
+            videoTrimEditorState.cuts.push({ start, end, enabled: true, detected: false });
+            document.getElementById('videoTrimManualStart').value = '';
+            document.getElementById('videoTrimManualEnd').value = '';
+            renderVideoTrimCuts();
+            updateVideoTrimView();
+        }
+
+        function updateVideoTrimView() {
+            const state = videoTrimEditorState;
+            if (!state || !state.duration) return;
+            const duration = state.duration;
+            const trimStart = Math.max(0, Number(document.getElementById('videoTrimStart').value) || 0);
+            const trimEnd = Math.min(duration, Number(document.getElementById('videoTrimEnd').value) || duration);
+            const active = effectiveVideoCuts().sort((a, b) => a.start - b.start);
+            const merged = [];
+            for (const cut of active) {
+                if (merged.length && cut.start <= merged[merged.length - 1].end) merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, cut.end);
+                else merged.push({ ...cut });
+            }
+            const removed = Math.min(duration, trimStart + Math.max(0, duration - trimEnd) + merged.reduce((sum, cut) => sum + cut.end - cut.start, 0));
+            document.getElementById('videoTrimRemoved').textContent = videoTrimClock(removed);
+            document.getElementById('videoTrimFinal').textContent = videoTrimClock(Math.max(0, duration - removed));
+            document.getElementById('videoTrimRanges').innerHTML = state.cuts.map(cut => `<span class="video-trim-range ${cut.detected ? '' : 'manual'}" style="left:${Math.max(0, cut.start / duration * 100)}%;width:${Math.max(0, (cut.end - cut.start) / duration * 100)}%;opacity:${cut.enabled ? 1 : 0.25}" title="${videoTrimClock(cut.start)} - ${videoTrimClock(cut.end)}"></span>`).join('');
+            updateVideoTrimPosition();
+        }
+
+        function updateVideoTrimPosition() {
+            const player = document.getElementById('videoTrimPlayer');
+            const state = videoTrimEditorState;
+            if (!state) return;
+            const time = Number(player.currentTime) || 0;
+            document.getElementById('videoTrimTime').textContent = `${videoTrimClock(time)} / ${videoTrimClock(state.duration)}`;
+            document.getElementById('videoTrimSeek').value = time;
+            document.getElementById('videoTrimPosition').style.left = `${state.duration ? time / state.duration * 100 : 0}%`;
+            if (state.previewing) {
+                const end = Number(document.getElementById('videoTrimEnd').value) || state.duration;
+                if (time >= end) { player.pause(); state.previewing = false; return; }
+                const cut = effectiveVideoCuts().find(item => time >= item.start && time < item.end);
+                if (cut) player.currentTime = cut.end;
+            }
+        }
+
+        function toggleVideoTrimPlayback() {
+            const player = document.getElementById('videoTrimPlayer');
+            if (player.paused) player.play(); else player.pause();
+        }
+
+        function previewVideoTrimResult() {
+            if (!videoTrimEditorState) return;
+            const player = document.getElementById('videoTrimPlayer');
+            const start = Number(document.getElementById('videoTrimStart').value) || 0;
+            videoTrimEditorState.previewing = true;
+            player.currentTime = start;
+            player.play();
+            document.getElementById('videoTrimStatus').textContent = 'Previewing the proposed result. Apply changes creates the validated copy.';
+        }
+
+        function resetVideoTrimEditor() {
+            if (!videoTrimEditorState) return;
+            videoTrimEditorState.cuts = videoTrimEditorState.detected.map(cut => ({ ...cut }));
+            document.getElementById('videoTrimStart').value = '0';
+            document.getElementById('videoTrimEnd').value = videoTrimEditorState.duration.toFixed(2);
+            document.getElementById('videoTrimManualStart').value = '';
+            document.getElementById('videoTrimManualEnd').value = '';
+            videoTrimEditorState.cropPreview = false;
+            document.getElementById('videoCropPreview').textContent = 'Preview crop';
+            resetVideoTrimCrop();
+            renderVideoTrimCuts();
+            updateVideoTrimView();
+            document.getElementById('videoTrimStatus').textContent = 'Edits reset. Detected ranges remain selected for review.';
+        }
+
+        async function applyVideoTrimEdits() {
+            if (!videoTrimEditorState) return;
+            const state = videoTrimEditorState;
+            const button = document.getElementById('videoTrimApplyButton');
+            const duration = state.duration;
+            const start = Number(document.getElementById('videoTrimStart').value) || 0;
+            const end = Number(document.getElementById('videoTrimEnd').value) || duration;
+            const crop = state.crop && (state.crop.x || state.crop.y || state.crop.width !== state.width || state.crop.height !== state.height) ? state.crop : null;
+            if (start < 0 || end > duration || end <= start) { document.getElementById('videoTrimStatus').textContent = 'Trim bounds must be within the source duration.'; return; }
+            const cuts = effectiveVideoCuts();
+            const finalDuration = duration - start - (duration - end) - cuts.reduce((sum, cut) => sum + cut.end - cut.start, 0);
+            if (finalDuration <= 0 || (cuts.length === 0 && start === 0 && end === duration && !crop)) {
+                document.getElementById('videoTrimStatus').textContent = 'No edits selected.'; return;
+            }
             button.disabled = true;
-            button.textContent = 'Scanning…';
+            button.textContent = 'Validating copy…';
+            document.getElementById('videoTrimStatus').textContent = 'Creating and validating a new copy. The source remains untouched.';
             try {
-                const auto = document.getElementById('autoCropBlack').checked;
-                const scan = await post('/api/video/black-borders', {
-                    id,
-                    darkness_threshold: Number(document.getElementById('blackDarknessThreshold').value),
-                });
-                if (!scan.ok) throw new Error(scan.error || 'Could not scan borders');
-                if (!scan.crop) {
-                    showToast('No persistent black borders found');
-                    return;
-                }
-                const crop = scan.crop;
-                const review = `Status: ${scan.status} (${scan.confidence} confidence)\nCrop ${crop.width}×${crop.height} at ${crop.x},${crop.y}.\n\nCreate a separately cropped copy? Temporal black sections are untouched.`;
-                if (auto && scan.confidence !== 'high') {
-                    window.alert(`${review}\n\nNEEDS_REVIEW. Automatic cropping is disabled for this result.`);
-                    return;
-                }
-                if (auto) window.alert(`${review}\n\nCreating a cropped copy. The original stays untouched.`);
-                else if (!window.confirm(`${review}\n\nContinue?`)) return;
-                button.textContent = 'Cropping…';
-                const result = await post('/api/video/crop-black-borders', { id, crop, auto, confidence: scan.confidence });
-                if (!result.ok) throw new Error(result.error || 'Could not crop borders');
-                showToast(`Saved ${result.name}; original preserved`);
+                const result = await post('/api/video/edit', { id: state.id, cuts, trim_start: start, trim_end: end, crop });
+                if (!result.ok || !result.validated) throw new Error(result.error || 'Edited copy failed validation');
+                closeVideoTrimEditor();
+                showToast(`Saved ${result.name}; source preserved (${videoTrimClock(result.duration_seconds)})`);
                 await loadFiles();
             } catch (error) {
-                showToast(error.message || 'Could not crop black borders');
+                document.getElementById('videoTrimStatus').textContent = error.message || 'Could not create edited copy';
             } finally {
                 button.disabled = false;
-                button.textContent = originalLabel;
+                button.textContent = 'Apply changes';
             }
+        }
+
+        function enableVideoCropDrag() {
+            const box = document.getElementById('videoCropBox');
+            let drag = null;
+            box.onpointerdown = event => {
+                if (!videoTrimEditorState || videoTrimEditorState.cropPreview) return;
+                const frame = document.getElementById('videoTrimFrame').getBoundingClientRect();
+                const crop = videoTrimEditorState.crop;
+                drag = { resize: event.offsetX > box.clientWidth - 18 && event.offsetY > box.clientHeight - 18,
+                    startX: event.clientX, startY: event.clientY, crop: { ...crop },
+                    scaleX: videoTrimEditorState.width / frame.width, scaleY: videoTrimEditorState.height / frame.height };
+                box.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            };
+            box.onpointermove = event => {
+                if (!drag || !videoTrimEditorState) return;
+                const dx = Math.round((event.clientX - drag.startX) * drag.scaleX / 2) * 2;
+                const dy = Math.round((event.clientY - drag.startY) * drag.scaleY / 2) * 2;
+                const crop = { ...drag.crop };
+                if (drag.resize) {
+                    crop.width = Math.max(2, Math.min(videoTrimEditorState.width - crop.x, crop.width + dx));
+                    crop.height = Math.max(2, Math.min(videoTrimEditorState.height - crop.y, crop.height + dy));
+                } else {
+                    crop.x = Math.max(0, Math.min(videoTrimEditorState.width - crop.width, crop.x + dx));
+                    crop.y = Math.max(0, Math.min(videoTrimEditorState.height - crop.height, crop.y + dy));
+                }
+                setVideoCrop(crop);
+            };
+            box.onpointerup = () => { drag = null; };
         }
 
         function populateProjectFilter(files) {
@@ -1579,7 +1962,7 @@
                                 <button class="btn-edit tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="editFile('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="Edit" title="Edit file">
                                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </button>
-                                ${fileType === 'Video' && !f.logical_video ? `<button class="btn-edit tooltip" onclick="removeBlackSections('${encodeURIComponent(f.media_id)}', this)" aria-label="Remove black sections" title="Find and cut long black sections">Cut black</button><button class="btn-edit tooltip" onclick="cropBlackBorders('${encodeURIComponent(f.media_id)}', this)" aria-label="Crop black borders" title="Detect and crop persistent black borders">Crop bars</button>` : ''}
+                                ${fileType === 'Video' && !f.logical_video ? `<button class="btn-edit tooltip" onclick="openVideoTrimEditor('${encodeURIComponent(f.media_id)}', '${encodeURIComponent(f.name)}')" aria-label="Edit video" title="Preview and edit time ranges or frame crop">Edit video</button>` : ''}
                                 ${doc
                                     ? `<button class="btn-docs tooltip" data-tip="View Documentation" onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}', true)" aria-label="View Documentation" title="View Documentation">
                                         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>

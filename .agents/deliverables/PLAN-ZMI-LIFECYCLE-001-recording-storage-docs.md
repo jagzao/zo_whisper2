@@ -163,3 +163,14 @@ Keep the last known-good production image/SHA and configuration. If health, pari
 | Galaxy public CA export and instructions | 🟩 COMPLETE | Public root only exported as `artifacts/gates/Whisper-LAN-Local-CA.cer`; no private key copied. Galaxy One UI install steps documented in `docs/ops/MOBILE_LAN_ACCESS.md`. | Install public CA and verify on phone after Norton configuration | Owner |
 
 Strict verification: `requests.get(..., verify=<Whisper CA PEM>)` fails for all three local origins while Norton substitutes its own leaf; normal Windows/Python trust validation and Playwright pass. No TLS validation bypass was used. Exact local origins and Norton instructions are in `docs/ops/MOBILE_LAN_ACCESS.md`.
+
+## Delivery Kanban ? video trim editor, 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| TIME editor: playback, timeline, reviewable cuts, manual trim, preview | ?? COMPLETE | Host Playwright verifies seek/play, detected interval adjustment/deselection, manual cut/trim, preview, reset and cancel. Screenshot: `artifacts/gates/e2e-host-data/video-trim-editor.png` | Preserve evidence | Codex |
+| FRAME editor: border detection, crop rectangle, preview and reset | ?? COMPLETE | Isolated letterbox fixture verifies suggested crop, manual adjustment, crop preview/reset and apply | Preserve evidence | Codex |
+| Apply: validated copy, source preservation and provenance | ?? COMPLETE | 16 focused pytest tests pass; API and Host E2E verify valid output, sidecar provenance and unchanged source hash | Preserve evidence | Codex |
+| Playwright / Host E2E | ?? COMPLETE | `scripts/e2e.py` PASS; report `artifacts/gates/e2e-host-data/e2e_report.json`; includes mobile layout and capture auto-stop warning/cancel | Preserve evidence | Codex |
+| Full repository heavy gate | ?? BLOCKED | Available RAM 3.71 GiB; canonical runner requires >6 GiB before heavy suite | Rerun when RAM exceeds 6 GiB | Codex |
+| Desktop and LAN deployment from final HEAD | ?? TESTING | Restart and served UI verification pending this commit | Restart both services; verify HEAD and shared-data parity | Codex |
