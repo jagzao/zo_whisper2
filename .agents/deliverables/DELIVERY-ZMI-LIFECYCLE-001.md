@@ -51,3 +51,14 @@
 | Original preservation | 🟩 COMPLETE | API integration test verifies original path and SHA-256 unchanged after temporal trim; media unit tests verify source unchanged after crop. | Keep invariant | Codex |
 
 This run did not mark the feature complete. Head was `2b73649`; Playwright and Host E2E remain pending under the canonical RAM gate.
+
+## Gate repair round — 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Full regression / loopback TLS | 🟥 BLOCKED | Python 3.12 full pytest: 1225 passed, 1 failed, 6 errors from reset loopback TLS handshakes. Explicit host-interception handling added; focused rerun: 1 passed, 6 environment skips. | Rerun full pytest | Codex |
+| Black video Host E2E | 🟨 TESTING | Smoke dashboard passed. Black-tools browser timed out waiting for `DOMContentLoaded` at 30 s before scenario checks; navigation now waits for commit then `#filesList` up to 60 s. | Rerun Host E2E and exercise all black-video UI paths | Codex |
+| Security / smoke / Docker | 🟩 COMPLETE | Security PASS (116 passed, 3 skipped; dependency audit clean); smoke PASS; Docker build PASS (200.45 s); Docker E2E PASS (109.72 s). | Retain reports | Codex |
+| Sonar / Jenkins / soak | 🟥 BLOCKED | Runner reports `NOT_CONFIGURED` for all three. | No local executable is configured | Codex |
+
+RAM opened briefly at 6.33 GiB for the first heavy run, then fell during validation. The canonical runner completed its gates; the next regression and Host E2E run remains scheduled for a stable >6 GiB window. No deployment/restart occurred.

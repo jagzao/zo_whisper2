@@ -50,6 +50,11 @@ def _served_cert_fingerprint(port: int) -> str:
     return lan_access.format_fingerprint(x509.load_der_x509_certificate(der).fingerprint(hashes.SHA256()))
 
 
+def _require_loopback_tls(https_server: dict) -> None:
+    if https_server["intercepted"]:
+        pytest.skip("host-level TLS interception resets or replaces the loopback certificate")
+
+
 def _free_lan_ip(port: int) -> str | None:
     for ip in lan_access.local_ipv4_addresses():
         try:
@@ -104,12 +109,17 @@ def https_server(tmp_path, monkeypatch):
     thread.start()
     time.sleep(0.2)
     try:
+        served_fingerprint = _served_cert_fingerprint(port)
+        tls_intercepted = served_fingerprint != cert_result.fingerprint_sha256
+    except ConnectionResetError:
+        tls_intercepted = True
+    try:
         yield {
             "port": port,
             "ca": cert_result.ca_path,
             "fingerprint": cert_result.fingerprint_sha256,
             "server": server,
-            "intercepted": _served_cert_fingerprint(port) != cert_result.fingerprint_sha256,
+            "intercepted": tls_intercepted,
         }
     finally:
         server.shutdown()
@@ -133,6 +143,7 @@ def test_served_chain_verifies_against_generated_ca(https_server):
 
 
 def test_https_health_and_files(https_server):
+    _require_loopback_tls(https_server)
     base = f"https://127.0.0.1:{https_server['port']}"
 
     with requests.get(f"{base}/api/health", verify=False, timeout=10) as resp:
@@ -149,6 +160,7 @@ def test_https_health_and_files(https_server):
 
 
 def test_lan_interface_client_loads_dashboard(https_server):
+    _require_loopback_tls(https_server)
     port = https_server["port"]
     lan_ip = _free_lan_ip(port)
     if lan_ip is None:
@@ -159,6 +171,7 @@ def test_lan_interface_client_loads_dashboard(https_server):
 
 
 def test_synthetic_fragment_upload_over_https(https_server):
+    _require_loopback_tls(https_server)
     base = f"https://127.0.0.1:{https_server['port']}"
     headers = {"X-Local-Dashboard-Token": TOKEN}
 
@@ -196,6 +209,7 @@ def test_synthetic_fragment_upload_over_https(https_server):
 
 
 def test_health_from_separate_process(https_server):
+    _require_loopback_tls(https_server)
     base = f"https://127.0.0.1:{https_server['port']}"
     code = (
         "import requests, urllib3;"

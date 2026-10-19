@@ -118,3 +118,12 @@ Keep the last known-good production image/SHA and configuration. If health, pari
 | Separate letterbox/pillarbox detection and crop | 🟨 TESTING | Same 12 tests include synthetic letterbox and pillarbox, crop output and temporal independence | Capture Playwright UI evidence when RAM exceeds 6 GiB | Codex |
 | Live capture black preview auto-stop | 🟨 TESTING | Code has Off default, 30/60/120 s, 10 s warning and reset when content returns; no browser evidence in this run | Verify countdown, stop and cancellation in Playwright/Host E2E when RAM exceeds 6 GiB | Codex |
 | Black video UI and Host E2E | 🟥 BLOCKED | `scripts/ram_gate.py`: 4.33 GiB available; canonical threshold is >6.0 GiB. Host E2E/Playwright were not run | Recheck RAM; run isolated black-video UI subset after gate opens | Codex |
+
+## Gate repair round — 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Full regression and loopback TLS | 🟥 BLOCKED | Full pytest on locked Python 3.12: 1225 passed, 1 failed, 6 errored. Six TLS setup failures and the TLS handshake test reset at loopback. Added explicit interception detection; focused rerun: 1 passed, 6 skipped as host TLS interception. | Rerun full pytest under canonical heavy runner | Codex |
+| Black video Host E2E | 🟨 TESTING | Smoke UI passed; black tools script timed out waiting for `DOMContentLoaded` on its second browser. Changed to commit navigation plus bounded `#filesList` readiness wait. | Rerun full Host E2E when RAM is stable above 6 GiB | Codex |
+| Security, smoke, Docker build/E2E | 🟩 COMPLETE | Heavy runner: security PASS, smoke PASS, Docker build PASS (200.45 s), Docker E2E PASS (109.72 s). | Keep artifacts for release record | Codex |
+| Sonar, Jenkins, soak | 🟥 BLOCKED | Authoritative commands report `NOT_CONFIGURED`; not counted as PASS. | Configure only if part of the release environment | Codex |
