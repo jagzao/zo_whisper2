@@ -11,7 +11,7 @@ import tempfile
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from transcript_pipeline.media.utils import run_ffprobe
 
@@ -34,7 +34,7 @@ def _probe(path: Path) -> dict[str, Any]:
     return {"duration": duration, "streams": streams}
 
 
-def _validate_output(source: Path, output: Path, expected_duration: float) -> dict[str, Any]:
+def _validate_output(source: Path, output: Path, expected_duration: float, progress: Callable[[str, int], None] | None = None) -> dict[str, Any]:
     source_info = _probe(source)
     output_info = _probe(output)
     source_types = [stream["codec_type"] for stream in source_info["streams"]]
@@ -46,6 +46,8 @@ def _validate_output(source: Path, output: Path, expected_duration: float) -> di
     tolerance = max(1.0, expected_duration * 0.01)
     if abs(output_info["duration"] - expected_duration) > tolerance:
         raise RuntimeError("Trimmed output duration failed validation")
+    if progress:
+        progress("VALIDATING", 75)
     decoded = subprocess.run(
         ["ffmpeg", "-v", "error", "-i", str(output), "-f", "null", "-"],
         capture_output=True,
@@ -65,6 +67,7 @@ def _render_copy(
     expected_duration: float,
     *,
     filtered_audio: bool = False,
+    progress: Callable[[str, int], None] | None = None,
 ) -> Path:
     output = source.with_name(f"{source.stem}_{output_suffix}.mp4")
     if output.exists():
@@ -81,10 +84,14 @@ def _render_copy(
         command += ["-c:a", "aac"]
     command += ["-movflags", "+faststart", str(temporary)]
     try:
+        if progress:
+            progress("PROCESSING", 10)
         result = subprocess.run(command, capture_output=True, text=True, timeout=7200, check=False)
         if result.returncode or not temporary.exists() or temporary.stat().st_size == 0:
             raise RuntimeError(result.stderr[-1500:] or "FFmpeg did not produce an output video")
-        _validate_output(source, temporary, expected_duration)
+        if progress:
+            progress("VALIDATING", 60)
+        _validate_output(source, temporary, expected_duration, progress)
         temporary.replace(output)
         return output
     finally:
@@ -228,6 +235,44 @@ def crop_black_borders(path: Path, crop: dict[str, int]) -> Path:
     return _render_copy(path, f"[0:v:0]crop={crop_width}:{crop_height}:{x}:{y}[vout]", "cropped", duration)
 
 
+def validate_video_edit_spec(
+    path: Path,
+    cuts: list[dict[str, float]],
+    *,
+    trim_start: float = 0.0,
+    trim_end: float | None = None,
+    crop: dict[str, int] | None = None,
+) -> dict[str, Any]:
+    """Validate reviewed coordinates against the source before queuing work."""
+    info = _probe(path)
+    duration = info["duration"]
+    start = float(trim_start)
+    end = duration if trim_end is None else float(trim_end)
+    if not math.isfinite(start) or not math.isfinite(end) or start < 0 or end > duration or end <= start:
+        raise ValueError("Trim boundaries must be within the source duration")
+    normalized = []
+    for cut in cuts:
+        if not isinstance(cut, dict):
+            raise ValueError("Each cut must be an object")
+        cut_start, cut_end = float(cut["start"]), float(cut["end"])
+        if not math.isfinite(cut_start) or not math.isfinite(cut_end) or cut_start < 0 or cut_end > duration or cut_end <= cut_start:
+            raise ValueError("Cut ranges must be within the source duration")
+        normalized.append((cut_start, cut_end))
+    streams = info["streams"]
+    video = next(stream for stream in streams if stream.get("codec_type") == "video")
+    if crop:
+        width, height = int(video["width"]), int(video["height"])
+        values = [crop.get(key) for key in ("x", "y", "width", "height")]
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
+            raise ValueError("Crop coordinates must be integer source pixels")
+        x, y, crop_width, crop_height = values
+        if min(crop_width, crop_height) < 2 or x < 0 or y < 0 or x + crop_width > width or y + crop_height > height or any(value % 2 for value in values):
+            raise ValueError("Crop must be in bounds and use even pixel values")
+    if start == 0 and end == duration and not normalized and not crop:
+        raise ValueError("No video edits were selected")
+    return {"duration": duration, "start": start, "end": end, "cuts": normalized}
+
+
 def apply_video_edits(
     path: Path,
     cuts: list[dict[str, float]],
@@ -235,6 +280,7 @@ def apply_video_edits(
     trim_start: float = 0.0,
     trim_end: float | None = None,
     crop: dict[str, int] | None = None,
+    progress: Callable[[str, int], None] | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     """Create one validated derivative from reviewed temporal and spatial edits."""
     info = _probe(path)
@@ -317,7 +363,7 @@ def apply_video_edits(
 
     removed = sum(end - start for start, end in merged)
     expected_duration = end_limit - start_limit - removed
-    output = _render_copy(path, ";".join(filters), "edited", expected_duration, filtered_audio=has_audio)
+    output = _render_copy(path, ";".join(filters), "edited", expected_duration, filtered_audio=has_audio, progress=progress)
     provenance_path = output.with_suffix(".provenance.json")
     temp_provenance: Path | None = None
     try:

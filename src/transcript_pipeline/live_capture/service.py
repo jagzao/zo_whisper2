@@ -137,6 +137,7 @@ class CaptureService:
         is_test_session: bool = False,
         capture_kind: str = "video",
         capture_source: str | None = None,
+        capture_metadata: dict[str, object] | None = None,
     ) -> models.Session:
         created_at = created_at or models.now_iso()
         session = models.Session(
@@ -153,6 +154,7 @@ class CaptureService:
             is_test_session=is_test_session,
             capture_kind=capture_kind,
             capture_source=capture_source,
+            capture_metadata=capture_metadata,
         )
         self.store.create_session(session)
         return session
@@ -354,6 +356,13 @@ class CaptureService:
         with self._lock_for(session_id):
             session = self.store.load_session(session_id)
             updated = replace(session, capture_source=source)
+            self.store.save_session(updated)
+            return updated
+
+    def set_capture_metadata(self, session_id: str, metadata: dict[str, object]) -> models.Session:
+        with self._lock_for(session_id):
+            session = self.store.load_session(session_id)
+            updated = replace(session, capture_metadata=dict(metadata))
             self.store.save_session(updated)
             return updated
 

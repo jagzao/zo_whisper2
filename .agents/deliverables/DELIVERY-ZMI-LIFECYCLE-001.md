@@ -95,5 +95,19 @@ Completion is based on passing tests, Host Playwright evidence, and served deskt
 | FRAME crop editor | ?? COMPLETE | Host Playwright covers border detection, manual crop adjustment, crop preview/reset, apply | Preserve evidence | Codex |
 | Validated derivative and original preservation | ?? COMPLETE | 16 focused unit/API tests plus Host E2E pass; output decoded/probed before publish, source hash unchanged, provenance sidecar present | Preserve evidence | Codex |
 | Playwright and Host E2E | ?? COMPLETE | `scripts/e2e.py` PASS; `artifacts/gates/e2e-host-data/e2e_report.json` and `video-trim-editor.png` | Preserve evidence | Codex |
-| Full repository heavy gate | ?? BLOCKED | RAM 3.71 GiB, below canonical >6 GiB gate | Rerun once threshold is available | Codex |
 | Desktop/LAN served UI | ?? COMPLETE | Desktop rebuilt; LAN restarted. Strict TLS requests and Playwright confirm HTTP 200, served SHA `131abb068ee245e4da97bbd34434ab1cc92e1671`, and live Edit video modal with TIME/FRAME tabs on desktop, LAN localhost and LAN IP. 58-file count, state hashes, media tree, projects and media identity parity match. Evidence: `artifacts/gates/served-video-trim-editor.json`, `artifacts/gates/deployment-post.json` | Preserve evidence | Codex |
+
+## Delivery Kanban ? video editor and mobile landscape UAT, 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Precise crop: 8 handles, drag, aspect lock, zoom/pan, source-pixel mapping | 🟨 TESTING | Focused Host Playwright passes every handle, drag, zoom/pan and original-pixel bounds | Deploy and verify served editor | Codex |
+| HH:MM:SS inputs and draggable trim/cut timeline | 🟨 TESTING | Focused Host Playwright verifies >1h timecode and synchronized trim/cut handles | Deploy and verify served timeline | Codex |
+| Apply lifecycle, idempotency, validated derivative and provenance | 🟨 TESTING | 82 focused unit/API tests pass; Host E2E verifies PROCESSING/VALIDATING/COMPLETED, one derivative, playable output and unchanged original | Deploy and verify Show result | Codex |
+| Landscape orientation and rear-camera retention | 🟨 TESTING | Synthetic browser media verifies portrait-to-landscape-to-portrait with rear camera and crop alignment | Verify on physical phone | Owner |
+| Quality selector and actual capture metadata | 🟨 TESTING | Host E2E verifies Auto 1080p request, 720p fallback, actual settings, codec/bitrate reporting | Verify displayed settings on physical phone | Owner |
+| Landscape layout, timer and accessible controls | 🟨 TESTING | Host E2E verifies landscape preview, timer, Start/Stop and no page overflow | Verify on physical phone | Owner |
+| Playwright and relevant Host E2E | 🟨 TESTING | `scripts/e2e.py` focused gate PASS; 82 unit/API tests PASS; full smoke gate previously reset before browser load | Rerun full Host E2E after RAM gate permits | Codex |
+| Desktop/LAN deployment and served UI | TODO | Not restarted from this candidate HEAD; canonical RAM gate currently reports 5.38 GiB | After review and RAM >6 GiB, build/restart; verify served SHA and shared-data parity | Codex |
+| Physical-phone UAT | TODO | Exact checklist: `docs/ops/VIDEO_EDITOR_MOBILE_UAT.md`; synthetic Playwright is not phone evidence | Owner follows checklist after deployment | Owner |
+| Full repository heavy gate | 🟥 BLOCKED | `scripts/ram_gate.py`: 5.38 GiB available, threshold strictly >6 GiB | Rerun when RAM gate allows | Codex |

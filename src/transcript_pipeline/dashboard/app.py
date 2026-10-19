@@ -14,6 +14,7 @@ Features:
 
 from __future__ import annotations
 
+import hashlib
 import ipaddress
 import json
 import logging
@@ -64,6 +65,7 @@ from transcript_pipeline.live_capture.black_video import (
     detect_black_borders,
     detect_black_intervals,
     trim_black_intervals,
+    validate_video_edit_spec,
 )
 from transcript_pipeline.live_capture.playlist import PlaylistService, ocr_title_image
 from transcript_pipeline.logging_setup import configure_logging
@@ -106,6 +108,11 @@ _MEDIA_DURATION_CACHE: dict[tuple[str, int, int], float | None] = {}
 _MEDIA_DURATION_FUTURES: dict[tuple[str, int, int], Future[float | None]] = {}
 _MEDIA_DURATION_CACHE_LOCK = threading.Lock()
 _MEDIA_DURATION_EXECUTOR = ThreadPoolExecutor(max_workers=4, thread_name_prefix="whisper-media-probe")
+_VIDEO_EDIT_EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="whisper-video-edit")
+_VIDEO_EDIT_JOBS: dict[str, dict[str, Any]] = {}
+_VIDEO_EDIT_KEYS: dict[str, str] = {}
+_VIDEO_EDIT_SOURCE_JOBS: dict[str, str] = {}
+_VIDEO_EDIT_JOBS_LOCK = threading.Lock()
 
 RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
@@ -1650,38 +1657,77 @@ def api_video_remove_black() -> Any:
 
 @app.route("/api/video/edit", methods=["POST"])
 def api_video_edit() -> Any:
-    """Apply reviewed time/frame edits to one validated derivative."""
+    """Queue a reviewed edit; identical retries share one job and derivative."""
     payload = request.get_json(force=True) or {}
-    target = _from_media_id(payload.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS])
-    if target.suffix.lower() not in VIDEO_EXTS:
-        return jsonify({"ok": False, "error": "Choose a video file"}), 400
-    cuts = payload.get("cuts", [])
-    if not isinstance(cuts, list) or len(cuts) > 1000:
-        return jsonify({"ok": False, "error": "Invalid cut ranges"}), 400
-    crop = payload.get("crop")
-    if crop is not None and not isinstance(crop, dict):
-        return jsonify({"ok": False, "error": "Invalid crop rectangle"}), 400
     try:
-        output, provenance = apply_video_edits(
-            target,
-            cuts,
-            trim_start=payload.get("trim_start", 0),
-            trim_end=payload.get("trim_end"),
-            crop=crop,
-        )
-        return jsonify({
-            "ok": True,
-            "name": output.name,
-            "duration_seconds": provenance["output_duration_seconds"],
-            "provenance": output.with_suffix(".provenance.json").name,
-            "validated": provenance["validated"],
-        })
-    except FileExistsError:
-        return jsonify({"ok": False, "error": "An edited copy already exists"}), 409
-    except (RuntimeError, ValueError, KeyError, TypeError, subprocess.SubprocessError, FileNotFoundError) as exc:
-        logger.warning("[VIDEO_EDIT] Edit failed for %s: %s", target.name, exc)
-        return jsonify({"ok": False, "error": "Could not create a validated edited copy"}), 422
+        target = _from_media_id(payload.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS])
+        if target.suffix.lower() not in VIDEO_EXTS:
+            return jsonify({"ok": False, "error": "Choose a video file"}), 400
+        cuts = payload.get("cuts", [])
+        crop = payload.get("crop")
+        if not isinstance(cuts, list) or len(cuts) > 1000 or (crop is not None and not isinstance(crop, dict)):
+            return jsonify({"ok": False, "error": "Invalid edit specification"}), 400
+        start = float(payload.get("trim_start", 0))
+        end = payload.get("trim_end")
+        end = None if end is None else float(end)
+        if not math.isfinite(start) or (end is not None and not math.isfinite(end)):
+            return jsonify({"ok": False, "error": "Trim bounds must be finite"}), 400
+        validate_video_edit_spec(target, cuts, trim_start=start, trim_end=end, crop=crop)
+        canonical = json.dumps({"path": str(target.resolve()), "mtime": target.stat().st_mtime_ns, "size": target.stat().st_size,
+                                "cuts": cuts, "trim_start": start, "trim_end": end, "crop": crop}, sort_keys=True)
+        key = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        source_key = str(target.resolve())
+        with _VIDEO_EDIT_JOBS_LOCK:
+            existing_id = _VIDEO_EDIT_KEYS.get(key)
+            if existing_id and existing_id in _VIDEO_EDIT_JOBS:
+                existing_job = _VIDEO_EDIT_JOBS[existing_id]
+                if existing_job.get("status") != "FAILED":
+                    return jsonify({"ok": True, "job_id": existing_id, **existing_job})
+                _VIDEO_EDIT_KEYS.pop(key, None)
+            active_id = _VIDEO_EDIT_SOURCE_JOBS.get(source_key)
+            active_job = _VIDEO_EDIT_JOBS.get(active_id or "")
+            if active_job and active_job.get("status") in {"PROCESSING", "VALIDATING"}:
+                return jsonify({"ok": False, "error": "An edit for this source is already processing"}), 409
+            output = target.with_name(f"{target.stem}_edited.mp4")
+            if output.exists():
+                return jsonify({"ok": False, "error": "An edited copy already exists; no duplicate was created"}), 409
+            job_id = secrets.token_urlsafe(18)
+            _VIDEO_EDIT_KEYS[key] = job_id
+            _VIDEO_EDIT_SOURCE_JOBS[source_key] = job_id
+            _VIDEO_EDIT_JOBS[job_id] = {"status": "PROCESSING", "progress": 5, "message": "Processing", "source": target.name}
 
+        def update(status: str, progress: int) -> None:
+            with _VIDEO_EDIT_JOBS_LOCK:
+                job = _VIDEO_EDIT_JOBS.get(job_id)
+                if job:
+                    job.update(status=status, progress=progress, message="Validating" if status == "VALIDATING" else "Processing")
+
+        def run_edit() -> None:
+            try:
+                output_path, provenance = apply_video_edits(target, cuts, trim_start=start, trim_end=end, crop=crop, progress=update)
+                with _VIDEO_EDIT_JOBS_LOCK:
+                    _VIDEO_EDIT_JOBS[job_id].update(status="COMPLETED", progress=100, message="Completed", ok=True,
+                        name=output_path.name, duration_seconds=provenance["output_duration_seconds"],
+                        provenance=output_path.with_suffix(".provenance.json").name, validated=provenance["validated"])
+            except Exception as exc:
+                logger.exception("[VIDEO_EDIT] Edit failed for %s", target.name)
+                with _VIDEO_EDIT_JOBS_LOCK:
+                    _VIDEO_EDIT_JOBS[job_id].update(status="FAILED", progress=100, message=str(exc) or "Edit failed", ok=False)
+                    if _VIDEO_EDIT_SOURCE_JOBS.get(source_key) == job_id:
+                        _VIDEO_EDIT_SOURCE_JOBS.pop(source_key, None)
+        _VIDEO_EDIT_EXECUTOR.submit(run_edit)
+        return jsonify({"ok": True, "job_id": job_id, "status": "PROCESSING"}), 202
+    except (RuntimeError, ValueError, KeyError, TypeError, subprocess.SubprocessError, FileNotFoundError, SecurityError) as exc:
+        return jsonify({"ok": False, "error": str(exc) or "Invalid edit specification"}), 400
+
+
+@app.route("/api/video/edit-jobs/<job_id>", methods=["GET"])
+def api_video_edit_job(job_id: str) -> Any:
+    with _VIDEO_EDIT_JOBS_LOCK:
+        job = _VIDEO_EDIT_JOBS.get(job_id)
+        if not job:
+            return jsonify({"ok": False, "error": "Edit job not found"}), 404
+        return jsonify({"ok": True, **job})
 
 @app.route("/api/video/black-borders", methods=["POST"])
 def api_video_black_borders() -> Any:
@@ -2258,6 +2304,9 @@ def api_capture_create_session() -> Any:
     if capture_kind not in {"video", "audio"}:
         return jsonify({"ok": False, "error": "capture_kind must be video or audio"}), 400
     capture_source = payload.get("capture_source")
+    capture_metadata = payload.get("capture_metadata")
+    if capture_metadata is not None and not isinstance(capture_metadata, dict):
+        return jsonify({"ok": False, "error": "capture_metadata must be an object"}), 400
     if capture_source is not None and capture_source not in {"environment", "user", "microphone"}:
         return jsonify({"ok": False, "error": "capture_source must be environment, user, microphone or null"}), 400
     if capture_kind == "audio" and capture_mode == "playlist":
@@ -2277,6 +2326,7 @@ def api_capture_create_session() -> Any:
         title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop,
         audio_availability=audio_availability, capture_mode=capture_mode, project_id=project_id,
         capture_kind=capture_kind, capture_source=capture_source,
+        capture_metadata=capture_metadata,
         is_test_session=bool(payload.get("is_test_session")) and (app.testing or app.config.get("CAPTURE_TEST_MODE")),
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
@@ -2425,6 +2475,19 @@ def api_capture_set_crop(session_id: str) -> Any:
     except capture_errors.ValidationError as exc:
         return jsonify({"ok": False, "error": str(exc)}), 400
     session = _get_capture_service().set_crop(session_id, crop)
+    return jsonify({"ok": True, "session": _session_payload(session)})
+
+
+@app.route("/api/capture/sessions/<session_id>/capture-metadata", methods=["PUT"])
+def api_capture_set_metadata(session_id: str) -> Any:
+    payload = request.get_json(silent=True) or {}
+    metadata = payload.get("capture_metadata")
+    if not isinstance(metadata, dict):
+        return jsonify({"ok": False, "error": "capture_metadata must be an object"}), 400
+    allowed = {"width", "height", "frameRate", "facingMode", "quality", "codec", "videoBitsPerSecond", "maxWidth", "maxHeight"}
+    if any(key not in allowed for key in metadata):
+        return jsonify({"ok": False, "error": "Unsupported capture metadata field"}), 400
+    session = _get_capture_service().set_capture_metadata(session_id, metadata)
     return jsonify({"ok": True, "session": _session_payload(session)})
 
 

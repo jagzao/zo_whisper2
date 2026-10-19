@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -67,29 +68,44 @@ def test_scan_and_trim_api_returns_ranges_and_keeps_original(client, env):
 
 
 @requires_ffmpeg
-def test_video_editor_apply_creates_validated_copy_and_source_provenance(client, env):
+def test_video_editor_apply_job_is_idempotent_and_preserves_source(client, env):
     source = env / "editor_source.mp4"
     _clip(source, [("blue", 2), ("black", 3), ("red", 2)])
     media_id = dashboard_app._to_media_id(MediaRoot.VIDEOS, source)
     source_hash = _sha(source)
-    response = client.post("/api/video/edit", headers=AUTH_HEADERS, json={
+    payload = {
         "id": media_id,
         "cuts": [{"start": 2, "end": 5}],
         "trim_start": 0.5,
         "trim_end": 6.5,
         "crop": {"x": 0, "y": 0, "width": 158, "height": 88},
-    })
-    assert response.status_code == 200
-    data = response.get_json()
-    output = env / data["name"]
-    provenance_path = env / data["provenance"]
-    assert data["validated"] is True
+    }
+    response = client.post("/api/video/edit", headers=AUTH_HEADERS, json=payload)
+    assert response.status_code == 202
+    accepted = response.get_json()
+    assert accepted["status"] == "PROCESSING"
+    retry = client.post("/api/video/edit", headers=AUTH_HEADERS, json=payload)
+    assert retry.status_code == 200
+    assert retry.get_json()["job_id"] == accepted["job_id"]
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        status = client.get(f"/api/video/edit-jobs/{accepted['job_id']}", headers=AUTH_HEADERS).get_json()
+        if status["status"] in {"COMPLETED", "FAILED"}:
+            break
+        time.sleep(0.1)
+    assert status["status"] == "COMPLETED", status
+    output = env / status["name"]
+    provenance_path = env / status["provenance"]
+    assert status["validated"] is True
     assert source.exists() and _sha(source) == source_hash
     assert output.exists() and provenance_path.exists()
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     assert provenance["source"] == source.name
     assert provenance["source_sha256"] == source_hash
     assert provenance["output_sha256"] == _sha(output)
+    duplicate = client.post("/api/video/edit", headers=AUTH_HEADERS, json=payload)
+    assert duplicate.get_json()["job_id"] == accepted["job_id"]
+    assert len(list(env.glob("editor_source_edited*"))) == 2
 
 
 @requires_ffmpeg
@@ -135,3 +151,17 @@ def test_border_crop_endpoint_is_separate_from_temporal_scan(client, env):
     assert (env / response.get_json()["name"]).exists()
     temporal = client.post("/api/video/black-intervals", headers=AUTH_HEADERS, json={"id": media_id}).get_json()
     assert temporal["intervals"] == []
+
+
+@requires_ffmpeg
+def test_video_editor_rejects_invalid_time_range_before_queueing(client, env):
+    source = env / "invalid_editor.mp4"
+    _clip(source, [("blue", 3)])
+    media_id = dashboard_app._to_media_id(MediaRoot.VIDEOS, source)
+    response = client.post("/api/video/edit", headers=AUTH_HEADERS, json={
+        "id": media_id, "cuts": [], "trim_start": 0, "trim_end": 4,
+        "crop": None,
+    })
+    assert response.status_code == 400
+    assert "source duration" in response.get_json()["error"]
+    assert not (env / "invalid_editor_edited.mp4").exists()

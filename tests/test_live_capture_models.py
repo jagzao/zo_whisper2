@@ -173,3 +173,12 @@ def test_playable_requires_finalized_and_sized():
     assert _chunk(state=ChunkState.FINALIZED).playable is False  # no size -> incomplete
     assert _chunk(state=ChunkState.FINALIZED, media_size_bytes=10).playable is True
     assert _chunk(state=ChunkState.FAILED, media_size_bytes=10).playable is False
+
+
+def test_capture_metadata_roundtrips_in_session_manifest():
+    session = _session(capture_source="environment", capture_metadata={
+        "width": 1920, "height": 1080, "frameRate": 30, "facingMode": "environment",
+        "codec": "video/webm;codecs=vp8", "videoBitsPerSecond": 8000000,
+    })
+    restored = Session.from_manifest(session.to_manifest())
+    assert restored.capture_metadata == session.capture_metadata

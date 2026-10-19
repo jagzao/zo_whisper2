@@ -74,7 +74,9 @@ def main() -> int:
             page_errors = []
             page.on("pageerror", lambda error: page_errors.append(str(error)))
             page.goto(BASE_URL, wait_until="commit", timeout=30_000)
-            page.locator("#filesList").wait_for(timeout=60_000)
+            page.wait_for_function("document.querySelector('#filesList')?.children.length > 0", timeout=60_000)
+            if page_errors:
+                raise AssertionError(f"Dashboard startup errors: {page_errors}")
             source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
             page.fill("#fileFilter", source.name)
             row = page.locator("#filesList tr").filter(has_text=source.name).first
@@ -85,6 +87,20 @@ def main() -> int:
             page.wait_for_function("document.querySelectorAll('#videoTrimCuts .video-trim-cut').length > 0")
             if page.locator("#videoTrimPlayer").evaluate("video => video.duration") < 9:
                 raise AssertionError("Editor preview did not load the source video")
+            if page.evaluate("videoTrimSeconds('01:15:30')") != 4530 or page.evaluate("videoTrimClock(4530)") != "01:15:30":
+                raise AssertionError("HH:MM:SS parser failed for video time beyond one hour")
+            handles = page.locator("#videoTrimTrack [data-time-handle]")
+            if handles.count() < 4:
+                raise AssertionError("Timeline must expose trim bounds and detected cut boundaries")
+            page.locator("#videoTrimStart").fill("00:00:01")
+            trim_handle = page.locator("#videoTrimTrack [data-time-handle='trim:start']")
+            hb = trim_handle.bounding_box()
+            if hb:
+                page.mouse.move(hb["x"] + hb["width"]/2, hb["y"] + hb["height"]/2); page.mouse.down()
+                page.mouse.move(hb["x"] + hb["width"]/2 + 150, hb["y"] + hb["height"]/2, steps=3); page.mouse.up()
+            if page.locator("#videoTrimStart").input_value() == "00:00:01":
+                raise AssertionError(f"Dragging trim timeline did not synchronize its HH:MM:SS field: {hb}")
+            page.locator("#videoTrimStart").fill("00:00:00")
             page.locator("#videoTrimSeek").fill("1.2")
             page.wait_for_function("Math.abs(document.querySelector('#videoTrimPlayer').currentTime - 1.2) < 0.2")
             page.locator("#videoTrimPlayButton").click()
@@ -93,22 +109,22 @@ def main() -> int:
             detected = page.locator("#videoTrimCuts .video-trim-cut").first
             detected.get_by_role("checkbox").check()
             original_removed = page.locator("#videoTrimRemoved").inner_text()
-            detected.locator("input[type=number]").nth(1).fill("6.5")
-            detected.locator("input[type=number]").nth(1).press("Tab")
+            detected.locator("input[aria-label$='end HH:MM:SS']").fill("00:00:06")
+            detected.locator("input[aria-label$='end HH:MM:SS']").press("Tab")
             if page.locator("#videoTrimRemoved").inner_text() == original_removed:
                 raise AssertionError("Changing a cut range did not update the edit summary")
             detected.get_by_role("checkbox").uncheck()
-            page.locator("#videoTrimManualStart").fill("0.5")
-            page.locator("#videoTrimManualEnd").fill("1.5")
+            page.locator("#videoTrimManualStart").fill("00:00:00")
+            page.locator("#videoTrimManualEnd").fill("00:00:01")
             page.get_by_role("button", name="Add cut").click()
             if page.locator("#videoTrimCuts .video-trim-cut").count() != 2:
                 raise AssertionError("Manual cut range was not added")
-            page.locator("#videoTrimStart").fill("0.25")
+            page.locator("#videoTrimStart").fill("00:00:00")
             page.screenshot(path=str(DATA_ROOT / "video-trim-editor.png"), full_page=True)
             page.get_by_role("button", name="Preview", exact=True).click()
             page.wait_for_timeout(250)
             page.get_by_role("button", name="Reset", exact=True).click()
-            if page.locator("#videoTrimStart").input_value() != "0" or page.locator("#videoTrimCuts .video-trim-cut").count() != 1:
+            if page.locator("#videoTrimStart").input_value() != "00:00:00" or page.locator("#videoTrimCuts .video-trim-cut").count() != 1:
                 raise AssertionError("Reset did not restore the detected edit state")
             if outputs[0].exists():
                 raise AssertionError("Opening or previewing the editor created media")
@@ -128,6 +144,8 @@ def main() -> int:
             page.wait_for_function("document.querySelectorAll('#videoTrimCuts .video-trim-cut').length > 0")
             page.wait_for_function("!document.querySelector('#videoTrimStatus').textContent.startsWith('Scanning')")
             page.get_by_role("button", name="Apply changes").click()
+            page.wait_for_function("document.querySelector('#videoTrimApplyButton')?.textContent === 'Completed'", timeout=120_000)
+            page.locator("#videoTrimShowResult").wait_for(state="visible")
             page.fill("#fileFilter", "")
             try:
                 page.get_by_text(outputs[0].name, exact=True).wait_for(timeout=45_000)
@@ -139,6 +157,7 @@ def main() -> int:
                 ) from exc
             if hashlib.sha256(source.read_bytes()).hexdigest() != source_hash or not sidecars[0].is_file():
                 raise AssertionError("Apply failed source preservation or edit provenance")
+            page.get_by_role("button", name="Close video editor").click()
 
             border_hash = hashlib.sha256(border_source.read_bytes()).hexdigest()
             page.fill("#fileFilter", border_source.name)
@@ -160,10 +179,12 @@ def main() -> int:
             page.get_by_role("button", name="Auto detect black borders").click()
             page.wait_for_function("document.querySelector('#videoTrimStatus').textContent.startsWith('Border suggestion')")
             page.get_by_role("button", name="Apply changes").click()
+            page.wait_for_function("document.querySelector('#videoTrimApplyButton')?.textContent === 'Completed'", timeout=120_000)
             page.fill("#fileFilter", "")
             page.get_by_text(outputs[1].name, exact=True).wait_for(timeout=120_000)
             if hashlib.sha256(border_source.read_bytes()).hexdigest() != border_hash or not sidecars[1].is_file():
                 raise AssertionError("Crop apply changed the original or omitted provenance")
+            page.get_by_role("button", name="Close video editor").click()
             if crop_width >= 160 and crop_height >= 90:
                 raise AssertionError("Synthetic border fixture did not produce a crop")
 
@@ -171,6 +192,52 @@ def main() -> int:
             page.locator("#captureModal:not(.hidden)").wait_for()
             if page.locator("#captureAutoStopBlack").input_value() != "off":
                 raise AssertionError("Black preview auto-stop must default Off")
+            if page.locator("#captureQuality").input_value() != "auto":
+                raise AssertionError("Capture quality should default to Auto")
+            if page.evaluate("captureTargetConstraints('auto').width.ideal") != 1920 or page.evaluate("captureTargetConstraints('auto').height.ideal") != 1080:
+                raise AssertionError("Auto quality did not request 1080p")
+            actual = page.evaluate("captureSettingsSnapshot({getSettings:()=>({width:1920,height:1080,frameRate:30,facingMode:'environment'}),getCapabilities:()=>({width:{max:1920},height:{max:1080}})})")
+            if actual["width"] != 1920 or actual["height"] != 1080 or actual["facingMode"] != "environment":
+                raise AssertionError(f"Actual rear camera settings were not displayed: {actual}")
+            fallback = page.evaluate("""async () => {
+                document.querySelector('#captureQuality').value='auto';
+                let requested=[]; let current={width:1280,height:720,frameRate:30,facingMode:'environment'};
+                const track={getCapabilities:()=>({width:{max:1280},height:{max:720}}),getSettings:()=>current,
+                    applyConstraints:async c=>{requested.push(c); if(c.width.ideal>1280 || c.height.ideal>720) throw Error('unsupported'); current={...current,width:c.width.ideal,height:c.height.ideal};}};
+                await applyCaptureQuality(track);
+                return {requested,settings:capture.captureSettings,label:document.querySelector('#captureVideoSettings').textContent};
+            }""")
+            if fallback["settings"]["width"] != 1280 or fallback["settings"]["height"] != 720 or "1280" not in fallback["label"] or "720" not in fallback["label"]:
+                raise AssertionError(f"Unsupported 1080p did not fall back to displayed 720p: {fallback}")
+            page.set_viewport_size({"width":390,"height":844})
+            rotated = page.evaluate("""async () => {
+                const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+                const track=stream.getVideoTracks()[0], requests=[];
+                const nativeApply=track.applyConstraints?.bind(track);
+                if (nativeApply) track.applyConstraints=async c=>{requests.push(c); return nativeApply(c);};
+                capture.stream=stream; capture.captureKind='video'; capture.activeFacingMode='environment'; capture.state='idle';
+                capture.pendingCrop={x:.1,y:.1,width:.8,height:.8};
+                await attachCapturePreview(stream); await applyCaptureQuality(track); renderCropRegion();
+                const before=stream.id;
+                window.__syntheticRotation={stream,track,requests};
+                return {before,settings:track.getSettings(),facing:capture.activeFacingMode};
+            }""")
+            page.set_viewport_size({"width":844,"height":390})
+            page.evaluate("handleCaptureOrientationChange()")
+            rotated_landscape = page.evaluate("""() => ({sameStream:capture.stream.id===window.__syntheticRotation.stream.id, streamId:capture.stream.id,
+                facing:capture.activeFacingMode,selected:document.querySelector('#captureCameraFacing').value,
+                settings:capture.captureSettings,crop:readCropRegion(),requests:window.__syntheticRotation.requests})""")
+            page.evaluate("capture.timerSeconds=31; renderCaptureTimer(); document.querySelector('#captureTimerBadge').classList.remove('hidden')")
+            if not rotated_landscape["sameStream"] or rotated_landscape["facing"] != "environment" or rotated_landscape["selected"] != "environment":
+                raise AssertionError(f"Landscape rotation changed rear camera or active stream: {rotated_landscape}")
+            if not rotated_landscape["crop"] or abs(rotated_landscape["crop"]["x"]-.1) > .03 or page.locator("#captureTimer").inner_text() != "00:00:31":
+                raise AssertionError(f"Crop alignment or timer failed in landscape: {rotated_landscape}")
+            page.set_viewport_size({"width":390,"height":844})
+            page.evaluate("handleCaptureOrientationChange()")
+            rotated_portrait = page.evaluate("({facing:capture.activeFacingMode,stream:capture.stream.id,settings:capture.captureSettings})")
+            if rotated_portrait["facing"] != "environment" or rotated_portrait["stream"] != rotated_landscape["streamId"]:
+                raise AssertionError(f"Portrait return changed stream or lost rear camera: {rotated_portrait}")
+            page.evaluate("window.__syntheticRotation.stream.getTracks().forEach(t=>t.stop()); capture.stream=null; document.querySelector('#capturePreview').srcObject=null; capture.pendingCrop=null; renderCropRegion(); document.querySelector('#captureTimerBadge').classList.add('hidden')")
             page.locator("#captureAutoStopBlack").select_option("30")
             page.evaluate("""async () => {
                 const preview = document.querySelector('#capturePreview');
@@ -239,6 +306,12 @@ def main() -> int:
                 capture.state = 'idle';
             }""")
 
+            page.evaluate("capture.timerSeconds=31; renderCaptureTimer(); document.querySelector('#captureTimerBadge').classList.remove('hidden')")
+            page.set_viewport_size({"width": 844, "height": 390})
+            landscape = page.evaluate("""() => {const p=document.querySelector('.capture-preview-wrap').getBoundingClientRect(),t=document.querySelector('#captureTimerBadge').getBoundingClientRect(),s=document.querySelector('#captureStartBtn').getBoundingClientRect(); return {width:innerWidth,documentWidth:document.documentElement.scrollWidth,preview:p.height,timerInside:t.width>0&&t.left>=p.left&&t.right<=p.right&&t.top>=p.top&&t.bottom<=p.bottom,startVisible:s.width>0&&s.top>=0&&s.bottom<=innerHeight};}""")
+            if landscape["documentWidth"] > landscape["width"] + 1 or landscape["preview"] < 150 or not landscape["timerInside"] or not landscape["startVisible"]:
+                raise AssertionError(f"Landscape preview is too small or page overflows: {landscape}")
+            page.set_viewport_size({"width": 390, "height": 844})
             mobile_capture = page.evaluate("""() => ({width: innerWidth, documentWidth: document.documentElement.scrollWidth,
                 modalWidth: document.querySelector('#captureModal .capture-modal').clientWidth,
                 warningWidth: document.querySelector('#captureBlackWarning').getBoundingClientRect().width,
@@ -249,7 +322,7 @@ def main() -> int:
             context.close()
             browser.close()
         assert all(path.is_file() and path.stat().st_size > 0 for path in outputs)
-        print(json.dumps({"status": "PASS", "checks": ["video player and seek", "detected and manual cuts", "deselect and edit range", "manual trim", "result preview", "reset and cancel", "combined border crop preview", "validated apply and provenance", "auto-stop warning/cancel", "mobile layout", "originals retained"], "screenshot": "video-trim-editor.png"}))
+        print(json.dumps({"status": "PASS", "checks": ["video player and seek", "HH:MM:SS beyond one hour", "detected/manual cuts", "eight precise crop handles", "zoom/pan and original pixel bounds", "async apply lifecycle", "validated derivative and provenance", "auto-stop warning/cancel", "quality/resolution reporting", "landscape layout", "originals retained"], "screenshot": "video-trim-editor.png"}))
         return 0
     finally:
         for path in [*outputs, *sidecars, source, border_source]:
