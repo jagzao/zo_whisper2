@@ -2,7 +2,7 @@
 
 ## Status
 
-`HEAVY_VALIDATION_DEFERRED_LOW_RAM`
+`HEAVY_VALIDATION_REPAIR_PENDING`
 
 ## Implemented
 
@@ -62,3 +62,17 @@ This run did not mark the feature complete. Head was `2b73649`; Playwright and H
 | Sonar / Jenkins / soak | 🟥 BLOCKED | Runner reports `NOT_CONFIGURED` for all three. | No local executable is configured | Codex |
 
 RAM opened briefly at 6.33 GiB for the first heavy run, then fell during validation. The canonical runner completed its gates; the next regression and Host E2E run remains scheduled for a stable >6 GiB window. No deployment/restart occurred.
+
+## Black video delivery run — 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Temporal preview, review gate, and non-destructive trim | 🟨 TESTING | Focused media/API tests pass; isolated Host Playwright passed preview ranges, removed duration, cancel, confirm, derivative output, and original preservation. | Rerun canonical full regression at stable RAM >6 GiB | Codex |
+| Separate black-border crop | 🟨 TESTING | Isolated Host Playwright passed separate crop confirmation and copy creation; unit cases cover letterbox and pillarbox. | Rerun canonical full regression at stable RAM >6 GiB | Codex |
+| Live capture auto-stop | 🟨 TESTING | Isolated Host Playwright passed Off default, warning/countdown, visible-content cancellation, auto-stop, and mobile layout. Screenshot: `artifacts/gates/e2e-host-data/black-video-tools.png`. | Rerun canonical full regression at stable RAM >6 GiB | Codex |
+| Playwright and Host E2E | 🟩 COMPLETE | Full `scripts/e2e.py` report PASS, including dashboard smoke and all black-video UI paths; isolated black-only run also PASS. Report: `artifacts/gates/e2e-host-data/e2e_report.json`. | Preserve evidence | Codex |
+| Full regression / release gates | 🟨 TESTING | Last full run: pytest 1225 passed, 1 failed, 13 skipped; failure was a 900-second floating-point bound, now fixed. Security, smoke, Docker build and Docker E2E passed. | Rerun canonical heavy runner after stable RAM >6 GiB | Codex |
+| Sonar / Jenkins / soak | 🟥 BLOCKED | Canonical runner reports `NOT_CONFIGURED`; services/commands are absent in this environment. | Record as ENV_BLOCKED; do not claim PASS | Codex |
+| Desktop/LAN deployment and served UI parity | TODO | Not restarted; both services still serve the prior build. Shared data unchanged so far. | After required gates pass, rebuild/restart from final HEAD; verify served SHA, shared data hash/parity and live black-trim controls | Codex |
+
+No feature is marked COMPLETE from implementation alone. Production deployment remains gated on the canonical full rerun.

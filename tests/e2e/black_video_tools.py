@@ -53,22 +53,38 @@ def _run_button(page, name: str, button_name: str, copy_name: str) -> str:
     page.fill("#fileFilter", name)
     row = page.locator("#filesList tr").filter(has_text=name).first
     row.wait_for()
-    messages = []
-    page.once("dialog", lambda dialog: (messages.append(dialog.message), dialog.accept()))
+    _capture_prompts(page, confirm=True)
     row.get_by_role("button", name=button_name).click(timeout=30_000)
+    message = _prompt_message(page)
+    page.fill("#fileFilter", "")
     page.get_by_text(copy_name, exact=True).wait_for(timeout=120_000)
-    return messages[0] if messages else ""
+    return message
 
 
 def _click_and_dismiss(page, name: str, button_name: str) -> str:
     page.fill("#fileFilter", name)
     row = page.locator("#filesList tr").filter(has_text=name).first
     row.wait_for()
-    messages = []
-    page.once("dialog", lambda dialog: (messages.append(dialog.message), dialog.dismiss()))
+    _capture_prompts(page, confirm=False)
     row.get_by_role("button", name=button_name).click(timeout=30_000)
-    page.wait_for_timeout(100)
-    return messages[0] if messages else ""
+    return _prompt_message(page)
+
+
+def _capture_prompts(page, *, confirm: bool) -> None:
+    page.evaluate("""accept => {
+        window.__e2ePrompts = [];
+        window.alert = message => window.__e2ePrompts.push(String(message));
+        window.confirm = message => { window.__e2ePrompts.push(String(message)); return accept; };
+    }""", confirm)
+
+
+def _prompt_message(page) -> str:
+    try:
+        page.wait_for_function("window.__e2ePrompts?.length > 0", timeout=15_000)
+    except Exception:
+        toast = page.locator("#toast").inner_text()
+        raise AssertionError(f"Expected review prompt; toast={toast!r}")
+    return page.evaluate("window.__e2ePrompts[0]")
 
 
 def main() -> int:
@@ -99,7 +115,7 @@ def main() -> int:
             page.locator("#blackDarknessThreshold").select_option("0.12")
             review = _click_and_dismiss(page, "black_video_ui.mp4", "Remove black sections")
             if "NEEDS_REVIEW" not in review:
-                raise AssertionError("Low-confidence auto trim did not show NEEDS_REVIEW")
+                raise AssertionError(f"Low-confidence auto trim did not show NEEDS_REVIEW: {review!r}")
             if outputs[0].exists():
                 raise AssertionError("Low-confidence auto trim produced a copy")
             page.locator("#autoRemoveBlack").uncheck()
@@ -132,26 +148,32 @@ def main() -> int:
                 raise AssertionError("Black preview auto-stop must default Off")
             page.locator("#captureAutoStopBlack").select_option("30")
             page.evaluate("""async () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 160; canvas.height = 90;
-                const ctx = canvas.getContext('2d');
-                window.__setBlackPreview = color => {
-                    ctx.fillStyle = color;
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                };
-                window.__setBlackPreview('black');
-                const stream = canvas.captureStream(10);
                 const preview = document.querySelector('#capturePreview');
-                preview.muted = true;
-                preview.srcObject = stream;
-                await preview.play();
-                await new Promise(resolve => {
-                    if (preview.readyState >= 2) return resolve();
-                    preview.addEventListener('loadeddata', resolve, {once: true});
+                Object.defineProperties(preview, {
+                    readyState: {configurable: true, value: 2},
+                    videoWidth: {configurable: true, value: 160},
+                    videoHeight: {configurable: true, value: 90},
                 });
+                const originalGetContext = HTMLCanvasElement.prototype.getContext;
+                HTMLCanvasElement.prototype.getContext = function(type, options) {
+                    const context = originalGetContext.call(this, type, options);
+                    if (this.width === 32 && this.height === 18 && context) {
+                        context.drawImage = () => {};
+                        context.getImageData = () => {
+                            const data = new Uint8ClampedArray(32 * 18 * 4);
+                            for (let i = 0; i < data.length; i += 4) {
+                                const value = window.__blackFrameDark ? 0 : 255;
+                                data[i] = data[i + 1] = data[i + 2] = value;
+                                data[i + 3] = 255;
+                            }
+                            return {data};
+                        };
+                    }
+                    return context;
+                };
+                window.__blackFrameDark = true;
                 capture.state = 'recording';
                 capture.captureKind = 'video';
-                window.__blackTestStream = stream;
                 window.__fakeNow = Date.now();
                 Date.now = () => window.__fakeNow;
                 const nativeClearInterval = window.clearInterval.bind(window);
@@ -174,13 +196,11 @@ def main() -> int:
             page.evaluate(tick)
             if "stop in 5 s" not in warning.inner_text():
                 raise AssertionError("Black preview countdown did not update")
-            page.evaluate("window.__setBlackPreview('white')")
-            page.wait_for_timeout(300)
+            page.evaluate("window.__blackFrameDark = false")
             page.evaluate(tick)
             if not warning.evaluate("el => el.classList.contains('hidden')"):
                 raise AssertionError("Visible content did not cancel the black preview countdown")
-            page.evaluate("window.__setBlackPreview('black')")
-            page.wait_for_timeout(300)
+            page.evaluate("window.__blackFrameDark = true")
             page.evaluate(tick)
             page.evaluate("window.__fakeNow += 30000")
             page.evaluate(tick)
@@ -190,7 +210,6 @@ def main() -> int:
                 raise AssertionError("Black preview auto-stop did not stop after the warning countdown")
             page.evaluate("""() => {
                 clearInterval(99173);
-                window.__blackTestStream.getTracks().forEach(track => track.stop());
                 document.querySelector('#capturePreview').srcObject = null;
                 capture.state = 'idle';
             }""")

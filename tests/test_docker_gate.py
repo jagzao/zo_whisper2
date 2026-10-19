@@ -453,7 +453,7 @@ def test_smoke_matrix_passes_with_expected_exec_commands():
 
     budget = docker_gate.TIMEOUTS["docker-smoke"]
     for call in recorded:
-        assert 0 < call["kwargs"]["timeout"] <= budget
+        assert 0 < call["kwargs"]["timeout"] <= budget + 1e-9
 
     log = (ROOT / data["artifact"]).read_text(encoding="utf-8")
     for check in (
@@ -641,7 +641,7 @@ def test_persistence_gate_matrix_fixtures_recreate_volume_and_fresh_status():
 
     budget = docker_gate.TIMEOUTS["docker-persistence"]
     for call in recorded:
-        assert 0 < call["kwargs"]["timeout"] <= budget
+        assert 0 < call["kwargs"]["timeout"] <= budget + 1e-9
 
     log = (ROOT / data["artifact"]).read_text(encoding="utf-8")
     for slug in ("projects_json", "project_overrides_json", "processed_files_json", "transcript", "docs_asset"):

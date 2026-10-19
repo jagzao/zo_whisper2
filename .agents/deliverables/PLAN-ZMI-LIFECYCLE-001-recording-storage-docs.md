@@ -80,6 +80,18 @@
 - Verify health, served HEAD markers, localhost/LAN normalized video/project/job/docs/worker parity, mobile crop/docs/duration/delete behavior, and synthetic multiframe playback. Confirm rollback command and previous image/SHA.
 - Record deployment and checks in DELIVERY. Stop at `READY_FOR_HUMAN_ACCEPTANCE`; owner performs final real-phone UAT before `DONE`.
 
+## Delivery Kanban — black video completion, 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Temporal detection, preview, review, trim | 🟨 TESTING | Media/API unit tests pass; isolated browser verified ranges, total removed duration, cancel/confirm, derivative output, original preservation. | Canonical full regression after stable RAM >6 GiB | Codex |
+| Separate spatial border crop | 🟨 TESTING | Letterbox/pillarbox unit cases and browser crop workflow pass. | Canonical full regression after stable RAM >6 GiB | Codex |
+| Black-preview capture auto-stop | 🟨 TESTING | Browser verified safe Off default, countdown warning, visible-content cancellation, stop behavior and mobile layout. | Canonical full regression after stable RAM >6 GiB | Codex |
+| Playwright / Host E2E | 🟩 COMPLETE | Full host smoke plus all black-video scenarios pass; report and screenshot are in `artifacts/gates/e2e-host-data/`. | Retain evidence | Codex |
+| Full regression and release gates | 🟨 TESTING | Latest full run found one floating-point timeout assertion; tolerance fixed. Security, smoke and Docker build/E2E passed. | Rerun canonical runner after stable RAM >6 GiB | Codex |
+| Sonar / Jenkins / soak | 🟥 BLOCKED | Runner reports `NOT_CONFIGURED`. | Keep explicitly ENV_BLOCKED | Codex |
+| Desktop/LAN deploy and served UI | TODO | Not restarted; live services still serve the previous build; shared data unchanged. | After required gates pass, deploy final HEAD and verify served SHA, shared-data parity and black-trim controls | Codex |
+
 ## Rollback
 
 Keep the last known-good production image/SHA and configuration. If health, parity, or integrity checks fail, restore the previous image/config without touching shared data. Do not run cleanup or backfill against real originals during rollback.

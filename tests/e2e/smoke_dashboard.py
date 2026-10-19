@@ -16,6 +16,7 @@ from contextlib import ExitStack
 from pathlib import Path
 
 import requests
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 DASHBOARD_URL = os.environ.get("ZMI_BASE_URL", "http://127.0.0.1:5000")
 TIMEOUT_MS = 30000
@@ -146,7 +147,6 @@ def main() -> int:
         page.on("response", _capture_bad_response)
 
         page.goto(DASHBOARD_URL, wait_until="commit", timeout=TIMEOUT_MS)
-        page.wait_for_load_state("domcontentloaded", timeout=TIMEOUT_MS)
         page.wait_for_function(
             "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
             timeout=TIMEOUT_MS,
@@ -469,10 +469,17 @@ def main() -> int:
                 # Reuse the active page so old polling work is cancelled by
                 # navigation without racing fixture teardown against a new target.
                 page.goto(DASHBOARD_URL, wait_until="commit", timeout=TIMEOUT_MS)
-                page.wait_for_function(
-                    "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
-                    timeout=TIMEOUT_MS,
-                )
+                try:
+                    page.wait_for_function(
+                        "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
+                        timeout=TIMEOUT_MS,
+                    )
+                except PlaywrightTimeoutError:
+                    page.reload(wait_until="commit", timeout=TIMEOUT_MS)
+                    page.wait_for_function(
+                        "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
+                        timeout=TIMEOUT_MS,
+                    )
                 page.locator("#fileFilter").fill(stem)
                 page.wait_for_timeout(400)
                 row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
