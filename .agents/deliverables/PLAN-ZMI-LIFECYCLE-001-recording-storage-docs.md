@@ -108,4 +108,13 @@ Keep the last known-good production image/SHA and configuration. If health, pari
 | Temporal black detection and non-destructive trim | 🟨 TESTING | 12 targeted FFmpeg/API tests pass; scan returns intervals and total removed; validated derivative preserves source | ChatGPT review, then Playwright/Host E2E after RAM gate | Codex |
 | Spatial black border detection and crop | 🟨 TESTING | Separate letterbox/pillarbox detection and crop API; synthetic source hash and duration preserved | Capture UI evidence in isolated Host E2E | Codex |
 | Live capture black preview auto-stop | 🟨 TESTING | Explicit Off/30/60/120 s selection, 10 s warning, reset when content returns; dashboard UI added | Verify countdown and cancellation in Playwright/Host E2E | Codex |
-| Black tools implementation gates | 🟨 TESTING | `tests/test_black_video.py` and `tests/test_dashboard_black_video_api.py`: 12 passed | Run lint, quality and typecheck; commit/push; stop for ChatGPT review | Codex |
+| Black tools implementation gates | 🟨 TESTING | 12 focused pytest passed; changed-file Ruff, compileall and `git diff --check` pass | Playwright/Host E2E after RAM gate | Codex |
+
+## Black video completion run — 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Temporal detection and non-destructive trim | 🟨 TESTING | `watcher/venv/Scripts/python.exe -m pytest tests/test_black_video.py tests/test_dashboard_black_video_api.py -q`: 12 passed, including fully black, short transition, multiple/start/end intervals, naturally dark footage, audio, duration, and source hash preservation | Run Playwright review/confirmation and Host E2E when RAM exceeds 6 GiB | Codex |
+| Separate letterbox/pillarbox detection and crop | 🟨 TESTING | Same 12 tests include synthetic letterbox and pillarbox, crop output and temporal independence | Capture Playwright UI evidence when RAM exceeds 6 GiB | Codex |
+| Live capture black preview auto-stop | 🟨 TESTING | Code has Off default, 30/60/120 s, 10 s warning and reset when content returns; no browser evidence in this run | Verify countdown, stop and cancellation in Playwright/Host E2E when RAM exceeds 6 GiB | Codex |
+| Black video UI and Host E2E | 🟥 BLOCKED | `scripts/ram_gate.py`: 4.33 GiB available; canonical threshold is >6.0 GiB. Host E2E/Playwright were not run | Recheck RAM; run isolated black-video UI subset after gate opens | Codex |

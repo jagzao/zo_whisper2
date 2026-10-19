@@ -39,3 +39,15 @@
 - Repository-wide Ruff gate is currently **FAIL on existing findings** outside this feature (47 findings in `scripts`/`tests`). `scripts/quality.py` syntax/import checks pass; its repository-wide Ruff and existing Pyright checks fail on unrelated files (`processor.py`, `versioning.py`, `kab_ingest`, etc.).
 - Playwright/Host E2E remain **DEFERRED** under the canonical execution plan: current available RAM is below the 6 GiB heavy-gate threshold and ChatGPT `/review` has not occurred. The isolated fixture scenario is added to `scripts/e2e.py`; no live/user media is used.
 - Feature remains `TESTING`; do not claim COMPLETE until reviewed heavy gates and visual UI evidence pass.
+
+## Black video completion run — 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Temporal detection and non-destructive trim | 🟨 TESTING | Targeted pytest — 12 passed; changed-file Ruff, compileall and `git diff --check` pass. Tests cover fully black, short transition, multiple/start/end intervals, naturally dark footage, audio, duration, source hash and API review gate. | Playwright UI review/confirmation | Codex |
+| Separate spatial border detection/crop | 🟨 TESTING | Same run passed synthetic letterbox/pillarbox, crop output, source hash and duration checks; temporal scan stays separate. | Playwright UI evidence | Codex |
+| Live capture auto-stop | 🟨 TESTING | Inspected implementation: explicit Off default, 30/60/120 s setting, 10 s countdown warning, content-return cancellation. Browser test not run. | Playwright countdown/stop/cancel verification | Codex |
+| Playwright and Host E2E | 🟥 BLOCKED | `scripts/ram_gate.py`: 4.33 GiB available of >6.0 GiB required. Per canonical plan, both gates deferred. | Re-run RAM gate; run isolated black-video Host E2E and save screenshot/report | Codex |
+| Original preservation | 🟩 COMPLETE | API integration test verifies original path and SHA-256 unchanged after temporal trim; media unit tests verify source unchanged after crop. | Keep invariant | Codex |
+
+This run did not mark the feature complete. Head was `2b73649`; Playwright and Host E2E remain pending under the canonical RAM gate.
