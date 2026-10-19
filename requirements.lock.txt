@@ -49,7 +49,9 @@ colorama==0.4.6
 coloredlogs==15.0.1
     # via onnxruntime
 cryptography==50.0.0
-    # via pdfminer-six
+    # via
+    #   transcript-pipeline (pyproject.toml)
+    #   pdfminer-six
 ctranslate2==4.8.1
     # via faster-whisper
 cyclonedx-python-lib==11.12.0
