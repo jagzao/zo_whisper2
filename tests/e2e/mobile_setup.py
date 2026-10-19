@@ -63,7 +63,7 @@ def main() -> int:
             checks.append("desktop dismissal persists")
 
             page.goto(f"{base}/setup", wait_until="domcontentloaded")
-            if f"https://127.0.0.1:5001/" not in page.locator("a.secure").get_attribute("href"):
+            if "https://127.0.0.1:5001/" not in page.locator("a.secure").get_attribute("href"):
                 raise AssertionError("Secure link has the wrong HTTPS port")
             if "Settings" not in page.locator("main").inner_text():
                 raise AssertionError("Android installation steps are missing")

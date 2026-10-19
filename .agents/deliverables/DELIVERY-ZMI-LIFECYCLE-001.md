@@ -37,8 +37,8 @@
 - Targeted test command: `watcher/venv/Scripts/python.exe -m pytest tests/test_black_video.py tests/test_dashboard_black_video_api.py -q` — **12 passed**. Synthetic tests cover all-black, brief dark transition, multiple/start/end intervals, naturally dark content, letterbox/pillarbox, audio continuity, duration, API review behavior and source preservation.
 - Ruff on changed implementation/test/E2E files: **PASS**. `compileall -q src scripts`: **PASS**. `git diff --check`: **PASS**.
 - Repository-wide Ruff gate is currently **FAIL on existing findings** outside this feature (47 findings in `scripts`/`tests`). `scripts/quality.py` syntax/import checks pass; its repository-wide Ruff and existing Pyright checks fail on unrelated files (`processor.py`, `versioning.py`, `kab_ingest`, etc.).
-- Playwright/Host E2E remain **DEFERRED** under the canonical execution plan: current available RAM is below the 6 GiB heavy-gate threshold and ChatGPT `/review` has not occurred. The isolated fixture scenario is added to `scripts/e2e.py`; no live/user media is used.
-- Feature remains `TESTING`; do not claim COMPLETE until reviewed heavy gates and visual UI evidence pass.
+- Historical checkpoint: Playwright/Host E2E were deferred because RAM was below the heavy-gate threshold; the manual `/review` requirement has since been removed. The isolated fixture scenario is added to `scripts/e2e.py`; no live/user media is used.
+- Feature remains `TESTING`; do not claim COMPLETE until passing heavy gates and deployed UI evidence pass.
 
 ## Black video completion run — 2026-10-19
 
@@ -91,13 +91,13 @@ Completion is based on passing tests, Host Playwright evidence, and served deskt
 
 | Feature | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
-| TIME editor and review-before-apply | ?? COMPLETE | Host Playwright covers player seek/play, timeline, detected range edit/deselect, manual cut/trim, preview, reset and cancel | Preserve evidence | Codex |
-| FRAME crop editor | ?? COMPLETE | Host Playwright covers border detection, manual crop adjustment, crop preview/reset, apply | Preserve evidence | Codex |
-| Validated derivative and original preservation | ?? COMPLETE | 16 focused unit/API tests plus Host E2E pass; output decoded/probed before publish, source hash unchanged, provenance sidecar present | Preserve evidence | Codex |
-| Playwright and Host E2E | ?? COMPLETE | `scripts/e2e.py` PASS; `artifacts/gates/e2e-host-data/e2e_report.json` and `video-trim-editor.png` | Preserve evidence | Codex |
-| Desktop/LAN served UI | ?? COMPLETE | Desktop rebuilt; LAN restarted. Strict TLS requests and Playwright confirm HTTP 200, served SHA `131abb068ee245e4da97bbd34434ab1cc92e1671`, and live Edit video modal with TIME/FRAME tabs on desktop, LAN localhost and LAN IP. 58-file count, state hashes, media tree, projects and media identity parity match. Evidence: `artifacts/gates/served-video-trim-editor.json`, `artifacts/gates/deployment-post.json` | Preserve evidence | Codex |
+| TIME editor and review-before-apply | 🟩 COMPLETE | Host Playwright covers player seek/play, timeline, detected range edit/deselect, manual cut/trim, preview, reset and cancel | Preserve evidence | Codex |
+| FRAME crop editor | 🟩 COMPLETE | Host Playwright covers border detection, manual crop adjustment, crop preview/reset, apply | Preserve evidence | Codex |
+| Validated derivative and original preservation | 🟩 COMPLETE | 16 focused unit/API tests plus Host E2E pass; output decoded/probed before publish, source hash unchanged, provenance sidecar present | Preserve evidence | Codex |
+| Playwright and Host E2E | 🟩 COMPLETE | `scripts/e2e.py` PASS; `artifacts/gates/e2e-host-data/e2e_report.json` and `video-trim-editor.png` | Preserve evidence | Codex |
+| Desktop/LAN served UI | 🟩 COMPLETE | Desktop rebuilt; LAN restarted. Strict TLS requests and Playwright confirm HTTP 200, served SHA `131abb068ee245e4da97bbd34434ab1cc92e1671`, and live Edit video modal with TIME/FRAME tabs on desktop, LAN localhost and LAN IP. 58-file count, state hashes, media tree, projects and media identity parity match. Evidence: `artifacts/gates/served-video-trim-editor.json`, `artifacts/gates/deployment-post.json` | Preserve evidence | Codex |
 
-## Delivery Kanban ? video editor and mobile landscape UAT, 2026-10-19
+## Delivery Kanban - video editor and mobile landscape UAT, 2026-10-19
 
 | Feature | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
@@ -108,10 +108,29 @@ Completion is based on passing tests, Host Playwright evidence, and served deskt
 | Quality selector and actual capture metadata | 🟨 TESTING | Host E2E verifies Auto 1080p request, 720p fallback, actual settings, codec/bitrate reporting | Verify displayed settings on physical phone | Owner |
 | Landscape layout, timer and accessible controls | 🟨 TESTING | Host E2E verifies landscape preview, timer, Start/Stop and no page overflow | Verify on physical phone | Owner |
 | Playwright and relevant Host E2E | 🟨 TESTING | `scripts/e2e.py` focused gate PASS; 82 unit/API tests PASS; full smoke gate previously reset before browser load | Rerun full Host E2E after RAM gate permits | Codex |
-| Desktop/LAN deployment and served UI | TODO | Not restarted from this candidate HEAD; canonical RAM gate currently reports 5.38 GiB | After review and RAM >6 GiB, build/restart; verify served SHA and shared-data parity | Codex |
+| Desktop/LAN deployment and served UI | TODO | Not restarted from this candidate HEAD; canonical RAM gate currently reports 5.38 GiB | After automated gates and RAM >6 GiB, build/restart; verify served SHA and shared-data parity | Codex |
 | Physical-phone UAT | TODO | Exact checklist: `docs/ops/VIDEO_EDITOR_MOBILE_UAT.md`; synthetic Playwright is not phone evidence | Owner follows checklist after deployment | Owner |
 | Full repository heavy gate | 🟥 BLOCKED | `scripts/ram_gate.py`: 5.38 GiB available, threshold strictly >6 GiB | Rerun when RAM gate allows | Codex |
 | Mobile certificate onboarding | 🟨 TESTING | 65 tests pass (1 skipped); Host E2E Playwright verifies desktop QR, persistent dismiss, mobile layout and public-only CA download (`artifacts/gates/e2e-host-data/e2e_report.json`) | Deploy and verify served `/setup` | Agent |
 | Android CA installation | TODO | Playwright confirms only public root download and Samsung steps; no physical install performed | Confirm install on Galaxy phone | Juan |
 | Secure LAN access | TODO | HTTP allowlist/redirect tests pass; Compose LAN opt-in config passes; live restart/strict HTTPS not verified | Deploy after gate; verify certificate download and HTTPS on phone | Juan + Agent |
-| Mobile onboarding deployment gate | 🟥 BLOCKED | RAM gate reports 4.76 GiB; canonical deploy gate requires >6 GiB and review | Rerun gate, then rebuild/restart desktop and LAN services | Agent |
+| Mobile onboarding deployment gate | 🟥 BLOCKED | RAM gate reports 4.76 GiB; canonical deploy gate requires automated gates and >6 GiB | Rerun gate, then rebuild/restart desktop and LAN services | Agent |
+
+
+## Release recovery checkpoint - 2026-10-19
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Video Editor/mobile commit integration | 🟩 | `f09b5d9003975f4b1e06e54e08b7f1a20927e98e` is an ancestor of HEAD | Preserve integration | Agent |
+| Mobile HTTPS onboarding integration | 🟩 | Canonical commit `7a183368d500da0039f567722c50490372e42c38` is HEAD and ancestor; supplied hash had one extra zero | Preserve integration | Agent |
+| Manual review dependency | 🟩 | Canonical plan now defines repeatable automated release acceptance; no human approval handoff | Use objective gates | Agent |
+| Active jobs and RAM recovery | 🟥 | No active Whisper jobs. Terminated idle >1-hour Zavi Playwright test runner and headless browser tree; RAM briefly reached 5.85 GiB, later 5.01 GiB. No other safe stale test process identified | Recheck RAM; do not stop user apps or active services | Agent |
+| Focused regression | 🟩 | 167 passed, 1 skipped after fixes; `artifacts/gates/latest.json` and `artifacts/gates/logs/targeted.log` | Retain evidence | Agent |
+| Feature-scoped static checks | 🟩 | Ruff passes on changed Python files; Pyright passes on `black_video.py`, `lan_access.py`, and capture models; compile/import checks pass | Retain evidence | Agent |
+| Repository-wide quality | 🟥 | Full `quality` reports legacy Ruff/Pyright issues outside changed feature code; feature-scoped checks pass | Track baseline separately; do not report global quality as PASS | Agent |
+| Playwright and Host E2E | 🟥 | Canonical runner classifies these as heavy; RAM is below strict >6 GiB gate | Run feature E2E when RAM gate allows | Agent |
+| Full release gate | 🟥 | `scripts/ram_gate.py`: 5.01 GiB, threshold >6.0 GiB. The threshold is a conservative headroom guard for combined tests, Chromium/FFmpeg and Docker build; observed stale E2E tree used about 1.2 GiB across runner/server and Chromium processes | Rerun full ordered gates when RAM exceeds 6 GiB | Agent |
+| Desktop/LAN deploy and served UI | TODO | Currently served build is `ed33e4dcda250a62e370fcbba7822fe62bf8152e`; candidate HEAD is `7a183368d500da0039f567722c50490372e42c38 | Deploy only after automated gates pass; verify SHA/data/UI parity | Agent |
+| `/setup`, QR and public CA download | TODO | Current desktop has no QR; LAN `/setup` HTTP connection refused and HTTPS returns 404 | Verify after deploy; confirm public certificate only | Agent |
+| Video Editor on served UI | TODO | Current deployed build predates editor/onboarding HEAD | Verify HH:MM:SS, crop handles/zoom, Apply Changes and landscape/quality controls | Agent |
+| Phone UAT | TODO | No physical Galaxy test performed | Owner validates after deployment | Owner |

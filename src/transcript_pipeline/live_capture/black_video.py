@@ -9,9 +9,10 @@ import re
 import subprocess
 import tempfile
 from collections import Counter
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, cast
 
 from transcript_pipeline.media.utils import run_ffprobe
 
@@ -265,8 +266,8 @@ def validate_video_edit_spec(
         values = [crop.get(key) for key in ("x", "y", "width", "height")]
         if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
             raise ValueError("Crop coordinates must be integer source pixels")
-        x, y, crop_width, crop_height = values
-        if min(crop_width, crop_height) < 2 or x < 0 or y < 0 or x + crop_width > width or y + crop_height > height or any(value % 2 for value in values):
+        x, y, crop_width, crop_height = (cast(int, value) for value in values)
+        if min(crop_width, crop_height) < 2 or x < 0 or y < 0 or x + crop_width > width or y + crop_height > height or any(value % 2 for value in (x, y, crop_width, crop_height)):
             raise ValueError("Crop must be in bounds and use even pixel values")
     if start == 0 and end == duration and not normalized and not crop:
         raise ValueError("No video edits were selected")

@@ -4,11 +4,9 @@ import dataclasses
 from pathlib import Path
 
 from cryptography import x509
-from cryptography.hazmat.primitives import serialization
 
-from transcript_pipeline.dashboard import app as dashboard
 from transcript_pipeline import lan_access
-
+from transcript_pipeline.dashboard import app as dashboard
 
 LAN_IP = "192.168.50.20"
 

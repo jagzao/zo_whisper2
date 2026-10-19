@@ -17,7 +17,7 @@
 - No worktree; continue on the approved current branch. Preserve the owner’s plan edits and never reset/stash/clean them. Commit only the coherent implementation artifacts/code after review of the diff.
 - OpenCode Go is PRIMARY_CODER; DeepSeek is fallback only when the configured provider is unavailable/auth/quota/invocation failure, via runtime aliases. Codex/ChatGPT performs heavy analysis/review; do not call premium models from the coding loop.
 - Synthetic/isolated data for tests. Never test destructive cleanup against user originals.
-- Local coder runs implementation gates only. Commit/push, stop at `READY_FOR_CHATGPT_REVIEW`. After ChatGPT `/review` and RAM gate, run heavy gates. Then authorized production deploy is allowed with backup/rollback and no schema/data destructive migration.
+- Use objective acceptance criteria; no ChatGPT `/review` or manual approval handoff is required. Before release, require a clean reviewed diff (`git diff --check`), focused regression, changed-file Ruff, feature-module Pyright, and compile/import checks PASS; then require full pytest, security, smoke, Host E2E, and Docker build/E2E PASS when the RAM gate allows. Sonar/Jenkins are explicitly ENV_BLOCKED when unavailable, not silently passed. Deploy only the validated SHA with backup/rollback and no destructive data migration.
 
 ## WP-01 — Reconcile baseline and lifecycle state
 
@@ -61,21 +61,20 @@
 - Confirm desktop/LAN API sets and state match, and responsive UI controls work on both origins.
 - Evidence: AC-08/09 Host E2E, parity JSON and ffprobe artifact.
 
-## WP-07 — Implementation closure and ChatGPT review
+## WP-07 - Implementation closure and objective source checks
 
-- Run targeted gates, quality/lint/typecheck and code/diff review.
-- Commit/push implementation; update checkpoint and DELIVERY evidence; stop at `READY_FOR_CHATGPT_REVIEW`.
-- Do not run heavy gates or deploy until ChatGPT review is approved.
+- Run focused regression, quality/lint/typecheck, inspect the code diff, and require `git diff --check`.
+- Commit/push implementation and record exact evidence in DELIVERY. A manual review approval is not a release prerequisite; failed objective checks block the next stage.
 
 ## WP-08 — Heavy release gates
 
 - Verify `scripts/ram_gate.py`; if <=6 GiB, report `HEAVY_VALIDATION_DEFERRED_LOW_RAM`, keep implementation pushed, and defer heavy validation/deploy.
 - Otherwise run full pytest, security, smoke, authoritative E2E, Docker gates, configured Sonar/Jenkins/CI in protocol order. Do not treat NOT_CONFIGURED as PASS.
-- Any heavy failure returns to ChatGPT review with compact deterministic evidence; do not self-approve a scope change.
+- Any heavy failure blocks release; fix the cause and rerun the failed gate plus affected regression. Record compact deterministic evidence. Do not silently change acceptance scope.
 
 ## WP-09 — Authorized production deployment and UAT readiness
 
-- Confirm final approved SHA equals origin and all required gates pass; capture production config/service identities and backup/rollback steps.
+- Confirm the final validated SHA equals origin and all required gates pass; capture production config/service identities and backup/rollback steps.
 - Deploy/restart only the current Whisper desktop and LAN services, from the same reviewed SHA and shared data root. No account/environment substitution, schema reset, data copy, or deletion/migration of user media.
 - Verify health, served HEAD markers, localhost/LAN normalized video/project/job/docs/worker parity, mobile crop/docs/duration/delete behavior, and synthetic multiframe playback. Confirm rollback command and previous image/SHA.
 - Record deployment and checks in DELIVERY. Stop at `READY_FOR_HUMAN_ACCEPTANCE`; owner performs final real-phone UAT before `DONE`.
@@ -117,7 +116,7 @@ Keep the last known-good production image/SHA and configuration. If health, pari
 
 | Feature | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
-| Temporal black detection and non-destructive trim | 🟨 TESTING | 12 targeted FFmpeg/API tests pass; scan returns intervals and total removed; validated derivative preserves source | ChatGPT review, then Playwright/Host E2E after RAM gate | Codex |
+| Temporal black detection and non-destructive trim | 🟨 TESTING | 12 targeted FFmpeg/API tests pass; scan returns intervals and total removed; validated derivative preserves source | Feature E2E after RAM gate | Codex |
 | Spatial black border detection and crop | 🟨 TESTING | Separate letterbox/pillarbox detection and crop API; synthetic source hash and duration preserved | Capture UI evidence in isolated Host E2E | Codex |
 | Live capture black preview auto-stop | 🟨 TESTING | Explicit Off/30/60/120 s selection, 10 s warning, reset when content returns; dashboard UI added | Verify countdown and cancellation in Playwright/Host E2E | Codex |
 | Black tools implementation gates | 🟨 TESTING | 12 focused pytest passed; changed-file Ruff, compileall and `git diff --check` pass | Playwright/Host E2E after RAM gate | Codex |
@@ -164,17 +163,17 @@ Keep the last known-good production image/SHA and configuration. If health, pari
 
 Strict verification: `requests.get(..., verify=<Whisper CA PEM>)` fails for all three local origins while Norton substitutes its own leaf; normal Windows/Python trust validation and Playwright pass. No TLS validation bypass was used. Exact local origins and Norton instructions are in `docs/ops/MOBILE_LAN_ACCESS.md`.
 
-## Delivery Kanban ? video trim editor, 2026-10-19
+## Delivery Kanban - video trim editor, 2026-10-19
 
 | Feature | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
-| TIME editor: playback, timeline, reviewable cuts, manual trim, preview | ?? COMPLETE | Host Playwright verifies seek/play, detected interval adjustment/deselection, manual cut/trim, preview, reset and cancel. Screenshot: `artifacts/gates/e2e-host-data/video-trim-editor.png` | Preserve evidence | Codex |
-| FRAME editor: border detection, crop rectangle, preview and reset | ?? COMPLETE | Isolated letterbox fixture verifies suggested crop, manual adjustment, crop preview/reset and apply | Preserve evidence | Codex |
-| Apply: validated copy, source preservation and provenance | ?? COMPLETE | 16 focused pytest tests pass; API and Host E2E verify valid output, sidecar provenance and unchanged source hash | Preserve evidence | Codex |
-| Playwright / Host E2E | ?? COMPLETE | `scripts/e2e.py` PASS; report `artifacts/gates/e2e-host-data/e2e_report.json`; includes mobile layout and capture auto-stop warning/cancel | Preserve evidence | Codex |
-| Desktop and LAN deployment from final HEAD | ?? COMPLETE | Desktop image rebuilt and LAN host process restarted; strict requests + Playwright verify HTTP 200 and Edit video TIME/FRAME controls at desktop, LAN localhost and LAN IP. Both serve `131abb068ee245e4da97bbd34434ab1cc92e1671`; 58-file count, state hashes, media tree, projects and desktop/LAN identity match pre-restart evidence. Artifacts: `artifacts/gates/served-video-trim-editor.json`, `artifacts/gates/deployment-post.json` | Preserve evidence | Codex |
+| TIME editor: playback, timeline, reviewable cuts, manual trim, preview | 🟩 COMPLETE | Host Playwright verifies seek/play, detected interval adjustment/deselection, manual cut/trim, preview, reset and cancel. Screenshot: `artifacts/gates/e2e-host-data/video-trim-editor.png` | Preserve evidence | Codex |
+| FRAME editor: border detection, crop rectangle, preview and reset | 🟩 COMPLETE | Isolated letterbox fixture verifies suggested crop, manual adjustment, crop preview/reset and apply | Preserve evidence | Codex |
+| Apply: validated copy, source preservation and provenance | 🟩 COMPLETE | 16 focused pytest tests pass; API and Host E2E verify valid output, sidecar provenance and unchanged source hash | Preserve evidence | Codex |
+| Playwright / Host E2E | 🟩 COMPLETE | `scripts/e2e.py` PASS; report `artifacts/gates/e2e-host-data/e2e_report.json`; includes mobile layout and capture auto-stop warning/cancel | Preserve evidence | Codex |
+| Desktop and LAN deployment from final HEAD | 🟩 COMPLETE | Desktop image rebuilt and LAN host process restarted; strict requests + Playwright verify HTTP 200 and Edit video TIME/FRAME controls at desktop, LAN localhost and LAN IP. Both serve `131abb068ee245e4da97bbd34434ab1cc92e1671`; 58-file count, state hashes, media tree, projects and desktop/LAN identity match pre-restart evidence. Artifacts: `artifacts/gates/served-video-trim-editor.json`, `artifacts/gates/deployment-post.json` | Preserve evidence | Codex |
 
-## Delivery Kanban ? video editor and mobile landscape UAT, 2026-10-19
+## Delivery Kanban - video editor and mobile landscape UAT, 2026-10-19
 
 | Feature | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
@@ -185,10 +184,17 @@ Strict verification: `requests.get(..., verify=<Whisper CA PEM>)` fails for all 
 | Quality selector and actual capture metadata | 🟨 TESTING | Host E2E verifies Auto 1080p request, 720p fallback, actual settings, codec/bitrate reporting | Verify displayed settings on physical phone | Owner |
 | Landscape layout, timer and accessible controls | 🟨 TESTING | Host E2E verifies landscape preview, timer, Start/Stop and no page overflow | Verify on physical phone | Owner |
 | Playwright and relevant Host E2E | 🟨 TESTING | `scripts/e2e.py` focused gate PASS; 82 unit/API tests PASS; full smoke gate previously reset before browser load | Rerun full Host E2E after RAM gate permits | Codex |
-| Desktop/LAN deployment and served UI | TODO | Not restarted from this candidate HEAD; canonical RAM gate currently reports 5.38 GiB | After review and RAM >6 GiB, build/restart; verify served SHA and shared-data parity | Codex |
+| Desktop/LAN deployment and served UI | TODO | Not restarted from this candidate HEAD; canonical RAM gate currently reports 5.38 GiB | After automated gates and RAM >6 GiB, build/restart; verify served SHA and shared-data parity | Codex |
 | Physical-phone UAT | TODO | Exact checklist: `docs/ops/VIDEO_EDITOR_MOBILE_UAT.md`; synthetic Playwright is not phone evidence | Owner follows checklist after deployment | Owner |
 | Full repository heavy gate | 🟥 BLOCKED | `scripts/ram_gate.py`: 5.38 GiB available, threshold strictly >6 GiB | Rerun when RAM gate allows | Codex |
 | Mobile certificate onboarding | 🟨 TESTING | 65 tests pass (1 skipped); Host E2E Playwright verifies desktop QR, persistent dismiss, mobile layout and public-only CA download (`artifacts/gates/e2e-host-data/e2e_report.json`) | Deploy and verify served `/setup` | Agent |
 | Android CA installation | TODO | Playwright confirms only public root download and Samsung steps; no physical install performed | Confirm install on Galaxy phone | Juan |
 | Secure LAN access | TODO | HTTP allowlist/redirect tests pass; Compose LAN opt-in config passes; live restart/strict HTTPS not verified | Deploy after gate; verify certificate download and HTTPS on phone | Juan + Agent |
-| Mobile onboarding deployment gate | 🟥 BLOCKED | RAM gate reports 4.76 GiB; canonical deploy gate requires >6 GiB and review | Rerun gate, then rebuild/restart desktop and LAN services | Agent |
+| Mobile onboarding deployment gate | 🟥 BLOCKED | RAM gate reports 4.76 GiB; canonical deploy gate requires automated gates and >6 GiB | Rerun gate, then rebuild/restart desktop and LAN services | Agent |
+
+
+## Automated release acceptance policy - 2026-10-19
+
+The former manual ChatGPT `/review` handoff is removed. Release authorization uses recorded checks: branch/remote SHA parity; reviewed diff and `git diff --check`; focused regression, changed-file Ruff, feature-module Pyright, and compile/import checks PASS; then full pytest, security, smoke, Host Playwright E2E, Docker build and Docker E2E PASS. Repository-wide quality findings outside changed feature code are reported as baseline debt, never as a passing gate. Unavailable optional Sonar/Jenkins checks are `ENV_BLOCKED`. Deploy additionally requires desktop/LAN served SHA parity, setup/CA/QR checks, video editor UI evidence and shared-data parity.
+
+The strict `>6 GiB` RAM threshold remains an operational safety guard, not a proven technical minimum for each individual test. It protects headroom for the combined full suite, Chromium/FFmpeg E2E workers, Docker build, and concurrently running desktop services; prior run artifacts do not establish a lower safe peak. A lower threshold requires measured peak-memory evidence and an explicit plan change.

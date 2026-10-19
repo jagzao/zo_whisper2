@@ -5,8 +5,8 @@ Run only against scripts/e2e.py's isolated synthetic data root.
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -96,8 +96,10 @@ def main() -> int:
             trim_handle = page.locator("#videoTrimTrack [data-time-handle='trim:start']")
             hb = trim_handle.bounding_box()
             if hb:
-                page.mouse.move(hb["x"] + hb["width"]/2, hb["y"] + hb["height"]/2); page.mouse.down()
-                page.mouse.move(hb["x"] + hb["width"]/2 + 150, hb["y"] + hb["height"]/2, steps=3); page.mouse.up()
+                page.mouse.move(hb["x"] + hb["width"]/2, hb["y"] + hb["height"]/2)
+                page.mouse.down()
+                page.mouse.move(hb["x"] + hb["width"]/2 + 150, hb["y"] + hb["height"]/2, steps=3)
+                page.mouse.up()
             if page.locator("#videoTrimStart").input_value() == "00:00:01":
                 raise AssertionError(f"Dragging trim timeline did not synchronize its HH:MM:SS field: {hb}")
             page.locator("#videoTrimStart").fill("00:00:00")
@@ -210,7 +212,7 @@ def main() -> int:
             if fallback["settings"]["width"] != 1280 or fallback["settings"]["height"] != 720 or "1280" not in fallback["label"] or "720" not in fallback["label"]:
                 raise AssertionError(f"Unsupported 1080p did not fall back to displayed 720p: {fallback}")
             page.set_viewport_size({"width":390,"height":844})
-            rotated = page.evaluate("""async () => {
+            page.evaluate("""async () => {
                 const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
                 const track=stream.getVideoTracks()[0], requests=[];
                 const nativeApply=track.applyConstraints?.bind(track);

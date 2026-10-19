@@ -15,8 +15,8 @@ Features:
 from __future__ import annotations
 
 import hashlib
-import ipaddress
 import io
+import ipaddress
 import json
 import logging
 import math
@@ -786,6 +786,8 @@ def _probe_media_duration_sync(media_path: Path) -> float | None:
         values = [(data.get("format") or {}).get("duration")]
         values.extend(stream.get("duration") for stream in data.get("streams", []))
         for value in values:
+            if value is None:
+                continue
             duration = float(value)
             if math.isfinite(duration) and duration > 0:
                 duration_result = duration

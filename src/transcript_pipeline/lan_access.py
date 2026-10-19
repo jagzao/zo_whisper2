@@ -19,10 +19,10 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterable
 
 CERT_FILE_NAME = "dashboard-lan-cert.pem"
 KEY_FILE_NAME = "dashboard-lan-key.pem"
