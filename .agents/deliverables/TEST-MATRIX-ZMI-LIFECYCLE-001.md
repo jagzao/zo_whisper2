@@ -31,3 +31,13 @@
 - L21 production deployment health, served revision, data parity, rollback reference; no user-data deletion during test.
 
 Use synthetic media and isolated test roots. Store machine-readable results under existing ignored `artifacts/gates/`; no media/transcript fixtures from real users.
+
+## Black Video Detection / Editing
+
+- B01 synthetic full-black, multiple intervals, start/end, and minimum-duration dark transitions; threshold and duration validation.
+- B02 naturally dark valid footage is retained; uncertain auto-mode confidence returns `NEEDS_REVIEW`.
+- B03 scan preview lists every detected time range and total removal before a derivative is created.
+- B04 trim output has valid duration/video/audio streams and fully decodes; source bytes remain unchanged; audio stays continuous.
+- B05 letterbox and pillarbox borders are detected/cropped independently of temporal black sections; source and duration remain unchanged.
+- B06 live preview auto-stop is opt-in, shows a 10-second warning, and cancels the countdown when visible content returns.
+- B07 isolated Playwright verifies both dashboard actions and their preview/confirmation flow; Host E2E uses only generated fixture data.

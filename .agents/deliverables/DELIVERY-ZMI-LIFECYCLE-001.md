@@ -28,3 +28,14 @@
 - Complete W45 isolated synthetic end-to-end and served desktop/LAN parity verification from the final committed SHA.
 - After the active processing job drains and all required gates pass, restart both services; confirm shared data, mobile crop/docs, duration, playback and deterministic delete reasons.
 - Owner performs the final real-phone UAT.
+
+## Black video feature checkpoint — 2026-10-18
+
+- Temporal detection supports configurable darkness threshold and minimum duration (2 s default), multiple intervals, review preview with removed-time total, and H.264/AAC derivative output. Output is fully decoded/probed before publication; originals are never overwritten.
+- Automatic temporal trim and spatial border crop are explicit opt-ins. Low-confidence automatic requests return `NEEDS_REVIEW`. Spatial border detection/crop is a separate operation.
+- Live capture black-preview stop is opt-in (Off by default), configurable at 30/60/120 seconds, warns for 10 seconds, and cancels when visible content returns.
+- Targeted test command: `watcher/venv/Scripts/python.exe -m pytest tests/test_black_video.py tests/test_dashboard_black_video_api.py -q` — **12 passed**. Synthetic tests cover all-black, brief dark transition, multiple/start/end intervals, naturally dark content, letterbox/pillarbox, audio continuity, duration, API review behavior and source preservation.
+- Ruff on changed implementation/test/E2E files: **PASS**. `compileall -q src scripts`: **PASS**. `git diff --check`: **PASS**.
+- Repository-wide Ruff gate is currently **FAIL on existing findings** outside this feature (47 findings in `scripts`/`tests`). `scripts/quality.py` syntax/import checks pass; its repository-wide Ruff and existing Pyright checks fail on unrelated files (`processor.py`, `versioning.py`, `kab_ingest`, etc.).
+- Playwright/Host E2E remain **DEFERRED** under the canonical execution plan: current available RAM is below the 6 GiB heavy-gate threshold and ChatGPT `/review` has not occurred. The isolated fixture scenario is added to `scripts/e2e.py`; no live/user media is used.
+- Feature remains `TESTING`; do not claim COMPLETE until reviewed heavy gates and visual UI evidence pass.

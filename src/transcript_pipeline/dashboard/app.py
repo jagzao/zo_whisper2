@@ -58,6 +58,12 @@ from transcript_pipeline.documentation.engine import (
 from transcript_pipeline.live_capture import CaptureService
 from transcript_pipeline.live_capture import errors as capture_errors
 from transcript_pipeline.live_capture import models as capture_models
+from transcript_pipeline.live_capture.black_video import (
+    crop_black_borders,
+    detect_black_borders,
+    detect_black_intervals,
+    trim_black_intervals,
+)
 from transcript_pipeline.live_capture.playlist import PlaylistService, ocr_title_image
 from transcript_pipeline.logging_setup import configure_logging
 from transcript_pipeline.media.utils import run_ffprobe
@@ -1600,6 +1606,80 @@ def stream_media() -> Any:
         request.args.get("id", ""), [MediaRoot.AUDIO, MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS]
     )
     return send_from_directory(str(target.parent), target.name)
+
+
+@app.route("/api/video/black-intervals", methods=["POST"])
+def api_video_black_intervals() -> Any:
+    payload = request.get_json(force=True) or {}
+    target = _from_media_id(payload.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS])
+    if target.suffix.lower() not in VIDEO_EXTS:
+        return jsonify({"ok": False, "error": "Choose a video file"}), 400
+    try:
+        scan = detect_black_intervals(
+            target,
+            darkness_threshold=float(payload.get("darkness_threshold", 0.05)),
+            minimum_duration_seconds=float(payload.get("minimum_duration_seconds", 2.0)),
+        )
+    except (RuntimeError, ValueError, subprocess.SubprocessError, FileNotFoundError) as exc:
+        logger.warning("[VIDEO_CUT] Black-frame scan failed for %s: %s", target.name, exc)
+        return jsonify({"ok": False, "error": "Could not scan this video"}), 422
+    return jsonify({"ok": True, **scan})
+
+
+@app.route("/api/video/remove-black", methods=["POST"])
+def api_video_remove_black() -> Any:
+    payload = request.get_json(force=True) or {}
+    target = _from_media_id(payload.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS])
+    if target.suffix.lower() not in VIDEO_EXTS:
+        return jsonify({"ok": False, "error": "Choose a video file"}), 400
+    intervals = payload.get("intervals")
+    if not isinstance(intervals, list) or not intervals or len(intervals) > 1000:
+        return jsonify({"ok": False, "error": "No valid black intervals were selected"}), 400
+    if payload.get("auto") is True and payload.get("confidence") != "high":
+        return jsonify({"ok": False, "status": "NEEDS_REVIEW", "error": "Low confidence; review detected ranges first"}), 409
+    try:
+        output = trim_black_intervals(target, intervals)
+        return jsonify({"ok": True, "name": output.name})
+    except FileExistsError:
+        return jsonify({"ok": False, "error": "A trimmed copy already exists"}), 409
+    except (RuntimeError, ValueError, KeyError, TypeError, subprocess.SubprocessError, FileNotFoundError) as exc:
+        logger.warning("[VIDEO_CUT] Trim failed for %s: %s", target.name, exc)
+        return jsonify({"ok": False, "error": "Could not create a trimmed copy"}), 422
+
+
+@app.route("/api/video/black-borders", methods=["POST"])
+def api_video_black_borders() -> Any:
+    payload = request.get_json(force=True) or {}
+    target = _from_media_id(payload.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS])
+    if target.suffix.lower() not in VIDEO_EXTS:
+        return jsonify({"ok": False, "error": "Choose a video file"}), 400
+    try:
+        result = detect_black_borders(target, darkness_threshold=float(payload.get("darkness_threshold", 0.05)))
+    except (RuntimeError, ValueError, subprocess.SubprocessError, FileNotFoundError) as exc:
+        logger.warning("[VIDEO_CROP] Border scan failed for %s: %s", target.name, exc)
+        return jsonify({"ok": False, "error": "Could not scan video borders"}), 422
+    return jsonify({"ok": True, **result})
+
+
+@app.route("/api/video/crop-black-borders", methods=["POST"])
+def api_video_crop_black_borders() -> Any:
+    payload = request.get_json(force=True) or {}
+    target = _from_media_id(payload.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.VIDEO_COMPRESS])
+    if target.suffix.lower() not in VIDEO_EXTS:
+        return jsonify({"ok": False, "error": "Choose a video file"}), 400
+    crop = payload.get("crop")
+    if not isinstance(crop, dict):
+        return jsonify({"ok": False, "error": "No border crop was provided"}), 400
+    if payload.get("auto") is True and payload.get("confidence") != "high":
+        return jsonify({"ok": False, "status": "NEEDS_REVIEW", "error": "Low confidence; review the crop first"}), 409
+    try:
+        output = crop_black_borders(target, crop)
+        return jsonify({"ok": True, "name": output.name})
+    except FileExistsError:
+        return jsonify({"ok": False, "error": "A cropped copy already exists"}), 409
+    except (RuntimeError, ValueError, KeyError, TypeError, subprocess.SubprocessError, FileNotFoundError) as exc:
+        logger.warning("[VIDEO_CROP] Crop failed for %s: %s", target.name, exc)
+        return jsonify({"ok": False, "error": "Could not create a cropped copy"}), 422
 
 
 @app.route("/api/transcription", methods=["POST"])

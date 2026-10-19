@@ -100,3 +100,12 @@ Keep the last known-good production image/SHA and configuration. If health, pari
 | Regression, mobile capture, Host E2E, heavy, Docker E2E | 🟨 TESTING | 51 focused dashboard/capture/date/delete tests pass in 4.61s; 56 Docker gate tests pass after runtime CA update; prior crop Playwright and assembly regressions pass; current Host E2E/mobile served UAT/heavy gates remain pending | Run remaining gates after safe worker completion and RAM threshold | Codex |
 | Desktop/LAN rebuild and UAT | PENDING | HEAD/origin `00e18db03429ce91e5ea41d26e80de60a2924791`; both health endpoints return ONLINE, but localhost pipeline state reports `running=false`/transcription error while shared queue still counts one active job; do not restart while compressor child runs | Reconcile job after compressor exits, run gates, then deploy same HEAD to both services | Codex |
 | Repeated AMS KAP playlist rows | 🟩 COMPLETE | Three distinct synthetic Playwright sessions; 1, 1, and 3 ACKed fragments; same fixture title; not optimized media | Preserve records; delete only through new stop/confirm UI after served | Codex |
+
+## Delivery Kanban — black video tools (2026-10-18)
+
+| Feature | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Temporal black detection and non-destructive trim | 🟨 TESTING | 12 targeted FFmpeg/API tests pass; scan returns intervals and total removed; validated derivative preserves source | ChatGPT review, then Playwright/Host E2E after RAM gate | Codex |
+| Spatial black border detection and crop | 🟨 TESTING | Separate letterbox/pillarbox detection and crop API; synthetic source hash and duration preserved | Capture UI evidence in isolated Host E2E | Codex |
+| Live capture black preview auto-stop | 🟨 TESTING | Explicit Off/30/60/120 s selection, 10 s warning, reset when content returns; dashboard UI added | Verify countdown and cancellation in Playwright/Host E2E | Codex |
+| Black tools implementation gates | 🟨 TESTING | `tests/test_black_video.py` and `tests/test_dashboard_black_video_api.py`: 12 passed | Run lint, quality and typecheck; commit/push; stop for ChatGPT review | Codex |

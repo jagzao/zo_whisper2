@@ -41,6 +41,7 @@ lan-access/
 
 # ── Base de datos del FileTracker ───────────────────────────────────────────
 processed_files.json
+compression_provenance.json
 
 # ── Overrides de proyecto (se regeneran en cada run) ──────────────────────────
 project_overrides.json

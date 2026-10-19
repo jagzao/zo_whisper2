@@ -263,24 +263,37 @@ def main() -> int:
             check = "host_e2e_data_isolation" if not EXTERNAL_SERVER else "e2e_preflight"
             return _write_failure(REPORT_PATH, check, f"preflight failed: {type(exc).__name__}", "".join(server_output))
 
-        print(f"Running E2E smoke test against {DASHBOARD_URL}...")
-        result = subprocess.run(
-            [PYTHON, str(ROOT / "tests" / "e2e" / "smoke_dashboard.py")],
-            cwd=str(TEST_DATA_ROOT),
-            env=env,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=300,
-        )
-        ok = result.returncode == 0
+        e2e_results = []
+        scripts = ("smoke_dashboard.py",) if EXTERNAL_SERVER else ("smoke_dashboard.py", "black_video_tools.py")
+        for script in scripts:
+            print(f"Running {script} against {DASHBOARD_URL}...")
+            result = subprocess.run(
+                [PYTHON, str(ROOT / "tests" / "e2e" / script)],
+                cwd=str(TEST_DATA_ROOT),
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=600,
+            )
+            e2e_results.append({
+                "script": script,
+                "status": "PASS" if result.returncode == 0 else "FAIL",
+                "returncode": result.returncode,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            })
+            if result.returncode:
+                break
+        ok = all(item["status"] == "PASS" for item in e2e_results)
         report = {
             "status": "PASS" if ok else "FAIL",
-            "returncode": result.returncode,
+            "returncode": 0 if ok else e2e_results[-1]["returncode"],
             "base_url": DASHBOARD_URL,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
+            "checks": e2e_results,
+            "stdout": "\n".join(item["stdout"] for item in e2e_results),
+            "stderr": "\n".join(item["stderr"] for item in e2e_results),
             "server_output": "".join(server_output)[-4000:],
             "ok": ok,
         }

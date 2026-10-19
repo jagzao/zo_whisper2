@@ -684,6 +684,20 @@
         }
         #captureTimerBadge b { font-size: 0.72rem; letter-spacing: 0.08em; }
         #cropOverlay { touch-action: none; user-select: none; }
+        #captureBlackWarning {
+            position: absolute;
+            left: 50%;
+            bottom: 0.75rem;
+            z-index: 5;
+            transform: translateX(-50%);
+            padding: 0.5rem 0.75rem;
+            color: var(--text);
+            background: rgba(85, 52, 0, 0.94);
+            border: 1px solid var(--warn);
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
         .capture-crop-controls {
             display: flex;
             align-items: center;
@@ -913,6 +927,18 @@
                 </div>
                 <div id="filesPaginationTop" class="pagination top"></div>
             </div>
+            <details style="margin:0 0 0.75rem;">
+                <summary>Black video tools</summary>
+                <div class="row" style="align-items:center; flex-wrap:wrap;">
+                    <label for="blackDarknessThreshold">Darkness threshold</label>
+                    <select id="blackDarknessThreshold"><option value="0.03">Strict</option><option value="0.05" selected>Default</option><option value="0.12">Sensitive</option></select>
+                    <label for="blackMinDuration">Minimum black duration (seconds)</label>
+                    <input id="blackMinDuration" type="number" min="0.5" max="3600" step="0.5" value="2" style="width:5rem;">
+                    <label><input id="autoRemoveBlack" type="checkbox"> Automatically remove black sections</label>
+                    <label><input id="autoCropBlack" type="checkbox"> Auto crop black borders</label>
+                </div>
+                <p class="muted" style="margin:0;">Temporal black sections and persistent black borders are separate edits. Originals are retained.</p>
+            </details>
             <div id="filesList"></div>
             <details style="margin-top:0.75rem;">
                 <summary>Optimized media &amp; cleanup status</summary>
@@ -1108,6 +1134,7 @@
                 </div>
                 <span id="captureState" class="status pending" style="position:absolute; top:0.5rem; left:0.5rem; z-index:2;">Idle</span>
                 <span id="captureTimerBadge" class="hidden" aria-live="off"><b>REC</b><span id="captureTimer" aria-label="Recording timer">00:00:00</span></span>
+                <span id="captureBlackWarning" class="hidden" role="status" aria-live="assertive"></span>
                 <div id="cropOverlay" title="Drag to select a crop region" style="position:absolute; inset:0; cursor:crosshair; z-index:1; border-radius:0.625rem;"></div>
                 <div id="cropBox" class="hidden" style="position:absolute; border:2px dashed var(--accent,#fff); background:rgba(255,255,255,0.12); z-index:1; pointer-events:none; border-radius:0.125rem;"></div>
             </div>
@@ -1132,6 +1159,11 @@
                     <input type="checkbox" id="captureAudio"> Record audio with camera (microphone)
                 </label>
             </div>
+            <label id="captureAutoStopBlackLabel" for="captureAutoStopBlack" style="display:flex; align-items:center; gap:0.4rem; color:var(--muted); font-size:0.82rem;">
+                Stop recording after a black preview:
+                <select id="captureAutoStopBlack"><option value="off" selected>Off</option><option value="30">30 s</option><option value="60">60 s</option><option value="120">120 s</option></select>
+                <span>Crop around the laptop screen first.</span>
+            </label>
             <div id="captureNotice" class="ai-package-summary hidden"></div>
             <div id="captureJobs" style="margin:0.5rem 0;"></div>
             <div id="captureAudioWarning" class="ai-package-summary hidden" style="color:var(--danger);"></div>
@@ -1285,6 +1317,87 @@
                 await loadCompressionRetention();
             } catch (error) {
                 document.getElementById('compressionRetention').textContent = `Cleanup retry failed: ${error.message}`;
+            }
+        }
+
+        async function removeBlackSections(encodedMediaId, button) {
+            const id = decodeURIComponent(encodedMediaId);
+            const originalLabel = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Scanning…';
+            try {
+                const auto = document.getElementById('autoRemoveBlack').checked;
+                const scan = await post('/api/video/black-intervals', {
+                    id,
+                    darkness_threshold: Number(document.getElementById('blackDarknessThreshold').value),
+                    minimum_duration_seconds: Number(document.getElementById('blackMinDuration').value),
+                });
+                if (!scan.ok) throw new Error(scan.error || 'Could not scan video');
+                const intervals = scan.intervals || [];
+                if (!intervals.length) {
+                    showToast('No black sections met the selected threshold and duration');
+                    return;
+                }
+                const clock = seconds => {
+                    const value = Math.max(0, Math.floor(seconds));
+                    return `${String(Math.floor(value / 3600)).padStart(2, '0')}:${String(Math.floor(value % 3600 / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+                };
+                const preview = intervals.slice(0, 8).map(item => `${clock(item.start)}–${clock(item.end)}`).join('\n');
+                const extra = intervals.length > 8 ? `\n…and ${intervals.length - 8} more` : '';
+                const review = `Status: ${scan.status} (${scan.confidence} confidence)\n${intervals.length} section(s), ${clock(scan.removed_seconds)} removed:\n\n${preview}${extra}`;
+                if (auto && scan.confidence !== 'high') {
+                    window.alert(`${review}\n\nNEEDS_REVIEW. Automatic trimming is disabled for this result.`);
+                    return;
+                }
+                if (auto) window.alert(`${review}\n\nCreating a trimmed copy. The original stays untouched.`);
+                else if (!window.confirm(`${review}\n\nCreate a trimmed copy? The original stays untouched.`)) return;
+                button.textContent = 'Cutting…';
+                const result = await post('/api/video/remove-black', { id, intervals, auto, confidence: scan.confidence });
+                if (!result.ok) throw new Error(result.error || 'Could not create trimmed video');
+                showToast(`Saved ${result.name}; original preserved`);
+                await loadFiles();
+            } catch (error) {
+                showToast(error.message || 'Could not remove black sections');
+            } finally {
+                button.disabled = false;
+                button.textContent = originalLabel;
+            }
+        }
+
+        async function cropBlackBorders(encodedMediaId, button) {
+            const id = decodeURIComponent(encodedMediaId);
+            const originalLabel = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Scanning…';
+            try {
+                const auto = document.getElementById('autoCropBlack').checked;
+                const scan = await post('/api/video/black-borders', {
+                    id,
+                    darkness_threshold: Number(document.getElementById('blackDarknessThreshold').value),
+                });
+                if (!scan.ok) throw new Error(scan.error || 'Could not scan borders');
+                if (!scan.crop) {
+                    showToast('No persistent black borders found');
+                    return;
+                }
+                const crop = scan.crop;
+                const review = `Status: ${scan.status} (${scan.confidence} confidence)\nCrop ${crop.width}×${crop.height} at ${crop.x},${crop.y}.\n\nCreate a separately cropped copy? Temporal black sections are untouched.`;
+                if (auto && scan.confidence !== 'high') {
+                    window.alert(`${review}\n\nNEEDS_REVIEW. Automatic cropping is disabled for this result.`);
+                    return;
+                }
+                if (auto) window.alert(`${review}\n\nCreating a cropped copy. The original stays untouched.`);
+                else if (!window.confirm(`${review}\n\nContinue?`)) return;
+                button.textContent = 'Cropping…';
+                const result = await post('/api/video/crop-black-borders', { id, crop, auto, confidence: scan.confidence });
+                if (!result.ok) throw new Error(result.error || 'Could not crop borders');
+                showToast(`Saved ${result.name}; original preserved`);
+                await loadFiles();
+            } catch (error) {
+                showToast(error.message || 'Could not crop black borders');
+            } finally {
+                button.disabled = false;
+                button.textContent = originalLabel;
             }
         }
 
@@ -1466,6 +1579,7 @@
                                 <button class="btn-edit tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="editFile('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="Edit" title="Edit file">
                                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </button>
+                                ${fileType === 'Video' && !f.logical_video ? `<button class="btn-edit tooltip" onclick="removeBlackSections('${encodeURIComponent(f.media_id)}', this)" aria-label="Remove black sections" title="Find and cut long black sections">Cut black</button><button class="btn-edit tooltip" onclick="cropBlackBorders('${encodeURIComponent(f.media_id)}', this)" aria-label="Crop black borders" title="Detect and crop persistent black borders">Crop bars</button>` : ''}
                                 ${doc
                                     ? `<button class="btn-docs tooltip" data-tip="View Documentation" onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}', true)" aria-label="View Documentation" title="View Documentation">
                                         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
@@ -2553,6 +2667,9 @@
             closed: false,
             starting: false,
             rotateTimer: null,
+            blackMonitorTimer: null,
+            blackSinceMs: null,
+            blackWarningStartedMs: null,
             pendingCrop: null,      // W6: normalized {x,y,width,height} crop, or null
             audioAvailability: 'UNKNOWN', // W7: AVAILABLE | MISSING | UNKNOWN
             transcriptSessions: [],
@@ -2620,6 +2737,7 @@
             if (capture.lastError) { errEl.textContent = capture.lastError; errEl.classList.remove('hidden'); }
             else { errEl.textContent = ''; errEl.classList.add('hidden'); }
             const recording = state === 'recording';
+            if (!recording) document.getElementById('captureBlackWarning')?.classList.add('hidden');
             const busy = state === 'requesting' || state === 'finalizing';
             const stalled = state === 'stalled';
             document.getElementById('captureStartBtn').classList.toggle('hidden', recording || busy || stalled);
@@ -2629,6 +2747,8 @@
             if (cancelProcessing) cancelProcessing.classList.toggle('hidden', !currentCancelableProcessingChunk());
             document.getElementById('captureRetryBtn').classList.toggle('hidden', !stalled);
             document.getElementById('captureStartBtn').disabled = busy;
+            const autoStopBlack = document.getElementById('captureAutoStopBlack');
+            if (autoStopBlack) autoStopBlack.disabled = recording || busy;
             renderCaptureTimer();
             const audioState = document.getElementById('captureAudioState');
             if (audioState && capture.captureKind === 'audio') {
@@ -2851,6 +2971,11 @@
         function stopCaptureTracks() {
             clearInterval(capture.titleSampleTimer);
             capture.titleSampleTimer = null;
+            clearInterval(capture.blackMonitorTimer);
+            capture.blackMonitorTimer = null;
+            capture.blackSinceMs = null;
+            capture.blackWarningStartedMs = null;
+            document.getElementById('captureBlackWarning')?.classList.add('hidden');
             if (capture.stream) {
                 capture.stream.getTracks().forEach(t => t.stop());
                 capture.stream = null;
@@ -2931,6 +3056,7 @@
             document.getElementById('captureInputAudio').setAttribute('aria-pressed', String(audio));
             document.querySelector('.capture-camera-row').classList.toggle('hidden', audio);
             document.querySelector('.capture-audio-row').classList.toggle('hidden', audio);
+            document.getElementById('captureAutoStopBlackLabel').classList.toggle('hidden', audio);
             document.getElementById('capturePreview').classList.toggle('hidden', audio);
             document.getElementById('captureAudioPreview').classList.toggle('hidden', !audio);
             document.getElementById('captureCropControls').classList.toggle('hidden', audio);
@@ -2971,6 +3097,7 @@
             const previousStream = capture.stream;
             const previousRecorder = capture.recorder;
             capture.cameraSwitching = true;
+            capture.blackSinceMs = null;
             clearTimeout(capture.rotateTimer);
             document.getElementById('captureCameraFacing').disabled = true;
             if (previousRecorder && previousRecorder.state !== 'inactive') {
@@ -3849,12 +3976,72 @@
                 capture.fragmentStartedAtMs = Date.now();
                 recorder.start(CAPTURE_FRAGMENT_TIMESLICE_MS);
                 setCaptureState('recording');
+                startBlackScreenMonitor();
                 scheduleRotation();
             } catch (err) {
                 setStalled(true, 'Could not start next fragment: ' + err.message);
             } finally {
                 capture.starting = false;
             }
+        }
+
+        function startBlackScreenMonitor() {
+            if (capture.blackMonitorTimer) return;
+            capture.blackSinceMs = null;
+            capture.blackWarningStartedMs = null;
+            const thresholdSeconds = Number(document.getElementById('captureAutoStopBlack')?.value);
+            if (capture.captureKind !== 'video' || !Number.isFinite(thresholdSeconds) || thresholdSeconds <= 0) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 18;
+            const context = canvas.getContext('2d', { willReadFrequently: true });
+            if (!context) return;
+            capture.blackMonitorTimer = setInterval(() => {
+                if (capture.state !== 'recording' || capture.cameraSwitching) return;
+                const preview = document.getElementById('capturePreview');
+                if (!preview || preview.readyState < 2 || !preview.videoWidth || !preview.videoHeight) return;
+                const crop = capture.pendingCrop || { x: 0, y: 0, width: 1, height: 1 };
+                try {
+                    context.drawImage(
+                        preview,
+                        crop.x * preview.videoWidth,
+                        crop.y * preview.videoHeight,
+                        crop.width * preview.videoWidth,
+                        crop.height * preview.videoHeight,
+                        0, 0, canvas.width, canvas.height,
+                    );
+                    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+                    let dark = 0;
+                    for (let i = 0; i < pixels.length; i += 4) {
+                        if (pixels[i] < 14 && pixels[i + 1] < 14 && pixels[i + 2] < 14) dark += 1;
+                    }
+                    const warning = document.getElementById('captureBlackWarning');
+                    if (dark / (pixels.length / 4) >= 0.98) {
+                        if (capture.blackSinceMs === null) capture.blackSinceMs = Date.now();
+                        if (Date.now() - capture.blackSinceMs >= thresholdSeconds * 1000) {
+                            if (capture.blackWarningStartedMs === null) capture.blackWarningStartedMs = Date.now();
+                            const remaining = Math.max(0, 10 - Math.floor((Date.now() - capture.blackWarningStartedMs) / 1000));
+                            warning.textContent = `No visible content detected. Recording will stop in ${remaining} s.`;
+                            warning.classList.remove('hidden');
+                            if (remaining <= 0) {
+                                clearInterval(capture.blackMonitorTimer);
+                                capture.blackMonitorTimer = null;
+                                stopCapture();
+                            }
+                        }
+                    } else {
+                        capture.blackSinceMs = null;
+                        capture.blackWarningStartedMs = null;
+                        warning?.classList.add('hidden');
+                    }
+                } catch (error) {
+                    clearInterval(capture.blackMonitorTimer);
+                    capture.blackMonitorTimer = null;
+                    capture.blackSinceMs = null;
+                    capture.blackWarningStartedMs = null;
+                    document.getElementById('captureBlackWarning')?.classList.add('hidden');
+                }
+            }, 1000);
         }
 
         function scheduleRotation() {
