@@ -147,6 +147,8 @@ def probe_media_duration(path: Path) -> float | None:
         values = [(data.get("format") or {}).get("duration")]
         values.extend(stream.get("duration") for stream in data.get("streams", []))
         for value in values:
+            if value is None or not isinstance(value, (int, float, str)):
+                continue
             duration = float(value)
             if result.returncode == 0 and math.isfinite(duration) and duration > 0:
                 return duration
@@ -183,8 +185,9 @@ def probe_media_streams(path: Path) -> dict[str, object] | None:
             fps = float(numerator) / float(denominator)
         except (TypeError, ValueError, ZeroDivisionError):
             fps = None
+        raw_duration = (data.get("format") or {}).get("duration")
         try:
-            duration = float((data.get("format") or {}).get("duration"))
+            duration = float(raw_duration) if isinstance(raw_duration, (int, float, str)) else None
         except (TypeError, ValueError):
             duration = None
         return {

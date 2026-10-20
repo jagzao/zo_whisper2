@@ -10,16 +10,16 @@ with a fake assembler, so they never depend on FFmpeg.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
-import hashlib
 import shutil
 import subprocess
 from dataclasses import replace
 
 import pytest
 
-from transcript_pipeline.live_capture.assembly import assemble_media, probe_media_streams
+from transcript_pipeline.live_capture.assembly import assemble_media
 from transcript_pipeline.live_capture.errors import AssemblyError
 from transcript_pipeline.live_capture.service import CaptureService
 

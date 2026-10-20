@@ -198,3 +198,7 @@ Strict verification: `requests.get(..., verify=<Whisper CA PEM>)` fails for all 
 The former manual ChatGPT `/review` handoff is removed. Release authorization uses recorded checks: branch/remote SHA parity; reviewed diff and `git diff --check`; focused regression, changed-file Ruff, feature-module Pyright, and compile/import checks PASS; then full pytest, security, smoke, Host Playwright E2E, Docker build and Docker E2E PASS. Repository-wide quality findings outside changed feature code are reported as baseline debt, never as a passing gate. Unavailable optional Sonar/Jenkins checks are `ENV_BLOCKED`. Deploy additionally requires desktop/LAN served SHA parity, setup/CA/QR checks, video editor UI evidence and shared-data parity.
 
 The strict `>6 GiB` RAM threshold remains an operational safety guard, not a proven technical minimum for each individual test. It protects headroom for the combined full suite, Chromium/FFmpeg E2E workers, Docker build, and concurrently running desktop services; prior run artifacts do not establish a lower safe peak. A lower threshold requires measured peak-memory evidence and an explicit plan change.
+
+## Current finalization status
+
+The live Kanban and resume sequence are maintained in `docs/plans/WHISPER_LIVE_CAPTURE_EXECUTION_PLAN.md`, section `FINAL SDD RELEASE RUN`. Earlier tables in this file are historical evidence, not the current delivery status.

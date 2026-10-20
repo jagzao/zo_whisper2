@@ -1263,9 +1263,10 @@ def api_files() -> Any:
             file_row["duration"] = _format_media_duration(duration) if isinstance(duration, (int, float)) and math.isfinite(duration) and duration > 0 else None
             capture_active = capture_session is not None and capture_session.status is capture_models.SessionStatus.ACTIVE
             file_row["delete_allowed"], file_row["delete_reason"] = _delete_action(
-                file_row.get("user_state") or file_row.get("status"), capture_active=capture_active
+                str(file_row.get("user_state") or file_row.get("status") or ""), capture_active=capture_active
             )
-            if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture" and relative_parts[2] == "chunks":
+            if (root is MediaRoot.VIDEOS and capture_session is not None and relative_parts
+                    and relative_parts[0] == "live_capture" and relative_parts[2] == "chunks"):
                 chunk_id = path.stem
                 logical_rows = []
                 all_logical_rows = []
@@ -1321,7 +1322,8 @@ def api_files() -> Any:
                     media_files.append(file_row)
                 listed_capture_sessions.add(session_id)
                 continue
-            if root is MediaRoot.VIDEOS and relative_parts and relative_parts[0] == "live_capture" and relative_parts[2] == "final":
+            if (root is MediaRoot.VIDEOS and capture_session is not None and relative_parts
+                    and relative_parts[0] == "live_capture" and relative_parts[2] == "final"):
                 logical_videos = []
                 if capture_session.capture_mode == "playlist":
                     try:
@@ -2407,7 +2409,9 @@ def api_capture_create_session() -> Any:
         audio_availability=audio_availability, capture_mode=capture_mode, project_id=project_id,
         capture_kind=capture_kind, capture_source=capture_source,
         capture_metadata=capture_metadata,
-        is_test_session=bool(payload.get("is_test_session")) and (app.testing or app.config.get("CAPTURE_TEST_MODE")),
+        is_test_session=bool(payload.get("is_test_session")) and (
+            app.testing or bool(app.config.get("CAPTURE_TEST_MODE"))
+        ),
     )
     return jsonify({"ok": True, "session": _session_payload(session)})
 
@@ -2467,8 +2471,9 @@ def _probe_capture_fragment(path: Path) -> dict[str, Any]:
             except (TypeError, ValueError, ZeroDivisionError):
                 return None
 
+        raw_duration = (data.get("format") or {}).get("duration")
         try:
-            duration = float((data.get("format") or {}).get("duration"))
+            duration = float(raw_duration) if isinstance(raw_duration, (int, float, str)) else None
         except (TypeError, ValueError):
             duration = None
         return {
@@ -2510,8 +2515,11 @@ def api_capture_upload_fragment(session_id: str) -> Any:
     media = request.files.get("media")
     if media is None:
         return jsonify({"ok": False, "error": "media file required"}), 400
+    raw_sequence = request.form.get("sequence")
+    if raw_sequence is None:
+        return jsonify({"ok": False, "error": "sequence must be an integer"}), 400
     try:
-        sequence = int(request.form.get("sequence"))
+        sequence = int(raw_sequence)
     except (TypeError, ValueError):
         return jsonify({"ok": False, "error": "sequence must be an integer"}), 400
     extension = (

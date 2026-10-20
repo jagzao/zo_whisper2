@@ -9,8 +9,8 @@ media atomically and flips the chunk RECORDING -> FINALIZED. Incomplete
 
 from __future__ import annotations
 
-import io
 import hashlib
+import io
 import logging
 import os
 import shutil
@@ -20,7 +20,12 @@ from pathlib import Path
 
 from transcript_pipeline.config import VIDEOS_DIR
 from transcript_pipeline.live_capture import models
-from transcript_pipeline.live_capture.assembly import assemble_media, ensure_seekable_audio, probe_media_duration, probe_media_streams
+from transcript_pipeline.live_capture.assembly import (
+    assemble_media,
+    ensure_seekable_audio,
+    probe_media_duration,
+    probe_media_streams,
+)
 from transcript_pipeline.live_capture.audio import transcript_required
 from transcript_pipeline.live_capture.errors import (
     AssemblyError,
@@ -58,7 +63,12 @@ def _optional_nonnegative_ms(value: int | None, label: str) -> int | None:
     return value
 
 
-def _stream_blocks(source, max_bytes: int | None, cancelled=None, too_large_error=ChunkTooLargeError):
+def _stream_blocks(
+    source,
+    max_bytes: int | None,
+    cancelled=None,
+    too_large_error: type[Exception] = ChunkTooLargeError,
+):
     """Reads `source` (a `.read(n)` file-like) in bounded blocks.
 
     Enforces the empty-body and size-limit invariants lazily, before any byte
@@ -197,7 +207,7 @@ class CaptureService:
             if mappings and any(not entry.finalized for entry in mappings):
                 raise AssemblyError("processing chunks are not all finalized")
             fragments = sorted(self.store.load_fragments(session_id), key=lambda item: item.sequence)
-            chunks = sorted((c for c in session.chunks if c.media_extension), key=lambda c: c.index)
+            chunks = sorted((c for c in session.chunks if c.media_extension is not None), key=lambda c: c.index)
             if not fragments and not chunks:
                 raise AssemblyError("capture has no finalized media")
 
@@ -211,7 +221,12 @@ class CaptureService:
                 sources = [self.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension)
                            for fragment in fragments]
                 raw_durations = [fragment.duration_ms for fragment in fragments]
-                durations_ms = raw_durations if all(isinstance(value, int) and value > 0 for value in raw_durations) else None
+                valid_durations: list[int] = []
+                for value in raw_durations:
+                    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+                        break
+                    valid_durations.append(value)
+                durations_ms = valid_durations if len(valid_durations) == len(raw_durations) else None
                 timeline_values = [
                     fragment.recorded_offset_ms + fragment.duration_ms
                     for fragment in fragments
@@ -220,9 +235,11 @@ class CaptureService:
                 expected_duration = max(timeline_values) / 1000 if len(timeline_values) == len(fragments) else None
                 fragment_ids_for_metadata = fragment_ids
             else:
-                extensions = {chunk.media_extension for chunk in chunks}
-                sources = [self.store.chunk_media_path(session_id, chunk.index, chunk.media_extension)
-                           for chunk in chunks]
+                extensions = {chunk.media_extension for chunk in chunks if chunk.media_extension is not None}
+                sources = [
+                    self.store.chunk_media_path(session_id, chunk.index, chunk.media_extension)
+                    for chunk in chunks if chunk.media_extension is not None
+                ]
                 durations_ms = None
                 expected_duration = None
                 fragment_ids_for_metadata = [fid for entry in mappings for fid in entry.fragment_ids]
@@ -289,10 +306,11 @@ class CaptureService:
             capture_status = capture_metadata.get("captureStatus")
             if stream_info is not None:
                 audio_requested = capture_metadata.get("audioRequested") is True
-                if audio_requested and stream_info.get("audioStreams") == 0:
+                audio_stream_count = stream_info.get("audioStreams")
+                if audio_requested and audio_stream_count == 0:
                     capture_status = "AUDIO_CAPTURE_FAILED"
                     session = replace(session, audio_availability=models.AudioAvailability.MISSING)
-                elif audio_requested and stream_info.get("audioStreams", 0) > 0:
+                elif audio_requested and isinstance(audio_stream_count, int) and audio_stream_count > 0:
                     session = replace(session, audio_availability=models.AudioAvailability.AVAILABLE)
                 expected_width = capture_metadata.get("cropOutputWidth")
                 expected_height = capture_metadata.get("cropOutputHeight")
@@ -979,9 +997,17 @@ class CaptureService:
         staging = self.store.assembly_staging_path(session_id, plan.chunk_index, extension)
         try:
             if self._assembler is assemble_media:
-                durations = [fragments[fid].duration_ms for fid in plan.fragment_ids]
-                durations = durations if all(isinstance(value, int) and value > 0 for value in durations) else None
-                self._assembler(paths, staging, durations)
+                raw_durations = [fragments[fid].duration_ms for fid in plan.fragment_ids]
+                durations: list[int] = []
+                for value in raw_durations:
+                    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+                        break
+                    durations.append(value)
+                if len(durations) != len(raw_durations):
+                    validated_durations = None
+                else:
+                    validated_durations = durations
+                self._assembler(paths, staging, validated_durations)
             else:
                 self._assembler(paths, staging)
         except AssemblyError as exc:
