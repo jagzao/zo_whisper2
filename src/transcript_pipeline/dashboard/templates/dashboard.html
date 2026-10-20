@@ -71,6 +71,7 @@
         @media (max-width: 980px) {
             .grid { grid-template-columns: minmax(0, 1fr); }
             .card { min-width: 0; }
+            .grid #foldersCard { grid-column: auto; }
         }
         .card {
             background: var(--panel);
@@ -82,6 +83,7 @@
         }
         .card:hover { border-color: rgba(0,229,255,0.25); }
         .card.wide { grid-column: 1 / -1; }
+        #foldersCard { grid-column: 2; }
         .card h2 {
             margin: 0 0 1rem 0;
             font-size: 0.95rem;
@@ -304,6 +306,7 @@
             gap: 1.25rem;
             align-items: start;
         }
+        .editor-main > p.muted { grid-column: 1 / -1; }
         @media (max-width: 980px) { .editor-main { grid-template-columns: 1fr; } }
         .video-col {
             display: flex;
@@ -956,16 +959,11 @@
         </div>
 
         <div class="card">
-            <h2>Overview</h2>
-            <div class="metrics" id="metrics"></div>
-        </div>
-
-        <div class="card wide">
             <h2>Pipeline</h2>
             <div class="pipeline-stepper" id="pipelineStepper"></div>
         </div>
 
-        <div class="card">
+        <div class="card" id="foldersCard">
             <h2>Folders</h2>
             <div class="folders" id="folders"></div>
         </div>
@@ -1390,13 +1388,12 @@
 
         async function loadMetrics() {
             const data = await api('/api/metrics');
-            document.getElementById('metrics').innerHTML = metricsCardsHtml(data);
+            document.getElementById('overviewModalMetrics').innerHTML = metricsCardsHtml(data);
         }
 
         async function openOverviewModal() {
-            const main = document.getElementById('metrics');
+            const main = document.getElementById('overviewModalMetrics');
             if (!main || !main.innerHTML.trim()) await loadMetrics();
-            document.getElementById('overviewModalMetrics').innerHTML = document.getElementById('metrics').innerHTML;
             document.getElementById('overviewModal').classList.remove('hidden');
         }
 
@@ -2153,7 +2150,7 @@
                                 <button class="btn-view tooltip" onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="View" title="View">
                                     <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
                                 </button>
-                                <button class="btn-edit tooltip" ${!tx || !tx.id ? 'disabled' : ''} onclick="editFile('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="Edit" title="Edit file">
+                                <button class="btn-edit tooltip" onclick="editFile('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}')" aria-label="${tx && tx.id ? 'Edit transcription' : 'Add transcription'}" title="${tx && tx.id ? 'Edit transcription' : 'Add transcription'}">
                                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </button>
                                 ${fileType === 'Video' && !f.logical_video ? `<button class="btn-edit tooltip" onclick="openVideoTrimEditor('${encodeURIComponent(f.media_id)}', '${encodeURIComponent(f.name)}')" aria-label="Edit video" title="Preview and edit time ranges or frame crop">Edit video</button>` : ''}
@@ -2381,6 +2378,7 @@
                             <button id="tabFrames" onclick="switchEditorTab('frames')">FRAMES</button>
                             <button id="tabDocs" onclick="switchEditorTab('docs')">DOCS</button>
                         </div>
+                        ${txId ? '' : `<button type="button" class="secondary" onclick="editFile('${encodeURIComponent(mediaId)}', '')">Add transcription</button>`}
                         <div id="transcriptTabPanel">
                             <div class="search-bar">
                                 <input type="text" id="txSearch" placeholder="Search transcription..." oninput="filterSegments(this.value)" aria-label="Search">
@@ -2806,16 +2804,18 @@
 
         async function editFile(mediaIdEncoded, txIdEncoded) {
             const mediaId = decodeURIComponent(mediaIdEncoded);
-            const txId = decodeURIComponent(txIdEncoded);
-            if (!txId) return;
+            const txId = txIdEncoded ? decodeURIComponent(txIdEncoded) : '';
             document.getElementById('editTxId').value = txId;
             document.getElementById('editMediaId').value = mediaId;
-            document.getElementById('editTxText').value = 'Loading...';
+            document.getElementById('editTxText').value = txId ? 'Loading...' : '';
+            document.getElementById('editTxText').placeholder = txId ? '' : 'Paste or type the transcription here';
+            document.querySelector('#editModal .modal-header h2').textContent = txId ? 'Edit file' : 'Add transcription';
 
             const file = (window._allFiles || []).find(f => f.media_id === mediaId) || {};
             await populateEditProject(file.project, file.project_source);
 
             document.getElementById('editModal').classList.remove('hidden');
+            if (!txId) return;
             const txRes = await api('/api/transcription?id=' + encodeURIComponent(txId));
             if (txRes.ok) {
                 document.getElementById('editTxText').value = txRes.text;
@@ -2860,6 +2860,10 @@
                 closeEdit();
                 await loadFiles();
                 renderFilePage(page);
+                if (!document.getElementById('previewModal').classList.contains('hidden')) {
+                    const updated = (window._allFiles || []).find(file => file.media_id === mediaId);
+                    preview(encodeURIComponent(mediaId), updated?.transcription?.id ? encodeURIComponent(updated.transcription.id) : '');
+                }
             } else {
                 showToast(res.error || 'Error saving');
             }

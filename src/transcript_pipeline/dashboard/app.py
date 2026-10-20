@@ -1873,13 +1873,31 @@ def api_video_crop_black_borders() -> Any:
 def api_transcription_save() -> Any:
     payload = request.get_json(force=True) or {}
     text = payload.get("text", "")
-    resolved = _from_media_id(payload.get("id", ""), [MediaRoot.TRANSCRIPTIONS])
-
     media_id = str(payload.get("media_id") or "")
-    filename = resolved.name
+    tx_id = str(payload.get("id") or "")
+    if not isinstance(text, str):
+        return jsonify({"ok": False, "error": "text must be a string"}), 400
+    media_target = None
+    if tx_id:
+        resolved = _from_media_id(tx_id, [MediaRoot.TRANSCRIPTIONS])
+        filename = resolved.name
+    else:
+        if not media_id:
+            return jsonify({"ok": False, "error": "media_id required to add a transcription"}), 400
+        if not text.strip():
+            return jsonify({"ok": False, "error": "transcription cannot be empty"}), 400
+        media_target = _from_media_id(media_id, [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+        try:
+            relative = media_target.relative_to(VIDEOS_BASE)
+        except ValueError:
+            relative = media_target.relative_to(AUDIO_BASE)
+        resolved = TRANSCRIPTIONS_BASE / relative.parent / f"{media_target.stem}.txt"
+        if resolved.exists():
+            return jsonify({"ok": False, "error": "A transcription already exists"}), 409
+        filename = media_target.name
     override_project: str | None = None
     if media_id:
-        media_target = _from_media_id(media_id, [MediaRoot.VIDEOS, MediaRoot.AUDIO], must_exist=False)
+        media_target = media_target or _from_media_id(media_id, [MediaRoot.VIDEOS, MediaRoot.AUDIO], must_exist=False)
         filename = media_target.name
         raw_project = payload.get("project")
         normalized = raw_project.strip() if isinstance(raw_project, str) else ""
@@ -1900,9 +1918,7 @@ def api_transcription_save() -> Any:
             return jsonify({"ok": False, "error": "Could not prepare transcription update"}), 500
 
     overrides_path = _project_overrides_path()
-    snapshots: dict[Path, tuple[bool, str]] = {
-        resolved: _snapshot_text_file(resolved),
-    }
+    snapshots: dict[Path, tuple[bool, str]] = {resolved: _snapshot_text_file(resolved)}
     if segments_path.exists():
         snapshots[segments_path] = _snapshot_text_file(segments_path)
     if media_id:
@@ -1916,6 +1932,7 @@ def api_transcription_save() -> Any:
             new_overrides.pop(media_id, None)
 
     try:
+        resolved.parent.mkdir(parents=True, exist_ok=True)
         _atomic_write_text(resolved, text)
         if segments_content is not None:
             _atomic_write_text(segments_path, segments_content)
