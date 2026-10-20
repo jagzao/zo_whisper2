@@ -855,7 +855,9 @@ The accumulated SDD includes Live Capture/project inheritance; camera/microphone
 
 This run's lightweight evidence on current code: 279 selected unit/API tests passed; after typed-boundary fixes, 60 fragment/assembly/processing/API and synthetic-capture tests passed; the independent Live Capture → keyframe → Docs V2 integration pair passed 4 tests; changed-module Ruff passed; feature-module Pyright had 0 errors and 2 optional `qrcode` stub warnings; compileall and `git diff --check` passed. The served app advertises `9ddb5a150fbd7dd1c4d5db3cd732a6e8de007501`, while repository HEAD before this checkpoint is `d1061fb62cb6ba86ee501a80ed9c101fb2d28152`; this run also has uncommitted type-safety fixes. Do not call the final release deployed until final HEAD is built, served, and parity checked.
 
-Read-only `/api/status` reports Worker `RUNNING`, `active_jobs=1`, `pending_jobs=0`. Do not restart or interrupt Whisper while that job is active. Last measured RAM: 1.78 GiB, below the 4 GiB heavy-operation floor. No other project/service was stopped. Continue independent work; recheck job and RAM before each heavy gate and resume this sequence when safe.
+Read-only `/api/status` reports Worker `RUNNING`, `active_jobs=1`, `pending_jobs=0`. Do not restart or interrupt Whisper while that job is active. Latest RAM measurement is 3.06 GiB, below the 4 GiB heavy-operation floor. No other project/service was stopped. Continue independent work; recheck job and RAM before each heavy gate and resume this sequence when safe.
+
+Security mini-loop: the first harness attempt used the watcher Python, which lacks `pip-audit` and `truststore`; its dependency audit result was not an external network failure. The security suite also exposed environment leakage because importing dashboard configuration loads LAN values from `scan_config.env`; the localhost-only test now explicitly clears `ZMI_LAN_ACCESS` and `ZMI_CONTAINER_MODE` while preserving its rejection assertion. Targeted rerun passed 2/2, full security harness with Python 3.13 passed (116 passed, 3 skipped; runtime and dev audits CLEAN), and the local-only module passed 13/13 under the project Python.
 
 ### Delivery Kanban
 
@@ -877,10 +879,11 @@ Read-only `/api/status` reports Worker `RUNNING`, `active_jobs=1`, `pending_jobs
 | Changed-code static and focused quality | 🟩 COMPLETE | Ruff PASS; Pyright 0 errors (2 optional `qrcode` stub warnings); compileall/diff-check PASS; selected 279 tests, post-fix 60 targeted tests, and 4 integrations PASS | Preserve exact commands/results with final artifacts | Agent |
 | Playwright release journeys | 🟨 TESTING | Prior capture subset 77/77 and prior UI gates passed on earlier served revision | Run required synthetic-device suite sequentially at RAM ≥4 GiB | Agent |
 | Host E2E | 🟨 TESTING | Prior Host E2E 4/4 passed before final runtime/type corrections | Run canonical Host E2E after Playwright and close its browser | Agent |
-| Docker build/E2E and security | 🟨 TESTING | Earlier build/E2E/security evidence exists; current HEAD has not been built | Recheck RAM; build, Docker E2E and security serially | Agent |
-| Final release build and desktop/LAN deployment | 🟥 BLOCKED | RAM 1.78 GiB (<4 floor); one active user job; desktop/LAN serve `9ddb5a1`, not final HEAD | Wait for job completion and safe RAM; pass gates, snapshot shared data, rebuild/restart and verify parity | Agent |
+| Docker build/E2E and release build | 🟨 TESTING | Earlier build/E2E evidence exists; current HEAD has not been built | Recheck RAM; build and Docker E2E serially | Agent |
+| Security and dependency audit | 🟩 COMPLETE | `py -3.13 scripts/security.py`: 116 passed, 3 skipped; secrets/path/env checks pass; runtime/dev dependency audits CLEAN | Preserve security report artifact | Agent |
+| Final release build and desktop/LAN deployment | 🟥 BLOCKED | RAM 3.06 GiB (<4 floor); one active user job; desktop/LAN serve `9ddb5a1`, not final HEAD | Wait for job completion and safe RAM; pass gates, snapshot shared data, rebuild/restart and verify parity | Agent |
 | Shared-data preservation and post-deploy smoke | 🟨 TESTING | No user media changed in this run; services currently healthy | Capture pre-deploy snapshot, deploy only when safe, compare and run full smoke | Agent |
-| Physical Galaxy UAT | TODO | Physical-device run unavailable; synthetic Playwright does not claim phone PASS | Juan verifies mic, landscape, crop, audio and playback after deployment | Juan |
+| Physical Galaxy UAT | OWNER_PENDING | Physical-device run unavailable; synthetic Playwright does not claim phone PASS | Juan verifies mic, landscape, crop, audio and playback after deployment | Juan |
 | Optional Sonar/Jenkins/soak | TODO | Required/configured status not yet authoritatively confirmed | Record NOT_CONFIGURED if config confirms absence | Agent |
 
 ### Resume order

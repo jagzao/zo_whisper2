@@ -121,6 +121,8 @@ def test_transcription_read_error_does_not_leak_exception_text(client, monkeypat
 
 def test_non_loopback_dashboard_host_rejected(monkeypatch):
     monkeypatch.setattr("transcript_pipeline.settings.load_env", lambda: None)
+    monkeypatch.delenv("ZMI_LAN_ACCESS", raising=False)
+    monkeypatch.delenv("ZMI_CONTAINER_MODE", raising=False)
     monkeypatch.setenv("DASHBOARD_HOST", "0.0.0.0")
     with pytest.raises(ConfigurationError):
         Settings.from_env()
@@ -128,5 +130,7 @@ def test_non_loopback_dashboard_host_rejected(monkeypatch):
 
 def test_loopback_dashboard_host_accepted(monkeypatch):
     monkeypatch.setattr("transcript_pipeline.settings.load_env", lambda: None)
+    monkeypatch.delenv("ZMI_LAN_ACCESS", raising=False)
+    monkeypatch.delenv("ZMI_CONTAINER_MODE", raising=False)
     monkeypatch.setenv("DASHBOARD_HOST", "127.0.0.1")
     assert Settings.from_env().dashboard_host == "127.0.0.1"
