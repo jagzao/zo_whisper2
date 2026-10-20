@@ -111,7 +111,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Merge to production branch (`main`) | 🟩 COMPLETE | Merge commit `a497f4f19ca401902afa653c37a1c214fc9143d4`; parents are pre-merge production `f14ed96b76d2ea48b137eb1910ccc68f7d347ff5` and validated RC. Post-merge unit suite passed 1232, 8 skipped. | Push production branch after this SDD/Kanban commit. | Agent |
 | Release tag | 🟩 COMPLETE | Annotated `whisper-2026-10-20` pushed to origin; points to `77108a206e9fa39d13e40238c8d2323c92958c53`. | None. | Agent |
 | Production deploy | 🟥 BLOCKED | Release branch/tag are pushed and merged, but pre-restart data check found nine missing session files and three changed session manifests; app was not restarted. Worker remains RUNNING with zero active/pending jobs. | Resolve data-safety discrepancy, then deploy tagged release. | Agent / Juan |
-| Production smoke | TODO | Not run: production release was not deployed because shared-data integrity could not be established. | Run required served smoke after safe deployment. | Agent |
+| Production smoke | 🟥 BLOCKED | Not run for release SHA `77108a206e9fa39d13e40238c8d2323c92958c53`: desktop and LAN HTTPS return 200 but still report RC marker `32be478a8a7e9ef837b4d12e9435ed0480acbcf4`; data discrepancy prevented deploying the tagged SHA. | Run required served smoke after data recovery and deployment. | Agent |
 | Galaxy UAT | OWNER_PENDING | Juan's physical phone validation remains final acceptance. | Juan validates capture/audio/crop/playback. | Juan |
 
 ## Evidence
