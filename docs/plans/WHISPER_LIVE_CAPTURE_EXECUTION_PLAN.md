@@ -907,15 +907,22 @@ Security mini-loop: the first harness attempt used the watcher Python, which lac
 - Optional confidence checks: safe synthetic integration selections `15 passed, 5 skipped` (LAN TLS interception); media crop/assembly/black-video regression `36 passed`. Process-restart integration was not run because its worker would scan the live shared root.
 - Pre-deploy shared-data snapshot at `.agents/session/deployment-pre.json`: 1493 files, 15,408,846,996 bytes, 418 content SHA-256 values, metadata manifest SHA-256 `6a1ea411325a6811c8855d7cfb795be58e61a279e859cbd9464f11e65d3bd395`. Previous runtime image `sha256:6fb5774908aaf635c056c1d19021ce4d7bb10f060382983061c7edc746a65fef` is tagged `whisper-zmi:rollback-9ddb5a1`.
 
+### Release smoke checkpoint - 2026-10-20
+
+- Build `c59dfed45aa290aac6db96e84fcdbf30220813c5` started healthy and is served by desktop HTTP and LAN HTTPS (`192.168.50.20`); `/setup`, QR, projects, health and network API returned 200. `/api/files` returned 59 user-facing rows. The worker reports RUNNING with 0 active and 0 pending jobs.
+- `tests/e2e/overview_stats_modal.py`: 12 checks PASS, including four shared metrics, X/Escape/backdrop, and mobile fit. Served UI smoke: New Recording opened; Video Editor opened for existing `Tidal.mp4`; no edits or uploads submitted.
+- Advisory media note: one finalized capture appeared during the verification window and was preserved (34.866 sec, 9 files, 48 MB; metadata reports `CROP_OUTPUT_MISMATCH`). The original 1493-file baseline has no missing/changed files and all 418 content hashes still match. Updated snapshot `.agents/session/deployment-pre-release.json`: 1502 files, 15,456,804,770 bytes; metadata SHA-256 `417563058a7338347eccf2d1604e20b75b401b2956d22a175c9d632f9e2b7bf9`.
+- Smoke found that the app needed the configured LAN HTTP/HTTPS port values in its Compose environment. `compose.yml` now passes both values; resolved config is 5000/5001. Focused LAN/setup tests pass 31/31. Rebuild/redeploy the final pushed HEAD and repeat the minimal smoke and snapshot comparison.
+- Current actual HTTP/HTTPS responses include `X-Whisper-Build: c59dfed45aa290aac6db96e84fcdbf30220813c5`; this is an intermediate deployment, not FINAL_HEAD. Preserve rollback image and do not remove the newly finalized capture.
+
 ### Active Kanban location
 
 The sole active feature-level Kanban is in the canonical SDD, `.agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md`, section `Finalization Kanban`. The dated tables elsewhere in this execution plan are historical evidence only.
 
 ### Resume order
 
-1. Finish the Overview modal UI check when practical; relevant unit suite is green. Complete build/import/start and migration/data-safety checks, then commit and push code, SDD, plan, and the sole active Kanban.
-2. Attempt optional integration/media/Playwright/Host E2E/Docker E2E/security checks when practical; record each result independently. Do not wait on advisory gates or RAM thresholds.
-3. Before deployment, verify pushed FINAL_HEAD, worktree clean, active worker job count zero, preserve the previous image, and snapshot shared-data counts/hashes/metadata.
-4. Set the deployment build revision to FINAL_HEAD, dynamically identify the LAN IPv4, rebuild/start only Whisper app + Caddy profile, preserving the shared root and model volume.
-5. Run required HTTP/HTTPS served smoke and parity checks. Update the final Kanban; commit/push final evidence and, if that changes served revision, rebuild/redeploy the resulting final HEAD and repeat smoke.
-6. Report phone UAT `OWNER_PENDING`; Jenkins/Sonar/soak `NOT_REQUIRED`.
+1. Focused LAN/setup suite passes 31/31; the full relevant unit suite passes 1230 with 8 skipped. Commit and push the Compose port wiring and updated SDD/plan.
+2. Before the final rebuild, verify pushed FINAL_HEAD, clean worktree, worker job count zero, rollback image, and updated shared-data snapshot.
+3. Set `WHISPER_BUILD_REVISION=FINAL_HEAD`, dynamically identify LAN IPv4, rebuild/start only Whisper app + Caddy, preserving the shared root and model volume.
+4. Run lightweight HTTP/HTTPS, served revision, Videos/Projects, worker, New Recording, Video Editor, Overview modal, `/setup`, and data snapshot smoke. Commit/push final deployment evidence; if that changes HEAD, redeploy and repeat smoke.
+5. Report phone UAT `OWNER_PENDING`; Jenkins/Sonar/soak `NOT_REQUIRED`. Advisory defect: retained finalized capture reports `CROP_OUTPUT_MISMATCH`; owner reviews during UAT.

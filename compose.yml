@@ -43,6 +43,8 @@ services:
       # Feature spec FEATURE-ZMI-DKR-002 required defaults.
       ZMI_CONTAINER_MODE: "true"       # permits the internal 0.0.0.0 bind
       ZMI_LAN_ACCESS: "${ZMI_LAN_ACCESS:-false}"
+      ZMI_LAN_HTTP_PORT: "${ZMI_LAN_HTTP_PORT:-5003}"
+      ZMI_HTTPS_PORT: "${ZMI_HTTPS_PORT:-5001}"
       ZMI_LAN_HOSTS: "${ZMI_LAN_HOSTS:-}"
       ZMI_DATA_ROOT: /data             # all mutable state under the bind mount
       ZMI_CONFIG_ENV: /data/scan_config.env  # optional; absent file is a no-op
@@ -89,6 +91,7 @@ services:
     tmpfs:
       - /tmp:rw,nosuid,nodev,noexec,size=67108864,mode=1777
     cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
     security_opt:
       - no-new-privileges:true
 
