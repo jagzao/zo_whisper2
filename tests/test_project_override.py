@@ -133,6 +133,57 @@ def test_manual_wins_over_auto(client, media):
     assert row["project_source"] == "manual"
 
 
+def test_add_transcription_for_media_without_existing_text(client, media, env):
+    media["tx"].unlink()
+
+    resp = client.post(
+        "/api/transcription",
+        json={"media_id": media["media_id"], "text": "manual transcript", "project": "Beta"},
+        headers=AUTH_HEADERS,
+    )
+
+    assert resp.status_code == 200
+    assert (env["transcriptions"] / "alpha_demo.txt").read_text(encoding="utf-8") == "manual transcript"
+    assert dashboard_app._load_project_overrides() == {media["media_id"]: "Beta"}
+    row = _file_row(client, media["media_id"])
+    assert row["transcription"]["id"] == "transcriptions:alpha_demo.txt"
+    assert row["project_source"] == "manual"
+
+
+def test_add_transcription_rejects_empty_and_duplicate(client, media, env):
+    media["tx"].unlink()
+    empty = client.post(
+        "/api/transcription", json={"media_id": media["media_id"], "text": "  "}, headers=AUTH_HEADERS
+    )
+    assert empty.status_code == 400
+    assert not (env["transcriptions"] / "alpha_demo.txt").exists()
+
+    added = client.post(
+        "/api/transcription", json={"media_id": media["media_id"], "text": "manual transcript"}, headers=AUTH_HEADERS
+    )
+    assert added.status_code == 200
+    duplicate = client.post(
+        "/api/transcription", json={"media_id": media["media_id"], "text": "replacement"}, headers=AUTH_HEADERS
+    )
+    assert duplicate.status_code == 409
+    assert (env["transcriptions"] / "alpha_demo.txt").read_text(encoding="utf-8") == "manual transcript"
+
+
+def test_add_transcription_rolls_back_when_project_override_fails(client, media, env, monkeypatch):
+    media["tx"].unlink()
+    monkeypatch.setattr(dashboard_app, "_save_project_overrides", lambda _overrides: False)
+
+    resp = client.post(
+        "/api/transcription",
+        json={"media_id": media["media_id"], "text": "manual transcript", "project": "Beta"},
+        headers=AUTH_HEADERS,
+    )
+
+    assert resp.status_code == 500
+    assert not (env["transcriptions"] / "alpha_demo.txt").exists()
+    assert dashboard_app._load_project_overrides() == {}
+
+
 def test_override_persists_across_reload(client, media, env):
     _save(client, media, "Beta")
 
