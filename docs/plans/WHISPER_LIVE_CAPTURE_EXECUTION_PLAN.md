@@ -911,9 +911,10 @@ Security mini-loop: the first harness attempt used the watcher Python, which lac
 
 - Build `c59dfed45aa290aac6db96e84fcdbf30220813c5` started healthy and is served by desktop HTTP and LAN HTTPS (`192.168.50.20`); `/setup`, QR, projects, health and network API returned 200. `/api/files` returned 59 user-facing rows. The worker reports RUNNING with 0 active and 0 pending jobs.
 - `tests/e2e/overview_stats_modal.py`: 12 checks PASS, including four shared metrics, X/Escape/backdrop, and mobile fit. Served UI smoke: New Recording opened; Video Editor opened for existing `Tidal.mp4`; no edits or uploads submitted.
-- Advisory media note: one finalized capture appeared during the verification window and was preserved (34.866 sec, 9 files, 48 MB; metadata reports `CROP_OUTPUT_MISMATCH`). The original 1493-file baseline has no missing/changed files and all 418 content hashes still match. Updated snapshot `.agents/session/deployment-pre-release.json`: 1502 files, 15,456,804,770 bytes; metadata SHA-256 `417563058a7338347eccf2d1604e20b75b401b2956d22a175c9d632f9e2b7bf9`.
-- Smoke found that the app needed the configured LAN HTTP/HTTPS port values in its Compose environment. `compose.yml` now passes both values; resolved config is 5000/5001. Focused LAN/setup tests pass 31/31. Rebuild/redeploy the final pushed HEAD and repeat the minimal smoke and snapshot comparison.
-- Current actual HTTP/HTTPS responses include `X-Whisper-Build: c59dfed45aa290aac6db96e84fcdbf30220813c5`; this is an intermediate deployment, not FINAL_HEAD. Preserve rollback image and do not remove the newly finalized capture.
+- Advisory media note: one finalized capture appeared during the verification window and was preserved (34.866 sec, 9 files; final WebM 15,989,285 bytes; metadata reports `CROP_OUTPUT_MISMATCH`). A later `POST /api/capture/sessions/sess-ea3bff8954f6/cancel-processing` returned 200 and its two processing-chunk states became `CANCELLED`; the final WebM and all source fragment/chunk files remain present. Treat as owner UAT follow-up; do not delete or retry automatically.
+- Original 1493-file baseline has no missing/changed files and all 418 selected content hashes match. Current snapshot `.agents/session/deployment-pre-finalhead.json`: 1502 files, 15,456,804,797 bytes, 419 hashes including the session JSON, metadata SHA-256 `919ccbc078524b108b9b4229e215b95bff73bd872b80acea4ea875f21ae4cdc0`.
+- Compose passes configured LAN ports; resolved runtime env is HTTP 5000 / HTTPS 5001. Focused LAN/setup tests pass 31/31. At `10e1744`, HTTP, HTTPS, `/setup`, QR, network info, projects, health and modal smoke pass; current build marker matches both origins. The full unit suite passed 1230 with 8 skipped; integrations passed 15 with 5 skipped; media regression passed 36.
+- Commit this final SDD/plan/Kanban evidence, set its build marker in ignored `.env`, re-serve the documentation-only final HEAD without changing app sources, then verify desktop/LAN build markers, health, `/setup`, files/projects, worker=0 active/0 pending, and compare the 1502-file snapshot. No further tracked edits after that smoke.
 
 ### Active Kanban location
 
@@ -921,8 +922,8 @@ The sole active feature-level Kanban is in the canonical SDD, `.agents/deliverab
 
 ### Resume order
 
-1. Focused LAN/setup suite passes 31/31; the full relevant unit suite passes 1230 with 8 skipped. Commit and push the Compose port wiring and updated SDD/plan.
-2. Before the final rebuild, verify pushed FINAL_HEAD, clean worktree, worker job count zero, rollback image, and updated shared-data snapshot.
-3. Set `WHISPER_BUILD_REVISION=FINAL_HEAD`, dynamically identify LAN IPv4, rebuild/start only Whisper app + Caddy, preserving the shared root and model volume.
-4. Run lightweight HTTP/HTTPS, served revision, Videos/Projects, worker, New Recording, Video Editor, Overview modal, `/setup`, and data snapshot smoke. Commit/push final deployment evidence; if that changes HEAD, redeploy and repeat smoke.
-5. Report phone UAT `OWNER_PENDING`; Jenkins/Sonar/soak `NOT_REQUIRED`. Advisory defect: retained finalized capture reports `CROP_OUTPUT_MISMATCH`; owner reviews during UAT.
+1. Relevant unit suite passes 1230 with 8 skipped; focused LAN/setup tests pass 31/31. Optional current-run checks: integration 15 passed/5 skipped, media regression 36 passed, Overview Playwright 12 passed; Host E2E/Docker E2E/security not run.
+2. Commit and push this final SDD/plan/Kanban evidence. Verify final HEAD, clean worktree, worker job count zero, rollback image, and updated 1502-file shared-data snapshot.
+3. Set `WHISPER_BUILD_REVISION=FINAL_HEAD`; re-serve the documentation-only final revision via the already-built identical app source and current LAN IP `192.168.50.20`, preserving shared root/model volume.
+4. Verify HTTP/HTTPS headers, health, `/setup`, QR/network, Videos/Projects, worker status and post-deploy data snapshot. No tracked edits after this verification.
+5. Report phone UAT `OWNER_PENDING`; Jenkins/Sonar/soak `NOT_REQUIRED`. Advisory: retained capture shows `CROP_OUTPUT_MISMATCH` and its processing chunks are `CANCELLED`; final video/fragments remain intact for Juan's review.
