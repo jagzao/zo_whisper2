@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlparse
 
-from flask import Flask, jsonify, make_response, redirect, render_template, request, send_file, send_from_directory
+from flask import Flask, g, jsonify, make_response, redirect, render_template, request, send_file, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
@@ -115,6 +115,7 @@ _VIDEO_EDIT_JOBS: dict[str, dict[str, Any]] = {}
 _VIDEO_EDIT_KEYS: dict[str, str] = {}
 _VIDEO_EDIT_SOURCE_JOBS: dict[str, str] = {}
 _VIDEO_EDIT_JOBS_LOCK = threading.Lock()
+_CAPTURE_SESSION_CREATE_LOCK = threading.Lock()
 
 RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
@@ -299,6 +300,8 @@ def _allowed_request_hostnames() -> set[str]:
 
 @app.before_request
 def _enforce_local_only() -> Any:
+    if request.path.startswith("/api/capture/"):
+        g.capture_request_started = time.monotonic()
     allowed = _allowed_request_hostnames()
     if SETTINGS.lan_access:
         try:
@@ -1083,6 +1086,18 @@ def mobile_setup_qr() -> Any:
 @app.after_request
 def prevent_stale_browser_assets(response) -> Any:
     response.headers["X-Whisper-Build"] = BUILD_REVISION
+    if request.path.startswith("/api/capture/") and response.status_code >= 500:
+        elapsed_ms = round((time.monotonic() - getattr(g, "capture_request_started", time.monotonic())) * 1000)
+        request_id = request.headers.get("X-Capture-Request-ID", "")[:120]
+        logger.error(
+            "[CAPTURE_HTTP_FAILURE] method=%s path=%s status=%s elapsed_ms=%s remote=%s request_id=%s",
+            request.method,
+            request.path,
+            response.status_code,
+            elapsed_ms,
+            request.remote_addr,
+            request_id,
+        )
     if request.method == "GET":
         response.headers["Cache-Control"] = "no-store, max-age=0"
     return response
@@ -2444,15 +2459,33 @@ def api_capture_create_session() -> Any:
             project_id = str(default_projects[0]["name"])
     if not project_id:
         return jsonify({"ok": False, "error": "Select an existing Whisper project before recording"}), 400
-    session = _get_capture_service().create_session(
-        title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop,
-        audio_availability=audio_availability, capture_mode=capture_mode, project_id=project_id,
-        capture_kind=capture_kind, capture_source=capture_source,
-        capture_metadata=capture_metadata,
-        is_test_session=bool(payload.get("is_test_session")) and (
-            app.testing or bool(app.config.get("CAPTURE_TEST_MODE"))
-        ),
-    )
+    client_request_id = str(payload.get("client_request_id") or "").strip()
+    if client_request_id and not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", client_request_id):
+        return jsonify({"ok": False, "error": "client_request_id must contain 8-128 safe characters"}), 400
+    session_service = _get_capture_service()
+    with _CAPTURE_SESSION_CREATE_LOCK:
+        if client_request_id:
+            session = next(
+                (
+                    item for item in session_service.list_sessions()
+                    if (item.capture_metadata or {}).get("clientRequestId") == client_request_id
+                ),
+                None,
+            )
+            if session is not None:
+                return jsonify({"ok": True, "session": _session_payload(session), "replayed": True})
+        metadata = dict(capture_metadata or {})
+        if client_request_id:
+            metadata["clientRequestId"] = client_request_id
+        session = session_service.create_session(
+            title, chunk_duration_sec=chunk_duration_sec, recorded_at=recorded_at, crop=crop,
+            audio_availability=audio_availability, capture_mode=capture_mode, project_id=project_id,
+            capture_kind=capture_kind, capture_source=capture_source,
+            capture_metadata=metadata,
+            is_test_session=bool(payload.get("is_test_session")) and (
+                app.testing or bool(app.config.get("CAPTURE_TEST_MODE"))
+            ),
+        )
     return jsonify({"ok": True, "session": _session_payload(session)})
 
 
@@ -2579,32 +2612,36 @@ def api_capture_upload_fragment(session_id: str) -> Any:
     recorded_at = request.form.get("recorded_at") or None
     # Stream straight from the multipart part; the service reads it in bounded
     # blocks and writes atomically — the whole fragment is never buffered.
-    fragment = _get_capture_service().upload_fragment(
-        session_id,
-        fragment_id,
-        sequence,
-        media.stream,
-        media_extension=extension,
-        max_bytes=max_bytes,
-        duration_ms=duration_ms,
-        recorded_offset_ms=recorded_offset_ms,
-        recorded_at=recorded_at,
-    )
-    service = _get_capture_service()
-    session = service.get_session(session_id)
-    capture_metadata = session.capture_metadata or {}
-    capture_status = None
-    if len(service.list_fragments(session_id)) == 1 and capture_metadata.get("audioRequested") is not None:
-        media_path = service.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension)
-        probed = _probe_capture_fragment(media_path)
-        service.set_capture_metadata(session_id, {"firstFragmentProbe": probed})
-        actual_audio = probed.get("actualAudioStreams")
-        if actual_audio is not None:
-            availability = capture_models.AudioAvailability.AVAILABLE if actual_audio > 0 else capture_models.AudioAvailability.MISSING
-            service.set_audio_availability(session_id, availability)
-            if capture_metadata.get("audioRequested") is True and actual_audio == 0:
-                capture_status = "AUDIO_CAPTURE_FAILED"
-                service.set_capture_metadata(session_id, {"captureStatus": capture_status})
+    try:
+        service = _get_capture_service()
+        fragment = service.upload_fragment(
+            session_id,
+            fragment_id,
+            sequence,
+            media.stream,
+            media_extension=extension,
+            max_bytes=max_bytes,
+            duration_ms=duration_ms,
+            recorded_offset_ms=recorded_offset_ms,
+            recorded_at=recorded_at,
+        )
+        session = service.get_session(session_id)
+        capture_metadata = session.capture_metadata or {}
+        capture_status = None
+        if len(service.list_fragments(session_id)) == 1 and capture_metadata.get("audioRequested") is not None:
+            media_path = service.store.fragment_media_path(session_id, fragment.fragment_id, fragment.media_extension)
+            probed = _probe_capture_fragment(media_path)
+            service.set_capture_metadata(session_id, {"firstFragmentProbe": probed})
+            actual_audio = probed.get("actualAudioStreams")
+            if actual_audio is not None:
+                availability = capture_models.AudioAvailability.AVAILABLE if actual_audio > 0 else capture_models.AudioAvailability.MISSING
+                service.set_audio_availability(session_id, availability)
+                if capture_metadata.get("audioRequested") is True and actual_audio == 0:
+                    capture_status = "AUDIO_CAPTURE_FAILED"
+                    service.set_capture_metadata(session_id, {"captureStatus": capture_status})
+    except OSError:
+        logger.exception("[CAPTURE_UPLOAD] storage failure session=%s fragment=%s", session_id, fragment_id)
+        return jsonify({"ok": False, "error": "Temporary storage failure. Keep this recording open and retry; the client preserves this fragment until ACK."}), 503
     response = {"ok": True, "fragment": _fragment_payload(fragment)}
     if capture_status:
         response["captureStatus"] = capture_status

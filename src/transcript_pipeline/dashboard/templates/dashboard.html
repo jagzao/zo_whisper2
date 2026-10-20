@@ -64,9 +64,10 @@
         h1 span { color: var(--accent); }
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 1.25rem;
             padding: 1.25rem;
+            align-items: start;
         }
         @media (max-width: 980px) {
             .grid { grid-template-columns: minmax(0, 1fr); }
@@ -83,7 +84,7 @@
         }
         .card:hover { border-color: rgba(0,229,255,0.25); }
         .card.wide { grid-column: 1 / -1; }
-        #foldersCard { grid-column: 2; }
+        .dashboard-side-stack { display: grid; gap: 1.25rem; align-content: start; min-width: 0; }
         .card h2 {
             margin: 0 0 1rem 0;
             font-size: 0.95rem;
@@ -812,6 +813,7 @@
             max-height: 16rem;
             overflow-y: auto;
         }
+        .capture-recovery-notice { margin: 0.5rem 0; padding: 0.65rem 0.8rem; border: 1px solid rgba(255,214,0,0.35); border-radius: 0.5rem; color: var(--warn); background: rgba(255,214,0,0.06); font-size: 0.85rem; }
         .capture-logical-row {
             display: flex;
             justify-content: space-between;
@@ -942,7 +944,7 @@
     {% endif %}
 
     <div class="grid">
-        <div class="card">
+        <div class="card" id="dashboardDropCard">
             <h2>Drop Area</h2>
             <div class="dropzone" id="dropzone">
                 <svg viewBox="0 0 24 24" width="36" height="36" fill="var(--accent)" style="margin-bottom:0.5rem;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
@@ -958,14 +960,16 @@
             <button id="startUploadBatch" class="secondary" style="width:100%;" data-upload-concurrency="{{ upload_concurrency }}" onclick="startUploadBatch()" disabled>Upload selected files (0)</button>
         </div>
 
-        <div class="card">
-            <h2>Pipeline</h2>
-            <div class="pipeline-stepper" id="pipelineStepper"></div>
-        </div>
+        <div class="dashboard-side-stack">
+            <div class="card" id="pipelineCard">
+                <h2>Pipeline</h2>
+                <div class="pipeline-stepper" id="pipelineStepper"></div>
+            </div>
 
-        <div class="card" id="foldersCard">
-            <h2>Folders</h2>
-            <div class="folders" id="folders"></div>
+            <div class="card" id="foldersCard">
+                <h2>Folders</h2>
+                <div class="folders" id="folders"></div>
+            </div>
         </div>
 
         <div class="card wide" id="videosSection">
@@ -1329,6 +1333,7 @@
             <div id="captureJobs" style="margin:0.5rem 0;"></div>
             <div id="captureAudioWarning" class="ai-package-summary hidden" style="color:var(--danger);"></div>
             <div id="captureBufferWarning" class="ai-package-summary hidden" role="status" aria-live="polite"></div>
+            <div id="captureRecoveryStatus" class="capture-recovery-notice hidden" role="status" aria-live="polite"></div>
             <div id="captureTranscriptSupply" class="hidden" style="margin:0.5rem 0;">
                 <label for="captureTranscriptText" style="font-size:0.85rem; color:var(--muted);">Supply transcript later (loose timing — no per-second sync):</label>
                 <select id="captureTranscriptSession" onchange="selectTranscriptSession()" style="width:100%; margin-top:0.25rem;"></select>
@@ -3216,6 +3221,7 @@
         const CAPTURE_BUFFER_WARN_RATIO = 0.5;
         const CAPTURE_UPLOAD_RETRY_BASE_MS = 1000;
         const CAPTURE_UPLOAD_RETRY_MAX_MS = 30000;
+        const CAPTURE_UPLOAD_RETRY_LIMIT = 6;
         const CAPTURE_MIME_FALLBACKS = [
             'video/webm;codecs=vp8', 'video/webm;codecs=vp9', 'video/webm', 'video/mp4',
         ];
@@ -3227,6 +3233,7 @@
             stream: null,
             recorder: null,
             sessionId: null,
+            createRequestId: null,
             chunkDurationSec: CAPTURE_DEFAULT_CHUNK_DURATION_SEC,
             fragmentDurationMs: CAPTURE_FRAGMENT_TARGET_MS,
             state: 'idle',
@@ -3248,6 +3255,8 @@
             queueFull: false,       // recording paused because the pending queue is full
             uploading: false,
             stalled: false,
+            retrying: false,
+            finalizePending: false,
             stopRequested: false,
             closed: false,
             starting: false,
@@ -3307,13 +3316,54 @@
             stalled: 'Stalled',
         };
 
-        function captureFetch(path, { method = 'POST', headers = {}, body = undefined, signal = undefined } = {}) {
-            return fetch(path, {
-                method,
-                headers: Object.assign({ 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, headers),
-                body,
-                signal,
-            }).then(r => r.json());
+        async function captureFetch(path, { method = 'POST', headers = {}, body = undefined, signal = undefined, retries = 0 } = {}) {
+            for (let attempt = 0; ; attempt += 1) {
+                try {
+                    const response = await fetch(path, {
+                        method,
+                        headers: Object.assign({ 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, headers),
+                        body,
+                        signal,
+                    });
+                    const text = await response.text();
+                    let payload;
+                    try { payload = text ? JSON.parse(text) : {}; }
+                    catch (error) { payload = { ok:false, error:`Server returned HTTP ${response.status} without a JSON response.` }; }
+                    if (!response.ok) {
+                        const requestError = new Error(payload.error || `Request failed (HTTP ${response.status}).`);
+                        requestError.status = response.status;
+                        throw requestError;
+                    }
+                    if (['status', 'request'].includes(capture.recoverySource)) {
+                        capture.recoverySource = '';
+                        renderCaptureRecovery('');
+                    }
+                    return payload;
+                } catch (error) {
+                    if (attempt >= retries || !captureRequestIsTransient(error) || error.name === 'AbortError') throw error;
+                    if (['recording', 'finalizing', 'stalled'].includes(capture.state) || path.endsWith('/fragments') || (method === 'POST' && path === '/api/capture/sessions')) {
+                        capture.recoverySource = 'request';
+                        const action = method === 'GET' ? 'capture status' : path.endsWith('/fragments') ? 'saved fragment' : 'capture session';
+                        renderCaptureRecovery(`Connection interrupted. Retrying ${action} (${attempt + 1}/${retries}); captured media remains on this device until Whisper confirms it.`);
+                    }
+                    if (method === 'GET' && ['recording', 'finalizing', 'stalled'].includes(capture.state)) {
+                        capture.recoverySource = 'status';
+                        renderCaptureRecovery(`Whisper is reconnecting. Your recording and saved fragments are being kept locally. Retrying status (${attempt + 1}/${retries}).`);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, Math.min(CAPTURE_UPLOAD_RETRY_MAX_MS, CAPTURE_UPLOAD_RETRY_BASE_MS * (2 ** attempt))));
+                }
+            }
+        }
+
+        function renderCaptureRecovery(message = '') {
+            const el = document.getElementById('captureRecoveryStatus');
+            if (!el) return;
+            el.textContent = message;
+            el.classList.toggle('hidden', !message);
+        }
+
+        function captureRequestIsTransient(error) {
+            return !error.status || [408, 425, 429, 500, 502, 503, 504].includes(error.status);
         }
 
         function renderCaptureMicStatus(label, available = null) {
@@ -3652,19 +3702,26 @@
                     if (row.offsetMs !== null && row.offsetMs !== undefined) form.append('recorded_offset_ms', String(row.offsetMs));
                     if (row.recordedAt) form.append('recorded_at', row.recordedAt);
                     form.append('media', row.blob, row.fragmentId + (row.extension || '.webm'));
-                    const res = await fetch(`/api/capture/sessions/${row.sessionId}/fragments`, {
+                    const res = await captureFetch(`/api/capture/sessions/${row.sessionId}/fragments`, {
                         method: 'POST',
-                        headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                        headers: { 'X-Capture-Request-ID': `${row.sessionId}:${row.fragmentId}` },
                         body: form,
-                    }).then(r => r.json());
+                        retries: CAPTURE_UPLOAD_RETRY_LIMIT,
+                    });
                     if (!res.ok) throw new Error(res.error || 'restore failed');
                     await captureBufferDelete(row.sessionId, row.fragmentId);
                     restored += 1;
                 } catch (err) {
-                    // Keep the record; the next reconnect retries the same ID.
+                    capture.retrying = false;
+                    capture.recoverySource = 'buffer';
+                    renderCaptureRecovery(`A saved fragment is waiting to upload. Reopen this recording or reconnect to retry it. ${err.message}`);
                 }
             }
             await refreshCaptureBufferStats();
+            if (!capture.bufferCount && capture.recoverySource === 'buffer') {
+                capture.recoverySource = '';
+                renderCaptureRecovery('');
+            }
             return { restored, pending: capture.bufferCount, offline };
         }
 
@@ -3897,6 +3954,7 @@
             if (!el) return;
             const uploadState = capture.queueFull ? 'paused (queue full)'
                 : capture.uploading ? 'uploading'
+                : capture.retrying ? 'retrying'
                 : (capture.stalled ? 'paused' : 'idle');
             const session = currentSession();
             const processing = session ? (session.chunks || []).filter(c => c.state === 'PROCESSING').length : 0;
@@ -4223,6 +4281,10 @@
             capture.recordedOffsetMs = 0;
             capture.fragmentStartedAtMs = null;
             capture.retryAttempts = 0;
+            capture.retrying = false;
+            capture.finalizePending = false;
+            capture.recoverySource = '';
+            renderCaptureRecovery('');
             clearTimeout(capture.retryTimer);
             capture.retryTimer = null;
             setCaptureMode('normal');
@@ -4269,8 +4331,15 @@
         async function loadCaptureSessions() {
             const notice = document.getElementById('captureNotice');
             let res;
-            try { res = await api('/api/capture/sessions'); }
-            catch (e) { notice.classList.add('hidden'); return; }
+            try { res = await captureFetch('/api/capture/sessions', { method:'GET', retries:2 }); }
+            catch (e) {
+                notice.classList.add('hidden');
+                if (['recording', 'finalizing', 'stalled'].includes(capture.state)) {
+                    capture.recoverySource = 'status';
+                    renderCaptureRecovery(`Whisper is temporarily unavailable. Capture data remains on this device; status will retry automatically. ${e.message}`);
+                }
+                return;
+            }
             capture.sessions = res.sessions || [];
             renderCaptureJobs(capture.sessions);
             const cancelProcessing = document.getElementById('captureCancelProcessingBtn');
@@ -4745,6 +4814,7 @@
             capture.closed = false;
 
             const title = (document.getElementById('captureTitle').value || '').trim() || 'Live capture';
+            capture.createRequestId ||= `capture-${(crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`).replace(/[^A-Za-z0-9_-]/g, '')}`;
             capture.fragmentDurationMs = resolveFragmentDurationMs();
             // W5: short fragments are not processing chunks. The session keeps
             // its default 600s processing chunk_duration_sec; the fragment
@@ -4755,8 +4825,9 @@
             capture.queueFull = false;
             try {
                 const createRes = await captureFetch('/api/capture/sessions', {
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-Capture-Request-ID': capture.createRequestId },
                     body: JSON.stringify({
+                        client_request_id: capture.createRequestId,
                         title,
                         project_id: projectId,
                         capture_kind: captureKind,
@@ -4775,9 +4846,11 @@
                         // 600s; only a test hook overrides it.
                         chunk_duration_sec: capture.requestedChunkDurationSec || CAPTURE_DEFAULT_CHUNK_DURATION_SEC,
                     }),
+                    retries: CAPTURE_UPLOAD_RETRY_LIMIT,
                 });
                 if (!createRes.ok) throw new Error(createRes.error || 'Could not create session');
                 capture.sessionId = createRes.session.sessionId;
+                capture.createRequestId = null;
                 if (createRes.session.chunkDurationSec) capture.chunkDurationSec = createRes.session.chunkDurationSec;
                 capture.sessionStartedAtMs = Date.now();
                 if (capture.mode === 'playlist') startPlaylistTitleSampling();
@@ -5034,12 +5107,21 @@
                             }
                             if (item.recordedAt) form.append('recorded_at', item.recordedAt);
                             form.append('media', item.blob, item.id + item.extension);
-                            const finRes = await fetch(`/api/capture/sessions/${capture.sessionId}/fragments`, {
+                            const response = await fetch(`/api/capture/sessions/${capture.sessionId}/fragments`, {
                                 method: 'POST',
-                                headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                                headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN, 'X-Capture-Request-ID': `${capture.sessionId}:${item.id}` },
                                 body: form,
                                 signal: capture.uploadController.signal,
-                            }).then(r => r.json());
+                            });
+                            const responseText = await response.text();
+                            let finRes;
+                            try { finRes = responseText ? JSON.parse(responseText) : {}; }
+                            catch (error) { finRes = { ok:false, error:`Server returned HTTP ${response.status} without a JSON response.` }; }
+                            if (!response.ok) {
+                                const requestError = new Error(finRes.error || `Upload failed (HTTP ${response.status}).`);
+                                requestError.status = response.status;
+                                throw requestError;
+                            }
                             if (!finRes.ok) throw new Error(finRes.error || 'Could not store fragment');
                             if (finRes.captureStatus === 'AUDIO_CAPTURE_FAILED') {
                                 capture.audioFailureDetected = true;
@@ -5053,8 +5135,15 @@
                         } catch (err) {
                             if (err.name === 'AbortError') return;
                             capture.retryAttempts = (capture.retryAttempts || 0) + 1;
-                            setStalled(true, 'Upload failed: ' + err.message);
-                            scheduleUploadRetry();
+                            if (captureRequestIsTransient(err) && capture.retryAttempts <= CAPTURE_UPLOAD_RETRY_LIMIT && capture.autoRetry) {
+                                capture.retrying = true;
+                                renderCaptureRecovery(`Connection interrupted. Retrying upload ${capture.retryAttempts}/${CAPTURE_UPLOAD_RETRY_LIMIT}; this fragment remains saved on this device until Whisper confirms it. ${err.message}`);
+                                scheduleUploadRetry();
+                            } else {
+                                capture.retrying = false;
+                                setStalled(true, `Upload could not be confirmed. The pending fragment is preserved locally. Check the connection and tap Retry upload. ${err.message}`);
+                            }
+                            updateChunkInfo();
                             return;
                         } finally {
                             capture.uploadController = null;
@@ -5066,6 +5155,8 @@
                         capture.ackedFragmentIds.push(item.id);
                         capture.finalizedIndexes.push(item.sequence);
                         capture.retryAttempts = 0;
+                        capture.retrying = false;
+                        renderCaptureRecovery('');
                         clearTimeout(capture.retryTimer);
                         capture.retryTimer = null;
                         await captureBufferDelete(capture.sessionId, item.id);
@@ -5079,6 +5170,7 @@
                     // Do not clear a stall raised by cancelCaptureUpload from
                     // this request's own abort handling.
                     if (!capture.stalled) setCaptureState(capture.state);
+                    updateChunkInfo();
                 }
                 if (capture.stopRequested && !capture.stalled) {
                     finishSession();
@@ -5117,11 +5209,21 @@
         }
 
         function retryUpload() {
+            if (capture.finalizePending) {
+                capture.retryAttempts = 0;
+                capture.stalled = false;
+                capture.retrying = false;
+                finishSession();
+                return;
+            }
             if (!capture.stalled) return;
             const item = capture.uploadQueue[0];
             // Same fragment ID is retried; an identical replay is idempotent
             // server-side, so a retry can never duplicate durable media.
             if (item) item.uploadCancelled = false;
+            capture.retryAttempts = 0;
+            capture.retrying = false;
+            renderCaptureRecovery('');
             setStalled(false);
             beginUpload();
             maybeResume();
@@ -5137,7 +5239,10 @@
             const delay = Math.min(CAPTURE_UPLOAD_RETRY_MAX_MS, CAPTURE_UPLOAD_RETRY_BASE_MS * Math.pow(2, attempt));
             capture.retryTimer = setTimeout(() => {
                 capture.retryTimer = null;
-                if (capture.stalled) retryUpload();
+                if (capture.retrying) {
+                    capture.retrying = false;
+                    beginUpload();
+                } else if (capture.stalled) retryUpload();
             }, delay);
         }
 
@@ -5145,7 +5250,12 @@
         // fragments still durable in IndexedDB (e.g. after a reload) with their
         // original IDs.
         function onCaptureReconnect() {
-            if (capture.stalled) {
+            if (capture.retrying) {
+                clearTimeout(capture.retryTimer);
+                capture.retryTimer = null;
+                capture.retrying = false;
+                beginUpload();
+            } else if (capture.stalled) {
                 clearTimeout(capture.retryTimer);
                 capture.retryTimer = null;
                 retryUpload();
@@ -5154,14 +5264,20 @@
         }
 
         async function finishSession() {
+            capture.finalizePending = true;
             try {
                 // W6 stop: /drain force-finalizes the partial processing-chunk
                 // tail from the durable fragments, then closes the session.
                 const sessRes = await captureFetch(`/api/capture/sessions/${capture.sessionId}/drain`, {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ ended_at: new Date().toISOString() }),
+                    retries: CAPTURE_UPLOAD_RETRY_LIMIT,
                 });
                 if (!sessRes.ok) throw new Error(sessRes.error || 'Could not finalize session');
+                capture.finalizePending = false;
+                capture.stalled = false;
+                capture.retrying = false;
+                renderCaptureRecovery('');
                 stopCaptureTracks();
                 stopCaptureTimer();
                 setCaptureState('done');
@@ -5173,7 +5289,10 @@
             } catch (err) {
                 stopCaptureTracks();
                 stopCaptureTimer();
-                setCaptureState('error', err.message);
+                capture.stalled = true;
+                capture.finalizePending = true;
+                capture.recoverySource = 'finalize';
+                setCaptureState('stalled', `Recording fragments are uploaded, but final save is not confirmed. Keep this session open and tap Retry upload. ${err.message}`);
             }
         }
 
