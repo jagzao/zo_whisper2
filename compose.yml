@@ -5,9 +5,9 @@
 #   # dashboard: http://127.0.0.1:5000 (loopback-only by default)
 #   # optional LAN: docker compose --profile lan up -d zmi caddy
 #
-# Interpolation (ZMI_PORT / ZMI_DATA_PATH): values come from the shell or a
+# Interpolation values (ZMI_PORT / ZMI_LAN_HTTP_PORT / ZMI_HTTPS_PORT / ZMI_DATA_PATH): from the shell or a
 # `.env` file next to this compose file; `docker compose --env-file <path>`
-# selects an explicit one. Defaults: ZMI_PORT=5000, ZMI_DATA_PATH=the repository
+# selects an explicit one. Defaults: ZMI_PORT=5000, ZMI_LAN_HTTP_PORT=5003, ZMI_HTTPS_PORT=5001, ZMI_DATA_PATH=the repository
 # root, shared with the host/LAN dashboard when running this checkout.
 #
 # scan_config.env: NOT wired through compose `env_file:` because a missing
@@ -78,7 +78,7 @@ services:
       zmi:
         condition: service_healthy
     ports:
-      - "${ZMI_LAN_BIND_ADDRESS:-0.0.0.0}:${ZMI_LAN_HTTP_PORT:-5000}:8080"
+      - "${ZMI_LAN_BIND_ADDRESS:-0.0.0.0}:${ZMI_LAN_HTTP_PORT:-5003}:8080"
       - "${ZMI_LAN_BIND_ADDRESS:-0.0.0.0}:${ZMI_HTTPS_PORT:-5001}:8443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro

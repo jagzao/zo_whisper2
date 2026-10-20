@@ -2298,7 +2298,7 @@
                     return;
                 }
                 const urls = (info.urls || []).map(u => `<li><code>${u}</code></li>`).join('');
-                const scheme = info.https ? 'HTTPS' : 'HTTP (camera needs HTTPS)';
+                const scheme = info.https_available ? 'HTTPS' : 'HTTP (camera needs HTTPS)';
                 const fp = info.cert_fingerprint_sha256
                     ? `<p>Certificate SHA-256: <code>${info.cert_fingerprint_sha256}</code></p>` : '';
                 el.innerHTML = `<p>Serving over ${scheme}. Open one of these URLs on the phone (same Wi-Fi):</p>`

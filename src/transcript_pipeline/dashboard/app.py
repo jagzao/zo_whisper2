@@ -122,6 +122,21 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
 if os.getenv("ZMI_TRUST_PROXY", "").strip().lower() == "true":
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
+
+
+def _lan_http_port() -> int:
+    return int(os.getenv("ZMI_LAN_HTTP_PORT", "5003"))
+
+
+def _lan_https_port() -> int:
+    return int(os.getenv("ZMI_HTTPS_PORT", "5001"))
+
+
+def _lan_https_available() -> bool:
+    if os.getenv("ZMI_TRUST_PROXY", "").strip().lower() == "true":
+        return True
+    certificate = SETTINGS.dashboard_cert_file
+    return bool(certificate and certificate.is_file())
 app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
 
 # This dashboard is explicitly localhost-only (SETTINGS.dashboard_host is
@@ -306,7 +321,7 @@ def _enforce_local_only() -> Any:
             "/setup/certificate",
             "/setup/qr.svg",
         }:
-            return redirect(f"https://{host}:5001/", code=302)
+            return redirect(f"https://{host}:{_lan_https_port()}/", code=302)
 
     if request.method in _MUTATING_METHODS:
         origin = request.headers.get("Origin")
@@ -991,7 +1006,7 @@ def _frame_media_url(frames_parent: Path, relative_to_frames_parent: str) -> str
 @app.route("/")
 def index() -> str:
     addresses = lan_access.advertised_lan_ipv4_addresses(SETTINGS.lan_hosts) if SETTINGS.lan_access else []
-    setup_url = f"http://{addresses[0]}:5000/setup" if addresses else ""
+    setup_url = f"http://{addresses[0]}:{_lan_http_port()}/setup" if addresses else ""
     return render_template(
         "dashboard.html",
         dashboard_token=_DASHBOARD_TOKEN,
@@ -1007,7 +1022,7 @@ def mobile_setup() -> Any:
     host = _hostname_only(request.host or "")
     if not SETTINGS.lan_access or not lan_access.is_private_ipv4(host) or host not in _LAN_HOST_ALLOWLIST:
         return jsonify({"ok": False, "error": "Mobile setup is available only at this computer's LAN IP."}), 404
-    secure_url = f"https://{host}:5001/"
+    secure_url = f"https://{host}:{_lan_https_port()}/"
     if request.cookies.get("whisper_secure_setup") == "1":
         return redirect(secure_url, code=302)
     response = make_response(render_template("mobile_setup.html", secure_url=secure_url))
@@ -1056,7 +1071,7 @@ def mobile_setup_qr() -> Any:
     from qrcode.image.svg import SvgPathImage
 
     qr = qrcode.QRCode(box_size=6, border=4)
-    qr.add_data(f"http://{addresses[0]}:5000/setup")
+    qr.add_data(f"http://{addresses[0]}:{_lan_http_port()}/setup")
     qr.make(fit=True)
     image = qr.make_image(image_factory=SvgPathImage)
     response = make_response(image.to_string())
@@ -1127,8 +1142,9 @@ def api_network() -> Any:
     """
     lan_access_enabled = bool(SETTINGS.lan_access)
     https_active = bool(request.is_secure)
-    port = SETTINGS.dashboard_port
-    scheme = "https" if https_active else "http"
+    https_available = lan_access_enabled and _lan_https_available()
+    port = (_lan_https_port() if https_available else _lan_http_port()) if lan_access_enabled else SETTINGS.dashboard_port
+    scheme = "https" if https_available else ("https" if https_active else "http")
 
     advertised: list[str] = []
     if lan_access_enabled:
@@ -1141,10 +1157,11 @@ def api_network() -> Any:
             seen.add(normalized)
             advertised.append(f"{scheme}://{normalized}:{port}/")
 
+    certificate = SETTINGS.dashboard_cert_file or (lan_access.default_runtime_dir() / lan_access.CERT_FILE_NAME)
     fingerprint = None
-    if SETTINGS.dashboard_cert_file and SETTINGS.dashboard_cert_file.is_file():
+    if certificate.is_file():
         try:
-            fingerprint = lan_access.certificate_fingerprint(SETTINGS.dashboard_cert_file)
+            fingerprint = lan_access.certificate_fingerprint(certificate)
         except Exception:
             fingerprint = None
 
@@ -1153,7 +1170,10 @@ def api_network() -> Any:
             "ok": True,
             "lan_access": lan_access_enabled,
             "https": https_active,
+            "https_available": https_available,
             "port": port,
+            "http_port": _lan_http_port() if lan_access_enabled else None,
+            "https_port": _lan_https_port() if lan_access_enabled else None,
             "urls": advertised,
             "health_path": "/api/health",
             "cert_fingerprint_sha256": fingerprint,

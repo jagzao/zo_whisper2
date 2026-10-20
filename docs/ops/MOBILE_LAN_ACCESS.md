@@ -48,6 +48,9 @@ gitignored — never commit the key):
 
 The command prints the paths, the server certificate SHA-256 fingerprint, the
 CA fingerprint, the SAN list, and the phone URLs.
+Generate or refresh the certificate before starting the LAN profile. The app
+builds its Host allowlist from the configured hosts and certificate SAN at
+startup; after a LAN IP or certificate change, recreate the `zmi` container.
 
 ## 3. Configure the LAN proxy certificate
 
@@ -74,6 +77,8 @@ ZMI_TRUST_PROXY=true
 
 The app stays loopback-only on port 5002. Caddy is the sole desktop/LAN entry
 point: it routes HTTP port 5000 and HTTPS port 5001 to the same app and worker.
+When using defaults without these `.env` overrides, Caddy uses HTTP 5003 to
+avoid colliding with the app's loopback port 5000.
 The HTTP listener serves `/setup` and the public CA download; other LAN HTTP
 paths redirect to HTTPS. Start both services with:
 

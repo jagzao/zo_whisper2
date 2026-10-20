@@ -264,10 +264,12 @@ def test_network_builds_lan_urls_without_loopback(client, monkeypatch):
         dataclasses.replace(SETTINGS, lan_access=True, lan_hosts=("whisper.local",), dashboard_port=5001),
     )
     monkeypatch.setattr(lan_access, "local_ipv4_addresses", lambda: ["192.168.1.50"])
+    monkeypatch.setenv("ZMI_TRUST_PROXY", "true")
     data = client.get("/api/network").get_json()
     assert data["lan_access"] is True
-    assert "https://whisper.local:5001/" in data["urls"] or "http://whisper.local:5001/" in data["urls"]
-    assert "http://192.168.1.50:5001/" in data["urls"]
+    assert data["https_available"] is True
+    assert "https://whisper.local:5001/" in data["urls"]
+    assert "https://192.168.1.50:5001/" in data["urls"]
     for url in data["urls"]:
         assert "localhost" not in url and "127.0.0.1" not in url
 

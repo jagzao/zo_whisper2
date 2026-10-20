@@ -70,13 +70,74 @@ def test_desktop_dashboard_has_lan_qr_and_dismissal(monkeypatch):
     response = client.get("/", headers={"Host": "localhost:5000"})
 
     assert response.status_code == 200
-    assert f"http://{LAN_IP}:5000/setup".encode() in response.data
+    assert f"http://{LAN_IP}:5003/setup".encode() in response.data
     assert b"/setup/qr.svg" in response.data
     assert b"whisperMobileSetupDismissed" in response.data
     qr = client.get("/setup/qr.svg", headers={"Host": "localhost:5000"})
     assert qr.status_code == 200
     assert qr.mimetype == "image/svg+xml"
     assert b"<svg" in qr.data
+
+
+def test_mobile_urls_use_configured_public_ports(monkeypatch, tmp_path):
+    _enable_lan(monkeypatch, tmp_path)
+    monkeypatch.setenv("ZMI_TRUST_PROXY", "true")
+    monkeypatch.setenv("ZMI_LAN_HTTP_PORT", "5500")
+    monkeypatch.setenv("ZMI_HTTPS_PORT", "5443")
+    monkeypatch.setattr(
+        dashboard,
+        "SETTINGS",
+        dataclasses.replace(dashboard.SETTINGS, lan_access=True, dashboard_cert_file=None),
+    )
+    lan_access.generate_lan_chain(
+        tmp_path / lan_access.CERT_FILE_NAME,
+        tmp_path / lan_access.KEY_FILE_NAME,
+        tmp_path / lan_access.CA_FILE_NAME,
+        ["localhost", "127.0.0.1", LAN_IP],
+    )
+    client = dashboard.app.test_client()
+
+    home = client.get("/", headers={"Host": "localhost:5000"})
+    setup = client.get("/setup", headers={"Host": f"{LAN_IP}:5500"})
+    network = client.get("/api/network", headers={"Host": "localhost:5000"}).get_json()
+
+    assert f"http://{LAN_IP}:5500/setup".encode() in home.data
+    assert f"https://{LAN_IP}:5443/".encode() in setup.data
+    assert network["urls"] == [f"https://{LAN_IP}:5443/"]
+    assert network["http_port"] == 5500
+    assert network["https_port"] == 5443
+    assert network["cert_fingerprint_sha256"] == lan_access.certificate_fingerprint(
+        tmp_path / lan_access.CERT_FILE_NAME
+    )
+
+
+def test_setup_qr_encodes_configured_http_port(monkeypatch):
+    _enable_lan(monkeypatch)
+    monkeypatch.setenv("ZMI_LAN_HTTP_PORT", "5500")
+    import qrcode
+
+    encoded: list[str] = []
+
+    class FakeQr:
+        def __init__(self, **_kwargs):
+            pass
+
+        def add_data(self, value: str) -> None:
+            encoded.append(value)
+
+        def make(self, *, fit: bool) -> None:
+            assert fit is True
+
+        def make_image(self, *, image_factory):
+            return type("Image", (), {"to_string": lambda self: "<svg></svg>"})()
+
+    monkeypatch.setattr(qrcode, "QRCode", FakeQr)
+    response = dashboard.app.test_client().get(
+        "/setup/qr.svg", headers={"Host": "localhost:5000"}
+    )
+
+    assert response.status_code == 200
+    assert encoded == [f"http://{LAN_IP}:5500/setup"]
 
 
 def test_lan_http_only_serves_bootstrap_and_redirects_other_paths(monkeypatch):
