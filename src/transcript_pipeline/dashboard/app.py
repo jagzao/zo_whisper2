@@ -36,6 +36,7 @@ from typing import Any
 from urllib.parse import quote, urlparse
 
 from flask import Flask, jsonify, make_response, redirect, render_template, request, send_file, send_from_directory
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from transcript_pipeline import lan_access
@@ -119,6 +120,8 @@ RUN_ID = configure_logging("dashboard.log")
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="templates", static_folder="static", static_url_path="/static")
+if os.getenv("ZMI_TRUST_PROXY", "").strip().lower() == "true":
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
 app.config["MAX_CONTENT_LENGTH"] = SETTINGS.upload_max_mb * 1024 * 1024
 
 # This dashboard is explicitly localhost-only (SETTINGS.dashboard_host is

@@ -1,0 +1,12 @@
+{
+	auto_https disable_redirects
+}
+
+:8080 {
+	reverse_proxy zmi:5000
+}
+
+:8443 {
+	tls /etc/caddy/certs/dashboard-lan-cert.pem /etc/caddy/certs/dashboard-lan-key.pem
+	reverse_proxy zmi:5000
+}

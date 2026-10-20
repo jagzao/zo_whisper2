@@ -1,7 +1,7 @@
 ---
 description: Implements frozen owner/heavy-model specs mechanically using Z.ai GLM only
 mode: primary
-model: zai-coding-plan/glm-5.2
+model: zai-coding-plan/glm-5.3
 temperature: 0.1
 permission:
   read: allow

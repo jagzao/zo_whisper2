@@ -280,6 +280,8 @@
             justify-content: center;
         }
         .close-x:hover { border-color: var(--danger); color: var(--danger); }
+        .overview-modal { max-width: 520px; }
+        @media (max-width: 640px) { .overview-modal { max-width: 94vw; max-height: 90vh; } }
         .hidden { display: none !important; }
         .toast {
             position: fixed;
@@ -910,6 +912,9 @@
             <button id="btnRunFull" onclick="run('full')">RUN Full</button>
             <button id="btnRunCompress" onclick="run('compress')">Compress Only</button>
             <button id="btnRunTranscribe" onclick="run('transcribe')">Transcribe Only</button>
+            <button class="icon-btn tooltip" data-tip="Overview" title="Overview" onclick="openOverviewModal()" aria-label="Overview">
+                <svg viewBox="0 0 24 24"><path d="M4 20h3V10H4v10zm6.5 0h3V4h-3v16zM17 20h3v-7h-3v7z"/></svg>
+            </button>
             <button class="icon-btn tooltip" data-tip="Capture" onclick="openCaptureModal()" aria-label="Capture">
                 <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
             </button>
@@ -1228,6 +1233,16 @@
         </div>
     </div>
 
+    <div id="overviewModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="overviewModalTitle" onclick="if (event.target === this) closeOverviewModal()">
+        <div class="modal overview-modal">
+            <div class="modal-header">
+                <h2 id="overviewModalTitle">Overview</h2>
+                <button class="close-x" onclick="closeOverviewModal()" aria-label="Close overview">&times;</button>
+            </div>
+            <div class="metrics" id="overviewModalMetrics"></div>
+        </div>
+    </div>
+
     <div id="frameModal" class="modal-overlay hidden" onclick="if (event.target === this) closeFrameModal()">
         <div class="modal" style="max-width:90vw; max-height:90vh; text-align:center;">
             <button class="close-x" onclick="closeFrameModal()" aria-label="Close">×</button>
@@ -1362,17 +1377,31 @@
         const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); };
         let lastCompressionRefreshAt = null;
 
-        async function loadMetrics() {
-            const data = await api('/api/metrics');
-            const el = document.getElementById('metrics');
+        function metricsCardsHtml(data) {
             const pct = data.success_rate_pct != null ? `${data.success_rate_pct}%` : '—';
             const avg = data.avg_processing_time_seconds != null ? `${data.avg_processing_time_seconds}s` : '—';
-            el.innerHTML = `
+            return `
                 <div class="metric"><div class="value">${data.files_processed}</div><div class="label">Files processed</div></div>
                 <div class="metric"><div class="value">${data.duration_processed_formatted}</div><div class="label">Media processed</div></div>
                 <div class="metric"><div class="value">${pct}</div><div class="label">Success rate</div></div>
                 <div class="metric"><div class="value">${avg}</div><div class="label">Avg. processing time</div></div>
             `;
+        }
+
+        async function loadMetrics() {
+            const data = await api('/api/metrics');
+            document.getElementById('metrics').innerHTML = metricsCardsHtml(data);
+        }
+
+        async function openOverviewModal() {
+            const main = document.getElementById('metrics');
+            if (!main || !main.innerHTML.trim()) await loadMetrics();
+            document.getElementById('overviewModalMetrics').innerHTML = document.getElementById('metrics').innerHTML;
+            document.getElementById('overviewModal').classList.remove('hidden');
+        }
+
+        function closeOverviewModal() {
+            document.getElementById('overviewModal')?.classList.add('hidden');
         }
 
         const PIPELINE_STAGE_LABELS = {
@@ -5176,7 +5205,7 @@
         window.addEventListener('online', onCaptureReconnect);
 
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') { closePreview(); closeEdit(); closeProjectsModal(); closeLogsModal(); closeHelpModal(); closeFrameModal(); closeCaptureModal(); }
+            if (e.key === 'Escape') { closePreview(); closeEdit(); closeProjectsModal(); closeLogsModal(); closeHelpModal(); closeFrameModal(); closeCaptureModal(); closeOverviewModal(); }
         });
 
         setInterval(() => { updateRunStatus(); loadLogs(); updateServerHealth(); }, 3000);

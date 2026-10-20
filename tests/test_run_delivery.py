@@ -50,7 +50,7 @@ def delivery_env() -> dict[str, str]:
     env = {
         key: value
         for key, value in os.environ.items()
-        if key not in {"BUILD_NUMBER", "BUILD_ID", "ALLOW_EXTERNAL_LLM"}
+        if key not in {"BUILD_NUMBER", "BUILD_ID", "ALLOW_EXTERNAL_LLM", "DASHBOARD_PORT", "ZMI_BASE_URL"}
     }
     env["BUILD_NUMBER"] = TEST_BUILD
     yield env

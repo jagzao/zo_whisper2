@@ -8,7 +8,7 @@ The default remains loopback-only. Nothing here changes that until
 
 ## Prerequisites
 
-- The dashboard runs on the host machine.
+- The Docker dashboard and Caddy LAN proxy run on the host machine.
 - The phone is on the same Wi-Fi/LAN as that machine.
 - The `cryptography` package is installed (`pip install cryptography`) for
   certificate generation.
@@ -21,7 +21,6 @@ Edit `scan_config.env`:
 ZMI_LAN_ACCESS=true
 DASHBOARD_HOST=0.0.0.0
 ZMI_LAN_HOSTS=whisper.local
-DASHBOARD_PORT=5001
 ```
 
 - `ZMI_LAN_ACCESS=true` is the explicit opt-in. Without it,
@@ -50,14 +49,12 @@ gitignored — never commit the key):
 The command prints the paths, the server certificate SHA-256 fingerprint, the
 CA fingerprint, the SAN list, and the phone URLs.
 
-## 3. Point the dashboard at the certificate
+## 3. Configure the LAN proxy certificate
 
-```
-DASHBOARD_CERT=<DATA_ROOT>/lan-access/dashboard-lan-cert.pem
-DASHBOARD_KEY=<DATA_ROOT>/lan-access/dashboard-lan-key.pem
-```
-
-Set both or neither. Setting only one is a configuration error.
+Caddy reads `<DATA_ROOT>/lan-access/dashboard-lan-cert.pem` and
+`dashboard-lan-key.pem` directly from the read-only certificate mount. Keep the
+private key in that ignored runtime directory; do not copy it into the image or
+Git. The dashboard container continues to serve HTTP internally on port 5000.
 
 ## 4. Start and open on the phone
 
@@ -66,14 +63,27 @@ unless LAN setup is explicitly enabled. To publish only the bootstrap flow on
 HTTP, add these values to Compose's `.env` file beside `compose.yml`:
 
 ```
-ZMI_BIND_ADDRESS=0.0.0.0
+ZMI_BIND_ADDRESS=127.0.0.1
+ZMI_PORT=5002
+ZMI_LAN_BIND_ADDRESS=0.0.0.0
+ZMI_LAN_HTTP_PORT=5000
+ZMI_HTTPS_PORT=5001
 ZMI_LAN_ACCESS=true
+ZMI_TRUST_PROXY=true
 ```
 
-Rebuild/restart Compose. The HTTP listener serves `/setup` and the public CA
-download; other LAN HTTP paths redirect to HTTPS. The application still checks
-the private client address and the request host against configured/detected LAN
-addresses and the HTTPS leaf SAN. The default bind remains loopback-only.
+The app stays loopback-only on port 5002. Caddy is the sole desktop/LAN entry
+point: it routes HTTP port 5000 and HTTPS port 5001 to the same app and worker.
+The HTTP listener serves `/setup` and the public CA download; other LAN HTTP
+paths redirect to HTTPS. Start both services with:
+
+```
+docker compose --profile lan up -d --build zmi caddy
+```
+
+The app still checks the private client address and request host against
+configured/detected LAN addresses and the HTTPS leaf SAN. The default Compose
+profile remains loopback-only.
 
 Open `http://<LAN-IP>:5000/setup` on the phone. It downloads only the public
 `Whisper-LAN-Local-CA.cer`; Android asks the user to confirm installation. Then

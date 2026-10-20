@@ -14,10 +14,11 @@
 
 ## Execution rules
 
-- No worktree; continue on the approved current branch. Preserve the owner’s plan edits and never reset/stash/clean them. Commit only the coherent implementation artifacts/code after review of the diff.
-- OpenCode Go is PRIMARY_CODER; DeepSeek is fallback only when the configured provider is unavailable/auth/quota/invocation failure, via runtime aliases. Codex/ChatGPT performs heavy analysis/review; do not call premium models from the coding loop.
+- No worktree. Preserve all existing working-tree edits; never reset, stash, or clean. Commit coherent checkpoints and push them.
+- Model order: Z.AI/GLM; if auth/provider unavailable, OpenCode Go/DeepSeek Flash; then local DeepSeek/Ollama; then any available current coding model. DeepSeek Pro only for a difficult blocker after cheaper attempts. GLM auth failure is `MODEL_DEGRADED=YES`, never a project blocker.
 - Synthetic/isolated data for tests. Never test destructive cleanup against user originals.
-- Use objective acceptance criteria; no ChatGPT `/review` or manual approval handoff is required. Before release, require a clean reviewed diff (`git diff --check`), focused regression, changed-file Ruff, feature-module Pyright, and compile/import checks PASS; then require full pytest, security, smoke, Host E2E, and Docker build/E2E PASS when the RAM gate allows. Sonar/Jenkins are explicitly ENV_BLOCKED when unavailable, not silently passed. Deploy only the validated SHA with backup/rollback and no destructive data migration.
+- New/changed business logic must have relevant unit tests and those tests must pass. Build/import/start and migration/data-safety checks are mandatory. Integration, Playwright, E2E, Docker, security scans, and resource-heavy gates are advisory; run when practical and record `PASS`, `FAIL_ADVISORY`, `ENV_BLOCKED`, `NOT_CONFIGURED`, or `NOT_RUN` with evidence. RAM controls execution strategy, never publication eligibility.
+- Commit and push code, canonical SDD, and the single active Kanban. Deploy only the final pushed HEAD, preserve rollback, shared data, and any active job.
 
 ## WP-01 — Reconcile baseline and lifecycle state
 
@@ -66,17 +67,18 @@
 - Run focused regression, quality/lint/typecheck, inspect the code diff, and require `git diff --check`.
 - Commit/push implementation and record exact evidence in DELIVERY. A manual review approval is not a release prerequisite; failed objective checks block the next stage.
 
-## WP-08 — Heavy release gates
+## WP-08 — Optional confidence checks
 
-- Verify `scripts/ram_gate.py`; if <=6 GiB, report `HEAVY_VALIDATION_DEFERRED_LOW_RAM`, keep implementation pushed, and defer heavy validation/deploy.
-- Otherwise run full pytest, security, smoke, authoritative E2E, Docker gates, configured Sonar/Jenkins/CI in protocol order. Do not treat NOT_CONFIGURED as PASS.
-- Any heavy failure blocks release; fix the cause and rerun the failed gate plus affected regression. Record compact deterministic evidence. Do not silently change acceptance scope.
+- After implementation and unit tests are complete, attempt integration, media regression, Playwright, Host E2E, Docker E2E, and security checks when practical. Serialize resource-heavy checks when useful.
+- Record every attempted/unavailable check as `PASS`, `FAIL_ADVISORY`, `ENV_BLOCKED`, `NOT_CONFIGURED`, or `NOT_RUN`. Advisory failure creates a defect/UAT item and does not block deployment unless it proves a hard blocker: incomplete requested feature, relevant unit failure, app build/start failure, or known data loss/corruption.
+- Jenkins, Sonar, and soak are `NOT_REQUIRED`; do not configure them for this release.
 
 ## WP-09 — Authorized production deployment and UAT readiness
 
-- Confirm the final validated SHA equals origin and all required gates pass; capture production config/service identities and backup/rollback steps.
+- Confirm the final pushed SHA equals origin; capture production config/service identities, pre-deploy shared-data snapshot, and backup/rollback steps. Advisory gates are not prerequisites.
+- Preserve the active processing job. Restart only if inactive or if web can be isolated from the worker without loss; otherwise wait for job completion while continuing independent work.
 - Deploy/restart only the current Whisper desktop and LAN services, from the same reviewed SHA and shared data root. No account/environment substitution, schema reset, data copy, or deletion/migration of user media.
-- Verify health, served HEAD markers, localhost/LAN normalized video/project/job/docs/worker parity, mobile crop/docs/duration/delete behavior, and synthetic multiframe playback. Confirm rollback command and previous image/SHA.
+- Verify health, served HEAD markers, localhost/LAN normalized video/project/job/docs/worker parity, Videos, New Recording, Video Editor, Overview modal, and `/setup`. Confirm rollback command and previous image/SHA.
 - Record deployment and checks in DELIVERY. Stop at `READY_FOR_HUMAN_ACCEPTANCE`; owner performs final real-phone UAT before `DONE`.
 
 ## Delivery Kanban — black video completion, 2026-10-19
@@ -193,12 +195,20 @@ Strict verification: `requests.get(..., verify=<Whisper CA PEM>)` fails for all 
 | Mobile onboarding deployment gate | 🟥 BLOCKED | RAM gate reports 4.76 GiB; canonical deploy gate requires automated gates and >6 GiB | Rerun gate, then rebuild/restart desktop and LAN services | Agent |
 
 
-## Automated release acceptance policy - 2026-10-19
+## Automated release acceptance policy — canonical, 2026-10-19
 
-The former manual ChatGPT `/review` handoff is removed. Release authorization uses recorded checks: branch/remote SHA parity; reviewed diff and `git diff --check`; focused regression, changed-file Ruff, feature-module Pyright, and compile/import checks PASS; then full pytest, security, smoke, Host Playwright E2E, Docker build and Docker E2E PASS. Repository-wide quality findings outside changed feature code are reported as baseline debt, never as a passing gate. Unavailable optional Sonar/Jenkins checks are `ENV_BLOCKED`. Deploy additionally requires desktop/LAN served SHA parity, setup/CA/QR checks, video editor UI evidence and shared-data parity.
+This section replaces every earlier gate rule in this plan, including the fixed `>6 GiB` RAM guard and requirements that integration, Playwright/E2E, Docker E2E, Jenkins, Sonar, soak, or phone UAT pass before publication. All dated Kanban tables above are historical evidence only.
 
-The strict `>6 GiB` RAM threshold remains an operational safety guard, not a proven technical minimum for each individual test. It protects headroom for the combined full suite, Chromium/FFmpeg E2E workers, Docker build, and concurrently running desktop services; prior run artifacts do not establish a lower safe peak. A lower threshold requires measured peak-memory evidence and an explicit plan change.
+Hard blockers — the only conditions that block release: incomplete requested implementation; relevant unit tests fail; app build/start fails; known data loss or corruption; an unsafe restart that would lose the active user job and cannot be isolated or recovered.
+
+Advisory gates (integration, E2E, Playwright, Host E2E, Docker build/E2E, heavy gates, security, other optional checks) record exactly one of `PASS`, `FAIL_ADVISORY`, `ENV_BLOCKED`, `NOT_CONFIGURED`, `NOT_RUN`. Advisory results never block release, and `PASS` requires executed evidence from the current run. Jenkins, Sonar and soak are `NOT_REQUIRED`. RAM affects execution strategy only (ordering, serialization, deferral) — never release eligibility; never stop an active user job or unrelated services to manufacture headroom. Physical Galaxy phone UAT is `OWNER_PENDING` owner verification and does not hold release.
+
+Model policy: GLM is the preferred executor; on auth/provider failure degrade to the cheapest available fallback. Provider routing is an execution detail, never a project blocker.
+
+Mandatory engineering Definition of Done: scope complete per the US; no TODO/mock in requested production functionality; relevant unit tests pass; app builds/imports/starts; migrations valid; data safety (no user data loss; active job preserved); code + SDD + Kanban committed and pushed.
+
+Deploy verification (required whenever deploying): deploy only the final pushed HEAD with rollback available; deploy only when the active job is inactive or safely isolatable/recoverable; verify desktop and LAN HTTPS serve that exact HEAD, health is ONLINE, and shared-data parity holds against a pre-deploy snapshot; then run the required lightweight post-deploy smoke: dashboard loads, Videos list renders, worker RUNNING with expected counts, `/setup` reachable, served revision equals deployed HEAD.
 
 ## Current finalization status
 
-The live Kanban and resume sequence are maintained in `docs/plans/WHISPER_LIVE_CAPTURE_EXECUTION_PLAN.md`, section `FINAL SDD RELEASE RUN`. Earlier tables in this file are historical evidence, not the current delivery status.
+The single authoritative active Delivery Kanban, canonical release policy and resume order are in `docs/plans/WHISPER_LIVE_CAPTURE_EXECUTION_PLAN.md`, section `FINAL SDD RELEASE RUN`. All Kanban tables and gate lists in this file are historical evidence, not live status.

@@ -663,12 +663,12 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 
 
 
-### Progress Log ? W38 completion
+### Progress Log - W38 completion
 
 - 2026-10-16: Moved Clear crop beside crop selection; placed a prominent REC timer over preview; added rear-default/front camera selection and safe in-recording stream replacement with fragment finalization, rollback on failure, and persisted source; added separate microphone-only Audio mode with project/title/session/fragment/chunk inheritance and audio media listing. A mobile CSS display override initially kept the camera selector visible in Audio mode; corrected selector rule to apply only when not hidden and reran the full capture scenario successfully. Focused unit/API/integration tests: 72 passed. Synthetic Playwright capture report: all checks PASS, including crop adjacency/mobile geometry, rear request, front?rear switching, same preview/recorder stream, timer, audio-only tracks, audio project inheritance, fragments/chunk mapping, and no browser errors (`artifacts/gates/capture-uat-data/capture_new_recording_report.json`). Host E2E gate PASS in 29.19s (`artifacts/gates/latest.json`, `artifacts/gates/logs/e2e.log`). JM audit remains read-only: usable VP8 video confirmed, 72.072s, no audio, status READY/QUEUED, no documentation, camera source unavailable from historical manifest. Synthetic browser devices only; real-device rear camera/audio behavior remains unverified.
 
 
-## W39 ? Single-file Live Capture finalization and real media playback
+## W39 - Single-file Live Capture finalization and real media playback
 
 - ID: W39
 - Status: PASS
@@ -682,16 +682,16 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - Expected artifacts: focused pytest results, capture finalization/player Playwright report, host E2E report, live served revision check, read-only duplicate-session audit evidence.
 - Recovery/fallback: never delete originals or provenance; on assemble/probe failure retain all fragment/chunk media, mark finalization retryable, surface a useful user error and reuse existing session; if processing still depends on chunk bytes, defer cleanup; do not merge separate capture sessions just because their titles match.
 
-### Progress Log ? W39 initial audit
+### Progress Log - W39 initial audit
 
-- 2026-10-16: Read-only LAN audit found the two newest `Live capture.webm` rows are separate sessions, not duplicate finalizations: `sess-d313658ad200` (JM, 5 ACKed fragments, 72.072s, one finalized processing chunk) and `sess-9843cd339967` (JM, 1 ACKed fragment, 1.149s, one finalized processing chunk). No media was changed. Current source exposes processing chunk paths as the session?s user media and stop only drains chunks/finalizes the session; no separate session-level final-media manifest exists. Player View is disabled without a transcript, and the custom player suppresses native controls. Real served build was previously stale; current task will validate both services after implementation.
+- 2026-10-16: Read-only LAN audit found the two newest `Live capture.webm` rows are separate sessions, not duplicate finalizations: `sess-d313658ad200` (JM, 5 ACKed fragments, 72.072s, one finalized processing chunk) and `sess-9843cd339967` (JM, 1 ACKed fragment, 1.149s, one finalized processing chunk). No media was changed. Current source exposes processing chunk paths as the session's user media and stop only drains chunks/finalizes the session; no separate session-level final-media manifest exists. Player View is disabled without a transcript, and the custom player suppresses native controls. Real served build was previously stale; current task will validate both services after implementation.
 - 2026-10-16: Implemented session-level final media assembly after stop with persisted ordered chunk/fragment provenance, size/hash, stable path and idempotent retries. Internal chunk rows are suppressed once the final exists. Temporary media cleanup now requires valid final hash and every processing chunk PROCESSED; metadata remains. View is enabled without transcript and native video/audio controls plus playback errors are exposed. Added Camera/Audio labels with icons. Targeted pytest: 52 passed; wider capture/API/playlist/assembly/docs tests: 89 passed. Next: rebuild/restart desktop and HTTPS LAN from committed code, run synthetic browser capture/player journeys, then host E2E.
 - 2026-10-16: Both desktop and HTTPS LAN were rebuilt/restarted on `45b33bf31aa0d8f84e109a9ffabd1bc18fc200fd`; browser checks confirmed identical served revision, visible Camera/Audio controls, rear default, getUserMedia, no service worker, and mobile-width layout. Synthetic camera/audio journey proved final files and one row/session. It exposed an audio WebM with an audio stream but no finite duration; added FFmpeg normalization and a generated live-WebM fixture. Targeted FFmpeg/API/service tests: 30 passed. Updating the served-build checks and rerunning full capture/player + host E2E after rebuilding this correction.
 - 2026-10-16: W39 acceptance PASS. `pytest tests/test_live_capture_assembly.py tests/test_live_capture_processing_chunks.py tests/test_dashboard_capture_processing_api.py -q`: 30 passed, including multi-chunk single-final output, idempotent drain, provenance retention, cleanup gate, and synthetic live-WebM duration repair. Synthetic `tests/e2e/capture_new_recording.py`: all checks PASS; video and audio final media both reported finite duration and loaded native players; camera/audio modes, switching, upload ACKs, project, crop/mobile, and one user row/session passed (`capture_new_recording_report.json`). `tests/e2e/served_ui_revision.py`: desktop and HTTPS LAN returned 200 and matching revision `54e78ba`, showed Camera/Audio, rear default, secure media API, no service worker and 390px overflow-free layout (`artifacts/gates/live-capture-finalization/served_ui_revision.json`). Host E2E PASS in 41.43s (`artifacts/gates/latest.json`). The two previously inspected JM `Live capture.webm` rows remain unchanged and are distinct capture sessions. No physical-device camera hardware test was claimed.
 - 2026-10-16: Follow-up review found cleanup gating was callable/tested but not automatically invoked when dependent processing completed. W39 reopened to invoke the safe cleanup gate on final-media creation and on the last PROCESSING -> PROCESSED transition; source metadata remains retained. Targeted FFmpeg/API/service tests now pass again: 30 passed, including automatic blob cleanup with retained fragment and mapping metadata. Re-running the browser and host gates on this code revision before closing W39 again.
 - 2026-10-16: W39 final verification PASS on code revision `7350713117474b640dc1fdbf7e6bb26b0892d79d`: focused tests 30 passed; synthetic capture journey all 66 checks passed, including final video/audio duration metadata, playable native players, idempotent single row per session, and cleanup after processing while preserving hashes/mappings; Host E2E PASS in 42.67s. Rebuilt desktop container and restarted HTTPS LAN; served UI Playwright reports matching response header and HTML revision on both, Camera/Audio visible, rear selected, getUserMedia available, no service worker, no horizontal overflow at 390px. The final plan-only commit will be reflected in the runtime revision marker after commit and services will be restarted once more.
 
-## W40 ? Recording integrity, shared data, mobile crop, duration and delete actions
+## W40 - Recording integrity, shared data, mobile crop, duration and delete actions
 
 - ID: W40
 - Status: PASS
@@ -705,7 +705,7 @@ Routine implementation must use configured Z.AI/GLM first, then OpenCode Go/Deep
 - Expected artifacts: read-only JM manifest/ffprobe audit, synthetic multi-fragment report, focused pytest output, Playwright report, host gate report, same-data-root API counts and served revision report.
 - Recovery/fallback: never remove/replace the JM final during diagnosis. Build recovery output at a new staging path, verify duration/streams/hash first, retain the previous final as backup until replacement is proven. Never copy data between roots; point both services at the verified existing root. If a shared root is unreachable, keep services stopped rather than silently starting against a separate empty dataset. On failed assembly, preserve ACKed fragments and chunks and report retryable error.
 
-### Progress Log ? W40
+### Progress Log - W40
 
 - 2026-10-16: Baseline HEAD/upstream `1ae1248b417d7282e37d2aed8e85cd5091bb8fe3`, clean worktree. Docker localhost mounted `C:\\Dev\\Zo\\whisper\\zmi-data`; LAN Python served repository `Videos/`. API proved localhost had 0 files while LAN had 39. JM `sess-4ee4a8f39d86`: five ACKED WebM fragments, 71.295 s declared, five files present, all mapped once to a finalized processing chunk; old final/chunk were identical at 12,683,545 bytes. Packet inspection found 1,233 packets across the fragments but reset timestamps; old final probed/displayed 14.944 s. Root cause: FFmpeg was given a `.tmp` path without explicit output format, so it failed; the fallback appended WebM bytes and did not offset fragment timestamps.
 - 2026-10-16: Implemented explicit FFmpeg output formats and concat durations, ACKed-fragment completeness checks, direct ordered fragment final assembly, verified duration tolerance (max 2 s / 5%), and duration persistence. Invalid old output is retained under a recovery path only after staged output validates. Reconstructed JM final: 71.25 s, 5/5 ACKed IDs in order, 5/5 source fragment files retained, old final backed up, final playable duration 71.25 s. Added synthetic 3×15 s regression plus short-final recovery test. Targeted service/API/date tests: 40 passed; compileall passed.
@@ -847,50 +847,71 @@ Current source findings:
 
 ## FINAL SDD RELEASE RUN
 
-This is the single authoritative current release status. Older Kanbans above are retained as dated evidence; do not use them as live status. This section supersedes earlier fixed `>6 GiB` gate text: below 4 GiB, run review/static/focused tests only; from 4 to 6 GiB, run one expensive gate at a time; at 6 GiB or above, standard mode. Never interrupt a user processing job or stop unrelated services to manufacture headroom.
+This is the canonical release policy and execution record. The only active feature-level Delivery Kanban is in `.agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md`, section `Finalization Kanban`. Older Kanbans above are dated historical evidence only. This section supersedes every earlier fixed RAM-threshold rule (including the former strict `>6 GiB` hard gate and the later 4/6 GiB ladder) and every earlier policy that made integration tests, full-suite runs, Playwright/E2E, Docker build/E2E, Jenkins, Sonar, soak, or phone UAT mandatory for release. The same supersession applies to the gate sections of `US-ZMI-LIFECYCLE-001` and `PLAN-ZMI-LIFECYCLE-001`.
+
+### Release policy (canonical)
+
+Hard blockers — the ONLY conditions that block release:
+
+1. Requested implementation incomplete (SDD/US scope not implemented).
+2. Relevant unit tests fail (tests tied to the change or scope).
+3. App build or app start fails.
+4. Known data loss or corruption.
+5. An unsafe restart that would lose the active user job and cannot be isolated or recovered safely.
+
+Everything else is advisory. RAM affects execution strategy only — it decides ordering, serialization and deferral of expensive work (for example, one browser/Docker gate at a time, processes released between gates). A low RAM reading is never by itself a release blocker or a gate result.
+
+Advisory gates — integration, E2E, Playwright, Host E2E, Docker build/E2E, security, and any other optional check — record exactly one result: `PASS`, `FAIL_ADVISORY`, `ENV_BLOCKED`, `NOT_CONFIGURED`, `NOT_RUN`. Advisory results never block release; they are recorded with evidence and become follow-up work. Never record `PASS` without executed evidence from the current run.
+
+Jenkins, Sonar and soak are `NOT_REQUIRED` for this release. Physical Galaxy phone UAT is owner-only verification tracked as `OWNER_PENDING`; it does not hold an otherwise accepted release.
+
+Model policy: use Z.AI/GLM for normal implementation. On auth failure use OpenCode Go/DeepSeek Flash, then local DeepSeek/Ollama, then the available current coding model. DeepSeek Pro is only for a difficult blocker after cheaper attempts. Record `MODEL_DEGRADED=YES` on GLM auth failure and continue; model access is never a project blocker.
+
+Mandatory engineering Definition of Done — all required before release:
+
+- Scope complete per the SDD/US and the reconciled scope below.
+- No TODO, mock, stub or placeholder left in requested production functionality.
+- Relevant unit tests pass.
+- App builds, imports and starts.
+- Migrations/defaults valid for existing records; no destructive migration.
+- Data safety: no user data deleted or corrupted; active job preserved; shared data root untouched except documented synthetic test records.
+- Code + SDD docs + this Kanban committed and pushed (remote HEAD equals local HEAD).
+
+Deploy verification — all required whenever deploying:
+
+- Deploy only the final reviewed, pushed HEAD, with the previous image/SHA retained as rollback.
+- Deploy only when hard blocker 5 is cleared: the active job is inactive, or can be isolated/recovered without loss. Never stop the worker or the active job to force a deploy, and never deploy behind its back in a way that loses it.
+- Detect the current LAN IP dynamically. Verify desktop HTTP and LAN HTTPS serve that exact HEAD (response header and page meta), health is ONLINE, and shared-data parity matches a pre-deploy count/hash/metadata snapshot (media/projects/jobs/docs/worker).
+- Required lightweight post-deploy smoke: HTTP and HTTPS respond; served revision equals FINAL_HEAD; existing Videos and Projects render; shared data is unchanged; New Recording, Video Editor, and Overview modal open; `/setup` responds. A startup failure or data corruption is a hard blocker and triggers repair/rollback.
 
 ### Reconciled scope and evidence
 
 The accumulated SDD includes Live Capture/project inheritance; camera/microphone lifecycle; real pre-encode crop; durable fragments, ACK/idempotency, processing chunks, assembly and cleanup; continuous playlist; TIME/FRAME editor and black-video tools; multi-file upload; processing worker recovery; Documentation V2, regeneration and versioning; Videos table/player/delete behavior; mobile HTTPS onboarding; and the Overview Stats Modal. The Overview modal adds a top-right toolbar control, responsive modal, and the same Files Processed, Media Processed, Success Rate, and Avg. Processing Time cards, reusing the existing overview data/rendering logic. It must preserve the main Overview section and support close button, backdrop, and Escape. Existing evidence remains in the dated entries above. Historical S43 was audited read-only: its final WebM has one VP8 480x640 video stream and no audio; its manifest lacks `audioRequested` and mic-permission state, so the original cause cannot be recovered.
 
-This run's lightweight evidence on current code: 279 selected unit/API tests passed; after typed-boundary fixes, 60 fragment/assembly/processing/API and synthetic-capture tests passed; the independent Live Capture → keyframe → Docs V2 integration pair passed 4 tests; changed-module Ruff passed; feature-module Pyright had 0 errors and 2 optional `qrcode` stub warnings; compileall and `git diff --check` passed. A fresh lightweight rerun on 2026-10-19 passed 38 tests across capture-fragment API, assembly, and capture-store modules (first invocation without `PYTHONPATH=src` failed collection; rerun with the configured source path passed). Current branch is `feat/zmi-documentation-synthesis-v2`; current local and remote HEAD are `a61dfae639e6f7153ad7ccebb49c1670e818c750` (documentation-only checkpoint on implementation HEAD `450c554d9a188024da76948ab4e31539977d0ed7`); the worktree was clean after that checkpoint. The served app advertises `9ddb5a150fbd7dd1c4d5db3cd732a6e8de007501`; final HEAD has not been built/served. Do not call the final release deployed until final HEAD is built, served, and parity checked.
+This run's lightweight evidence on current code: 279 selected unit/API tests passed; after typed-boundary fixes, 60 fragment/assembly/processing/API and synthetic-capture tests passed; the independent Live Capture → keyframe → Docs V2 integration pair passed 4 tests; changed-module Ruff passed; feature-module Pyright had 0 errors and 2 optional `qrcode` stub warnings; compileall and `git diff --check` passed. A fresh lightweight rerun on 2026-10-19 passed 38 tests across capture-fragment API, assembly, and capture-store modules (first invocation without `PYTHONPATH=src` failed collection; rerun with the configured source path passed). Current branch is `feat/zmi-documentation-synthesis-v2`; local and remote HEAD are both `5b7f9299eb4b9203c0d8cec96154135712525745` (pushed). The worktree currently holds the uncommitted Overview Stats Modal implementation (`src/transcript_pipeline/dashboard/templates/dashboard.html` modified; `tests/e2e/overview_stats_modal.py` untracked) — the DoD commit/push item is not yet satisfied for that scope. The served app advertises `9ddb5a150fbd7dd1c4d5db3cd732a6e8de007501` (verified live 2026-10-19; HTTP 200); the served revision differs from HEAD and final HEAD has not been built/served. Do not call the final release deployed until final HEAD is built, served, parity checked and the post-deploy smoke passes.
 
-Read-only `/api/status` reports Worker `RUNNING`, `active_jobs=1`, `pending_jobs=0`. The active job is `14ed371b097a4b1c9a47a9166f5e1a95` (`full`, started 2026-10-20 00:25:55 UTC, host `ZenMini`, PID 44660); PID 44660 is present as Python, so this is an active user job, not a stale queue record. Do not restart or interrupt Whisper. RAM was 2.42 GiB at 2026-10-19 20:17 local time (`LOW_RESOURCE`, below the 4 GiB threshold). Keep expensive gates deferred; continue lightweight independent review and rerun resource checks before each gate. No unrelated project/service was stopped.
+Historical read-only `/api/status` recheck on 2026-10-19: HTTP 200, worker `state=RUNNING`, `active_jobs=1`, `pending_jobs=0`, concurrency limit 3. The active job is `14ed371b097a4b1c9a47a9166f5e1a95` (`full`, started 2026-10-20 00:25:55 UTC, host `ZenMini`, PID 44660); PID 44660 was re-verified present as `python` (started 2026-10-19 15:58 local). This is an active user job, not a stale queue record. Do not restart or interrupt Whisper while it runs — that is hard blocker 5, the only current deploy blocker. Free RAM measured 4.65 GiB at recheck; under the canonical policy this is execution-strategy context only (prefer serial/lightweight ordering), never a blocker. Coding and unit tests continue regardless of the job. No unrelated project/service was stopped.
 
 Security mini-loop: the first harness attempt used the watcher Python, which lacks `pip-audit` and `truststore`; its dependency audit result was not an external network failure. The security suite also exposed environment leakage because importing dashboard configuration loads LAN values from `scan_config.env`; the localhost-only test now explicitly clears `ZMI_LAN_ACCESS` and `ZMI_CONTAINER_MODE` while preserving its rejection assertion. Targeted rerun passed 2/2, full security harness with Python 3.13 passed (116 passed, 3 skipped; runtime and dev audits CLEAN), and the local-only module passed 13/13 under the project Python.
 
-### Delivery Kanban
+### Current run recheck - 2026-10-20
 
-| Feature / Gate | Status | Evidence | Next Action | Owner |
-|---|---|---|---|---|
-| S43 historical media audit | 🟩 COMPLETE | Read-only ffprobe: VP8 480x640, no audio; session metadata cannot establish mic request/permission | Retain as historical limitation; never alter fixture | Agent |
-| Live Capture modes, projects, timer, stop/cancel/retry | 🟨 TESTING | Capture API, playlist, cancel, retry and session suites included in 279 passing tests; earlier browser evidence is dated above | Rerun critical journeys in Playwright on final candidate | Agent |
-| Camera microphone default and camera/orientation/quality preservation | 🟨 TESTING | Prior synthetic browser coverage 77/77; current lightweight capture/API tests pass, including post-fix reruns | Rerun Playwright and Host E2E; phone UAT remains owner-only | Agent |
-| Real crop encoding, audio, dimensions and size | 🟨 TESTING | Prior synthetic WebM: 1280x720 → 636x360, 176,976 B → 111,147 B; current crop/assembly tests pass | Rerun media journeys on final candidate | Agent |
-| Fragment ACK/idempotency, processing chunks, assembly, cleanup, provenance | 🟨 TESTING | 60 focused fragment/assembly/processing/API and synthetic integration tests pass after typed-boundary fixes | Rerun Host E2E and verify cleanup paths | Agent |
-| Continuous playlist and title review/split/merge | 🟨 TESTING | Playlist/session suites pass in selected unit/API run; previous browser evidence is dated above | Include playlist/title review in Host E2E | Agent |
-| Video Editor and black-video tools | 🟨 TESTING | Black detection, edit API, crop, duration and source-preservation tests pass; earlier browser evidence is dated above | Rerun TIME/FRAME/apply/black review journeys | Agent |
-| Multi-file upload, bounded concurrency, cancel/retry | 🟨 TESTING | Existing upload-memory evidence is retained in lifecycle plan | Rerun upload acceptance at safe RAM | Agent |
-| Processing worker claims, schedule, recovery and cancellation | 🟨 TESTING | Worker reports RUNNING, one active user job, zero pending; worker unit tests passed | Preserve active job; rerun recovery integration after completion | Agent |
-| Documentation V2 evidence grounding and synthesis | 🟨 TESTING | Four synthetic Live Capture/keyframe/Docs V2 integration tests pass | Rerun full Docs V2 integration and UI journey | Agent |
-| Regenerate/reprocess separation and document versioning | 🟨 TESTING | Regeneration review/versioning suites pass in selected unit/API run | Rerun UI journey and version-history check after deployment | Agent |
-| Videos table, duration, Show/player, deterministic delete | 🟨 TESTING | Prior API/browser evidence retained; current `/api/health` is ONLINE | Verify final served UI and shared-data snapshot | Agent |
-| Overview Stats Modal | 🟥 BLOCKED | SDD acceptance criteria added; GLM/Z.AI primary returned an expired-key AUTH_BLOCKED response; no application code or UI test was changed | Restore valid GLM credentials; implement shared Overview metric rendering and run focused Playwright open/render/close/Escape/backdrop/mobile checks | Agent |
-| HTTPS `/setup`, QR and public-only CA onboarding | 🟨 TESTING | Served `9ddb5a1` previously passed setup/QR/DER CA checks; desktop and LAN currently return 200 on that build | Recheck final HEAD, current LAN URL, CA bytes and no private key after deployment | Agent |
-| Changed-code static and focused quality | 🟩 COMPLETE | Ruff PASS; Pyright 0 errors (2 optional `qrcode` stub warnings); compileall/diff-check PASS; selected 279 tests, post-fix 60 targeted tests, and 4 integrations PASS | Preserve exact commands/results with final artifacts | Agent |
-| Playwright release journeys | 🟨 TESTING | Prior capture subset 77/77 and prior UI gates passed on earlier served revision | Run required synthetic-device suite sequentially at RAM ≥4 GiB | Agent |
-| Host E2E | 🟨 TESTING | Prior Host E2E 4/4 passed before final runtime/type corrections | Run canonical Host E2E after Playwright and close its browser | Agent |
-| Docker build/E2E and release build | 🟨 TESTING | Earlier build/E2E evidence exists; current HEAD has not been built | Recheck RAM; build and Docker E2E serially | Agent |
-| Security and dependency audit | 🟩 COMPLETE | `py -3.13 scripts/security.py`: 116 passed, 3 skipped; secrets/path/env checks pass; runtime/dev dependency audits CLEAN | Preserve security report artifact | Agent |
-| Final release build and desktop/LAN deployment | 🟥 BLOCKED | Active user job `14ed371b097a4b1c9a47a9166f5e1a95` (PID 44660); observed RAM range 1.41–4.17 GiB while active; desktop/LAN serve `9ddb5a1`, not current HEAD `a61dfae` | Preserve job; when inactive and RAM >=4 GiB, run Playwright/Host E2E and Docker/release gates serially, snapshot shared data, rebuild/restart, verify parity | Agent |
-| Shared-data preservation and post-deploy smoke | 🟨 TESTING | No user media changed in this run; services currently healthy | Capture pre-deploy snapshot, deploy only when safe, compare and run full smoke | Agent |
-| Physical Galaxy UAT | OWNER_PENDING | Physical-device run unavailable; synthetic Playwright does not claim phone PASS | Juan verifies mic, landscape, crop, audio and playback after deployment | Juan |
-| Optional Sonar/Jenkins/soak | TODO | Required/configured status not yet authoritatively confirmed | Record NOT_CONFIGURED if config confirms absence | Agent |
+- Git branch `feat/zmi-documentation-synthesis-v2`; baseline local and remote HEAD `5b7f9299eb4b9203c0d8cec96154135712525745`. Existing owner edits were preserved; no worktree created.
+- Full relevant unit suite: `.venv-validation\Scripts\python.exe -m pytest tests -q --ignore=tests/integration --ignore=tests/e2e` -> `1230 passed, 8 skipped` after isolating test defaults from `.env` (`DASHBOARD_PORT`/`ZMI_BASE_URL`). This suite was rerun after adding conditional trusted-proxy scheme handling.
+- Changed-source Ruff and compile checks passed; Compose `--profile lan config --quiet` passed. Current dashboard returns HTTP 200/ONLINE but serves old `9ddb5a150fbd7dd1c4d5db3cd732a6e8de007501`, not the final candidate.
+- Current `/api/status`: worker `RUNNING`, 0 active jobs, 0 pending. The prior October 19 active job is no longer active. No processing job needs to be interrupted for deployment.
+- The Docker app bind mounts the repository root at `/data`. Caddy profile routes desktop HTTP and LAN HTTPS to that one app/worker, avoiding a duplicate worker. Current LAN IPv4 detected from Windows interfaces: `192.168.50.20`; existing runtime CA/certificate/key are present and ignored by Git. Shared-data pre-deploy snapshot, final build, Caddy start, served-revision parity and post-deploy smoke remain pending.
+- GLM provider alias was unavailable in the previous session; current session uses the available coding model. Record `MODEL_DEGRADED=YES`.
+
+### Active Kanban location
+
+The sole active feature-level Kanban is in the canonical SDD, `.agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md`, section `Finalization Kanban`. The dated tables elsewhere in this execution plan are historical evidence only.
 
 ### Resume order
 
-1. Recheck `/api/status`; let the active job finish without cancellation. RAM below 4 GiB is `LOW_RESOURCE`; recheck RAM and do not start heavy gates until >=4 GiB.
-2. At RAM ≥4 GiB, run Playwright; close its browser; recheck RAM; run Host E2E; close its processes; recheck RAM; then Docker build/E2E and security serially. Do not reduce assertions or reuse stale PASS as a current-candidate PASS.
-3. Fix failures with the bounded repair loop and rerun the failing target; classify unresolved gates `CODE_BLOCKED`, `TEST_DEFECT`, or genuine `ENV_BLOCKED`.
-4. Confirm HEAD equals remote HEAD and the worktree is clean. Snapshot shared data, then rebuild/restart from final HEAD only when the job is inactive and gates pass.
-5. Verify desktop and dynamically detected LAN HTTPS serve final HEAD; verify post-deploy UI, setup/QR/public CA, worker/video/project state, shared-data parity and synthetic capture cleanup. Physical Galaxy check remains `OWNER_PENDING`.
+1. Finish the Overview modal UI check when practical; relevant unit suite is green. Complete build/import/start and migration/data-safety checks, then commit and push code, SDD, plan, and the sole active Kanban.
+2. Attempt optional integration/media/Playwright/Host E2E/Docker E2E/security checks when practical; record each result independently. Do not wait on advisory gates or RAM thresholds.
+3. Before deployment, verify pushed FINAL_HEAD, worktree clean, active worker job count zero, preserve the previous image, and snapshot shared-data counts/hashes/metadata.
+4. Set the deployment build revision to FINAL_HEAD, dynamically identify the LAN IPv4, rebuild/start only Whisper app + Caddy profile, preserving the shared root and model volume.
+5. Run required HTTP/HTTPS served smoke and parity checks. Update the final Kanban; commit/push final evidence and, if that changes served revision, rebuild/redeploy the resulting final HEAD and repeat smoke.
+6. Report phone UAT `OWNER_PENDING`; Jenkins/Sonar/soak `NOT_REQUIRED`.
