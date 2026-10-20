@@ -55,12 +55,16 @@ except ImportError:
 
 # Formats MarkItDown can process
 MARKITDOWN_EXTS = {
-    ".pdf", ".docx", ".doc", ".pptx", ".ppt",
-    ".xlsx", ".xls", ".csv",
-    ".png", ".jpg", ".jpeg", ".webp", ".gif",
+    ".pdf", ".docx", ".pptx", ".xlsx", ".xls", ".csv",
     ".html", ".htm", ".xml", ".json",
-    ".epub", ".zip",
 }
+
+
+def _markitdown_text(result) -> str:
+    markdown = getattr(result, "markdown", None)
+    if markdown:
+        return markdown
+    return getattr(result, "text_content", "")
 
 # Developer-oriented Vision LLM prompt
 _DEV_SCREEN_PROMPT = (
@@ -326,7 +330,7 @@ class MeetingDevHandler:
             for doc_path in candidates:
                 try:
                     result = md.convert(str(doc_path))
-                    md_text = result.text_content.strip()
+                    md_text = _markitdown_text(result).strip()
                     if not md_text:
                         continue
 

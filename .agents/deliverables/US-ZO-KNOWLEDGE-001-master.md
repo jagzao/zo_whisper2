@@ -1,0 +1,150 @@
+# US-ZO-KNOWLEDGE-001 — Project-aware Knowledge-to-Action
+
+## Status
+FROZEN_FOR_IMPLEMENTATION
+
+## Parent
+`EPIC-ZO-KNOWLEDGE-001-project-aware-knowledge-to-action.md`
+
+## US-01 — Scope-aware Zo project publishing
+
+As the owner, I want each Zo Media project to declare whether derived knowledge is PROJECT-private or GLOBAL so confidential client knowledge never leaks across projects.
+
+Acceptance:
+1. add `KnowledgeScope = PROJECT|GLOBAL`;
+2. publishing disabled by default for legacy projects;
+3. PROJECT requires Second Brain project id/domain;
+4. confidential + GLOBAL is invalid;
+5. P&G maps to PROJECT/p-g;
+6. generic tutorial project may explicitly map to GLOBAL;
+7. scope is persisted in Knowledge Package v2;
+8. no raw transcript/media is published.
+
+## US-02 — Knowledge Package v2 + durable outbox
+
+As the owner, I want documentation output to create a durable, versioned, idempotent knowledge package so Second Brain outages do not lose knowledge.
+
+Acceptance:
+1. emit `knowledge-package.json`;
+2. emit `procedure.json` for procedural/tutorial artifacts;
+3. stable source/package/knowledge identity;
+4. atomic outbox lifecycle;
+5. bounded retries/backoff;
+6. same package id is logically once-only;
+7. docs generation is not failed by publisher outage;
+8. no Supabase service-role key in Zo Media.
+
+## US-03 — Scoped Zavi ingestion
+
+As Zavi, I want to ingest Zo knowledge packages into the existing evidence plane with scope/actionability/provenance so project-private and global knowledge coexist safely.
+
+Acceptance:
+1. authenticated import boundary;
+2. strict v2 schema;
+3. idempotent import by package id;
+4. existing docs/chunks stay PROJECT by default;
+5. new GLOBAL partition supported without per-project duplication;
+6. embeddings use existing ingestion pipeline;
+7. confidential GLOBAL rejected;
+8. version/supersede metadata preserved.
+
+## US-04 — Scoped retrieval
+
+As Zavi/KAV, I want retrieval to return GLOBAL knowledge plus the active project's PROJECT knowledge and nothing from other projects.
+
+Acceptance:
+1. lexical filter implements allowed(scope, project);
+2. vector RPC implements same;
+3. normalized Second Brain retrieval implements same;
+4. no active project -> GLOBAL only;
+5. P&G never appears under another active project;
+6. scope is enforced server-side, not by prompt.
+
+## US-05 — Controlled canonical promotion
+
+As the owner, I want source-derived knowledge to be useful immediately as evidence but not silently become canonical verified knowledge.
+
+Acceptance:
+1. import lands in evidence plane;
+2. canonical promotion is separate;
+3. PROJECT -> GLOBAL requires explicit owner promotion;
+4. promotion creates new GLOBAL artifact/version, preserves original;
+5. confidential content cannot auto-promote;
+6. normalized entries preserve provenance/version/scope.
+
+## US-06 — Procedural knowledge
+
+As the owner, I want tutorials to produce machine-readable procedures with evidence so Zavi/KAV can guide or later automate the demonstrated task.
+
+Acceptance:
+1. `KnowledgeActionability = REFERENCE|GUIDED|EXECUTABLE`;
+2. default tutorial actionability is GUIDED unless explicitly configured;
+3. procedure steps preserve timestamp/evidence/review/confidence;
+4. semantic action/tool binding may be null;
+5. no tool call invented by Zo Media;
+6. whole raw transcript is excluded.
+
+## US-07 — KAV skill candidates
+
+As KAV, I want to convert eligible procedure knowledge into skill candidates bound to known capabilities, without treating raw tutorial prose as executable authority.
+
+Acceptance:
+1. knowledge ref/version/scope/project attached to skill;
+2. status = CANDIDATE|VALIDATED|DISABLED|SUPERSEDED;
+3. only VALIDATED executes;
+4. capability requirements explicit;
+5. missing capability yields structured non-execution;
+6. PROJECT skill cannot execute outside matching active project;
+7. credentials are never embedded in knowledge/skill specs.
+
+## US-08 — Policy-governed execution
+
+As the owner, I want KAV to execute a validated procedure only when permissions, approval and postconditions are satisfied.
+
+Acceptance:
+1. approval policy supported;
+2. runtime policy may be stricter;
+3. preconditions checked before tool calls;
+4. postconditions checked after;
+5. rollback metadata supported;
+6. write/destructive actions never bypass required approval;
+7. execution produces a structured receipt.
+
+## US-09 — K'ab project identity
+
+As a K'ab capture user, I want a course/session to explicitly identify the Zo project so a P&G capture is published to P&G Second Brain without filename guessing.
+
+Acceptance:
+1. sender contract supports explicit project key;
+2. receiver validates project exists/is publishable;
+3. old sessions without project remain compatible but publishing is disabled or routing-derived with explicit provenance;
+4. safe project catalog can be exposed to sender;
+5. no sensitive project config exposed.
+
+## Definition of Done
+
+A complete vertical acceptance demonstrates:
+
+A. P&G tutorial:
+- generated by Zo;
+- package scope PROJECT/project=p-g;
+- imported to Zavi;
+- retrievable in p-g;
+- not retrievable in another project.
+
+B. Azure Data Factory tutorial:
+- generated with explicit GLOBAL scope;
+- imported once;
+- retrievable from p-g and a different project.
+
+C. Procedure:
+- procedure preserves evidence and is GUIDED/EXECUTABLE as configured;
+- unvalidated skill cannot execute.
+
+D. KAV:
+- a VALIDATED GLOBAL procedure bound to a deterministic fake capability executes;
+- postcondition verified;
+- execution receipt emitted;
+- same PROJECT skill is denied outside its project.
+
+No real Azure write is required for this epic's deterministic acceptance.

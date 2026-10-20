@@ -24,7 +24,7 @@ import logging
 import sys
 import uuid
 
-from transcript_pipeline.config import PROJECT_ROOT
+from transcript_pipeline.config import LOG_DIR
 
 _FORMAT = "%(asctime)s - %(levelname)s - [run=%(run_id)s file=%(file_id)s] - %(message)s"
 
@@ -72,8 +72,9 @@ def configure_logging(log_filename: str, *, run_id: str | None = None) -> str:
     # substitutes unencodable characters instead of failing.
     if isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(errors="backslashreplace")
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     handlers: list[logging.Handler] = [
-        logging.FileHandler(PROJECT_ROOT / log_filename, encoding="utf-8"),
+        logging.FileHandler(LOG_DIR / log_filename, encoding="utf-8"),
         logging.StreamHandler(sys.stdout),
     ]
     context_filter = _ContextFilter(run_id)

@@ -1,0 +1,220 @@
+{
+  "video_info": {
+    "name": "gadgetplus_tutorial.mp4",
+    "duration": 700.0,
+    "extraction_method": "smart_scene",
+    "total_frames": 12
+  },
+  "transcription_summary": {
+    "total_segments": 10,
+    "mapped_frames": 10,
+    "full_transcription": "First, open GadgetPlus and click the New Project button. Type the project name Acme Demo and pick the Orders module. Press Enter to confirm and open the project workspace. Select Import Data from the toolbar and choose the CSV option. Browse to the sample file and click Open to start the import. Wait for the validation badge to turn green before continuing. Click Map Fields and match the returns column to Returns ID. Press Run Import and watch the progress bar finish. Open the Reports tab and select the Weekly Digest template. Finally, click Export to save the digest as a PDF file.",
+    "language": "en"
+  },
+  "frames": [
+    {
+      "frame_file": "frame_0000.png",
+      "timestamp": 30.0,
+      "timestamp_formatted": "00:00:30"
+    },
+    {
+      "frame_file": "frame_0001.png",
+      "timestamp": 90.0,
+      "timestamp_formatted": "00:01:30"
+    },
+    {
+      "frame_file": "frame_0002.png",
+      "timestamp": 150.0,
+      "timestamp_formatted": "00:02:30"
+    },
+    {
+      "frame_file": "frame_0003.png",
+      "timestamp": 210.0,
+      "timestamp_formatted": "00:03:30"
+    },
+    {
+      "frame_file": "frame_0004.png",
+      "timestamp": 270.0,
+      "timestamp_formatted": "00:04:30"
+    },
+    {
+      "frame_file": "frame_0005.png",
+      "timestamp": 330.0,
+      "timestamp_formatted": "00:05:30"
+    },
+    {
+      "frame_file": "frame_0006.png",
+      "timestamp": 390.0,
+      "timestamp_formatted": "00:06:30"
+    },
+    {
+      "frame_file": "frame_0007.png",
+      "timestamp": 450.0,
+      "timestamp_formatted": "00:07:30"
+    },
+    {
+      "frame_file": "frame_0008.png",
+      "timestamp": 510.0,
+      "timestamp_formatted": "00:08:30"
+    },
+    {
+      "frame_file": "frame_0009.png",
+      "timestamp": 570.0,
+      "timestamp_formatted": "00:09:30"
+    },
+    {
+      "frame_file": "frame_0010.png",
+      "timestamp": 630.0,
+      "timestamp_formatted": "00:10:30"
+    },
+    {
+      "frame_file": "frame_0011.png",
+      "timestamp": 660.0,
+      "timestamp_formatted": "00:11:00"
+    }
+  ],
+  "transcription_mapping": {
+    "frame_0000.png": {
+      "timestamp": 30.0,
+      "formatted_timestamp": "00:30",
+      "transcription_segments": [
+        {
+          "start": 28.0,
+          "end": 38.0,
+          "text": "First, open GadgetPlus and click the New Project button.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "First, open GadgetPlus and click the New Project button."
+    },
+    "frame_0001.png": {
+      "timestamp": 90.0,
+      "formatted_timestamp": "01:30",
+      "transcription_segments": [
+        {
+          "start": 88.0,
+          "end": 98.0,
+          "text": "Type the project name Acme Demo and pick the Orders module.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Type the project name Acme Demo and pick the Orders module."
+    },
+    "frame_0002.png": {
+      "timestamp": 150.0,
+      "formatted_timestamp": "02:30",
+      "transcription_segments": [
+        {
+          "start": 148.0,
+          "end": 158.0,
+          "text": "Press Enter to confirm and open the project workspace.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Press Enter to confirm and open the project workspace."
+    },
+    "frame_0003.png": {
+      "timestamp": 210.0,
+      "formatted_timestamp": "03:30",
+      "transcription_segments": [
+        {
+          "start": 208.0,
+          "end": 218.0,
+          "text": "Select Import Data from the toolbar and choose the CSV option.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Select Import Data from the toolbar and choose the CSV option."
+    },
+    "frame_0004.png": {
+      "timestamp": 270.0,
+      "formatted_timestamp": "04:30",
+      "transcription_segments": [
+        {
+          "start": 268.0,
+          "end": 278.0,
+          "text": "Browse to the sample file and click Open to start the import.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Browse to the sample file and click Open to start the import."
+    },
+    "frame_0005.png": {
+      "timestamp": 330.0,
+      "formatted_timestamp": "05:30",
+      "transcription_segments": [
+        {
+          "start": 328.0,
+          "end": 338.0,
+          "text": "Wait for the validation badge to turn green before continuing.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Wait for the validation badge to turn green before continuing."
+    },
+    "frame_0006.png": {
+      "timestamp": 390.0,
+      "formatted_timestamp": "06:30",
+      "transcription_segments": [
+        {
+          "start": 388.0,
+          "end": 398.0,
+          "text": "Click Map Fields and match the returns column to Returns ID.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Click Map Fields and match the returns column to Returns ID."
+    },
+    "frame_0007.png": {
+      "timestamp": 450.0,
+      "formatted_timestamp": "07:30",
+      "transcription_segments": [
+        {
+          "start": 448.0,
+          "end": 458.0,
+          "text": "Press Run Import and watch the progress bar finish.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Press Run Import and watch the progress bar finish."
+    },
+    "frame_0008.png": {
+      "timestamp": 510.0,
+      "formatted_timestamp": "08:30",
+      "transcription_segments": [
+        {
+          "start": 508.0,
+          "end": 518.0,
+          "text": "Open the Reports tab and select the Weekly Digest template.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Open the Reports tab and select the Weekly Digest template."
+    },
+    "frame_0009.png": {
+      "timestamp": 570.0,
+      "formatted_timestamp": "09:30",
+      "transcription_segments": [
+        {
+          "start": 568.0,
+          "end": 578.0,
+          "text": "Finally, click Export to save the digest as a PDF file.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Finally, click Export to save the digest as a PDF file."
+    },
+    "frame_0010.png": {
+      "timestamp": 630.0,
+      "formatted_timestamp": "10:30",
+      "transcription_segments": [],
+      "full_text": ""
+    },
+    "frame_0011.png": {
+      "timestamp": 660.0,
+      "formatted_timestamp": "11:00",
+      "transcription_segments": [],
+      "full_text": ""
+    }
+  }
+}

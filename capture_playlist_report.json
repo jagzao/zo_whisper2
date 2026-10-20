@@ -1,0 +1,114 @@
+{
+  "checks": [
+    {
+      "name": "mobile_modal_viewport_safe",
+      "status": "PASS",
+      "detail": "{\"viewportWidth\": 390, \"documentWidth\": 390, \"modalWidth\": 388, \"modalScrollWidth\": 388, \"actionsDirection\": \"column\", \"previewBottom\": 564.4375, \"viewportHeight\": 844}"
+    },
+    {
+      "name": "playlist_capture_started_once",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile_camera_preview_uses_recording_stream",
+      "status": "PASS",
+      "detail": "{\"width\": 1280, \"inline\": true, \"autoplay\": true, \"sameStream\": true}"
+    },
+    {
+      "name": "session1_automatically_detected_and_confirmed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "session2_automatically_detected",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "mobile_playlist_rows_readable",
+      "status": "PASS",
+      "detail": "[{\"width\": 344, \"scrollWidth\": 344, \"actionHeight\": 44, \"title\": \"AMS KAP Compliance Session 1 \\u00b7 96%\"}, {\"width\": 344, \"scrollWidth\": 344, \"actionHeight\": 44, \"title\": \"AMS KAP Compliance Session 2 \\u00b7 96%\"}]"
+    },
+    {
+      "name": "playlist_videos_inherit_project",
+      "status": "PASS",
+      "detail": "[{\"category\": \"Compliance\", \"confidence\": 0.95875, \"endFragmentSequence\": 1, \"endOffsetMs\": 15010, \"fragmentIds\": [\"fragment-000001\"], \"id\": \"logical-000001\", \"processingChunkIds\": [\"chunk-000000\"], \"projectId\": \"Zo Interviews\", \"recordedAt\": \"2026-08-05 12:29 UTC\", \"sessionNumber\": 1, \"signature\": \"ams kap compliance session 1\", \"startFragmentSequence\": 1, \"startOffsetMs\": 5010, \"status\": \"CONFIRMED\", \"title\": \"AMS KAP Compliance Session 1\"}, {\"category\": \"Compliance\", \"confidence\": 0.9562499999999999, \"endFragmentSequence\": null, \"endOffsetMs\": null, \"fragmentIds\": [\"fragment-000001\"], \"id\": \"logical-000002\", \"processingChunkIds\": [\"chunk-000000\"], \"projectId\": \"Zo Interviews\", \"recordedAt\": \"2026-08-05 12:44 UTC\", \"sessionNumber\": 2, \"signature\": \"ams kap compliance session 2\", \"startFragmentSequence\": 1, \"startOffsetMs\": 15010, \"status\": \"CONFIRMED\", \"title\": \"AMS KAP Compliance Session 2\"}]"
+    },
+    {
+      "name": "internal_chunks_hidden_from_jobs",
+      "status": "PASS",
+      "detail": "Live capture \u00b7 CAPTURING \u00b7 1 segmentos subidos \u00b7 0 en proceso"
+    },
+    {
+      "name": "stable_boundary_within_same_processing_chunk",
+      "status": "PASS",
+      "detail": "[{\"category\": \"Compliance\", \"confidence\": 0.95875, \"endFragmentSequence\": 1, \"endOffsetMs\": 15010, \"fragmentIds\": [\"fragment-000001\"], \"id\": \"logical-000001\", \"processingChunkIds\": [\"chunk-000000\"], \"projectId\": \"Zo Interviews\", \"recordedAt\": \"2026-08-05 12:29 UTC\", \"sessionNumber\": 1, \"signature\": \"ams kap compliance session 1\", \"startFragmentSequence\": 1, \"startOffsetMs\": 5010, \"status\": \"CONFIRMED\", \"title\": \"AMS KAP Compliance Session 1\"}, {\"category\": \"Compliance\", \"confidence\": 0.9562499999999999, \"endFragmentSequence\": null, \"endOffsetMs\": null, \"fragmentIds\": [\"fragment-000001\"], \"id\": \"logical-000002\", \"processingChunkIds\": [\"chunk-000000\"], \"projectId\": \"Zo Interviews\", \"recordedAt\": \"2026-08-05 12:44 UTC\", \"sessionNumber\": 2, \"signature\": \"ams kap compliance session 2\", \"startFragmentSequence\": 1, \"startOffsetMs\": 15010, \"status\": \"CONFIRMED\", \"title\": \"AMS KAP Compliance Session 2\"}]"
+    },
+    {
+      "name": "same_camera_session_kept_recording",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "low_confidence_title_marked_for_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rename_and_recorded_date_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "split_and_merge_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "confirm_low_confidence_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "playlist_stop_works",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logical_videos_returned_by_files_api",
+      "status": "PASS",
+      "detail": "[{\"capture_status\": \"QUEUED\", \"date\": \"2026-10-15T19:13:06-06:00\", \"date_epoch\": 1792113186.337, \"documentation\": null, \"language\": \"auto\", \"logical_read_only\": true, \"logical_session_id\": \"sess-7facfc343db4\", \"logical_video\": {\"category\": null, \"confidence\": 0.6, \"endOffsetMs\": null, \"id\": \"logical-000003\", \"processingChunkIds\": [\"chunk-000000\"], \"projectId\": \"Zo Interviews\", \"recordedAt\": null, \"sessionNumber\": null, \"startOffsetMs\": 30010, \"title\": \"Unclear slide words\"}, \"media_id\": \"videos:live_capture/sess-7facfc343db4/chunks/chunk-000000.webm\", \"name\": \"Unclear slide words.webm\", \"project\": \"Zo Interviews\", \"project_source\": \"none\", \"relative\": \"Videos\\\\live_capture\\\\sess-7facfc343db4\\\\chunks\\\\chunk-000000.webm\", \"size\": 30535, \"status\": \"QUEUED\", \"transcription\": null}, {\"capture_status\": \"QUEUED\", \"date\": \"2026-08-06T06:44:00-06:00\", \"date_epoch\": 1786020240, \"documentation\": null, \"language\": \"auto\", \"logical_read_only\": true, \"logical_session_id\": \"sess-7facfc343db4\", \"logical_video\": {\"category\": \"Compliance\", \"confidence\": 0.9562499999999999, \"endOffsetMs\": 30010, \"id\": \"logical-000002\", \"processingChunkIds\": [\"chunk-000000\"], \"projectId\": \"Zo Interviews\", \"recordedAt\": \"2026-08-06 12:44 UTC\", \"sessionNumber\": 2, \"startOffsetMs\": 15010, \"title\": \"Corrected Session 2\"}, \"media_id\": \"videos:live_capture/sess-7facfc343db4/chunks/chunk-000000.webm\", \"name\": \"Corrected Session 2.webm\", \"project\": \"Zo Interviews\", \"project_source\": \"none\", \"relative\": \"Videos\\\\live_capture\\\\sess-7facfc343db4\\\\chunks\\\\chunk-000000.webm\", \"size\": 30535, \"status\": \"QUEUED\", \"transcription\": null}, {\"capture_status\": \"QUEUED\", \"date\": \"2026-08-05T06:29:00-06:00\", \"date_epoch\": 1785932940, \"documentation\": null, \"language\": \"auto\", \"logical_read_only\": true, \"logical_session_id\": \"sess-7facfc343db4\", \"logical_video\": {\"category\": \"Compliance\", \"confidence\": 0.95875, \"endOffsetMs\": 15010, \"id\": \"logical-000001\", \"processingChunkIds\": [\"chunk-000000\"], \"projectId\": \"Zo Interviews\", \"recordedAt\": \"2026-08-05 12:29 UTC\", \"sessionNumber\": 1, \"startOffsetMs\": 5010, \"title\": \"AMS KAP Compliance Session 1\"}, \"media_id\": \"videos:live_capture/sess-7facfc343db4/chunks/chunk-000000.webm\", \"name\": \"AMS KAP Compliance Session 1.webm\", \"project\": \"Zo Interviews\", \"project_source\": \"none\", \"relative\": \"Videos\\\\live_capture\\\\sess-7facfc343db4\\\\chunks\\\\chunk-000000.webm\", \"size\": 30535, \"status\": \"QUEUED\", \"transcription\": null}]"
+    },
+    {
+      "name": "videos_api_hides_internal_capture_chunks",
+      "status": "PASS",
+      "detail": "[]"
+    },
+    {
+      "name": "filtered_logical_video_appears_in_videos_table",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logical_videos_appear_in_videos_table",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logical_video_reuses_documentation_action",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "logical_video_cannot_delete_shared_physical_chunk",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

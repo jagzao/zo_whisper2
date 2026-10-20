@@ -48,7 +48,8 @@ class KeyframeExtractor:
         video_path: Path,
         method: str = "iframe",
         max_frames: int | None = None,
-        quality: int = 2
+        quality: int = 2,
+        crop: Any | None = None
     ) -> dict[str, Any]:
         """
         Extrae frames clave de un video usando FFmpeg.
@@ -58,6 +59,11 @@ class KeyframeExtractor:
             method: Método de extracción ("iframe", "scene", "interval")
             max_frames: Número máximo de frames a extraer (None = sin límite)
             quality: Calidad de compresión (1-31, menor = mejor calidad)
+            crop: Región de recorte normalizada opcional (W6). Una región no
+                nula y no de frame completo se aplica a cada frame generado,
+                preservando el original bajo ``originals/`` y registrando la
+                transformación en ``frame_mapping.json``. El video de origen
+                nunca se modifica.
 
         Returns:
             Dict con información sobre la extracción:
@@ -67,6 +73,7 @@ class KeyframeExtractor:
             - video_duration: float (segundos)
             - processing_time: float (segundos)
             - method: str (método usado)
+            - crop: dict (metadatos de recorte, si se aplicó)
             - error: str (si hubo error)
         """
         start_time = time.time()
@@ -114,8 +121,12 @@ class KeyframeExtractor:
             # Extraer frames según el método
             frame_count, real_pts_map = self._extract_frames(video_path, frames_dir, method, max_frames, quality)
 
+            # Aplicar recorte normalizado (W6) sobre los frames generados,
+            # preservando cada original y registrando la transformación.
+            crop_meta = self._apply_crop(frames_dir, crop) if crop is not None else None
+
             # Crear mapa de frames con timestamps (usa PTS reales cuando el método los provee)
-            self._create_frame_mapping(video_path, frames_dir, duration, method, real_pts_map)
+            self._create_frame_mapping(video_path, frames_dir, duration, method, real_pts_map, crop_meta=crop_meta)
 
             processing_time = time.time() - start_time
 
@@ -129,6 +140,7 @@ class KeyframeExtractor:
                 "video_duration": duration,
                 "processing_time": processing_time,
                 "method": method,
+                "crop": crop_meta,
                 "error": None
             }
 
@@ -210,13 +222,35 @@ class KeyframeExtractor:
             logger.warning(f"[KEYFRAMES] Error obteniendo duración: {e}")
             return 0.0
 
+    def _apply_crop(self, frames_dir: Path, crop: Any) -> dict[str, Any] | None:
+        """Aplica el recorte normalizado (W6) a los frames ya extraídos.
+
+        Delega en el primitivo determinista de ``live_capture.crop``, que
+        preserva cada original bajo ``originals/`` y nunca descarta fuente.
+        Un recorte inválido/no disponible devuelve metadatos de no-op (el
+        frame completo se conserva), nunca una excepción que interrumpa la
+        extracción.
+        """
+        try:
+            from transcript_pipeline.live_capture.crop import apply_crop_to_frames
+            from transcript_pipeline.live_capture.models import CropRegion
+
+            region = crop if isinstance(crop, CropRegion) else CropRegion.from_manifest(crop)
+            if region is None:
+                return None
+            return apply_crop_to_frames(frames_dir, region)
+        except Exception as exc:
+            logger.warning(f"[KEYFRAMES] Crop skipped for {frames_dir}: {exc}")
+            return {"applied": False, "reason": f"error:{type(exc).__name__}"}
+
     def _create_frame_mapping(
         self,
         video_path: Path,
         frames_dir: Path,
         duration: float,
         method: str,
-        real_pts_map: dict[str, float] | None = None
+        real_pts_map: dict[str, float] | None = None,
+        crop_meta: dict[str, Any] | None = None
     ):
         """
         Crea un archivo JSON con el mapeo de frames a timestamps y espacio para transcripción.
@@ -290,6 +324,11 @@ class KeyframeExtractor:
                 "frames": frame_timestamps,
                 "transcription_mapping": {}  # Se llenará después de la transcripción
             }
+            if crop_meta is not None:
+                # W6: registrar la transformación de recorte para que la
+                # evidencia/documentación pueda citarla; el original permanece
+                # bajo originals/ y el video fuente nunca se modifica.
+                mapping_data["crop"] = crop_meta
             
             # Guardar mapa en JSON
             mapping_file = frames_dir / "frame_mapping.json"

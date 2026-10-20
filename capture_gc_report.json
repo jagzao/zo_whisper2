@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "name": "gc_no_automatic_delete_notice",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "gc_review_control_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "gc_suggestions_surface_in_ui",
+      "status": "PASS",
+      "detail": "No media is deleted automatically."
+    },
+    {
+      "name": "gc_suggestions_have_no_automatic_delete_action",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "gc_no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

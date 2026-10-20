@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "name": "crop_region_selected",
+      "status": "PASS",
+      "detail": "{\"x\": 0.25, \"y\": 0.25, \"width\": 0.5, \"height\": 0.5}"
+    },
+    {
+      "name": "crop_cleared",
+      "status": "PASS",
+      "detail": "null"
+    },
+    {
+      "name": "crop_session_created",
+      "status": "PASS",
+      "detail": "1 new sessions"
+    },
+    {
+      "name": "crop_persisted_roundtrip",
+      "status": "PASS",
+      "detail": "snapshot={'x': 0.25, 'y': 0.25, 'width': 0.5, 'height': 0.5} persisted={'height': 0.5, 'width': 0.5, 'x': 0.25, 'y': 0.25}"
+    },
+    {
+      "name": "crop_no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

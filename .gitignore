@@ -21,6 +21,7 @@ projects.json
 replacements.txt
 
 # ── Datos de entrada (archivos de usuario, no código) ───────────────────────
+.whisper/
 audio/
 Videos/
 Video_compress/
@@ -32,8 +33,15 @@ demo/
 CarpetaTranscripciones/
 Frames/
 
+# ── K'ab ingest runtime (media recibido, certs, token — nunca en Git) ───────
+kab-inbox/
+
+# ── Mobile/LAN access runtime (dashboard HTTPS cert + private key) ──────────
+lan-access/
+
 # ── Base de datos del FileTracker ───────────────────────────────────────────
 processed_files.json
+compression_provenance.json
 
 # ── Overrides de proyecto (se regeneran en cada run) ──────────────────────────
 project_overrides.json
@@ -58,6 +66,7 @@ sbom.json
 # ── Entornos Python ──────────────────────────────────────────────────────────
 watcher/venv/
 deepseek/venv/
+.venv-validation/
 .venv/
 venv/
 __pycache__/
@@ -115,3 +124,7 @@ desktop.ini
 AGENTS.md
 CLAUDE.md
 .claude/
+
+# Deterministic gate runtime artifacts
+artifacts/
+/knowledge-outbox/

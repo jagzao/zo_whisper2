@@ -1,0 +1,59 @@
+{
+  "checks": [
+    {
+      "name": "cancel_upload_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "upload_aborted_no_durable_fragment",
+      "status": "PASS",
+      "detail": "fragments=0 pending=1 stalled=True"
+    },
+    {
+      "name": "upload_retry_available",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "queued_cancel_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cancelled_retry_visible_without_chunk_details",
+      "status": "PASS",
+      "detail": "cancel queued job 9250ca60 \u00b7 CANCELLED \u00b7 0 segmentos subidos \u00b7 0 en proceso\nProcesar de nuevo :: ['Procesar de nuevo']"
+    },
+    {
+      "name": "queued_job_cancelled",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "active_cancel_shows_cancelando",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "active_cancel_reaches_cancelled",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "completed_job_has_no_cancel_action",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "test_sessions_hidden",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_browser_errors",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

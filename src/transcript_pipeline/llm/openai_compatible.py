@@ -79,7 +79,8 @@ class OpenAICompatibleProvider:
         self._backoff_seconds = backoff_seconds
 
     def generate_summary(
-        self, text: str, system_prompt: str | None = None, max_tokens: int = 2000
+        self, text: str, system_prompt: str | None = None, max_tokens: int = 2000,
+        temperature: float = 0.3,
     ) -> str:
         return self._make_request(
             {
@@ -89,7 +90,7 @@ class OpenAICompatibleProvider:
                     {"role": "user", "content": text},
                 ],
                 "max_tokens": max_tokens,
-                "temperature": 0.3,
+                "temperature": temperature,
             }
         )
 

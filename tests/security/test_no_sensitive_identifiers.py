@@ -8,8 +8,98 @@ never become the leak it exists to prevent.
 """
 
 import json
+import os
 
-from scripts.security import check_denylisted_identifiers_in_history, check_no_denylisted_identifiers
+from scripts.security import (
+    check_denylisted_identifiers_in_history,
+    check_dependency_audit,
+    check_history_policy,
+    check_no_denylisted_identifiers,
+    check_path_traversal,
+)
+
+
+def test_dependency_audit_uses_project_lockfiles_and_separates_evidence(tmp_path, monkeypatch):
+    import subprocess
+
+    import scripts.security as security
+
+    root = tmp_path / "repo"
+    root.mkdir()
+    (root / "requirements.runtime.lock.txt").write_text("runtime==1\n", encoding="utf-8")
+    (root / "requirements.lock.txt").write_text("dev==2\n", encoding="utf-8")
+    audit_dir = tmp_path / "artifacts" / "gates" / "security"
+    monkeypatch.setattr(security, "ROOT", root)
+    monkeypatch.setattr(security, "AUDIT_DIR", audit_dir)
+    calls = []
+
+    def run(args, **kwargs):
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 0, stdout=json.dumps({
+            "status": "CLEAN", "service_used": "pypi", "transport_fallback": False, "vulnerabilities": []
+        }), stderr="")
+
+    monkeypatch.setattr(security.subprocess, "run", run)
+    report = []
+    check_dependency_audit(report)
+
+    assert [entry[entry.index("--lockfile") + 1] for entry in calls] == [
+        str(root / "requirements.runtime.lock.txt"), str(root / "requirements.lock.txt")
+    ]
+    assert all(entry[1].endswith("pip_audit_locked.py") for entry in calls)
+    assert [item["name"] for item in report] == ["dependency_audit_runtime", "dependency_audit_dev"]
+    assert all(item["status"] == "PASS" for item in report)
+    assert (audit_dir / "runtime-audit.json").is_file()
+    assert (audit_dir / "dev-audit.json").is_file()
+
+
+def test_project_lock_vulnerability_is_blocking_and_reports_fix(tmp_path, monkeypatch):
+    import subprocess
+
+    import scripts.security as security
+
+    root = tmp_path / "repo"
+    root.mkdir()
+    (root / "requirements.runtime.lock.txt").write_text("lib==1\n", encoding="utf-8")
+    (root / "requirements.lock.txt").write_text("lib==1\n", encoding="utf-8")
+    monkeypatch.setattr(security, "ROOT", root)
+    monkeypatch.setattr(security, "AUDIT_DIR", tmp_path / "audit")
+
+    def run(args, **kwargs):
+        payload = {
+            "status": "VULNERABLE", "service_used": "pypi", "transport_fallback": False,
+            "vulnerabilities": [{"package": "lib", "version": "1", "advisory": "GHSA-test", "fixed_versions": ["2"]}],
+        }
+        return subprocess.CompletedProcess(args, 1, stdout=json.dumps(payload), stderr="")
+
+    monkeypatch.setattr(security.subprocess, "run", run)
+    report = []
+    check_dependency_audit(report)
+    assert [item["status"] for item in report] == ["FAIL", "FAIL"]
+    assert report[0]["vulnerabilities"] == [{
+        "package": "lib", "version": "1", "advisory": "GHSA-test", "fixed_versions": ["2"]
+    }]
+    assert report[0]["audit_status"] == "VULNERABLE"
+    assert report[0]["service_used"] == "pypi"
+    assert (tmp_path / "audit" / "runtime-audit.json").is_file()
+
+
+def test_security_pytest_inherits_source_import_path(monkeypatch):
+    import subprocess
+
+    import scripts.security as security
+
+    observed = {}
+
+    def run(args, **kwargs):
+        observed.update(kwargs)
+        return subprocess.CompletedProcess(args, 0, stdout="security tests passed", stderr="")
+
+    monkeypatch.setattr(security.subprocess, "run", run)
+    report = []
+    check_path_traversal(report)
+    assert report[0]["status"] == "PASS"
+    assert str(security.ROOT / "src") in observed["env"]["PYTHONPATH"].split(os.pathsep)
 
 
 def test_detects_synthetic_denylisted_string(tmp_path, monkeypatch):
@@ -135,6 +225,29 @@ def test_history_check_detects_token_in_commit_message(monkeypatch):
 
     assert any(r["status"] == "FAIL" for r in report)
     assert any("commit message" in r.get("detail", "") for r in report)
+
+
+def test_history_policy_is_advisory_by_default(monkeypatch):
+    monkeypatch.delenv("ZMI_ENFORCE_HISTORY_CLEAN", raising=False)
+    monkeypatch.setattr(
+        "scripts.security.check_denylisted_identifiers_in_history",
+        lambda report: (_ for _ in ()).throw(AssertionError("history audit must be skipped")),
+    )
+    report: list[dict] = []
+    check_history_policy(report)
+    assert report[0]["status"] == "PASS"
+    assert "SKIPPED/ADVISORY" in report[0]["detail"]
+
+
+def test_history_policy_enforces_only_when_explicit(monkeypatch):
+    monkeypatch.setenv("ZMI_ENFORCE_HISTORY_CLEAN", "1")
+    called: list[bool] = []
+    monkeypatch.setattr(
+        "scripts.security.check_denylisted_identifiers_in_history",
+        lambda report: called.append(True),
+    )
+    check_history_policy([])
+    assert called == [True]
 
 
 def test_history_check_passes_when_token_in_neither_diff_nor_message(monkeypatch):

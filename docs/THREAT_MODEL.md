@@ -148,3 +148,7 @@ Git repo ──push──▶  Public GitHub
   but the document content itself isn't passed through `redact_secrets()`
   the way handler-generated summary text is, since MarkItDown owns that
   HTTP call internally.
+
+## Docker data path
+
+In Compose, the host-local trust boundary ends at the loopback-published dashboard port (`127.0.0.1:${ZMI_PORT}:5000`). Inside the app container, `/data` is the persistent bind mount, `/cache` is the named model-cache volume, and `/tmp` is ephemeral tmpfs. The image is non-root and read-only outside these locations. A Docker user with control of the host daemon remains trusted; the container is not a sandbox against its host administrator. This remains a single-user local application, not an internet-facing deployment.

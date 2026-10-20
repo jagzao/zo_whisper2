@@ -3,17 +3,15 @@ handlers/meeting_dev_handler.py::_scan_documents) previously had zero real
 coverage — only mocked in test_meeting_dev_handler.py. These exercise the
 real `MarkItDown().convert()` call against fully synthetic, generated-at-test-time
 fixtures (no real client documents, no binaries committed to the repo).
-
-PDF is intentionally omitted: hand-crafting a minimal PDF that pdfminer-six
-(MarkItDown's PDF backend) reliably extracts text from is fragile without a
-PDF-writing library, and adding one (e.g. reportlab) only to cover this one
-format isn't worth the new dependency for a synthetic-fixture test.
 """
 
 import zipfile
 
 import pytest
 from markitdown import MarkItDown
+from reportlab.pdfgen import canvas
+
+from transcript_pipeline.handlers.meeting_dev_handler import _markitdown_text
 
 SYNTHETIC_TEXT = "Synthetic meeting attachment / Project: Northwind / Task: TEST-123"
 
@@ -33,7 +31,7 @@ def test_converts_synthetic_xlsx(tmp_path, md):
     wb.save(path)
 
     result = md.convert(str(path))
-    assert SYNTHETIC_TEXT in result.text_content
+    assert SYNTHETIC_TEXT in _markitdown_text(result)
 
 
 def test_converts_synthetic_pptx(tmp_path, md):
@@ -48,7 +46,7 @@ def test_converts_synthetic_pptx(tmp_path, md):
     prs.save(path)
 
     result = md.convert(str(path))
-    assert SYNTHETIC_TEXT in result.text_content
+    assert SYNTHETIC_TEXT in _markitdown_text(result)
 
 
 def test_converts_synthetic_docx(tmp_path, md):
@@ -88,4 +86,20 @@ def test_converts_synthetic_docx(tmp_path, md):
         zf.writestr("word/document.xml", document_xml)
 
     result = md.convert(str(path))
-    assert SYNTHETIC_TEXT in result.text_content
+    assert SYNTHETIC_TEXT in _markitdown_text(result)
+
+
+def test_converts_synthetic_pdf(tmp_path, md):
+    path = tmp_path / "sample.pdf"
+    pdf = canvas.Canvas(str(path))
+    pdf.drawString(72, 720, SYNTHETIC_TEXT)
+    pdf.save()
+
+    assert SYNTHETIC_TEXT in _markitdown_text(md.convert(str(path)))
+
+
+def test_markdown_result_compatibility():
+    modern_result = type("Result", (), {"markdown": "modern", "text_content": "legacy"})()
+    legacy_result = type("Result", (), {"text_content": "legacy"})()
+    assert _markitdown_text(modern_result) == "modern"
+    assert _markitdown_text(legacy_result) == "legacy"

@@ -34,6 +34,9 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent
+# Runtime data lives under ZMI_DATA_ROOT when set (same env config.py
+# reads); the code root only contributes scripts, server, and artifacts.
+DATA_ROOT = Path(os.environ.get("ZMI_DATA_ROOT", "") or ROOT)
 OUT_PATH = ROOT / "docs" / "marketing" / "zo-media-intelligence-linkedin-demo.mp4"
 DEMO_VIDEO = ROOT / "demo" / "en_demo_zo_media_intelligence_tutorial.mp4"
 
@@ -392,12 +395,12 @@ def _isolate_workspace(backup: Path) -> None:
     """Moves the real workspace into `backup` and leaves empty dirs plus the
     demo video, so the pipeline run is isolated to synthetic data only."""
     for name in WORKSPACE_DIRS + WORKSPACE_FILES:
-        src = ROOT / name
+        src = DATA_ROOT / name
         if src.exists():
             shutil.move(str(src), str(backup / name))
     for name in WORKSPACE_DIRS:
-        (ROOT / name).mkdir(parents=True, exist_ok=True)
-    shutil.copy2(DEMO_VIDEO, ROOT / "Video_compress" / DEMO_VIDEO.name)
+        (DATA_ROOT / name).mkdir(parents=True, exist_ok=True)
+    shutil.copy2(DEMO_VIDEO, DATA_ROOT / "Video_compress" / DEMO_VIDEO.name)
 
 
 def _restore_workspace(backup: Path) -> None:
@@ -409,9 +412,9 @@ def _restore_workspace(backup: Path) -> None:
     A name with no backup entry simply didn't exist before; its empty dir is
     removed too."""
     for name in WORKSPACE_DIRS:
-        shutil.rmtree(ROOT / name, ignore_errors=True)
+        shutil.rmtree(DATA_ROOT / name, ignore_errors=True)
     for entry in backup.iterdir():
-        shutil.move(str(entry), str(ROOT / entry.name))
+        shutil.move(str(entry), str(DATA_ROOT / entry.name))
 
 
 def main() -> int:

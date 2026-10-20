@@ -23,7 +23,7 @@ def test_new_run_id_is_short_and_distinct():
 def test_configure_logging_sets_up_handlers(tmp_path, monkeypatch):
     saved = _clear_root_handlers()
     try:
-        monkeypatch.setattr("transcript_pipeline.logging_setup.PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr("transcript_pipeline.logging_setup.LOG_DIR", tmp_path)
         run_id = configure_logging("test.log")
         root = logging.getLogger()
         assert len(root.handlers) == 2
@@ -36,7 +36,7 @@ def test_configure_logging_sets_up_handlers(tmp_path, monkeypatch):
 def test_configure_logging_is_idempotent(tmp_path, monkeypatch):
     saved = _clear_root_handlers()
     try:
-        monkeypatch.setattr("transcript_pipeline.logging_setup.PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr("transcript_pipeline.logging_setup.LOG_DIR", tmp_path)
         first_run_id = configure_logging("first.log")
         second_run_id = configure_logging("second.log")
         assert first_run_id == second_run_id
@@ -48,7 +48,7 @@ def test_configure_logging_is_idempotent(tmp_path, monkeypatch):
 def test_file_id_defaults_and_can_be_overridden(tmp_path, monkeypatch):
     saved = _clear_root_handlers()
     try:
-        monkeypatch.setattr("transcript_pipeline.logging_setup.PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr("transcript_pipeline.logging_setup.LOG_DIR", tmp_path)
         configure_logging("test.log")
         logger = logging.getLogger("test_file_id_logger")
 
@@ -76,7 +76,7 @@ def test_non_ascii_log_message_does_not_crash_console_handler(tmp_path, monkeypa
     fake_stdout = io.TextIOWrapper(io.BytesIO(), encoding="ascii", errors="strict")
     monkeypatch.setattr("sys.stdout", fake_stdout)
     try:
-        monkeypatch.setattr("transcript_pipeline.logging_setup.PROJECT_ROOT", tmp_path)
+        monkeypatch.setattr("transcript_pipeline.logging_setup.LOG_DIR", tmp_path)
         configure_logging("test.log")
         assert fake_stdout.errors == "backslashreplace"
 
@@ -92,5 +92,17 @@ def test_non_ascii_log_message_does_not_crash_console_handler(tmp_path, monkeypa
         fake_stdout.buffer.seek(0)
         console_output = fake_stdout.buffer.read().decode("ascii")
         assert "\\u2192" in console_output
+    finally:
+        logging.getLogger().handlers[:] = saved
+
+
+def test_configure_logging_creates_log_dir(tmp_path, monkeypatch):
+    """Logs now land under LOG_DIR (data root), which may not exist yet on a
+    fresh ZMI_DATA_ROOT volume — configure_logging must create it itself."""
+    saved = _clear_root_handlers()
+    try:
+        monkeypatch.setattr("transcript_pipeline.logging_setup.LOG_DIR", tmp_path / "nested" / "logs")
+        configure_logging("x.log")
+        assert (tmp_path / "nested" / "logs" / "x.log").exists()
     finally:
         logging.getLogger().handlers[:] = saved

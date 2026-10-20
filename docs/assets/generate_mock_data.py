@@ -9,15 +9,17 @@ untranslated documentation.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-AUDIO = ROOT / "audio"
-VIDEOS = ROOT / "Videos"
-TRANSCRIPTIONS = ROOT / "CarpetaTranscripciones"
-PROCESSED_DB = ROOT / "processed_files.json"
+DATA_ROOT = Path(os.environ.get("ZMI_DATA_ROOT", "") or ROOT).resolve()
+AUDIO = DATA_ROOT / "audio"
+VIDEOS = DATA_ROOT / "Videos"
+TRANSCRIPTIONS = DATA_ROOT / "CarpetaTranscripciones"
+PROCESSED_DB = DATA_ROOT / "processed_files.json"
 
 FAKE_TRANSCRIPT_ES = (
     "Buenos días equipo, empecemos con el repaso del sprint. Terminamos la "
@@ -53,6 +55,7 @@ MOCK_FILES: list[tuple[str, str, str, float]] = [
     ("Videos/py_fabrikam/fabrikam_status_260806.webm", "es", FAKE_TRANSCRIPT_ES, 1897.0),
     ("Videos/mi_tutorial_deploy_pipeline.mp4", "es", FAKE_TRANSCRIPT_ES, 980.0),
 ]
+MOCK_MEDIA_FILENAMES = frozenset(Path(relative_path).name for relative_path, *_ in MOCK_FILES)
 
 
 def make_media(path: Path, duration: float) -> None:
@@ -60,13 +63,13 @@ def make_media(path: Path, duration: float) -> None:
     clip_len = 6  # actual seconds of the test clip (no need to loop, just needs to load)
     if path.suffix.lower() == ".mp3":
         cmd = [
-            "ffmpeg", "-y", "-f", "lavfi", "-i", f"anullsrc=r=44100:cl=mono",
+            "ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
             "-t", str(clip_len), str(path),
         ]
     else:
         vcodec = "libvpx-vp9" if path.suffix.lower() == ".webm" else "libx264"
         cmd = [
-            "ffmpeg", "-y", "-f", "lavfi", "-i", f"testsrc=size=640x360:rate=15",
+            "ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=size=640x360:rate=15",
             "-f", "lavfi", "-i", "anullsrc=r=44100:cl=mono",
             "-t", str(clip_len), "-c:v", vcodec, "-pix_fmt", "yuv420p", str(path),
         ]
@@ -74,7 +77,7 @@ def make_media(path: Path, duration: float) -> None:
 
 
 def make_transcription(rel_path: str, language: str, text: str, duration: float) -> None:
-    media_path = ROOT / rel_path
+    media_path = DATA_ROOT / rel_path
     base = Path(rel_path)
     is_video = base.parts[0] == "Videos"
     src_base = VIDEOS if is_video else AUDIO
@@ -129,7 +132,7 @@ def make_tutorial_documentation(rel_path: str, language: str) -> None:
     _sys.path.insert(0, str(ROOT / "src"))
     from transcript_pipeline.documentation.engine import generate_documentation
 
-    media_path = ROOT / rel_path
+    media_path = DATA_ROOT / rel_path
     stem = media_path.stem
     frames_parent = TRANSCRIPTIONS / f"{stem}_Frames" / stem
     frames_parent.mkdir(parents=True, exist_ok=True)
@@ -160,7 +163,7 @@ def make_tutorial_documentation(rel_path: str, language: str) -> None:
 
 def mark_processed(rel_path: str) -> None:
     db = json.loads(PROCESSED_DB.read_text(encoding="utf-8")) if PROCESSED_DB.exists() else {}
-    media_path = ROOT / rel_path
+    media_path = DATA_ROOT / rel_path
     key = str(media_path.absolute())
     db[key] = {
         "path": key,
@@ -175,7 +178,7 @@ def mark_processed(rel_path: str) -> None:
 
 def main() -> None:
     for rel_path, language, text, duration in MOCK_FILES:
-        path = ROOT / rel_path
+        path = DATA_ROOT / rel_path
         print(f"[MOCK] {rel_path}")
         make_media(path, duration)
         make_transcription(rel_path, language, text, duration)

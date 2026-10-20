@@ -1,0 +1,144 @@
+{
+  "video_info": {
+    "name": "acme_reference_overview.mp4",
+    "duration": 600.0,
+    "extraction_method": "smart_scene",
+    "total_frames": 7
+  },
+  "transcription_summary": {
+    "total_segments": 7,
+    "mapped_frames": 7,
+    "full_transcription": "This session is a reference overview of the Acme Corp data platforms. The metrics warehouse feeds the NimbusDesk and FlowDesk dashboards. Repository access is granted through the Acme Corp identity portal. Historical dashboards remain read-only after each quarter closes. The glossary of platform terms is maintained by the data steward. Reference links to the archive are published in the team wiki. Any further questions should go to the service desk queue.",
+    "language": "en"
+  },
+  "frames": [
+    {
+      "frame_file": "frame_0000.png",
+      "timestamp": 60.0,
+      "timestamp_formatted": "00:01:00"
+    },
+    {
+      "frame_file": "frame_0001.png",
+      "timestamp": 140.0,
+      "timestamp_formatted": "00:02:20"
+    },
+    {
+      "frame_file": "frame_0002.png",
+      "timestamp": 220.0,
+      "timestamp_formatted": "00:03:40"
+    },
+    {
+      "frame_file": "frame_0003.png",
+      "timestamp": 300.0,
+      "timestamp_formatted": "00:05:00"
+    },
+    {
+      "frame_file": "frame_0004.png",
+      "timestamp": 380.0,
+      "timestamp_formatted": "00:06:20"
+    },
+    {
+      "frame_file": "frame_0005.png",
+      "timestamp": 460.0,
+      "timestamp_formatted": "00:07:40"
+    },
+    {
+      "frame_file": "frame_0006.png",
+      "timestamp": 540.0,
+      "timestamp_formatted": "00:09:00"
+    }
+  ],
+  "transcription_mapping": {
+    "frame_0000.png": {
+      "timestamp": 60.0,
+      "formatted_timestamp": "01:00",
+      "transcription_segments": [
+        {
+          "start": 57.0,
+          "end": 67.0,
+          "text": "This session is a reference overview of the Acme Corp data platforms.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "This session is a reference overview of the Acme Corp data platforms."
+    },
+    "frame_0001.png": {
+      "timestamp": 140.0,
+      "formatted_timestamp": "02:20",
+      "transcription_segments": [
+        {
+          "start": 137.0,
+          "end": 147.0,
+          "text": "The metrics warehouse feeds the NimbusDesk and FlowDesk dashboards.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "The metrics warehouse feeds the NimbusDesk and FlowDesk dashboards."
+    },
+    "frame_0002.png": {
+      "timestamp": 220.0,
+      "formatted_timestamp": "03:40",
+      "transcription_segments": [
+        {
+          "start": 217.0,
+          "end": 227.0,
+          "text": "Repository access is granted through the Acme Corp identity portal.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Repository access is granted through the Acme Corp identity portal."
+    },
+    "frame_0003.png": {
+      "timestamp": 300.0,
+      "formatted_timestamp": "05:00",
+      "transcription_segments": [
+        {
+          "start": 297.0,
+          "end": 307.0,
+          "text": "Historical dashboards remain read-only after each quarter closes.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Historical dashboards remain read-only after each quarter closes."
+    },
+    "frame_0004.png": {
+      "timestamp": 380.0,
+      "formatted_timestamp": "06:20",
+      "transcription_segments": [
+        {
+          "start": 377.0,
+          "end": 387.0,
+          "text": "The glossary of platform terms is maintained by the data steward.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "The glossary of platform terms is maintained by the data steward."
+    },
+    "frame_0005.png": {
+      "timestamp": 460.0,
+      "formatted_timestamp": "07:40",
+      "transcription_segments": [
+        {
+          "start": 457.0,
+          "end": 467.0,
+          "text": "Reference links to the archive are published in the team wiki.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Reference links to the archive are published in the team wiki."
+    },
+    "frame_0006.png": {
+      "timestamp": 540.0,
+      "formatted_timestamp": "09:00",
+      "transcription_segments": [
+        {
+          "start": 537.0,
+          "end": 547.0,
+          "text": "Any further questions should go to the service desk queue.",
+          "avg_logprob": -0.2
+        }
+      ],
+      "full_text": "Any further questions should go to the service desk queue."
+    }
+  }
+}

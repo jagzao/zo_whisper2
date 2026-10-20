@@ -67,6 +67,35 @@ def _str_or_none(name: str) -> str | None:
     return val if val else None
 
 
+def _comma_list(raw: str | None) -> tuple[str, ...]:
+    """Parses a comma-separated host list, dropping blanks.
+
+    Entries are kept verbatim except for surrounding whitespace; binding a
+    hostname would resolve against the network at runtime, and this list is
+    used only for the Host/Origin allowlist and certificate SANs, so no DNS
+    resolution happens here.
+    """
+    if not raw:
+        return ()
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _allowed_export_roots(raw: str | None) -> tuple[Path, ...]:
+    """Parses ZMI_ALLOWED_EXPORT_ROOTS into Path entries.
+
+    os.pathsep-separated (";" on Windows, ":" on POSIX) — the same syntax
+    PATH uses. Empty parts (trailing separator, accidental ";;") are
+    dropped rather than materialized as Path("."): an empty allowlist
+    entry must never exist, because containment checks compare strings
+    and an empty/relative base would silently match wrong candidates.
+    """
+    import os
+
+    if not raw:
+        return ()
+    return tuple(Path(part.strip()) for part in raw.split(os.pathsep) if part.strip())
+
+
 @dataclass(frozen=True)
 class Settings:
     # ── Transcription ────────────────────────────────────────────────
@@ -110,6 +139,26 @@ class Settings:
     icecream_music: Path | None
     icecream_videos: Path | None
 
+    # ── Container runtime (dashboard bind + export routing) ──────────
+    # Defaults keep direct keyword construction (test fixtures) working;
+    # from_env() always sets them explicitly from the environment.
+    container_mode: bool = False
+    allowed_export_roots: tuple[Path, ...] = ()
+
+    # ── Mobile/LAN access (W25, explicit opt-in) ─────────────────────
+    # Off by default; loopback-only behavior is unchanged while `lan_access`
+    # is False. When True the dashboard may bind 0.0.0.0, accepts requests
+    # whose Host/Origin is one of `lan_hosts` (or a detected interface IP),
+    # and can serve HTTPS with the configured certificate/key so a phone on
+    # the same Wi-Fi gets camera permission. Defaults keep keyword
+    # construction in existing test fixtures working.
+    lan_access: bool = False
+    lan_hosts: tuple[str, ...] = ()
+    dashboard_cert_file: Path | None = None
+    dashboard_key_file: Path | None = None
+    upload_concurrency: int = 4
+    processing_timezone: str = "America/Mexico_City"
+
     @classmethod
     def from_env(cls) -> Settings:
         import os
@@ -143,8 +192,16 @@ class Settings:
             dashboard_host=os.getenv("DASHBOARD_HOST", "127.0.0.1"),
             dashboard_port=int(os.getenv("DASHBOARD_PORT", "5000")),
             upload_max_mb=int(os.getenv("UPLOAD_MAX_MB", "500")),
+            upload_concurrency=int(os.getenv("WHISPER_UPLOAD_CONCURRENCY", "4")),
+            processing_timezone=os.getenv("WHISPER_TIMEZONE", "America/Mexico_City").strip() or "America/Mexico_City",
             icecream_music=Path(v) if (v := os.getenv("ICECREAM_MUSIC")) else None,
             icecream_videos=Path(v) if (v := os.getenv("ICECREAM_VIDEOS")) else None,
+            container_mode=_bool("ZMI_CONTAINER_MODE", False),
+            allowed_export_roots=_allowed_export_roots(os.getenv("ZMI_ALLOWED_EXPORT_ROOTS")),
+            lan_access=_bool("ZMI_LAN_ACCESS", False),
+            lan_hosts=_comma_list(os.getenv("ZMI_LAN_HOSTS")),
+            dashboard_cert_file=Path(v) if (v := os.getenv("DASHBOARD_CERT")) else None,
+            dashboard_key_file=Path(v) if (v := os.getenv("DASHBOARD_KEY")) else None,
         )
         settings._validate()
         return settings
@@ -156,17 +213,54 @@ class Settings:
             raise ConfigurationError(f"VIDEO_COMPRESS_CRF out of range (0-51): {self.video_compress_crf}")
         if not (1024 <= self.dashboard_port <= 65535):
             raise ConfigurationError(f"DASHBOARD_PORT invalid: {self.dashboard_port}")
-        if self.dashboard_host not in _LOOPBACK_HOSTNAMES:
+        if self.container_mode:
+            # Container mode (ZMI_CONTAINER_MODE=true): additionally allow
+            # the container-internal 0.0.0.0 bind — the container has its
+            # own network namespace and Compose publishes the port on the
+            # host's loopback only. Anything else non-loopback (a LAN IP,
+            # a hostname) is still rejected: no public-bind mode exists.
+            dashboard_host_ok = self.dashboard_host in _LOOPBACK_HOSTNAMES or self.dashboard_host == "0.0.0.0"
+        elif self.lan_access:
+            # Explicit mobile/LAN opt-in (W25): the owner asked for
+            # same-Wi-Fi access, so a wildcard bind is allowed. Loopback is
+            # still accepted. This is a deliberate, separate flag — never
+            # implied by container mode or by DASHBOARD_HOST alone.
+            dashboard_host_ok = self.dashboard_host in _LOOPBACK_HOSTNAMES or self.dashboard_host == "0.0.0.0"
+        else:
+            dashboard_host_ok = self.dashboard_host in _LOOPBACK_HOSTNAMES
+        if not dashboard_host_ok:
+            container_hint = " or 0.0.0.0 (container mode)" if self.container_mode else ""
+            if not self.lan_access:
+                container_hint += " or 0.0.0.0 (ZMI_LAN_ACCESS=true)"
             raise ConfigurationError(
-                f"DASHBOARD_HOST must be a loopback address (127.0.0.1/localhost/::1): "
-                f"{self.dashboard_host!r} — remote binding is not supported."
+                f"DASHBOARD_HOST must be a loopback address (127.0.0.1/localhost/::1{container_hint}): "
+                f"{self.dashboard_host!r} — remote binding requires ZMI_LAN_ACCESS=true."
             )
+        if (self.dashboard_cert_file is None) != (self.dashboard_key_file is None):
+            raise ConfigurationError(
+                "DASHBOARD_CERT and DASHBOARD_KEY must be set together — HTTPS needs both the "
+                "certificate and its private key."
+            )
+        for root in self.allowed_export_roots:
+            # Absolute-only: a relative entry would resolve against an
+            # unpredictable CWD and turn the allowlist into a wildcard.
+            if not root.is_absolute():
+                raise ConfigurationError(
+                    f"ZMI_ALLOWED_EXPORT_ROOTS entries must be absolute paths: {str(root)!r}"
+                )
         if self.llm_provider_type not in ("local", "remote"):
             raise ConfigurationError(f"LLM_PROVIDER_TYPE must be 'local' or 'remote': {self.llm_provider_type!r}")
         if self.retention_days < 0:
             raise ConfigurationError(f"RETENTION_DAYS cannot be negative: {self.retention_days}")
         if self.upload_max_mb <= 0:
             raise ConfigurationError(f"UPLOAD_MAX_MB must be positive: {self.upload_max_mb}")
+        if not 1 <= self.upload_concurrency <= 6:
+            raise ConfigurationError("WHISPER_UPLOAD_CONCURRENCY must be between 1 and 6")
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+        try:
+            ZoneInfo(self.processing_timezone)
+        except ZoneInfoNotFoundError as exc:
+            raise ConfigurationError(f"WHISPER_TIMEZONE is not a valid IANA timezone: {self.processing_timezone!r}") from exc
 
 
 SETTINGS = Settings.from_env()

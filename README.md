@@ -108,6 +108,28 @@ a step persists `manual/steps.json` and regenerates both bundles immediately
 (`transcript_pipeline.documentation.engine.update_step`/`remove_step`/
 `regenerate_from_steps`).
 
+## Documentation Synthesis V2
+
+Documentation V2 preserves captured evidence separately from derived knowledge.
+Alongside the compatibility `manual/steps.json`, generated frame folders can
+contain `evidence/evidence.jsonl`, `evidence/EVIDENCE_TIMELINE.md`, and
+`evidence/review-queue.json`, plus a grounded semantic `manual/MANUAL.md` and
+`MANUAL.pdf` and section-oriented AI package. Meeting and KT recordings are
+organized by supported topics; they do not become one manual section or RAG
+chunk per frame. See [the V2 guide](docs/architecture/documentation-synthesis-v2.md)
+for modes, privacy behavior, Knowledge Package mapping, and regeneration.
+
+Regenerate V2 from an already processed frames directory without Whisper,
+FFmpeg extraction, OCR, vision, or recompression:
+
+```bat
+python -m transcript_pipeline.documentation.regenerate_v2 "path\to\recording_Frames"
+```
+
+Use `--mode KT_SESSION` for an explicit local override or `--evidence-only` to
+rebuild evidence without synthesis. Synthesis remains subject to the existing
+provider and project privacy rules.
+
 ## Security & Privacy
 
 - **Local by default.** Media and transcript content stay local for the
@@ -257,7 +279,7 @@ flowchart LR
 
 - **UI**: Flask/Jinja · HTML5 · CSS3 · Vanilla JavaScript · SVG
 - **Media/AI**: Python · faster-whisper · CTranslate2 · FFmpeg · Tesseract OCR · Pillow/ImageHash
-- **Quality**: Playwright · pytest · Ruff · Pyright · pip-audit · Gitleaks · GitHub Actions
+- **Quality**: Playwright · pytest · Ruff · Pyright · pip-audit · Gitleaks · SonarQube · Jenkins · GitHub Actions
 - **Documentation**: ReportLab · Markdown · JSON/JSONL
 
 The frontend is intentionally lightweight: no Node.js, no frontend build
@@ -353,6 +375,17 @@ a given feature needs. `[pdf]` (reportlab) is only needed to generate
 
 `match` decides which files belong to a project; `initial_prompt` reduces Whisper hallucinations with domain vocabulary; `corrections` fixes recurring transcription errors (proper names, technical jargon); `data_classification` (`public`/`internal`/`confidential`) gates whether this project's content can ever reach a remote LLM.
 
+## Docker quick start
+
+Run the complete CPU-first product with Docker Compose:
+
+```bash
+docker compose up -d --build
+# Open http://127.0.0.1:5000
+```
+
+Runtime files live in `./zmi-data` and model weights in the named Docker cache volume. The first model download may take several minutes. See [Docker operations](docs/DOCKER.md) for backup, updates, local configuration and safe cleanup.
+
 ## Usage
 
 ```bash
@@ -396,7 +429,7 @@ python scripts/generate_demo.py               # → docs/marketing/zo-media-inte
 |---|---|---|
 | ![home](docs/screenshots/dashboard_home.png) | ![preview](docs/screenshots/dashboard_preview.png) | ![editor](docs/screenshots/dashboard_editor.png) |
 
-| Extracted frames | Generated documentation | Edit transcription |
+| Extracted frames | Generated documentation | Edit file |
 |---|---|---|
 | ![frames](docs/screenshots/dashboard_frames.png) | ![docs](docs/screenshots/dashboard_docs.png) | ![edit](docs/screenshots/dashboard_edit.png) |
 
@@ -422,6 +455,12 @@ pytest tests/ -v
 - **E2E** (`tests/e2e/smoke_dashboard.py`): Playwright against a running dashboard with synthetic mock data, driven by `scripts/e2e.py` — not part of the default `pytest` run.
 
 Same gates run in CI (`.github/workflows/dashboard-ci.yml`): lint (ruff) → typing (pyright) → secret scan (gitleaks) → dependency audit (pip-audit) → unit/security/integration tests → E2E, all fail-closed (a missing tool reports failure, not a silent pass — see `scripts/quality.py`/`scripts/security.py`).
+
+## Contributor validation architecture
+
+Repeated validation is deterministic: pytest/Ruff/Pyright/security/Playwright run without LLM calls. GitHub Actions provides lightweight public PR checks; Jenkins is the local/self-hosted path for longer validation and optional soak runs; SonarQube contributes static-quality evidence when configured. See [Local / CI Operations](docs/ops/LOCAL-OPS.md).
+
+Project-lead V4 uses a strong model for implementation planning, OpenCode Go for primary coding, Ollama local for cheap/mechanical work, and Ollama Pro/Cloud as the secondary coding pool. Product/architecture decisions remain frozen owner-approved artifacts in Git.
 
 ## Extending the system
 

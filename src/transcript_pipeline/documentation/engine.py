@@ -38,6 +38,17 @@ logger = logging.getLogger(__name__)
 
 SCHEMA_VERSION = "1.0"
 
+# Knowledge-to-Action publish wakeup (DELTA-ZO-KNOWLEDGE-002). After a
+# successful enqueue, when a publisher is explicitly configured, the hook runs
+# ONE bounded publish cycle. Never a background loop; never an LLM.
+KNOWLEDGE_PUBLISH_WAKEUP_SECONDS = 15.0
+
+KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED = "SECOND_BRAIN_DISABLED"
+KNOWLEDGE_STATE_ENQUEUED = "ENQUEUED"
+KNOWLEDGE_STATE_PUBLISHED = "PUBLISHED"
+KNOWLEDGE_STATE_PENDING_RETRY = "PENDING_RETRY"
+KNOWLEDGE_STATE_TERMINAL_FAILURE = "TERMINAL_FAILURE"
+
 try:
     import pytesseract
     from PIL import Image as PILImage
@@ -205,45 +216,162 @@ def generate_documentation(
     ai_package_dir: Path | None = None,
     project_config: dict | None = None,
 ) -> dict:
-    """Reads `frames_dir/frame_mapping.json` and writes MANUAL.md + the
-    AI-ready package next to it. Returns a small summary dict.
+    """Reads `frames_dir/frame_mapping.json` and writes the documentation
+    bundles next to it. Returns a small summary dict.
+
+    V2 (PLAN WP-14): this now runs the staged Documentation Synthesis V2
+    pipeline — Evidence Plane first, then privacy-guarded semantic synthesis
+    when a provider is available. When synthesis is unavailable/blocked or
+    its output fails grounding validation, the Evidence Plane still succeeds
+    and the legacy frame-by-frame compatibility bundles are written instead
+    (same MANUAL.md/steps.json/metadata contract as before, DV2-47). The
+    returned dict keeps the historical keys (manual_dir, ai_package_dir,
+    step_count, low_confidence_count, knowledge) and adds the staged V2
+    fields (status, evidence, mode, synthesis, semantic).
 
     Safe to call again later purely from the persisted `steps.json` via
-    `regenerate_from_steps` — this function is the only one that re-derives
-    steps from frame_mapping.json (i.e. it's the only path that would need
-    re-transcription-adjacent data or re-run OCR/vision evidence gathering).
+    `regenerate_from_steps` — the V2 evidence gathering here (build_steps
+    with frames_dir) is the only path that runs OCR; the V2 regeneration
+    entry point never does.
     """
+    from transcript_pipeline.documentation.pipeline_v2 import generate_documentation_v2
+
     mapping_path = frames_dir / "frame_mapping.json"
     if not mapping_path.exists():
         raise FileNotFoundError(f"frame_mapping.json not found in {frames_dir}")
 
     mapping_data = json.loads(mapping_path.read_text(encoding="utf-8"))
-    video_info = mapping_data.get("video_info", {})
-    transcription_summary = mapping_data.get("transcription_summary", {})
-
     steps = build_steps(mapping_data, frames_dir, project_config)
 
-    source = DocumentationSource(
-        video_name=video_name,
-        duration=video_info.get("duration", 0.0),
-        language=transcription_summary.get("language", "unknown"),
-        extraction_method=video_info.get("extraction_method", "unknown"),
-        generated_at=datetime.now(timezone.utc).isoformat(),
+    return generate_documentation_v2(
+        frames_dir,
+        video_name,
+        manual_dir=manual_dir,
+        ai_package_dir=ai_package_dir,
+        project_config=project_config,
+        steps=steps,
     )
 
-    manual_dir = manual_dir or (frames_dir / "manual")
-    ai_package_dir = ai_package_dir or (frames_dir / "ai-package")
 
-    _write_steps_json(manual_dir, source, steps)  # editable source of truth for regeneration
-    write_manual(manual_dir, source, steps, frames_dir, write_steps_json=False)
-    write_ai_package(ai_package_dir, source, steps, frames_dir)
+def publish_knowledge_from_documentation(
+    ai_package_dir: Path,
+    source: DocumentationSource,
+    steps: list[ProceduralStep],
+    project_config: dict | None,
+    *,
+    frames_dir: Path | None = None,
+    existing_knowledge: dict | None = None,
+    supersedes_knowledge_id: str | None = None,
+) -> dict:
+    """Knowledge-to-Action hook (PLAN WP-04): after documentation succeeds,
+    resolve the matched project's second_brain config and, when enabled,
+    build + write + enqueue a Knowledge Package v2 on the durable outbox.
 
-    return {
-        "manual_dir": str(manual_dir),
-        "ai_package_dir": str(ai_package_dir),
-        "step_count": len(steps),
-        "low_confidence_count": sum(1 for s in steps if s.confidence == "low"),
-    }
+    When a publisher is explicitly configured (`publisher_from_env`), the hook
+    also runs ONE bounded publish cycle (<= KNOWLEDGE_PUBLISH_WAKEUP_SECONDS)
+    so a processed document does not sit forever in pending/. Without a
+    configured publisher it stays enqueue-only. There is never a background
+    recursive loop and never an LLM (DELTA-ZO-KNOWLEDGE-002).
+
+    Never raises — a publisher/outbox problem must not fail documentation
+    generation (ZK-16). Disabled/absent config returns a clean no-op
+    (ZK-01). Raw transcripts/media are never published (package builder and
+    the recursive policy guard enforce this fail-closed).
+
+    The returned dict distinguishes:
+    SECOND_BRAIN_DISABLED, ENQUEUED, PUBLISHED (ACK), PENDING_RETRY,
+    TERMINAL_FAILURE via the `knowledgeState` key.
+    """
+    try:
+        from transcript_pipeline.knowledge.package_builder import (
+            build_knowledge_package,
+            resolve_second_brain,
+            write_package_files,
+        )
+        from transcript_pipeline.knowledge.publisher import (
+            enqueue_knowledge_package,
+            publisher_from_env,
+            run_publish_cycle,
+        )
+
+        if resolve_second_brain(project_config) is None:
+            return {
+                "published": False,
+                "reason": "second_brain_disabled",
+                "knowledgeState": KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED,
+            }
+
+        package = build_knowledge_package(
+            source=source,
+            steps=steps,
+            project_config=project_config,
+            existing_knowledge=existing_knowledge,
+            supersedes_knowledge_id=supersedes_knowledge_id,
+        )
+        if package is None:
+            return {
+                "published": False,
+                "reason": "second_brain_disabled",
+                "knowledgeState": KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED,
+            }
+
+        write_package_files(ai_package_dir, package)
+
+        from transcript_pipeline.config import DATA_ROOT
+        from transcript_pipeline.knowledge.outbox import KnowledgeOutbox
+
+        outbox = KnowledgeOutbox(DATA_ROOT)
+        entry = enqueue_knowledge_package(outbox, package.to_dict())
+        entry_state = entry.get("state", "PENDING") if isinstance(entry, dict) else "PENDING"
+
+        if entry_state == "PUBLISHED":
+            return {
+                "published": True,
+                "packageId": package.package_id,
+                "outbox": entry,
+                "knowledgeState": KNOWLEDGE_STATE_PUBLISHED,
+                "publishCycle": None,
+            }
+        if entry_state == "FAILED":
+            return {
+                "published": True,
+                "packageId": package.package_id,
+                "outbox": entry,
+                "knowledgeState": KNOWLEDGE_STATE_TERMINAL_FAILURE,
+                "publishCycle": None,
+            }
+
+        publisher = publisher_from_env()
+        if publisher is None:
+            # No configured publisher: enqueue-only, package waits in pending/.
+            return {
+                "published": True,
+                "packageId": package.package_id,
+                "outbox": entry,
+                "knowledgeState": KNOWLEDGE_STATE_ENQUEUED,
+                "publishCycle": None,
+            }
+
+        # Configured publisher: one bounded immediate wakeup cycle.
+        cycle = run_publish_cycle(outbox, publisher, max_seconds=KNOWLEDGE_PUBLISH_WAKEUP_SECONDS)
+        refreshed = outbox.ledger.get(package.package_id) or entry
+        final_state = refreshed.get("state", "PENDING") if isinstance(refreshed, dict) else "PENDING"
+        if final_state == "PUBLISHED":
+            knowledge_state = KNOWLEDGE_STATE_PUBLISHED
+        elif final_state == "FAILED":
+            knowledge_state = KNOWLEDGE_STATE_TERMINAL_FAILURE
+        else:
+            knowledge_state = KNOWLEDGE_STATE_PENDING_RETRY
+        return {
+            "published": True,
+            "packageId": package.package_id,
+            "outbox": refreshed,
+            "knowledgeState": knowledge_state,
+            "publishCycle": cycle,
+        }
+    except Exception as e:  # noqa: BLE001 - knowledge publishing is best-effort
+        logger.warning("[KNOWLEDGE] knowledge package skipped: %s", e)
+        return {"published": False, "reason": f"error:{type(e).__name__}"}
 
 
 def load_steps(manual_dir: Path) -> tuple[DocumentationSource, list[ProceduralStep]]:

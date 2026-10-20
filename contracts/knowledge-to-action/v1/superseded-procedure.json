@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "procedureId": "kn-fixtureazure0000000000000002:proc",
+  "knowledgeId": "kn-fixtureazure0000000000000002",
+  "version": 1,
+  "scope": "GLOBAL",
+  "projectId": null,
+  "actionability": "EXECUTABLE",
+  "title": "Create an Azure Data Factory pipeline (superseded v1)",
+  "parameters": [],
+  "steps": [
+    {
+      "id": "step-0001",
+      "order": 1,
+      "instruction": "Legacy instruction replaced by v2; no new execution may be derived from this procedure.",
+      "timestamp": 34.2,
+      "evidence": {
+        "transcriptExcerpt": "Legacy instruction replaced by v2.",
+        "ocrText": null,
+        "frameRef": null,
+        "sourceSegmentIndex": null,
+        "confidence": "medium",
+        "reviewed": false
+      },
+      "semanticAction": null,
+      "semanticTarget": null
+    }
+  ],
+  "preconditions": [],
+  "expectedOutcomes": [],
+  "status": "SUPERSEDED",
+  "supersededByKnowledgeVersion": 2
+}

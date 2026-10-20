@@ -5,14 +5,14 @@ import json
 import shutil
 from pathlib import Path
 
-from generate_mock_data import MOCK_FILES, ROOT, PROCESSED_DB, VIDEOS, AUDIO, TRANSCRIPTIONS
+from generate_mock_data import MOCK_FILES, DATA_ROOT, PROCESSED_DB, VIDEOS, AUDIO, TRANSCRIPTIONS
 
 
 def main() -> None:
     db = json.loads(PROCESSED_DB.read_text(encoding="utf-8")) if PROCESSED_DB.exists() else {}
 
     for rel_path, *_ in MOCK_FILES:
-        media_path = ROOT / rel_path
+        media_path = DATA_ROOT / rel_path
         base = Path(rel_path)
         is_video = base.parts[0] == "Videos"
         src_base = VIDEOS if is_video else AUDIO

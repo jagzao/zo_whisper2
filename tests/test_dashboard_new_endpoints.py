@@ -6,9 +6,11 @@ tests/security/test_dashboard_endpoints.py.
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import urllib.parse
+from datetime import datetime
 
 import pytest
 
@@ -16,6 +18,16 @@ from transcript_pipeline.dashboard import app as dashboard_app
 from transcript_pipeline.security import MediaRoot, SafePathResolver
 
 AUTH_HEADERS = {"X-Local-Dashboard-Token": "test-dashboard-token"}
+
+
+@pytest.fixture(autouse=True)
+def reset_pipeline_run_state():
+    dashboard_app._run_state.update(
+        running=False, mode=None, started_at=None, finished_at=None, error=None,
+        log_tail="", stage=None, stages=dashboard_app._fresh_stages(),
+    )
+    yield
+    dashboard_app._run_state.update(running=False, mode=None)
 
 
 @pytest.fixture
@@ -28,6 +40,7 @@ def env(tmp_path, monkeypatch):
         d.mkdir(parents=True)
 
     monkeypatch.setattr(dashboard_app, "ROOT", tmp_path)
+    monkeypatch.setattr(dashboard_app, "LOG_DIR", tmp_path)
     monkeypatch.setattr(dashboard_app, "AUDIO_BASE", audio)
     monkeypatch.setattr(dashboard_app, "VIDEOS_BASE", videos)
     monkeypatch.setattr(dashboard_app, "VIDEO_COMPRESS", video_compress)
@@ -102,6 +115,19 @@ def test_metrics_computed_from_processed_db_and_metadata(client, env):
     assert data["avg_processing_time_seconds"] == pytest.approx(8.0)
 
 
+def test_file_status_matches_windows_database_path_on_posix_runtime(env):
+    video = env["videos"] / "shared.mp4"
+    video.write_bytes(b"same shared media")
+    dashboard_app.PROCESSED_DB.write_text(json.dumps({
+        "legacy-path": {
+            "path": r"C:\Dev\Zo\whisper\Videos\shared.mp4",
+            "status": "completed_routed",
+        }
+    }), encoding="utf-8")
+
+    assert dashboard_app._file_status(video) == "completed_routed"
+
+
 # ── /api/documentation ───────────────────────────────────────────────────
 
 def test_documentation_endpoint_returns_manual_and_manifest(client, env):
@@ -126,7 +152,7 @@ def test_documentation_endpoint_returns_manual_and_manifest(client, env):
     resp = client.get(f"/api/documentation{q(video_id)}")
     data = resp.get_json()
 
-    assert resp.status_code == 200
+    assert resp.status_code == 200, resp.get_json()
     assert data["ok"] is True
     assert "Click New Project" in data["manual_markdown"]
     assert data["manifest"]["procedures"][0]["id"] == "step-0001"
@@ -366,6 +392,22 @@ def test_files_response_includes_documentation_flags(client, env):
     assert files[0]["documentation"]["has_ai_package"] is False
 
 
+def test_files_response_date_uses_media_mtime_as_timezone_aware_iso(client, env):
+    video = env["videos"] / "synthetic-date.mp4"
+    video.write_bytes(b"synthetic")
+    expected_mtime = 1_760_471_280.5
+    os.utime(video, (expected_mtime, expected_mtime))
+
+    files = client.get("/api/files").get_json()["files"]
+    media = next(item for item in files if item["name"] == video.name)
+    parsed = datetime.fromisoformat(media["date"])
+
+    assert parsed.tzinfo is not None
+    assert abs(parsed.timestamp() - video.stat().st_mtime) <= 1.0
+    assert media["date_epoch"] == video.stat().st_mtime
+    assert str(env["root"]) not in json.dumps(media)
+
+
 # ── stage inference (pure function, no Flask needed) ────────────────────
 
 def test_infer_stage_tracks_furthest_stage_reached():
@@ -422,7 +464,7 @@ def test_run_full_triggers_pipeline_and_stage_updates_visibly(client, env, monke
 
     def fake_popen(cmd, **kwargs):
         calls.append(cmd)
-        if "compress_and_move.py" in cmd[1]:
+        if "transcript_pipeline.media.compressor" in cmd:
             return _FakeCompletedProcess(["STEP 1 stub: nothing to compress\n"])
         return _FakeCompletedProcess([
             "[SCAN] Folder detected: audio/demo\n",
@@ -464,7 +506,7 @@ def test_run_rejects_second_run_while_one_in_progress(client, env, monkeypatch):
     monkeypatch.setattr(dashboard_app.subprocess, "Popen", slow_popen)
 
     first = client.post("/api/run/transcribe", headers=AUTH_HEADERS)
-    assert first.status_code == 200
+    assert first.status_code == 200, first.get_json()
 
     second = client.post("/api/run/transcribe", headers=AUTH_HEADERS)
     assert second.status_code == 409

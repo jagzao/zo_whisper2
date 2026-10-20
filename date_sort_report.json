@@ -1,0 +1,39 @@
+{
+  "checks": [
+    {
+      "name": "api_date_newest_first",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "api_date_ascending",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "default_newest_order",
+      "status": "PASS",
+      "detail": "['date_fixture_efd5b6f4_6.mp4', 'date_fixture_efd5b6f4_5.mp4', 'date_fixture_efd5b6f4_4.mp4', 'date_fixture_efd5b6f4_3.mp4', 'date_fixture_efd5b6f4_2.mp4', 'date_fixture_efd5b6f4_1.mp4', 'date_fixture_efd5b6f4_0.mp4']"
+    },
+    {
+      "name": "date_click_queries_backend",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ascending_first_page",
+      "status": "PASS",
+      "detail": "['date_fixture_efd5b6f4_0.mp4', 'date_fixture_efd5b6f4_1.mp4', 'date_fixture_efd5b6f4_2.mp4', 'date_fixture_efd5b6f4_3.mp4', 'date_fixture_efd5b6f4_4.mp4']"
+    },
+    {
+      "name": "ascending_second_page",
+      "status": "PASS",
+      "detail": "['date_fixture_efd5b6f4_5.mp4', 'date_fixture_efd5b6f4_6.mp4']"
+    },
+    {
+      "name": "descending_after_filter_and_page",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

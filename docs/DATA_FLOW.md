@@ -72,3 +72,7 @@ outputs land under `CarpetaTranscripciones/<project>/` or the project's
 `output_path`: `transcript.md`/`.txt`, `summary.md`, `context.md`,
 `*_metadata.json`, `*_segments.json`, `*_timestamps.txt/.srt`, and
 (for tutorial videos) extracted frame images + `frame_mapping.json`.
+
+## Docker runtime paths
+
+Compose maps `${ZMI_DATA_PATH:-./zmi-data}` to `/data`; configuration, project overrides, processed state, media, transcripts, documentation and logs are all rooted there. `/cache` is a named volume for downloaded Whisper weights and related model cache. The application image contains code/dependencies only and receives no source checkout, client media or secrets. Docker E2E mounts only its isolated synthetic data root.

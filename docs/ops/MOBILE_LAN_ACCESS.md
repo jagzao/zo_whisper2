@@ -1,0 +1,187 @@
+# Mobile / LAN access (W25)
+
+Reach the Whisper dashboard from a phone on the same Wi-Fi over HTTPS, with
+camera capture and fragment upload working from the LAN origin.
+
+The default remains loopback-only. Nothing here changes that until
+`ZMI_LAN_ACCESS=true` is set explicitly.
+
+## Prerequisites
+
+- The Docker dashboard and Caddy LAN proxy run on the host machine.
+- The phone is on the same Wi-Fi/LAN as that machine.
+- The `cryptography` package is installed (`pip install cryptography`) for
+  certificate generation.
+
+## 1. Enable LAN mode
+
+Edit `scan_config.env`:
+
+```
+ZMI_LAN_ACCESS=true
+DASHBOARD_HOST=0.0.0.0
+ZMI_LAN_HOSTS=whisper.local
+```
+
+- `ZMI_LAN_ACCESS=true` is the explicit opt-in. Without it,
+  `DASHBOARD_HOST=0.0.0.0` is rejected at startup.
+- `DASHBOARD_HOST=0.0.0.0` binds every interface. A specific LAN IP is not an
+  accepted bind value.
+- `ZMI_LAN_HOSTS` lists extra hostnames/IPs to accept in the Host/Origin check
+  and to write into the certificate SAN. Detected private LAN IPs are added
+  automatically.
+
+## 2. Generate the local HTTPS certificate
+
+```
+python scripts/setup_lan_certificate.py
+```
+
+This writes three files under `<DATA_ROOT>/lan-access/` (`lan-access/` is
+gitignored — never commit the key):
+
+| File | Purpose |
+|---|---|
+| `dashboard-lan-ca.pem` | Local root CA. Install this on the phone. |
+| `dashboard-lan-cert.pem` | Server certificate (SAN = hosts + LAN IPs). |
+| `dashboard-lan-key.pem` | Server private key. Keep secret. |
+
+The command prints the paths, the server certificate SHA-256 fingerprint, the
+CA fingerprint, the SAN list, and the phone URLs.
+Generate or refresh the certificate before starting the LAN profile. The app
+builds its Host allowlist from the configured hosts and certificate SAN at
+startup; after a LAN IP or certificate change, recreate the `zmi` container.
+
+## 3. Configure the LAN proxy certificate
+
+Caddy reads `<DATA_ROOT>/lan-access/dashboard-lan-cert.pem` and
+`dashboard-lan-key.pem` directly from the read-only certificate mount. Keep the
+private key in that ignored runtime directory; do not copy it into the image or
+Git. The dashboard container continues to serve HTTP internally on port 5000.
+
+## 4. Start and open on the phone
+
+Start the HTTPS dashboard as usual. The local Docker dashboard stays loopback-only
+unless LAN setup is explicitly enabled. To publish only the bootstrap flow on
+HTTP, add these values to Compose's `.env` file beside `compose.yml`:
+
+```
+ZMI_BIND_ADDRESS=127.0.0.1
+ZMI_PORT=5002
+ZMI_LAN_BIND_ADDRESS=0.0.0.0
+ZMI_LAN_HTTP_PORT=5000
+ZMI_HTTPS_PORT=5001
+ZMI_LAN_ACCESS=true
+ZMI_TRUST_PROXY=true
+```
+
+The app stays loopback-only on port 5002. Caddy is the sole desktop/LAN entry
+point: it routes HTTP port 5000 and HTTPS port 5001 to the same app and worker.
+When using defaults without these `.env` overrides, Caddy uses HTTP 5003 to
+avoid colliding with the app's loopback port 5000.
+The HTTP listener serves `/setup` and the public CA download; other LAN HTTP
+paths redirect to HTTPS. Start both services with:
+
+```
+docker compose --profile lan up -d --build zmi caddy
+```
+
+The app still checks the private client address and request host against
+configured/detected LAN addresses and the HTTPS leaf SAN. The default Compose
+profile remains loopback-only.
+
+Open `http://<LAN-IP>:5000/setup` on the phone. It downloads only the public
+`Whisper-LAN-Local-CA.cer`; Android asks the user to confirm installation. Then
+tap **Open Whisper securely** to continue at `https://<LAN-IP>:5001/`.
+
+Open the phone URL printed by step 2, for example:
+
+```
+https://192.168.1.50:5001/
+```
+
+The dashboard must be served over HTTPS for the browser camera permission.
+
+## 5. Trust the certificate on the phone
+
+The certificate is locally generated, so the phone must trust the local CA
+first. HTTPS/camera will not work otherwise.
+
+- **Android**: Settings -> Security -> Encryption & credentials -> Install a
+  certificate -> CA certificate -> pick `dashboard-lan-ca.pem`. The file is a
+  root CA; name it "Whisper LAN".
+- **iOS**: transfer `dashboard-lan-ca.pem` to the phone, install the profile
+  (Settings -> General -> VPN & Device Management), then enable it under
+  Settings -> General -> About -> Certificate Trust Settings.
+
+Verify the installed certificate fingerprint matches `ca-fingerprint-sha256`
+from step 2 before trusting it.
+
+### Galaxy / current One UI
+
+The setup page transfers only the public root certificate,
+`Whisper-LAN-Local-CA.cer` (DER). The private key `dashboard-lan-key.pem` is
+never exported. On the Galaxy, open **Settings -> Security and privacy -> More
+security settings -> Credential storage -> Install from device storage -> CA
+certificate**, authenticate, select the `.cer`, and confirm the Android
+security prompt. Menu labels vary by One UI version. Then tap **Open Whisper
+securely** while the phone is on the same Wi-Fi.
+
+### Windows trust and Norton HTTPS scanning
+
+Install the public CA for the signed-in Windows user in
+**Trusted Root Certification Authorities** (`Cert:\CurrentUser\Root`). Do not
+install or distribute the server private key. The server leaf must chain to
+`Whisper LAN Local CA` and include `DNS:localhost`, `IP:127.0.0.1`, and the
+current LAN IP as SAN entries.
+
+Norton Web/Mail Shield HTTPS scanning can replace the server's on-wire leaf
+with one issued by `Norton Web/Mail Shield Root` (OU: `generated by Norton
+Antivirus for SSL/TLS scanning`). If strict verification against the Whisper
+CA fails while Windows-verified HTTPS succeeds, inspect the peer issuer. For
+this local service only, add the exact origins
+`https://localhost:5001/`, `https://127.0.0.1:5001/`, and
+`https://192.168.50.20:5001/` to **Norton -> Security -> Advanced Security ->
+Computer -> Safe Web -> Exclusions** and choose the no-scan exclusion if shown.
+Keep Web Protection enabled. Remove any origin whose local IP changes. Norton
+documents URL exclusions in [its Safe Web guidance](https://support.norton.com/sp/en/in/home/current/solutions/v20250131135259243).
+
+## Security model
+
+- Loopback remains the default. LAN mode is explicit opt-in.
+- The Host header must match an allowed hostname (loopback, configured hosts,
+  detected LAN IPs). Other hosts get `403`.
+- Mutating requests also require a same-origin `Origin` and the per-process
+  `X-Local-Dashboard-Token`.
+- The private key is gitignored and never printed.
+- Detected URLs are built from real LAN addresses; no application URL is
+  hardcoded to loopback.
+
+## Validation
+
+```
+python scripts/gate_runner.py targeted tests/test_lan_access.py
+python scripts/gate_runner.py targeted tests/test_dashboard_lan_access.py
+python scripts/gate_runner.py targeted tests/integration/test_lan_https_server.py
+```
+
+Playwright HTTPS journey (report: `mobile_lan_access_report.json`):
+
+```
+set ZMI_BASE_URL=https://<lan-ip>:<port>
+set ZMI_EXPECT_LAN=1
+python tests/e2e/mobile_lan_access.py
+```
+
+## Troubleshooting
+
+- **Camera blocked**: the page must be loaded over `https://`, not `http://`.
+- **Browser certificate warning**: install the local CA on the device (step 5).
+- **`403` from the phone**: add the phone's URL host to `ZMI_LAN_HOSTS`.
+- **`DASHBOARD_HOST must be a loopback address`**: set `ZMI_LAN_ACCESS=true`.
+- **Local CA trust cannot be verified on the host**: some security suites
+  (for example Norton Web/Mail Shield) intercept local TLS and replace the
+  served certificate. Trust cannot be evaluated while that interception is
+  active; disable it or validate the certificate on the phone. The offline
+  chain test in `tests/test_lan_access.py` still proves the CA -> server cert
+  relationship.

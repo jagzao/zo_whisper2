@@ -7,15 +7,18 @@ Generates a JSON report with passed/failed checks.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
+from contextlib import ExitStack
 from pathlib import Path
 
 import requests
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-DASHBOARD_URL = "http://127.0.0.1:5000"
+DASHBOARD_URL = os.environ.get("ZMI_BASE_URL", "http://127.0.0.1:5000")
 TIMEOUT_MS = 30000
 SCREENSHOTS: list[str] = []
 REPORT: list[dict] = []
@@ -43,14 +46,34 @@ def fetch_files() -> list[dict]:
 
 
 def file_has_frames(media_id: str) -> bool:
-    """True when the server can serve keyframes for this media id (i.e. its
-    frame_mapping.json exists) â€” the prerequisite for the frames tab and for
-    the Generate Documentation endpoint."""
+    """True when the server reports a non-empty frame set for this media id
+    (i.e. its frame_mapping.json exists) â€” the prerequisite for the frames
+    tab and for the Generate Documentation endpoint. A valid media file
+    without frames now returns a successful *empty* payload, so the body
+    must be inspected, not just the status code."""
     try:
         r = requests.get(f"{DASHBOARD_URL}/api/frames?id={media_id}", timeout=10)
-        return r.status_code == 200
+        if r.status_code != 200:
+            return False
+        payload = r.json()
+        return bool(payload.get("ok")) and payload.get("count", 0) > 0
     except Exception:
         return False
+
+
+def wait_for_folder_cards(page) -> bool:
+    page.wait_for_function(
+        "document.querySelectorAll('#folders .folder').length === 4",
+        timeout=TIMEOUT_MS,
+    )
+    return page.locator("#folders .folder").count() == 4
+
+
+def _close_safely(handle) -> None:
+    try:
+        handle.close()
+    except Exception:
+        pass
 
 
 def main() -> int:
@@ -80,9 +103,14 @@ def main() -> int:
     print(f"Test file: {target['name']}")
     all_ok = True
 
-    with sync_playwright() as p:
+    with sync_playwright() as p, ExitStack() as cleanup:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1600, "height": 1000})
+        cleanup.callback(_close_safely, browser)
+        context = browser.new_context(viewport={"width": 1600, "height": 1000})
+        cleanup.callback(_close_safely, context)
+        page = context.new_page()
+        cleanup.callback(_close_safely, page)
+        browser_errors: list[str] = []
 
         # Registered globally, from the very start: an unhandled native
         # confirm()/alert() dialog blocks the renderer indefinitely (no
@@ -96,18 +124,40 @@ def main() -> int:
             dialog.accept()
 
         page.on("dialog", _auto_accept_dialog)
-        page.on("console", lambda msg: print(f"[CONSOLE {msg.type}] {msg.text}") if msg.type in ("error", "warning") else None)
-        page.on("pageerror", lambda exc: print(f"[PAGEERROR] {exc}"))
 
-        page.goto(DASHBOARD_URL, timeout=TIMEOUT_MS)
-        page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
+        def _capture_console(msg):
+            if msg.type == "error":
+                browser_errors.append(f"console: {msg.text}")
+            if msg.type in ("error", "warning"):
+                print(f"[CONSOLE {msg.type}] {msg.text}")
+
+        def _capture_page_error(exc):
+            browser_errors.append(f"pageerror: {exc}")
+            print(f"[PAGEERROR] {exc}")
+
+        page.on("console", _capture_console)
+        page.on("pageerror", _capture_page_error)
+
+        def _capture_bad_response(response):
+            if response.status >= 400:
+                detail = f"response: {response.status} {response.url}"
+                browser_errors.append(detail)
+                print(f"[HTTP {response.status}] {response.url}")
+
+        page.on("response", _capture_bad_response)
+
+        page.goto(DASHBOARD_URL, wait_until="commit", timeout=TIMEOUT_MS)
+        page.wait_for_function(
+            "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
+            timeout=TIMEOUT_MS,
+        )
 
         # Home
         screenshot(page, "home")
         rows = page.locator("#filesList table tbody tr").count()
         all_ok &= check("files_table", rows > 0 and rows <= 5, f"{rows} rows (page 1)")
         all_ok &= check("dropzone_visible", page.locator("#dropzone").is_visible())
-        all_ok &= check("folders_visible", page.locator("#folders .folder").count() == 4)
+        all_ok &= check("folders_visible", wait_for_folder_cards(page))
         all_ok &= check(
             "pagination_visible",
             page.locator("#filesPaginationTop button").count() > 0
@@ -159,6 +209,9 @@ def main() -> int:
             )
 
         # Preview modal
+        if project_name:
+            page.locator("#projectFilter").select_option(project_name)
+            page.wait_for_timeout(400)
         row = page.locator(f"#filesList table tbody tr:has-text('{target['name']}')")
         ver_button = row.locator("button[aria-label='View']")
         edit_button = row.locator("button[aria-label='Edit']")
@@ -327,6 +380,8 @@ def main() -> int:
         screenshot(page, "edit")
         page.locator("#editModal .close-x").click()
         page.wait_for_selector("#editModal.hidden", state="hidden", timeout=TIMEOUT_MS)
+        if project_name:
+            page.locator("#projectFilter").select_option("")
 
         # F5 â€” Edit File: manual project override (auto â†’ manual â†’ persisted
         # â†’ auto). Uses a disposable file named with the first project's
@@ -411,9 +466,20 @@ def main() -> int:
                     f"before={state_before} after={state_after}",
                 )
 
-                # Reload â†’ the manual assignment must survive (disk-persisted).
-                page.reload()
-                page.wait_for_selector("#filesList", timeout=TIMEOUT_MS)
+                # Reuse the active page so old polling work is cancelled by
+                # navigation without racing fixture teardown against a new target.
+                page.goto(DASHBOARD_URL, wait_until="commit", timeout=TIMEOUT_MS)
+                try:
+                    page.wait_for_function(
+                        "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
+                        timeout=TIMEOUT_MS,
+                    )
+                except PlaywrightTimeoutError:
+                    page.reload(wait_until="commit", timeout=TIMEOUT_MS)
+                    page.wait_for_function(
+                        "window._allFiles?.length > 0 && document.querySelectorAll('#filesList table tbody tr').length > 0",
+                        timeout=TIMEOUT_MS,
+                    )
                 page.locator("#fileFilter").fill(stem)
                 page.wait_for_timeout(400)
                 row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
@@ -613,12 +679,21 @@ def main() -> int:
                 check=True, capture_output=True, timeout=30,
             )
             page.set_input_files("#fileInput", str(upload_path))
+            page.locator("#startUploadBatch").click()
             try:
                 page.wait_for_function(
-                    "document.getElementById('uploadQueue').innerText.trim() !== ''", timeout=TIMEOUT_MS
+                    """() => {
+                        const text = document.getElementById('uploadQueue').innerText;
+                        return text.includes('OK e2e_smoke_upload.mp3') || text.includes('Error e2e_smoke_upload.mp3');
+                    }""",
+                    timeout=TIMEOUT_MS,
                 )
                 queue_text = page.locator("#uploadQueue").inner_text(timeout=5000)
-                all_ok &= check("upload_appears_as_job", "e2e_smoke_upload" in queue_text, queue_text[:200])
+                all_ok &= check(
+                    "upload_appears_as_job",
+                    "OK e2e_smoke_upload.mp3" in queue_text,
+                    queue_text[:200],
+                )
             except Exception as e:
                 all_ok &= check("upload_appears_as_job", False, f"did not resolve: {e}")
         finally:
@@ -800,8 +875,11 @@ def main() -> int:
         page.locator("#fileFilter").fill("")
         page.wait_for_timeout(300)
 
-        browser.close()
-
+        all_ok &= check(
+            "critical_path_no_browser_errors",
+            not browser_errors,
+            "; ".join(browser_errors)[:1000],
+        )
     # Report
     Path("dashboard_report.json").write_text(
         json.dumps({"checks": REPORT, "screenshots": SCREENSHOTS}, indent=2),
@@ -814,4 +892,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -17,13 +17,15 @@ from transcript_pipeline.pipeline import master as master_module
 
 
 class _FakeTracker:
-    def __init__(self):
+    def __init__(self, events=None):
         self.marked: dict[str, str] = {}
+        self.events = events if events is not None else []
 
     def is_file_processed(self, path: Path) -> bool:
         return False
 
     def mark_as_processed(self, path: Path, status: str) -> None:
+        self.events.append(("tracker", status))
         self.marked[str(path)] = status
 
 
@@ -31,7 +33,8 @@ class _FakeProcessor:
     def __init__(self, audio_files: list[Path], frame_info: dict | None = None):
         self._audio_files = audio_files
         self._frame_info = frame_info
-        self.tracker = _FakeTracker()
+        self.events = []
+        self.tracker = _FakeTracker(self.events)
         self.doc_bundle_calls: list[tuple] = []
 
     def find_audio_files(self) -> list[Path]:
@@ -41,12 +44,13 @@ class _FakeProcessor:
         return {"text": "fake transcript", "frame_info": self._frame_info, "project": "fake-project"}
 
     def save_transcription(self, path: Path, result: dict) -> None:
-        pass
+        self.events.append("save")
 
     def _integrate_transcription_with_frames(self, result: dict, frame_info) -> None:
         pass
 
     def _generate_documentation_bundle(self, audio_path: Path, frame_info, project_config=None) -> None:
+        self.events.append("docs")
         self.doc_bundle_calls.append((audio_path, frame_info, project_config))
 
 
@@ -75,13 +79,13 @@ def _run_with_fake_processor(monkeypatch, bare_processor, audio_files, frame_inf
     fake = _FakeProcessor(audio_files, frame_info=frame_info)
     monkeypatch.setattr(master_module, "SimpleScanProcessor", lambda: fake)
     success = bare_processor.run_transcription_and_routing()
-    return fake.tracker.marked, success, fake.doc_bundle_calls
+    return fake.tracker.marked, success, fake.doc_bundle_calls, fake.events
 
 
 def test_handler_success_marks_completed_routed(monkeypatch, bare_processor, tmp_path):
     audio = tmp_path / "tp_meeting.mp3"
     bare_processor._handlers["TestProj"] = _FakeHandler(HandlerResult.completed())
-    marked, success, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
+    marked, success, _, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
     assert marked[str(audio)] == "completed_routed"
     assert success is True
 
@@ -89,7 +93,7 @@ def test_handler_success_marks_completed_routed(monkeypatch, bare_processor, tmp
 def test_handler_permanent_failure_marks_failed_routed_not_completed(monkeypatch, bare_processor, tmp_path):
     audio = tmp_path / "tp_meeting.mp3"
     bare_processor._handlers["TestProj"] = _FakeHandler(HandlerResult.failed("bad data"))
-    marked, success, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
+    marked, success, _, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
     # This is the anchor regression: a failed handler must never be marked
     # "completed_routed" (that was the pre-fix bug in master.py:133-145).
     assert marked[str(audio)] == "failed_routed"
@@ -102,7 +106,7 @@ def test_handler_retryable_failure_leaves_file_unmarked(monkeypatch, bare_proces
     bare_processor._handlers["TestProj"] = _FakeHandler(
         HandlerResult.failed("LLM endpoint timed out", retryable=True)
     )
-    marked, success, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
+    marked, success, _, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
     # Deliberately not marked at all, so the next RUN_MAX_QUALITY.bat retries it.
     assert str(audio) not in marked
     assert success is False
@@ -115,7 +119,7 @@ def test_handler_exception_does_not_crash_the_batch(monkeypatch, bare_processor,
 
     audio = tmp_path / "tp_meeting.mp3"
     bare_processor._handlers["TestProj"] = _RaisingHandler()
-    marked, success, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
+    marked, success, _, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
     # The outer try/except in run_transcription_and_routing catches it; the
     # file is left unmarked (not silently "completed") and the batch reports failure.
     assert str(audio) not in marked
@@ -124,7 +128,7 @@ def test_handler_exception_does_not_crash_the_batch(monkeypatch, bare_processor,
 
 def test_no_matching_project_marks_completed(monkeypatch, bare_processor, tmp_path):
     audio = tmp_path / "unmatched_file.mp3"
-    marked, success, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
+    marked, success, _, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
     assert marked[str(audio)] == "completed"
     assert success is True
 
@@ -132,7 +136,7 @@ def test_no_matching_project_marks_completed(monkeypatch, bare_processor, tmp_pa
 def test_matched_project_without_handler_marks_completed(monkeypatch, bare_processor, tmp_path):
     # matches "TestProj" via prefix, but no handler registered for it
     audio = tmp_path / "tp_no_handler.mp3"
-    marked, success, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
+    marked, success, _, _ = _run_with_fake_processor(monkeypatch, bare_processor, [audio])
     assert marked[str(audio)] == "completed"
     assert success is True
 
@@ -147,7 +151,7 @@ def test_tutorial_frame_info_triggers_documentation_bundle(monkeypatch, bare_pro
     called it correctly, which is why no prior test caught the drift."""
     audio = tmp_path / "tutorial_demo.mp4"
     frame_info = {"frames_dir": str(tmp_path / "frames")}
-    marked, success, doc_bundle_calls = _run_with_fake_processor(
+    marked, success, doc_bundle_calls, events = _run_with_fake_processor(
         monkeypatch, bare_processor, [audio], frame_info=frame_info
     )
     assert len(doc_bundle_calls) == 1
@@ -155,11 +159,12 @@ def test_tutorial_frame_info_triggers_documentation_bundle(monkeypatch, bare_pro
     assert called_path == audio
     assert called_frame_info == frame_info
     assert called_project == "fake-project"
+    assert events.index("save") < events.index("docs") < events.index(("tracker", "completed"))
 
 
 def test_no_frame_info_skips_documentation_bundle(monkeypatch, bare_processor, tmp_path):
     audio = tmp_path / "plain_meeting.mp3"
-    _marked, _success, doc_bundle_calls = _run_with_fake_processor(
+    _marked, _success, doc_bundle_calls, _events = _run_with_fake_processor(
         monkeypatch, bare_processor, [audio], frame_info=None
     )
     assert doc_bundle_calls == []

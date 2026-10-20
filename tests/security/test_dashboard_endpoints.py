@@ -13,6 +13,11 @@ _REAL_IS_VALID_MEDIA_FILE = dashboard_app._is_valid_media_file
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
+    from transcript_pipeline import pipeline_metrics
+    from transcript_pipeline import upload_idempotency
+
+    monkeypatch.setattr(pipeline_metrics, "_PATH", tmp_path / ".whisper" / "pipeline_metrics.json")
+    monkeypatch.setattr(upload_idempotency, "_PATH", tmp_path / ".whisper" / "upload_ids.json")
     audio = tmp_path / "audio"
     videos = tmp_path / "Videos"
     video_compress = tmp_path / "Video_compress"
@@ -239,6 +244,24 @@ def test_frames_missing_id_rejected(client):
     assert resp.status_code in (400, 404)
 
 
+def test_frames_nonexistent_media_rejected(client, env):
+    resp = client.get("/api/frames" + q(mid(MediaRoot.VIDEOS, "missing.mp4")))
+    assert resp.status_code == 404
+
+
+def test_frames_valid_media_without_frames_returns_success_empty_payload(client, env):
+    # Regression: this used to 404, which the browser logged as a console
+    # error on every frames-tab open for valid media without keyframes.
+    video = env["videos"] / "clip.mp4"
+    video.write_bytes(b"fake video")
+    resp = client.get("/api/frames" + q(mid(MediaRoot.VIDEOS, "clip.mp4")))
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert body["frames"] == []
+    assert body["count"] == 0
+
+
 def test_frame_urls_returned_by_api_frames_are_actually_servable(client, env):
     # Regression: _resolve_frames() used to build frame["url"] relative to
     # ROOT instead of TRANSCRIPTIONS_BASE, so every generated URL 404'd.
@@ -281,6 +304,13 @@ def test_folders_response_has_no_absolute_paths(client, env):
     assert str(env["root"]) not in body
 
 
+def test_dashboard_exposes_current_build_and_disables_html_caching(client):
+    response = client.get("/")
+    assert response.headers["X-Whisper-Build"] == dashboard_app.BUILD_REVISION
+    assert "whisper-build" in response.get_data(as_text=True)
+    assert "no-store" in response.headers["Cache-Control"]
+
+
 # ── POST /api/upload ─────────────────────────────────────────────────────
 
 def test_upload_rejects_invalid_extension(client):
@@ -300,6 +330,22 @@ def test_upload_response_has_no_absolute_path(client, env):
     data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "clip2.mp3")}
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert "path" not in resp.get_json()
+
+
+def test_upload_preserves_selected_project_id(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "_load_projects", lambda: [{"name": "Zo Interviews", "match": {"prefix": ["zi_"]}}])
+    data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "meeting.mp3"), "project_id": "Zo Interviews"}
+    resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert resp.status_code == 200
+    assert resp.get_json()["project_id"] == "Zo Interviews"
+    assert resp.get_json()["name"] == "zi_meeting.mp3"
+
+
+def test_upload_rejects_unknown_selected_project(client, monkeypatch):
+    monkeypatch.setattr(dashboard_app, "_load_projects", lambda: [{"name": "Known project"}])
+    data = {"file": (__import__("io").BytesIO(b"fake mp3 bytes"), "meeting.mp3"), "project_id": "Missing project"}
+    response = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
+    assert response.status_code == 400
 
 
 # ── POST /api/projects (create/update reject malformed payloads) ────────
@@ -441,3 +487,90 @@ def test_upload_accepts_file_ffprobe_confirms_as_media(client, env, monkeypatch)
     resp = client.post("/api/upload", data=data, content_type="multipart/form-data", headers=AUTH_HEADERS)
     assert resp.status_code == 200
     assert (env["video_compress"] / "real.mp3").exists()
+
+
+def test_v2_regenerate_uses_saved_evidence_without_media_processing(client, env, monkeypatch):
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    frames = env["transcriptions"] / "sample_Frames" / "sample"
+    frames.mkdir(parents=True)
+    (frames / "frame_mapping.json").write_text('{"frames": []}', encoding="utf-8")
+    calls = []
+    monkeypatch.setattr(dashboard_app, "_effective_project", lambda *args: ({"name": "Demo"}, "test"))
+    from transcript_pipeline.documentation import regenerate_v2
+    monkeypatch.setattr(regenerate_v2, "regenerate_documentation_v2", lambda path, **kwargs: calls.append((path, kwargs)) or {"status": "EVIDENCE_READY"})
+    response = client.post("/api/documentation/v2/regenerate" + q(mid(MediaRoot.VIDEOS, "sample.mp4")), headers=AUTH_HEADERS)
+    assert response.status_code == 200
+    assert response.get_json()["pipeline"] == "documentation-v2"
+    assert calls == [(frames, {"project_config": {"name": "Demo"}})]
+
+
+def test_v2_regenerate_requires_existing_evidence(client, env):
+    (env["videos"] / "sample.mp4").write_bytes(b"synthetic video")
+    response = client.post("/api/documentation/v2/regenerate" + q(mid(MediaRoot.VIDEOS, "sample.mp4")), headers=AUTH_HEADERS)
+    assert response.status_code == 409
+
+
+def test_documentation_versions_are_selectable_from_video_detail_api(client, env):
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    frames = env["transcriptions"] / "sample_Frames" / "sample"
+    version = frames / "documentation_versions" / "000001"
+    (version / "manual").mkdir(parents=True)
+    (version / "manual" / "MANUAL.md").write_text("Synthetic version one", encoding="utf-8")
+    (version / "version.json").write_text(
+        '{"documentation_version": 1, "pipeline_version": "documentation-v2", "status": "COMPLETED"}',
+        encoding="utf-8",
+    )
+    listing = client.get("/api/documentation/versions" + q(mid(MediaRoot.VIDEOS, "sample.mp4")))
+    selected = client.get("/api/documentation/versions" + q(mid(MediaRoot.VIDEOS, "sample.mp4")) + "&version=1")
+    assert listing.get_json()["versions"][0]["documentation_version"] == 1
+    assert selected.get_json()["manual"] == "Synthetic version one"
+
+
+def test_video_list_exposes_user_state_and_stage_metrics(client, env):
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    from transcript_pipeline.pipeline_metrics import record_stage
+    record_stage(None, video.name, "upload", 1.25)
+    response = client.get("/api/files")
+    row = next(item for item in response.get_json()["files"] if item["name"] == "sample.mp4")
+    assert row["user_state"] == "READY"
+    assert row["timings"]["stages"]["upload"]["duration_seconds"] == 1.25
+
+
+def test_reprocess_video_queues_one_forced_media_run(client, env, monkeypatch):
+    import threading
+    from transcript_pipeline.transcription import processor
+
+    video = env["videos"] / "sample.mp4"
+    video.write_bytes(b"synthetic video")
+    finished = threading.Event()
+    calls = []
+
+    class FakeProcessor:
+        def process_file(self, target, *, force=False):
+            calls.append((target, force))
+            finished.set()
+            return True
+
+    monkeypatch.setattr(processor, "SimpleScanProcessor", FakeProcessor, raising=False)
+    response = client.post("/api/video/reprocess" + q(mid(MediaRoot.VIDEOS, "sample.mp4")), headers=AUTH_HEADERS)
+    assert response.status_code == 202
+    assert response.get_json()["state"] == "PROCESSING_MEDIA"
+    assert finished.wait(3)
+    assert calls == [(video, True)]
+
+
+def test_repeated_upload_id_returns_existing_file_without_duplicate(client, env):
+    first = client.post(
+        "/api/upload", data={"file": (__import__("io").BytesIO(b"first bytes"), "same.mp3"), "upload_id": "stable-test-upload-001"},
+        content_type="multipart/form-data", headers=AUTH_HEADERS,
+    ).get_json()
+    retry = client.post(
+        "/api/upload", data={"file": (__import__("io").BytesIO(b"different payload"), "same.mp3"), "upload_id": "stable-test-upload-001"},
+        content_type="multipart/form-data", headers=AUTH_HEADERS,
+    ).get_json()
+    assert first["name"] == retry["name"]
+    assert retry["duplicate"] is True
+    assert len(list(env["video_compress"].glob("same*.mp3"))) == 1
