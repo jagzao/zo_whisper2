@@ -65,6 +65,7 @@ def test_advertised_lan_address_prefers_host_certificate_san(monkeypatch, tmp_pa
 
 def test_desktop_dashboard_has_lan_qr_and_dismissal(monkeypatch):
     _enable_lan(monkeypatch)
+    monkeypatch.setenv("ZMI_LAN_HTTP_PORT", "5003")
     client = dashboard.app.test_client()
 
     response = client.get("/", headers={"Host": "localhost:5000"})
