@@ -112,7 +112,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Physical phone UAT | OWNER_PENDING | Juan's device validation is final acceptance; automated tests do not substitute. | Juan validates capture/audio/crop/playback after deployment. | Juan |
 | Release candidate integrity | 🟩 COMPLETE | RC `32be478a8a7e9ef837b4d12e9435ed0480acbcf4` matched feature branch and `origin/feat/zmi-documentation-synthesis-v2`; clean three-way merge parent preserved. | None. | Agent |
 | Merge to production branch (`main`) | 🟩 COMPLETE | Merge commit `a497f4f19ca401902afa653c37a1c214fc9143d4`; parents are pre-merge production `f14ed96b76d2ea48b137eb1910ccc68f7d347ff5` and validated RC. Post-merge unit suite passed 1232, 8 skipped; production branch and subsequent SDD updates are pushed. | None. | Agent |
-| Release tag | 🟩 COMPLETE | Annotated `whisper-2026-10-20` pushed to origin; points to `77108a206e9fa39d13e40238c8d2323c92958c53`. | None. | Agent |
+| Release tag | 🟩 COMPLETE | Annotated original tag `whisper-2026-10-20` preserved at `77108a2`; patch tag `whisper-2026-10-20.2` pushed at final production SHA `f0800e22ccf9e4412087f0e0034c282dc4d79296`. | None. | Agent |
 | Production deploy | 🟩 COMPLETE | Final release `f0800e22ccf9e4412087f0e0034c282dc4d79296`; main/origin/main match at verification. See served-revision smoke evidence above. | None. | Agent |
 | Production smoke | 🟩 COMPLETE | Served release and functional smoke passed; exact results recorded above. | None. | Agent |
 | Galaxy UAT | OWNER_PENDING | Juan's physical phone validation remains final acceptance. | Juan validates capture/audio/crop/playback. | Juan |
