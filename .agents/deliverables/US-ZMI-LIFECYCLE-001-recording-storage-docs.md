@@ -23,7 +23,7 @@ Implement and close gaps recorded in the analysis and canonical W41-W45 plan. Ex
 7. [ ] AC-07 — Documentation regeneration is visible on mobile and desktop, regenerates from saved evidence, records/selects a version, reports status, and does not invoke transcription, FFmpeg/keyframes, OCR or vision. Reprocess remains separate. Evidence: service spies and Playwright.
 8. [ ] AC-08 — localhost:5000 and the current LAN HTTPS origin serve the same revision/backend and equivalent video/project/job/docs/worker state from one configured data/database/media root. Evidence: config, served build markers, normalized API parity.
 9. [ ] AC-09 — Synthetic full workflow and Host E2E pass; production services are restarted from final reviewed HEAD and health/UI parity verified. Production UAT uses existing user data read-only except explicitly safe app-generated synthetic records; no real source is deleted as a test. Evidence: gate artifacts and deployment/rollback record.
-10. [ ] AC-10 — Full applicable release gates pass after ChatGPT review and RAM gate; DELIVERY records exact SHAs, tests, deployment health, residual risks and rollback path. Evidence: machine-readable gate artifacts and final DELIVERY.
+10. [ ] AC-10 — Full applicable automated release gates pass under the current resource-aware RAM policy; DELIVERY records exact SHAs, tests, deployment health, residual risks and rollback path. Evidence: machine-readable gate artifacts and final DELIVERY.
 
 ## Non-goals
 
@@ -43,7 +43,7 @@ Implement and close gaps recorded in the analysis and canonical W41-W45 plan. Ex
 - Sonar/Jenkins when configured (NOT_CONFIGURED is not PASS);
 - production served-revision, health, shared-root and API parity checks.
 
-Heavy gates require ChatGPT `/review` and RAM >6 GiB per `.agents/protocols/deterministic-gates.md`.
+The former manual ChatGPT `/review` handoff and fixed >6 GiB guard are retired. Follow the resource-aware policy and automated release criteria in `docs/plans/WHISPER_LIVE_CAPTURE_EXECUTION_PLAN.md`, section `FINAL SDD RELEASE RUN`. At <4 GiB, limit work to low-memory review/static/focused tests; at 4–6 GiB, serialize expensive operations; >=6 GiB permits standard mode. Never interrupt an active user job. Galaxy physical-device validation is tracked as `OWNER_PENDING` and does not block an otherwise accepted automated release.
 
 ## Planning
 
@@ -52,12 +52,12 @@ TEST MATRIX: `.agents/deliverables/TEST-MATRIX-ZMI-LIFECYCLE-001.md`
 
 ## Evidence
 
-Complete during implementation; link exact command, result, artifact and SHA for each AC.
+Complete during implementation; link exact command, result, artifact and SHA for each AC. The authoritative live Delivery Kanban and resume order are in the execution-plan `FINAL SDD RELEASE RUN` section; other dated tables are historical evidence.
 
 ## Owner interventions
 
-Expected: 2. INITIAL_SPEC (this frozen US and production publication authorization); FINAL_ACCEPTANCE (real-phone UAT). Unexpected: 0 unless a typed blocker applies.
+Expected: 1. INITIAL_SPEC (this frozen US and production publication authorization). Physical Galaxy UAT is owner-only follow-up, not a release handoff. Unexpected: 0 unless a typed external blocker applies.
 
 ## Terminal state
 
-`READY_FOR_CHATGPT_REVIEW` after implementation gates, commit and push; `READY_FOR_OWNER_AUDIT` after review and heavy gates; `READY_FOR_HUMAN_ACCEPTANCE` after production deployment/verification. `DONE` only after owner phone UAT.
+`READY_FOR_DEPLOY` after implementation gates, commit and push; `RELEASED` after production deployment/verification. Galaxy phone UAT may remain `OWNER_PENDING` after release and does not hold automated delivery. `DONE` after required owner phone acceptance when available.
