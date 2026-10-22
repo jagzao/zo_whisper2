@@ -12,7 +12,7 @@ SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba (LAN HTTPS X-Whisper-Build;
 DEVELOPMENT_COMPLETE=NO - several software journeys and runtime stability remain unverified or blocked
 UNIT=PASS - 92 Python focused tests; 9 Node upload reliability tests
 INTEGRATION=PARTIAL - served upload, auto-start, P&G defaults, Docs UI/history, and resume tested; processing, Docs semantic regeneration, capture, edit and several other journeys remain unverified
-DEPLOYED=YES - current implementation is served; ZMI healthy now, but had four restarts and intermittent unresponsiveness during this run
+DEPLOYED=YES - current implementation is served; ZMI healthy now; four restarts, exit 0 and OOM=false; restart cause not established
 KANBAN_COMPLETE=8
 KANBAN_IN_PROGRESS=0
 KANBAN_TESTING=57
@@ -20,7 +20,7 @@ KANBAN_BLOCKED=5
 KANBAN_OWNER_PENDING=3
 CURRENT_WORK=Reconcile product completion against actual served journeys; repair worker/runtime and Docs synthesis blockers
 LAST_COMPLETED=Served two-file auto-upload with P&G; P&G recording default and explicit selection persistence; simulated five 502 failures then fresh-page resume from ACKed chunk; Docs v2/version history UI opened
-BLOCKER=Worker queue has an orphaned ACTIVE owner job still inside its six-hour stale-recovery window; synthetic processing did not reach Videos; intermittent ZMI restarts/unresponsiveness; Docs regeneration is blocked by ALLOW_EXTERNAL_LLM=false and absent OPENCODE_API_KEY; video editor had prior served derivative validation failure; many journeys remain unverified
+BLOCKER=Worker job `a5baabf678944da7b463677ed566140f` remains ACTIVE on prior container `ef201c211f9f`, started 19:43:43Z and is still inside the six-hour recovery window; synthetic processing did not reach Videos; ZMI restarted four times (exit 0, OOM=false), cause unknown; Docs regeneration is blocked by ALLOW_EXTERNAL_LLM=false and absent OPENCODE_API_KEY; video editor had prior served derivative validation failure; many journeys remain unverified
 NEXT_ACTION=Resolve runtime/worker stale-job recovery without touching owner uploads; restore authorized provider configuration securely for Docs; run focused served journeys feature by feature, fix defects, then redeploy and revalidate
 RULE_CONFLICT=YES - owner completion semantics supersede prior implementation/test-based green statuses
 
@@ -43,7 +43,7 @@ HTTPS_MOBILE=TESTING - LAN HTTPS health and build marker pass; physical phone ce
 
 ### Latest execution result
 
-Actual served revision `74799c205c6f399aeecfa927a8baefba73aa69ba` returned HTTPS `/api/health` 200 JSON and `/api/uploads` 200 JSON. Container is running/healthy at report time with restart count 4; during test execution the app timed out/unresponded and restarted several times. Caddy remained up. Persistent media and acknowledged owner upload sessions were not altered.
+Actual served revision `74799c205c6f399aeecfa927a8baefba73aa69ba` returned HTTPS `/api/health` 200 JSON and `/api/uploads` 200 JSON. Container is running/healthy at report time with restart count 4; inspect reports exit 0 and OOM=false, while retained logs do not identify the restart cause. During test execution the app timed out/unresponded and restarted. Caddy remained up. Persistent media and acknowledged owner upload sessions were not altered.
 
 Drop Area on served build: selected two valid 12 KB synthetic MP4 files. Both immediately entered upload, completed one-chunk resumable upload/finalize under P&G without the Upload Selected button, and queued processing. No browser JS errors or failed network requests. The test jobs, files and sessions were individually removed after the run. They did not appear in Videos because the worker remained blocked by a pre-existing ACTIVE owner job; that job was left untouched. Thus auto-start and multi-file upload pass, but the full journey through processing/Videos does not.
 
@@ -199,7 +199,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Multi-upload: multiple files, streaming/bounded memory | 🟨 TESTING | Prior browser/memory evidence: 6x24 MiB upload, +79.7 MiB; no current-candidate rerun. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Multi-upload: concurrency default 4, configurable maximum 6, per-file retry/cancel | 🟨 TESTING | Prior 4/6 concurrency browser checks and upload retry/cancel evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Worker: periodic scan, day limit 1, night limit 3 | 🟨 TESTING | Worker configuration and scheduling tests exist; live API currently reports worker RUNNING, zero active/pending. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
-| Worker: stale recovery, idempotent claim, cancellation, no duplicate processing | 🟥 BLOCKED | Focused worker tests pass, but served worker is held by a pre-existing ACTIVE owner job and synthetic processing did not reach Videos; app had repeated restarts. | Diagnose orphaned lease/worker liveness without canceling or changing the owner job; prove a synthetic job completes in Videos. | Agent |
+| Worker: stale recovery, idempotent claim, cancellation, no duplicate processing | 🟥 BLOCKED | Focused worker tests pass, but served worker is held by a pre-existing ACTIVE owner job and synthetic processing did not reach Videos; app had four restarts (exit 0, OOM=false; cause unknown). | Diagnose orphaned lease/worker liveness without canceling or changing the owner job; prove a synthetic job completes in Videos. | Agent |
 | Documentation Synthesis V2: Evidence Timeline, semantic grouping, procedures | 🟨 TESTING | Current root unit suite passes 1230 with 8 skipped; synthetic Live Capture -> keyframe -> Docs V2 integration selection passes 15 tests with 5 HTTPS interception skips. | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Documentation Synthesis V2: decisions, claims/evidence, ambiguity/review queue, source mapping | 🟨 TESTING | Docs V2 evidence-grounding and source mapping implementation/tests exist. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Documentation regeneration boundary: regenerate from saved evidence without transcription/FFmpeg/OCR/vision; separate reprocess; version history | 🟨 TESTING | Regeneration isolation, versioning and separation unit suites pass in current root run (1230 passed, 8 skipped). | None; UI/browser check advisory. | Agent |
