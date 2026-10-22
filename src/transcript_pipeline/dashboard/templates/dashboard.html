@@ -2633,7 +2633,7 @@
             const history = await api('/api/documentation/versions?id=' + encodeURIComponent(mediaId));
             const versions = history.versions || [];
             const historyPanel = versions.length
-                ? `<section class="doc-version-history"><label>Documentation version <select id="docVersionSelect" onchange="viewDocumentationVersion(this.value)">${versions.map(v => `<option value="${v.documentation_version}">v${v.documentation_version} · ${escapeHtml(v.generated_at || '')}</option>`).join('')}</select></label><pre id="docVersionPreview" class="hidden"></pre></section>`
+                ? `<section class="doc-version-history"><label>Documentation version <select id="docVersionSelect" onchange="viewDocumentationVersion(this.value)">${versions.map(v => `<option value="${v.documentation_version}">v${v.documentation_version} · ${escapeHtml(v.generated_at || '')}</option>`).join('')}</select></label><div id="docVersionMetadata" class="muted"></div><div id="docEvidenceLinks" class="ai-package-links"></div><pre id="docVersionPreview" class="hidden"></pre></section>`
                 : '';
             el.innerHTML = humanBundle + aiSummary + historyPanel + `<div id="docsStepsList"></div>`;
             renderDocsSteps();
@@ -2645,6 +2645,25 @@
             const result = await api('/api/documentation/versions' + query);
             const preview = document.getElementById('docVersionPreview');
             if (!preview || !result.ok) return;
+            const version = result.version || {};
+            const metadata = document.getElementById('docVersionMetadata');
+            if (metadata) metadata.textContent = [
+                `Pipeline: ${version.pipeline_version || 'unknown'}`,
+                `Generated: ${version.generated_at || 'unknown'}`,
+                `Status: ${version.status || 'unknown'}`,
+                `Source: ${(version.source_evidence_references || []).join(', ') || 'unknown'}`,
+            ].join(' · ');
+            const links = document.getElementById('docEvidenceLinks');
+            if (links) {
+                const evidence = result.evidence_files || {};
+                links.innerHTML = [
+                    ['timeline', 'Evidence Timeline'],
+                    ['items', 'Source evidence mappings'],
+                    ['review_queue', 'Ambiguities / review queue'],
+                ].filter(([key]) => evidence[key])
+                    .map(([key, label]) => `<a href="${evidence[key]}" target="_blank" rel="noopener" class="ai-package-link">${label}</a>`)
+                    .join(' · ');
+            }
             preview.textContent = result.manual || `Version ${version} saved; no MANUAL.md in this version.`;
             preview.classList.remove('hidden');
         }

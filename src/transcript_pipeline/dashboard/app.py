@@ -2356,6 +2356,18 @@ def api_documentation() -> Any:
         "knowledge": ai_package_url("knowledge.md"),
     } if manifest_path.exists() else None
 
+    evidence_dir = frames_parent / "evidence"
+    evidence_files = {}
+    for key, filename in {
+        "timeline": "EVIDENCE_TIMELINE.md",
+        "items": "evidence.jsonl",
+        "review_queue": "review-queue.json",
+    }.items():
+        path = evidence_dir / filename
+        if path.is_file():
+            asset_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, path)
+            evidence_files[key] = f"/doc-asset?id={quote(asset_id, safe='')}"
+
     steps_payload = []
     if (manual_dir / "steps.json").exists():
         _, steps = load_steps(manual_dir)
@@ -2371,6 +2383,7 @@ def api_documentation() -> Any:
         "manifest": manifest,
         "steps": steps_payload,
         "ai_package_files": ai_package_files,
+        "evidence_files": evidence_files,
         "manual_pdf_url": manual_pdf_url,
         "manual_pdf_available": manual_pdf_available,
         "manual_pdf_error": manual_pdf_error,
@@ -2488,10 +2501,22 @@ def api_documentation_versions() -> Any:
     version_dir = frames_parent / "documentation_versions" / f"{selected:06d}"
     manifest = version_dir / "version.json"
     manual = version_dir / "manual" / "MANUAL.md"
+    evidence_dir = version_dir / "evidence"
     if not manifest.is_file():
         return jsonify({"ok": False, "error": "Documentation version not found"}), 404
+    evidence_files = {}
+    for key, filename in {
+        "timeline": "EVIDENCE_TIMELINE.md",
+        "items": "evidence.jsonl",
+        "review_queue": "review-queue.json",
+    }.items():
+        path = evidence_dir / filename
+        if path.is_file():
+            asset_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, path)
+            evidence_files[key] = f"/doc-asset?id={quote(asset_id, safe='')}"
     return jsonify({"ok": True, "version": json.loads(manifest.read_text(encoding="utf-8")),
-                    "manual": manual.read_text(encoding="utf-8") if manual.is_file() else ""})
+                    "manual": manual.read_text(encoding="utf-8") if manual.is_file() else "",
+                    "evidence_files": evidence_files})
 
 
 @app.route("/api/video/reprocess", methods=["POST"])

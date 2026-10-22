@@ -204,6 +204,34 @@ def test_documentation_get_includes_ai_package_download_links(client, real_docs)
         assert client.get(url).status_code == 200
 
 
+def test_documentation_versions_expose_versioned_evidence_assets(client, real_docs, env):
+    frames_parent = env["transcriptions"] / "demo_Frames" / "demo"
+    evidence = frames_parent / "documentation_versions" / "000001" / "evidence"
+    evidence.mkdir(parents=True)
+    for name, content in {
+        "EVIDENCE_TIMELINE.md": "# Evidence Timeline\n",
+        "evidence.jsonl": "{}\n",
+        "review-queue.json": '{"items":[]}\n',
+    }.items():
+        (evidence / name).write_text(content, encoding="utf-8")
+    version_dir = evidence.parent
+    (version_dir / "version.json").write_text(json.dumps({
+        "documentation_version": 1,
+        "pipeline_version": "documentation-v2",
+        "generated_at": "2026-01-01T00:00:00Z",
+        "status": "COMPLETED",
+        "source_evidence_references": ["frame_mapping.json", "evidence/evidence.jsonl"],
+    }), encoding="utf-8")
+    manual = version_dir / "manual"
+    manual.mkdir()
+    (manual / "MANUAL.md").write_text("# Semantic manual\n", encoding="utf-8")
+
+    result = client.get(f"/api/documentation/versions{q(real_docs)}&version=1").get_json()
+    assert result["version"]["pipeline_version"] == "documentation-v2"
+    assert set(result["evidence_files"]) == {"timeline", "items", "review_queue"}
+    assert all(client.get(url).status_code == 200 for url in result["evidence_files"].values())
+
+
 def test_documentation_get_includes_manual_pdf_url(client, real_docs):
     """The real engine (reportlab installed) writes MANUAL.pdf — the API must
     expose it as a servable /doc-asset URL, never a filesystem path."""
