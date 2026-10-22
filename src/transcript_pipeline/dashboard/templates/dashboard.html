@@ -2640,8 +2640,8 @@
             if (versions.length) await viewDocumentationVersion(versions[0].documentation_version);
         }
 
-        async function viewDocumentationVersion(version) {
-            const query = `?id=${encodeURIComponent(window._mediaId)}&version=${encodeURIComponent(version)}`;
+        async function viewDocumentationVersion(versionNumber) {
+            const query = `?id=${encodeURIComponent(window._mediaId)}&version=${encodeURIComponent(versionNumber)}`;
             const result = await api('/api/documentation/versions' + query);
             const preview = document.getElementById('docVersionPreview');
             if (!preview || !result.ok) return;
