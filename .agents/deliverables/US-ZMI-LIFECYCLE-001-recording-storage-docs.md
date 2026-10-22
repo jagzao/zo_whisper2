@@ -6,29 +6,29 @@
 ## CURRENT_RESULT
 
 STATUS=RELEASED_OWNER_UAT_PENDING
-HEAD=IMPLEMENTATION_HEAD=1e88785eb3bcbb4564a28e941f74df6609945b67; RESULT_COMMIT_HEAD=resolve Git HEAD after publishing this result
+HEAD=IMPLEMENTATION_HEAD=a99effbcc41ae8aa34091077970f48ae87455156; RESULT_COMMIT_HEAD=resolve Git HEAD after publishing this result
 REMOTE_HEAD=origin/main equals RESULT_COMMIT_HEAD after push; resolve from Git
-SERVED_HEAD=1e88785eb3bcbb4564a28e941f74df6609945b67
+SERVED_HEAD=a99effb (served X-Whisper-Build prefix of IMPLEMENTATION_HEAD)
 DEVELOPMENT_COMPLETE=YES
 UNIT=PASS - 10 Python resumable-upload tests; 9 Node upload reliability tests
-INTEGRATION=PASS - isolated candidate starts; POST /api/uploads and synthetic cleanup return JSON 200; simulated 502/network retry passes
-DEPLOYED=NO - candidate validated; deployment underway
-KANBAN_COMPLETE=62
-KANBAN_IN_PROGRESS=2
+INTEGRATION=PASS - isolated candidate and production synthetic upload/resume/cleanup; simulated 502/network retry
+DEPLOYED=YES - ZMI only; Caddy stayed running and persistent /data plus model-cache volume unchanged
+KANBAN_COMPLETE=63
+KANBAN_IN_PROGRESS=1
 KANBAN_TESTING=0
 KANBAN_BLOCKED=0
 KANBAN_OWNER_PENDING=3
-CURRENT_WORK=Deploying transient upload outage retry hardening; Juan UAT remains pending
-LAST_COMPLETED=Candidate build and isolated startup passed; upload request retry covers preflight, create, status, and finalize; existing chunk ACK retry/resume is preserved
-BLOCKER=Physical UAT had a transient ZMI OOM kill (exit 137) at 18:13:33 UTC; exact browser request was not logged, so request-level attribution remains unconfirmed
-NEXT_ACTION=Deploy validated change and smoke served routes; Juan resumes one selected real file at a time
-RULE_CONFLICT=NO - this strengthens current resumable behavior without changing release policy
+CURRENT_WORK=Juan real multi-GB upload UAT after retry-hardening deploy
+LAST_COMPLETED=Transient upload request retry deployed at a99effb; LAN HTTPS smoke and synthetic create/chunk/ACK/resume/finalize-error/cleanup passed
+BLOCKER=Juan must resume one selected real file; exact cause of the host memory pressure that OOM-killed ZMI is not established
+NEXT_ACTION=Juan resumes the existing 6.3 GB session without canceling it; if failure recurs, capture browser request URL/method/time and matching Caddy/ZMI logs
+RULE_CONFLICT=NO - validated resumable behavior and current release policy preserved
 
 ### Latest execution result
 
-Physical UAT screenshot showed two uploads at `Failed - Failed to fetch` and one 6.3 GB upload in progress. Browser `Failed to fetch` has no HTTP response/status; the precise request URL and method could not be recovered. Docker events show the ZMI container was OOM-killed (exit 137) at 2026-10-22 18:13:33 UTC, restarted at 18:13:36, and healthy at 18:13:42. This is a plausible transient outage source, but the screenshot request cannot be conclusively tied to that restart. App logs recorded eight successful chunk PUTs; the persistent session still has 8 acknowledged 8 MiB chunks (64 MiB). No real file was retried, canceled, or deleted. The active Caddy route remains `reverse_proxy zmi:5000`.
+Physical UAT screenshot showed two `Failed - Failed to fetch` entries and one 6.3 GB upload in progress. Browser fetch rejection provides no HTTP response/status; exact failed URL/method could not be recovered. Docker recorded a ZMI OOM kill (exit 137) at 2026-10-22 18:13:33 UTC, restart at 18:13:36, and healthy status at 18:13:42. This is a plausible outage source, not proven attribution for each screenshot error. The existing persistent upload session survived with 8 acknowledged 8 MiB chunks (64 MiB). No real file was retried, canceled, or deleted.
 
-Fix: transient network failures and HTTP 5xx responses retry up to five times for upload preflight, session creation/status, and finalize. Chunk transfer retains its existing same-chunk retry and durable ACK map. UI network errors now explain that Retry resumes acknowledged chunks. Validation: relevant Python tests 10/10, Node tests 9/9; isolated Docker candidate starts healthy, serves HTML with retry helper, POST `/api/uploads` returns JSON 200, and synthetic session cleanup returns 200. Host/data storage has about 184 GiB free; 2 GiB upload reserve remains. Candidate is validated; production deploy is the next step. Advisory checks remain advisory under the current release policy.
+Fix: transient network errors and HTTP 5xx now retry up to five times during preflight, session creation/status, and finalize. Chunk upload keeps its same-chunk retry and durable ACK map. Network errors tell the user Retry resumes acknowledged chunks. Tests: `tests/test_resumable_uploads.py` 10 passed; `tests/js/upload_reliability.test.cjs` 9 passed. Candidate image starts healthy and its synthetic API create/cleanup passed. Production ZMI serves build `a99effb`; localhost HTTP and LAN HTTPS return 200. Served HTML includes retry logic. Production synthetic POST `/api/uploads`, chunk ACK, status/resume, and cleanup returned JSON 200; invalid synthetic finalize returned JSON 409. The original session remains at 8 ACKed chunks. Host and `/data` had about 184 GiB free; 2 GiB reserve remains. Caddy was not restarted; `/data` bind and model-cache volume were preserved. Real-file UAT is owner-pending. Advisory checks remain advisory under the current release policy.
 
 ## Parent
 EPIC: `.agents/deliverables/EPIC-ZMI-LIFECYCLE-001-recording-to-knowledge.md`
@@ -113,7 +113,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Feature / Gate | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
 | Mobile reliability + large-file upload V2 | COMPLETE | Deployed through ZMI image `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc`; root cause was a stale served image missing `/api/uploads` and the package omitted its static helper. Caddy HTTP and LAN HTTPS return JSON 200 for GET `/api/uploads`; authenticated POST creates a synthetic session (200); chunk ACK, resume status and idempotent retry work; finalize returns JSON validation response for synthetic invalid media; synthetic session deleted. The served helper JS returns 200 and guards non-JSON responses. Storage preflight and oversize create return JSON 507 with free/required GiB. Served UI contains badge, bytes/total, percentage, speed, ETA and Pause/Resume/Cancel/Retry. No real owner files retried. | Juan runs real-file UAT manually. | Agent |
-| Resumable upload recovery after transient app outage | 🟨 IN PROGRESS | Physical UAT correlated with ZMI OOM kill (exit 137); persistent upload manifest retained 8 ACKed chunks. Candidate retries 5xx/network failures on preflight/create/status/finalize; Python 10 and Node 9 pass; isolated build/start and synthetic create/cleanup pass. | Deploy candidate and verify served build; Juan resumes one file manually. | Agent |
+| Resumable upload recovery after transient app outage | COMPLETE | ZMI deployed at `a99effb`; transient 5xx/network retry on preflight/create/status/finalize, with chunk ACK retry preserved. Python 10 and Node 9 pass. Candidate and served LAN HTTPS synthetic create/chunk/resume/finalize-error/cleanup passed. | Juan resumes one selected real file; no batch retry. | Agent |
 | Resumable Upload API | COMPLETE | Production through Caddy HTTP/HTTPS: GET/POST `/api/uploads`, chunk PUT, resume GET, finalize POST return JSON; small synthetic ACK/resume/retry and cleanup passed. 10 focused Python tests pass, covering synthetic 5 GiB, transient 502, resume, successful finalize, ACK preservation, ENOSPC mapping and packaged asset. 7 Node tests pass. | None; retain coverage. | Agent |
 | Non-JSON error handling | COMPLETE | Response parsing checks Content-Type; text/HTML failures show `Upload failed: HTTP <status> <reason>`. Node suite 7/7 includes HTML response handling; served helper JS returns HTTP 200 and UI badge says Upload error. | None; retain coverage. | Agent |
 | Storage preflight | COMPLETE | Upload target `Video_compress` is on C: via `/data`; host 106.55 GiB free, Whisper `/data` 106.53 GiB free, Docker backing volume C: 106.55 GiB free. 2 GiB safety reserve; batch sum and live preflight enforced before create/chunk/finalize. Production synthetic 200 GiB request rejected before session creation with `Insufficient storage: 106.7 GiB free, 202.0 GiB required.` | Recheck before Juan's large-file UAT. | Agent |
