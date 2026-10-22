@@ -73,12 +73,13 @@ def regenerate_versioned(
     *,
     project_config: dict | None = None,
     profile: dict[str, Any] | None = None,
+    force_new: bool = False,
 ) -> dict[str, Any]:
     fingerprint = _fingerprint(frames_dir)
     profile = profile or generation_profile(project_config)
     profile_fingerprint = _profile_fingerprint(profile)
     versions = list_versions(frames_dir)
-    if (versions and versions[0].get("source_fingerprint") == fingerprint
+    if (not force_new and versions and versions[0].get("source_fingerprint") == fingerprint
             and versions[0].get("profile_fingerprint") == profile_fingerprint
             and versions[0].get("status") == "COMPLETED"
             and versions[0].get("generation_status") != "SYNTHESIS_INVALID"):

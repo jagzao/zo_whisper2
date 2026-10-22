@@ -2470,7 +2470,7 @@ def api_documentation_v2_regenerate() -> Any:
         docs_started = time.perf_counter()
         result = regenerate_versioned(
             frames_parent, media_id, regenerate_documentation_v2, project_config=project,
-            profile=generation_profile(project),
+            profile=generation_profile(project), force_new=True,
         )
         from transcript_pipeline.pipeline_metrics import record_stage
 

@@ -499,10 +499,13 @@ def test_v2_regenerate_uses_saved_evidence_without_media_processing(client, env,
     monkeypatch.setattr(dashboard_app, "_effective_project", lambda *args: ({"name": "Demo"}, "test"))
     from transcript_pipeline.documentation import regenerate_v2
     monkeypatch.setattr(regenerate_v2, "regenerate_documentation_v2", lambda path, **kwargs: calls.append((path, kwargs)) or {"status": "EVIDENCE_READY"})
-    response = client.post("/api/documentation/v2/regenerate" + q(mid(MediaRoot.VIDEOS, "sample.mp4")), headers=AUTH_HEADERS)
-    assert response.status_code == 200
-    assert response.get_json()["pipeline"] == "documentation-v2"
-    assert calls == [(frames, {"project_config": {"name": "Demo"}})]
+    route = "/api/documentation/v2/regenerate" + q(mid(MediaRoot.VIDEOS, "sample.mp4"))
+    for expected_version in (1, 2):
+        response = client.post(route, headers=AUTH_HEADERS)
+        assert response.status_code == 200
+        assert response.get_json()["pipeline"] == "documentation-v2"
+        assert response.get_json()["result"]["version"]["documentation_version"] == expected_version
+    assert calls == [(frames, {"project_config": {"name": "Demo"}})] * 2
 
 
 def test_v2_regenerate_requires_existing_evidence(client, env):

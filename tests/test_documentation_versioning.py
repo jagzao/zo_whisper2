@@ -29,6 +29,26 @@ def test_documentation_version_metadata_and_idempotency(tmp_path):
     assert (frames / "documentation_versions" / "000001" / "manual" / "MANUAL.md").read_text() == "Synthetic manual"
 
 
+def test_explicit_regeneration_forces_new_version_for_unchanged_evidence(tmp_path):
+    frames = tmp_path / "frames"
+    frames.mkdir()
+    (frames / "frame_mapping.json").write_text('{"frames": []}', encoding="utf-8")
+
+    def generate(root, **kwargs):
+        manual = root / "manual"
+        manual.mkdir(exist_ok=True)
+        (manual / "MANUAL.md").write_text("Synthetic manual", encoding="utf-8")
+        return {"status": "MANUAL_READY"}
+
+    first = regenerate_versioned(frames, "videos:sample.mp4", generate)
+    second = regenerate_versioned(frames, "videos:sample.mp4", generate, force_new=True)
+
+    assert first["version"]["documentation_version"] == 1
+    assert second["version"]["documentation_version"] == 2
+    assert second["version"]["previous_version"] == 1
+    assert [v["documentation_version"] for v in list_versions(frames)] == [2, 1]
+
+
 def test_failed_generation_preserves_current_docs(tmp_path):
     frames = tmp_path / "frames"
     frames.mkdir()
