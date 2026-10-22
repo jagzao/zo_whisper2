@@ -164,3 +164,26 @@ def test_chunk_storage_failure_rejects_new_chunk_and_preserves_prior_ack(client,
     assert response.is_json
     saved = client.get(f"/api/uploads/{session_id}").get_json()["session"]
     assert saved["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
+
+
+def test_enospc_is_json_507_for_chunk_and_finalize(client, monkeypatch):
+    session_id = _new_session(client)
+
+    def no_space(*_args, **_kwargs):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(upload_module.ResumableUploads, "acknowledge", no_space)
+    chunk = _put(client, session_id, 0, b"abcd")
+    assert chunk.status_code == 507
+    assert chunk.is_json
+    assert chunk.get_json()["error"].startswith("Insufficient storage:")
+    monkeypatch.setattr(upload_module.ResumableUploads, "acknowledge", lambda *_args, **_kwargs: {"ok": True})
+    for index, data in enumerate((b"abcd", b"efgh", b"ij")):
+        _put(client, session_id, index, data)
+    monkeypatch.setattr(upload_module.ResumableUploads, "finalize", no_space)
+    finalized = client.post(f"/api/uploads/{session_id}/finalize", headers=AUTH)
+    assert finalized.status_code == 507
+    assert finalized.is_json
+    assert finalized.get_json()["error"].startswith("Insufficient storage:")
+    session = client.get(f"/api/uploads/{session_id}").get_json()["session"]
+    assert session["state"] == "UPLOADING"
