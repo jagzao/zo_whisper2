@@ -127,6 +127,9 @@ class ResumableUploads:
         directory, data = self._manifest(session_id)
         if data["state"] != "UPLOADING" or index < 0:
             raise UploadError("Upload session is not accepting chunks")
+        check = self.storage_preflight([{"session_id": session_id, "size": data["size"]}])
+        if not check["ok"]:
+            raise UploadError(self.insufficient_storage_message(check))
         expected_count = (data["size"] + CHUNK_SIZE - 1) // CHUNK_SIZE
         if index >= expected_count:
             raise UploadError("Chunk index is outside the file")

@@ -3139,7 +3139,7 @@
         }
 
         function pauseUploadItem(id) { const item = uploadItems.find(row => row.id === id); if (item && ['UPLOADING', 'RETRYING'].includes(item.state)) { item.controller?.abort(); } }
-        function resumeUploadItem(id) { const item = uploadItems.find(row => row.id === id); if (item?.file && item.state === 'PAUSED') { item.state = 'QUEUED'; uploadBatchStarted = true; pumpUploadQueue(); } else if (!item?.file) document.getElementById('fileInput').click(); }
+        function resumeUploadItem(id) { const item = uploadItems.find(row => row.id === id); if (item?.file && item.state === 'PAUSED') { item.state = 'QUEUED'; startUploadBatch(); } else if (!item?.file) document.getElementById('fileInput').click(); }
 
         function retryUploadItem(id) {
             const item = uploadItems.find(row => row.id === id);
@@ -3147,9 +3147,8 @@
                 item.state = 'QUEUED';
                 item.error = '';
                 item.cancelRequested = false;
-                uploadBatchStarted = true;
                 renderUploadQueue();
-                pumpUploadQueue();
+                startUploadBatch();
             }
         }
 

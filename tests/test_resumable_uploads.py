@@ -153,3 +153,14 @@ def test_finalize_storage_failure_preserves_acknowledged_chunks(client, monkeypa
     assert state["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest(),
                                 "1": hashlib.sha256(b"efgh").hexdigest(),
                                 "2": hashlib.sha256(b"ij").hexdigest()}
+
+
+def test_chunk_storage_failure_rejects_new_chunk_and_preserves_prior_ack(client, monkeypatch):
+    session_id = _new_session(client)
+    assert _put(client, session_id, 0, b"abcd").status_code == 200
+    monkeypatch.setattr(upload_module.shutil, "disk_usage", lambda _path: SimpleNamespace(free=1))
+    response = _put(client, session_id, 1, b"efgh")
+    assert response.status_code == 507
+    assert response.is_json
+    saved = client.get(f"/api/uploads/{session_id}").get_json()["session"]
+    assert saved["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
