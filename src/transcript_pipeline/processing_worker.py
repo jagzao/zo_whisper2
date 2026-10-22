@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 PROCESS_STARTED_AT = datetime.now(timezone.utc)
 PROCESS_INSTANCE_ID = uuid.uuid4().hex
+_PROCESS_QUEUE_LOCK = threading.Lock()
 
 
 def processing_limit(now: datetime, timezone_name: str = "America/Mexico_City") -> int:
@@ -35,41 +36,46 @@ class ProcessingJobStore:
 
     @contextmanager
     def _locked(self):
+        if not _PROCESS_QUEUE_LOCK.acquire(timeout=30):
+            raise TimeoutError("Timed out waiting for in-process processing queue lock")
         token = uuid.uuid4().hex
         deadline = time.monotonic() + 30
-        while True:
-            try:
-                self.directory.mkdir(parents=True, exist_ok=True)
-                descriptor = os.open(self.lease_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-                with os.fdopen(descriptor, "w", encoding="ascii") as handle:
-                    handle.write(token)
-                break
-            except (FileExistsError, PermissionError):
-                try:
-                    lease_mtime = self.lease_path.stat().st_mtime
-                except FileNotFoundError:
-                    lease_mtime = None
-                except OSError:
-                    lease_mtime = None
-                if lease_mtime is not None and time.time() - lease_mtime > 30:
-                    try:
-                        self.lease_path.unlink(missing_ok=True)
-                    except OSError:
-                        pass
-                    continue
-                if time.monotonic() >= deadline:
-                    raise TimeoutError("Timed out waiting for shared processing queue lock")
-                time.sleep(0.01)
-            except FileNotFoundError:
-                self.directory.mkdir(parents=True, exist_ok=True)
         try:
-            yield
-        finally:
+            while True:
+                try:
+                    self.directory.mkdir(parents=True, exist_ok=True)
+                    descriptor = os.open(self.lease_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                    with os.fdopen(descriptor, "w", encoding="ascii") as handle:
+                        handle.write(token)
+                    break
+                except (FileExistsError, PermissionError):
+                    try:
+                        lease_mtime = self.lease_path.stat().st_mtime
+                    except FileNotFoundError:
+                        lease_mtime = None
+                    except OSError:
+                        lease_mtime = None
+                    if lease_mtime is not None and time.time() - lease_mtime > 30:
+                        try:
+                            self.lease_path.unlink(missing_ok=True)
+                        except OSError:
+                            pass
+                        continue
+                    if time.monotonic() >= deadline:
+                        raise TimeoutError("Timed out waiting for shared processing queue lock")
+                    time.sleep(0.01)
+                except FileNotFoundError:
+                    self.directory.mkdir(parents=True, exist_ok=True)
             try:
-                if self.lease_path.read_text(encoding="ascii") == token:
-                    self.lease_path.unlink(missing_ok=True)
-            except OSError:
-                pass
+                yield
+            finally:
+                try:
+                    if self.lease_path.read_text(encoding="ascii") == token:
+                        self.lease_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+        finally:
+            _PROCESS_QUEUE_LOCK.release()
 
     def _read(self) -> dict[str, Any]:
         try:

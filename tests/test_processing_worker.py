@@ -44,6 +44,28 @@ def test_duplicate_worker_claim_prevention(tmp_path):
     assert sum(result is not None for result in results) == 1
 
 
+def test_concurrent_queue_calls_from_one_process_serialize_across_store_instances(tmp_path):
+    stores = [ProcessingJobStore(tmp_path) for _ in range(12)]
+    barrier = threading.Barrier(len(stores))
+    errors = []
+
+    def enqueue(store):
+        barrier.wait()
+        try:
+            store.enqueue()
+        except Exception as error:
+            errors.append(error)
+
+    threads = [threading.Thread(target=enqueue, args=(store,)) for store in stores]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert errors == []
+    assert len(stores[0].list_jobs()) == len(stores)
+
+
 def test_upload_enqueue_is_idempotent_by_session_id(tmp_path):
     store = ProcessingJobStore(tmp_path)
     first = store.enqueue("full", idempotency_key="upload:session-a")

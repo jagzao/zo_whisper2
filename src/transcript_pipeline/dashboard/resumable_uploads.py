@@ -144,10 +144,17 @@ class ResumableUploads:
             raise UploadError("Chunk conflicts with an acknowledged chunk")
         if not old:
             part = directory / f"{index:08d}.part"
-            with part.open("xb") as handle:
-                handle.write(body)
-                handle.flush()
-                os.fsync(handle.fileno())
+            if part.exists():
+                existing = hashlib.sha256(part.read_bytes()).hexdigest()
+                if existing != actual:
+                    part.unlink()
+            if not part.exists():
+                temporary = directory / f"{index:08d}.{uuid.uuid4().hex}.tmp"
+                with temporary.open("xb") as handle:
+                    handle.write(body)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary, part)
             data["chunks"][str(index)] = actual
             self._save(directory / "session.json", data)
         return {"ok": True, "index": index, "sha256": actual, "received": sorted(map(int, data["chunks"]))}

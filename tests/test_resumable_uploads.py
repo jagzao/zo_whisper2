@@ -101,6 +101,32 @@ def test_failed_chunk_request_recovers_without_restarting_file(client, monkeypat
     assert saved["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
 
 
+def test_retry_adopts_matching_chunk_file_left_before_manifest_ack(client):
+    session_id = _new_session(client)
+    part = dashboard_app.VIDEO_COMPRESS / ".upload_sessions" / session_id / "00000000.part"
+    part.write_bytes(b"abcd")
+
+    response = _put(client, session_id, 0, b"abcd")
+
+    assert response.status_code == 200
+    saved = client.get(f"/api/uploads/{session_id}").get_json()["session"]
+    assert saved["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
+    assert part.read_bytes() == b"abcd"
+
+
+def test_retry_replaces_incomplete_orphan_chunk_before_ack(client):
+    session_id = _new_session(client)
+    part = dashboard_app.VIDEO_COMPRESS / ".upload_sessions" / session_id / "00000000.part"
+    part.write_bytes(b"old!")
+
+    response = _put(client, session_id, 0, b"abcd")
+
+    assert response.status_code == 200
+    saved = client.get(f"/api/uploads/{session_id}").get_json()["session"]
+    assert saved["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
+    assert part.read_bytes() == b"abcd"
+
+
 def test_synthetic_multigb_upload_resumes_without_resending_acked_chunks(client, monkeypatch):
     size = 5 * 1024**3
     session_id = _new_session(client, "synthetic-large.mp4", size)
