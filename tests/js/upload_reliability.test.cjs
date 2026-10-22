@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ScreenWakeLock, adaptiveUploadLimit } = require('../../src/transcript_pipeline/dashboard/static/upload_reliability.js');
+const { ScreenWakeLock, adaptiveUploadLimit, fetchUploadWithRetry } = require('../../src/transcript_pipeline/dashboard/static/upload_reliability.js');
 
 class FakeDocument {
     visibilityState = 'visible';
@@ -88,4 +88,25 @@ test('upload JSON parser accepts JSON and preserves retryable HTTP status', asyn
     assert.deepEqual(await readResponseJson(ok, true), { ok: true });
     const badGateway = { status: 502, statusText: 'BAD GATEWAY', headers: { get: () => 'text/html' }, json: async () => ({}) };
     await assert.rejects(readResponseJson(badGateway, true), error => error.status === 502 && error.message === 'Upload failed: HTTP 502 BAD GATEWAY');
+});
+
+test('upload request retries a transient 502 and then succeeds', async () => {
+    let calls = 0;
+    const response = await fetchUploadWithRetry('/api/uploads', {}, { attempts: 3, sleep: async () => {},
+        fetcher: async () => (++calls === 1 ? { status: 502 } : { status: 200 }) });
+    assert.equal(response.status, 200);
+    assert.equal(calls, 2);
+});
+
+test('upload request retries a network rejection but does not retry cancellation', async () => {
+    let calls = 0;
+    const response = await fetchUploadWithRetry('/api/uploads/session', {}, { attempts: 3, sleep: async () => {},
+        fetcher: async () => { if (++calls === 1) throw new TypeError('Failed to fetch'); return { status: 200 }; } });
+    assert.equal(response.status, 200);
+    assert.equal(calls, 2);
+
+    calls = 0;
+    await assert.rejects(fetchUploadWithRetry('/api/uploads/session', {}, { attempts: 3, sleep: async () => {},
+        fetcher: async () => { calls += 1; const error = new Error('aborted'); error.name = 'AbortError'; throw error; } }), /aborted/);
+    assert.equal(calls, 1);
 });

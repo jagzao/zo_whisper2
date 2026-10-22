@@ -8,26 +8,27 @@
 STATUS=RELEASED_OWNER_UAT_PENDING
 HEAD=IMPLEMENTATION_HEAD=1e88785eb3bcbb4564a28e941f74df6609945b67; RESULT_COMMIT_HEAD=resolve Git HEAD after publishing this result
 REMOTE_HEAD=origin/main equals RESULT_COMMIT_HEAD after push; resolve from Git
-SERVED_HEAD=1e88785eb3bcbb4564a28e941f74df6609945b67 (last recorded served marker)
+SERVED_HEAD=1e88785eb3bcbb4564a28e941f74df6609945b67
 DEVELOPMENT_COMPLETE=YES
-UNIT=PASS - upload suite 10 Python tests and 7 Node tests; Docs V2 corpus validation recorded in Kanban
-INTEGRATION=PASS - synthetic resumable upload, transient 502 retry, resume, ACK preservation, and finalize
-DEPLOYED=YES - production upload routes/UI and storage preflight recorded deployed; no real owner media retried
+UNIT=PASS - 10 Python resumable-upload tests; 9 Node upload reliability tests
+INTEGRATION=PASS - isolated candidate starts; POST /api/uploads and synthetic cleanup return JSON 200; simulated 502/network retry passes
+DEPLOYED=NO - candidate validated; deployment underway
 KANBAN_COMPLETE=62
-KANBAN_IN_PROGRESS=1
+KANBAN_IN_PROGRESS=2
 KANBAN_TESTING=0
 KANBAN_BLOCKED=0
 KANBAN_OWNER_PENDING=3
-CURRENT_WORK=Juan real multi-GB upload UAT
-LAST_COMPLETED=Docs V2 generated for 9/9 media; resumable upload V2 deployed and smoke-checked; this run installed persistent /revisa contract
-BLOCKER=Juan's physical large-file UAT is owner-pending; no product/code blocker recorded
-NEXT_ACTION=Juan performs real-file UAT; future agents update this section and pointer, then commit and push
-RULE_CONFLICT=NO - current request adds a reporting contract; existing release policy remains authoritative
+CURRENT_WORK=Deploying transient upload outage retry hardening; Juan UAT remains pending
+LAST_COMPLETED=Candidate build and isolated startup passed; upload request retry covers preflight, create, status, and finalize; existing chunk ACK retry/resume is preserved
+BLOCKER=Physical UAT had a transient ZMI OOM kill (exit 137) at 18:13:33 UTC; exact browser request was not logged, so request-level attribution remains unconfirmed
+NEXT_ACTION=Deploy validated change and smoke served routes; Juan resumes one selected real file at a time
+RULE_CONFLICT=NO - this strengthens current resumable behavior without changing release policy
 
 ### Latest execution result
 
-Persistent `/revisa` status contract installed in the existing canonical SDD. Current production release includes `/api/uploads`, chunk/resume/finalize routes, JSON-safe errors, upload error badge, resumable progress controls, and storage preflight with a 2 GiB reserve. Host, Whisper data, and Docker backing storage were last recorded at about 106.5 GiB free. Synthetic 5 GiB resumable flow and a 200 GiB insufficient-space rejection passed; ACKs survive retry/resume. Upload tests: 10 Python + 7 Node passed. Docs V2 inventory and regeneration: 9/9 ready and generated, 0 generation failures, 273 items marked for review, 393 grounded claims. Real Juan files were not retried. Advisory E2E/security/repository-wide quality checks are not hard release gates under the current SDD release policy; prior E2E selector/metrics race and legacy Ruff/Pyright findings remain advisory. Latest recorded served revision: `1e88785eb3bcbb4564a28e941f74df6609945b67`. This record is committed and pushed with a result commit whose SHA is obtained from Git after publication.
+Physical UAT screenshot showed two uploads at `Failed - Failed to fetch` and one 6.3 GB upload in progress. Browser `Failed to fetch` has no HTTP response/status; the precise request URL and method could not be recovered. Docker events show the ZMI container was OOM-killed (exit 137) at 2026-10-22 18:13:33 UTC, restarted at 18:13:36, and healthy at 18:13:42. This is a plausible transient outage source, but the screenshot request cannot be conclusively tied to that restart. App logs recorded eight successful chunk PUTs; the persistent session still has 8 acknowledged 8 MiB chunks (64 MiB). No real file was retried, canceled, or deleted. The active Caddy route remains `reverse_proxy zmi:5000`.
 
+Fix: transient network failures and HTTP 5xx responses retry up to five times for upload preflight, session creation/status, and finalize. Chunk transfer retains its existing same-chunk retry and durable ACK map. UI network errors now explain that Retry resumes acknowledged chunks. Validation: relevant Python tests 10/10, Node tests 9/9; isolated Docker candidate starts healthy, serves HTML with retry helper, POST `/api/uploads` returns JSON 200, and synthetic session cleanup returns 200. Host/data storage has about 184 GiB free; 2 GiB upload reserve remains. Candidate is validated; production deploy is the next step. Advisory checks remain advisory under the current release policy.
 
 ## Parent
 EPIC: `.agents/deliverables/EPIC-ZMI-LIFECYCLE-001-recording-to-knowledge.md`
@@ -112,13 +113,14 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Feature / Gate | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
 | Mobile reliability + large-file upload V2 | COMPLETE | Deployed through ZMI image `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc`; root cause was a stale served image missing `/api/uploads` and the package omitted its static helper. Caddy HTTP and LAN HTTPS return JSON 200 for GET `/api/uploads`; authenticated POST creates a synthetic session (200); chunk ACK, resume status and idempotent retry work; finalize returns JSON validation response for synthetic invalid media; synthetic session deleted. The served helper JS returns 200 and guards non-JSON responses. Storage preflight and oversize create return JSON 507 with free/required GiB. Served UI contains badge, bytes/total, percentage, speed, ETA and Pause/Resume/Cancel/Retry. No real owner files retried. | Juan runs real-file UAT manually. | Agent |
+| Resumable upload recovery after transient app outage | 🟨 IN PROGRESS | Physical UAT correlated with ZMI OOM kill (exit 137); persistent upload manifest retained 8 ACKed chunks. Candidate retries 5xx/network failures on preflight/create/status/finalize; Python 10 and Node 9 pass; isolated build/start and synthetic create/cleanup pass. | Deploy candidate and verify served build; Juan resumes one file manually. | Agent |
 | Resumable Upload API | COMPLETE | Production through Caddy HTTP/HTTPS: GET/POST `/api/uploads`, chunk PUT, resume GET, finalize POST return JSON; small synthetic ACK/resume/retry and cleanup passed. 10 focused Python tests pass, covering synthetic 5 GiB, transient 502, resume, successful finalize, ACK preservation, ENOSPC mapping and packaged asset. 7 Node tests pass. | None; retain coverage. | Agent |
 | Non-JSON error handling | COMPLETE | Response parsing checks Content-Type; text/HTML failures show `Upload failed: HTTP <status> <reason>`. Node suite 7/7 includes HTML response handling; served helper JS returns HTTP 200 and UI badge says Upload error. | None; retain coverage. | Agent |
 | Storage preflight | COMPLETE | Upload target `Video_compress` is on C: via `/data`; host 106.55 GiB free, Whisper `/data` 106.53 GiB free, Docker backing volume C: 106.55 GiB free. 2 GiB safety reserve; batch sum and live preflight enforced before create/chunk/finalize. Production synthetic 200 GiB request rejected before session creation with `Insufficient storage: 106.7 GiB free, 202.0 GiB required.` | Recheck before Juan's large-file UAT. | Agent |
 | ENOSPC handling | COMPLETE | Chunk/finalize `ENOSPC` maps to JSON 507 and actionable free-space guidance; low-space finalize/chunk tests preserve prior ACK map. Production low-space preflight returns JSON 507. Upload UT 10 passed. | None; retain coverage. | Agent |
 | Deploy | COMPLETE | Commit `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc` pushed and served; candidate Docker build/import/start and production health pass, including packaged JS asset HTTP 200. Restarted ZMI only, left Caddy running; `/data` bind and `whisper_zmi-model-cache` named volume unchanged. Rollback image `sha256:b2fcff44a7516eac5f0d0dcbca1bcee2709d87afc9fb7d1e0731319082d6d211` retained. Worker 0 active/0 pending. | None. | Agent |
 | Persistent /revisa result contract | COMPLETE | `.agents/CURRENT.json` resolves this canonical SDD; this SDD has one `## CURRENT_RESULT`, latest execution result, and conflict policy. Result is committed and pushed with this update. | None. | Agent |
-| Real multi-GB UAT | OWNER_PENDING | No owner media retried; synthetic 5 GiB resumable test passes. | Juan runs real-file UAT manually after release. | Juan |
+| Real multi-GB UAT | OWNER_PENDING | Screenshot showed transient `Failed to fetch`; ZMI OOM event (exit 137) at 18:13:33 UTC; persistent session retains 8 ACKed chunks / 64 MiB. No owner media retried, canceled, or deleted. | Juan resumes one selected file after retry-hardening deploy. | Juan |
 
 | Documentation V2: corpus inventory and resumable regeneration | COMPLETE | Initial scan was 9 total: 1 ready, 1 transcript missing, 1 keyframes missing, 6 missing both. Local-only preprocessing reused valid artifacts and completed missing transcripts/keyframes for all 9; final inventory reports 9 READY. Prep progress is resumable and persisted per media. | None. | Agent |
 | Documentation V2: semantic regeneration of full current corpus | COMPLETE | OpenCode Go preflight passed; model Kimi K2.6. Batch completed 9/9 versioned Docs V2 manuals; 9/9 synthesis-validation files valid, 0 failures, 273 items flagged for review, 393 grounded claims, and timestamped transcript/keyframe evidence index references. Version metadata includes generated_at, pipeline_version, source fingerprint, and provenance; rerun is fingerprint-idempotent. | None. | Agent |

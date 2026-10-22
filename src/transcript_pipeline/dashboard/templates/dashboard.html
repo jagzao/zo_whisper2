@@ -3157,7 +3157,7 @@
             const queued = uploadItems.filter(row => row.state === 'QUEUED');
             if (!queued.length) return;
             uploadBatchStarted = true;
-            fetch('/api/uploads/preflight', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+            whisperFetchUploadWithRetry('/api/uploads/preflight', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
                 body: JSON.stringify({ uploads: queued.map(row => ({ session_id: row.sessionId || null, size: Number(row.size || row.file?.size || 0) })) }) })
                 .then(async response => {
                     const result = await whisperReadUploadJson(response);
@@ -3208,18 +3208,18 @@
         async function uploadOneFile(item) {
             try {
                 if (!item.sessionId) {
-                    const init = await fetch('/api/uploads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                    const init = await whisperFetchUploadWithRetry('/api/uploads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
                         body: JSON.stringify({ filename: item.file.name, size: item.file.size, project_id: item.projectId }) });
                     const created = await whisperReadUploadJson(init);
                     if (!init.ok || !created.ok) throw new Error(created.error || `HTTP ${init.status}`);
                     item.sessionId = created.session.id;
                     item.chunkSize = created.session.chunk_size;
                 }
-                const stateResponse = await fetch(`/api/uploads/${item.sessionId}`);
+                const stateResponse = await whisperFetchUploadWithRetry(`/api/uploads/${item.sessionId}`);
                 const statePayload = await whisperReadUploadJson(stateResponse);
                 const serverSession = statePayload.session;
                 if (serverSession?.state === 'COMPLETED') {
-                    const response = await fetch(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, signal: item.controller.signal });
+                    const response = await whisperFetchUploadWithRetry(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, signal: item.controller.signal });
                     const result = await whisperReadUploadJson(response);
                     if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
                     item.state = 'COMPLETED'; item.resultName = result.name; item.uploadedBytes = item.file.size; item.file = null;
@@ -3261,7 +3261,7 @@
                     renderUploadQueue();
                 }
                 item.state = 'FINALIZING'; renderUploadQueue();
-                const response = await fetch(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } });
+                const response = await whisperFetchUploadWithRetry(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } });
                 const result = await whisperReadUploadJson(response);
                 if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
                 item.state = 'COMPLETED';
@@ -3273,7 +3273,8 @@
             } catch (error) {
                 if (error.name === 'AbortError') item.state = item.cancelRequested ? 'CANCELLED' : 'PAUSED';
                 else {
-                    item.state = 'FAILED'; item.error = error.message;
+                    item.state = 'FAILED'; item.error = error instanceof TypeError
+                        ? `Connection interrupted; Retry resumes acknowledged chunks. (${error.message})` : error.message;
                     uploadRecentFailures += 1;
                     uploadBackendHealthy = false;
                 }

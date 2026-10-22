@@ -85,9 +85,24 @@
         return response.json();
     }
 
+    async function fetchUploadWithRetry(url, options = {}, { attempts = 5, fetcher = globalThis.fetch,
+        sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+        for (let attempt = 0; attempt < attempts; attempt++) {
+            try {
+                const response = await fetcher(url, options);
+                if (response.status < 500 || attempt === attempts - 1) return response;
+            } catch (error) {
+                if (error.name === 'AbortError' || attempt === attempts - 1) throw error;
+            }
+            await sleep(Math.min(8000, 500 * (2 ** attempt)));
+        }
+        throw new Error('Upload request failed after retries');
+    }
+
     globalThis.WhisperScreenWakeLock = ScreenWakeLock;
     globalThis.whisperAdaptiveUploadLimit = adaptiveUploadLimit;
     globalThis.whisperReadDashboardJson = response => readResponseJson(response);
     globalThis.whisperReadUploadJson = response => readResponseJson(response, true);
-    if (typeof module !== 'undefined') module.exports = { ScreenWakeLock, adaptiveUploadLimit, readResponseJson };
+    globalThis.whisperFetchUploadWithRetry = (url, options) => fetchUploadWithRetry(url, options);
+    if (typeof module !== 'undefined') module.exports = { ScreenWakeLock, adaptiveUploadLimit, readResponseJson, fetchUploadWithRetry };
 })();
