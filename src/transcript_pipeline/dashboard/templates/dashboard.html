@@ -954,8 +954,9 @@
                 <input type="file" id="fileInput" class="hidden" accept="video/*,audio/*" multiple>
             </div>
             <div class="row" style="margin-top:1rem;">
-                <label for="uploadProject">Project (optional):</label>
-                <select id="uploadProject"><option value="">Auto-detect</option></select>
+                <label for="uploadProject">Project:</label>
+                <select id="uploadProject" onchange="this.dataset.userSelected='true'"><option value="">Auto-detect</option></select>
+                <div id="uploadProjectWarning" class="muted" role="status" style="display:none;color:var(--warn);">P&amp;G project was not found. Choose a project or Auto-detect before uploading.</div>
             </div>
             <div id="uploadWakeLockState" class="muted" style="font-size:.8rem; margin-top:.4rem;">Screen awake: inactive</div>
             <div id="uploadQueue" class="row" style="margin-top:0.75rem; flex-direction:column; align-items:stretch;" aria-live="polite"></div>
@@ -1276,7 +1277,8 @@
             </div>
             <div class="row capture-project-row" style="align-items:center; margin-top:0;">
                 <label for="captureProject">Project:</label>
-                <select id="captureProject" required style="flex:1; min-width:0;"><option value="">Select existing Whisper project</option></select>
+                <select id="captureProject" onchange="this.dataset.userSelected='true'" required style="flex:1; min-width:0;"><option value="">Select existing Whisper project</option></select>
+                <div id="captureProjectWarning" class="muted" role="status" style="display:none;color:var(--warn);">P&amp;G project was not found. Choose a project before recording.</div>
             </div>
             <div class="row capture-title-row" style="align-items:center; margin-top:0;">
                 <label for="captureTitle">Title:</label>
@@ -2214,7 +2216,11 @@
             window._projects = data.projects || [];
             populateProjectFilter(window._allFiles || []);
             const select = document.getElementById('uploadProject');
+            const previous = select.value;
             select.innerHTML = '<option value="">Auto-detect</option>' + data.projects.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+            const pg = data.projects.find(p => String(p.name || '').trim().toLowerCase() === 'p&g');
+            select.value = select.dataset.userSelected === 'true' ? (data.projects.some(p => p.name === previous) ? previous : '') : (pg?.name || '');
+            document.getElementById('uploadProjectWarning').style.display = pg ? 'none' : 'block';
 
             const list = document.getElementById('projectList');
             list.innerHTML = data.projects.map(p => {
@@ -3079,6 +3085,7 @@
         }
 
         async function handleFiles(files) {
+            if (!window._projects?.length) await loadProjects();
             await loadResumableUploadSessions();
             const selectedFiles = Array.from(files || []);
             const projectId = document.getElementById('uploadProject').value;
@@ -3093,6 +3100,7 @@
             }
             fileInput.value = '';
             renderUploadQueue();
+            startUploadBatch();
         }
 
         function renderUploadQueue() {
@@ -4436,6 +4444,7 @@
             document.getElementById('captureTitle').value = 'Live capture';
             const projectSelect = document.getElementById('captureProject');
             if (projectSelect) {
+                const savedSelection = projectSelect.value;
                 projectSelect.replaceChildren(new Option('Select existing Whisper project', ''));
                 try {
                     const projects = await api('/api/projects');
@@ -4444,8 +4453,12 @@
                         if (!project?.name) continue;
                         projectSelect.add(new Option(project.name, project.name));
                     }
-                    const defaults = window._projects.filter(p => p.default === true);
-                    if (defaults.length === 1) projectSelect.value = defaults[0].name;
+                    const pg = window._projects.find(p => String(p.name || '').trim().toLowerCase() === 'p&g');
+                    const previous = projectSelect.dataset.userSelected === 'true' ? savedSelection : '';
+                    const warning = document.getElementById('captureProjectWarning');
+                    projectSelect.value = previous && window._projects.some(p => p.name === previous) ? previous : (pg?.name || '');
+                    if (warning) warning.style.display = pg ? 'none' : 'block';
+                    if (!pg) showToast('P&G project not found; choose a project before recording.');
                 } catch (err) {
                     setCaptureState('error', 'Could not load Whisper projects. Close and reopen this window to retry.');
                 }

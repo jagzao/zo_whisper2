@@ -3,6 +3,10 @@
 ## Status
 `FROZEN_FOR_IMPLEMENTATION`
 
+## Owner completion semantics (supersedes earlier status rules)
+
+Implementation and unit tests alone leave user-facing features at `🟨 TESTING`. Mark them `🟩 COMPLETE` only after the complete user journey passes against the actual served build. Hardware-only checks may remain `OWNER_PENDING` only when a physical device is indispensable. Keep historical evidence and preserve validated behavior while re-auditing.
+
 ## Source
 
 - `AUDIT-ZMI-LIFECYCLE-001-recording-storage-docs.md`

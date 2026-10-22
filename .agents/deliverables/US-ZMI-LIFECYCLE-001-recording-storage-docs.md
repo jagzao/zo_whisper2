@@ -99,6 +99,10 @@ Regression risk:
 Recommended resolution:
 Preserved behavior until resolution:
 
+## 🟥 USER-FACING COMPLETION SEMANTICS
+
+This owner rule supersedes earlier completion interpretations in this SDD and its execution plan. Unit tests, implementation, synthetic browser/API checks, or artifact existence alone do not complete user-facing functionality. Such features remain `🟨 TESTING` until their full journey passes against the actual served build. Only physical-device behavior that cannot be verified without the device may remain `OWNER_PENDING`. Preserve existing validated behavior while reopening unverified rows; do not downgrade or remove historical evidence.
+
 Preserve previously validated behavior unless the new instruction explicitly supersedes it. This policy does not override platform, security, or system constraints. Only one SDD per repository may be pointed to as active for `/revisa`; update `.agents/CURRENT.json` when the canonical active SDD changes.
 
 ## Planning
