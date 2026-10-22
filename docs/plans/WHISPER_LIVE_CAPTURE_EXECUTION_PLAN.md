@@ -914,12 +914,12 @@ The sole active feature-level Kanban is in the canonical SDD, `.agents/deliverab
 4. Report phone UAT `OWNER_PENDING`; Jenkins/Sonar/soak `NOT_REQUIRED`. Advisory defects: one large-WebM editor apply failed validation while preserving source; one retained capture has `CROP_OUTPUT_MISMATCH` and cancelled processing chunks with all media intact.
 
 
-### Resumable Upload V2 deployment record ? 2026-10-22
+### Resumable Upload V2 deployment record - 2026-10-22
 
 - Root cause: the previously served image lacked `/api/uploads`; Caddy's generic `reverse_proxy zmi:5000` routes the path correctly.
-- Hard gates: upload implementation complete; relevant UT PASS (9 Python, 7 Node); isolated Docker build/import/start PASS; production healthy; no active/pending jobs at restart; user media root and named model-cache volume preserved.
-- Storage: uploads land under `Video_compress` on C:. Host free 106.75 GiB; production `/data` free 106.76 GiB; Docker backing store on C: free 106.75 GiB. 2 GiB safety reserve. Oversize preflight/create returned JSON 507 with actionable free/required values before allocating a session.
-- Served verification: `POST /api/uploads` synthetic session, chunk ACK, resume status, idempotent retry, finalize JSON response, and cleanup passed through Caddy HTTP and HTTPS. Production health/files/projects returned 200; worker 0 active/0 pending. Served UI contains Upload error, HTTP-status handling, byte/percentage/speed/ETA, Pause/Resume/Cancel/Retry.
+- Hard gates: upload implementation complete; relevant UT PASS (10 Python, 7 Node); isolated Docker build/import/start PASS; production healthy; no active/pending jobs at restart; user media root and named model-cache volume preserved.
+- Storage: uploads land under `Video_compress` on C:. Host free 106.55 GiB; production `/data` free 106.53 GiB; Docker backing store on C: free 106.55 GiB. 2 GiB safety reserve. Oversize preflight/create returned JSON 507 with actionable free/required values before allocating a session.
+- Served revision `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc`; packaged `upload_reliability.js` returned HTTP 200. Served verification: `POST /api/uploads` synthetic session, chunk ACK, resume status, idempotent retry, finalize JSON response, and cleanup passed through Caddy HTTP and HTTPS. Production health/files/projects returned 200; worker 0 active/0 pending. Served UI contains Upload error, HTTP-status handling, byte/percentage/speed/ETA, Pause/Resume/Cancel/Retry.
 - Smoke: synthetic tests cover 5 GiB resumable size, simulated 502 retry, ACK preservation, successful finalize; production used only a 1-byte synthetic probe and an oversize metadata request. No Juan media retried.
 - Rollback image retained as `whisper-zmi:rollback-61c7503` (`sha256:b2fcff44a7516eac5f0d0dcbca1bcee2709d87afc9fb7d1e0731319082d6d211`).
 - Advisory only: last heavy run had E2E selector/metrics failure and security findings; repository-wide legacy quality findings remain. None blocked deployment under the authoritative policy. Real large-file UAT remains `OWNER_PENDING` for Juan.
