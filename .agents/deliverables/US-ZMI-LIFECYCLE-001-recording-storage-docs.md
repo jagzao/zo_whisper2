@@ -3,6 +3,32 @@
 ## Status
 `RELEASED_OWNER_UAT_PENDING`
 
+## CURRENT_RESULT
+
+STATUS=RELEASED_OWNER_UAT_PENDING
+HEAD=IMPLEMENTATION_HEAD=1e88785eb3bcbb4564a28e941f74df6609945b67; RESULT_COMMIT_HEAD=resolve Git HEAD after publishing this result
+REMOTE_HEAD=origin/main equals RESULT_COMMIT_HEAD after push; resolve from Git
+SERVED_HEAD=1e88785eb3bcbb4564a28e941f74df6609945b67 (last recorded served marker)
+DEVELOPMENT_COMPLETE=YES
+UNIT=PASS - upload suite 10 Python tests and 7 Node tests; Docs V2 corpus validation recorded in Kanban
+INTEGRATION=PASS - synthetic resumable upload, transient 502 retry, resume, ACK preservation, and finalize
+DEPLOYED=YES - production upload routes/UI and storage preflight recorded deployed; no real owner media retried
+KANBAN_COMPLETE=62
+KANBAN_IN_PROGRESS=1
+KANBAN_TESTING=0
+KANBAN_BLOCKED=0
+KANBAN_OWNER_PENDING=3
+CURRENT_WORK=Juan real multi-GB upload UAT
+LAST_COMPLETED=Docs V2 generated for 9/9 media; resumable upload V2 deployed and smoke-checked; this run installed persistent /revisa contract
+BLOCKER=Juan's physical large-file UAT is owner-pending; no product/code blocker recorded
+NEXT_ACTION=Juan performs real-file UAT; future agents update this section and pointer, then commit and push
+RULE_CONFLICT=NO - current request adds a reporting contract; existing release policy remains authoritative
+
+### Latest execution result
+
+Persistent `/revisa` status contract installed in the existing canonical SDD. Current production release includes `/api/uploads`, chunk/resume/finalize routes, JSON-safe errors, upload error badge, resumable progress controls, and storage preflight with a 2 GiB reserve. Host, Whisper data, and Docker backing storage were last recorded at about 106.5 GiB free. Synthetic 5 GiB resumable flow and a 200 GiB insufficient-space rejection passed; ACKs survive retry/resume. Upload tests: 10 Python + 7 Node passed. Docs V2 inventory and regeneration: 9/9 ready and generated, 0 generation failures, 273 items marked for review, 393 grounded claims. Real Juan files were not retried. Advisory E2E/security/repository-wide quality checks are not hard release gates under the current SDD release policy; prior E2E selector/metrics race and legacy Ruff/Pyright findings remain advisory. Latest recorded served revision: `1e88785eb3bcbb4564a28e941f74df6609945b67`. This record is committed and pushed with a result commit whose SHA is obtained from Git after publication.
+
+
 ## Parent
 EPIC: `.agents/deliverables/EPIC-ZMI-LIFECYCLE-001-recording-to-knowledge.md`
 FEATURE: `.agents/deliverables/FEATURE-ZMI-LIFECYCLE-001-safe-media-and-docs.md`
@@ -60,6 +86,20 @@ Integration, Playwright/E2E, Docker E2E, security scans, repository-wide legacy 
 Deploy the requested implementation after all six hard gates pass. Preserve persistent volumes and rollback image. Verify candidate build and served endpoints/UI, including `/api/uploads`, chunks, resume/status, and finalize. Do not start real owner media during smoke tests.
 
 
+## 🟥 RULE CONFLICT POLICY
+
+Within project-defined rules, this policy has highest priority. If a new request conflicts with an SDD requirement, approved architecture decision, validated behavior, release/resource policy, or another current requirement, do not silently select a side or regress validated behavior. Record `RULE_CONFLICT=YES` in `## CURRENT_RESULT`, followed by:
+
+### 🟥 RULE CONFLICT
+Existing rule:
+New instruction:
+Conflict:
+Regression risk:
+Recommended resolution:
+Preserved behavior until resolution:
+
+Preserve previously validated behavior unless the new instruction explicitly supersedes it. This policy does not override platform, security, or system constraints. Only one SDD per repository may be pointed to as active for `/revisa`; update `.agents/CURRENT.json` when the canonical active SDD changes.
+
 ## Planning
 
 PLAN: `.agents/deliverables/PLAN-ZMI-LIFECYCLE-001-recording-storage-docs.md`
@@ -77,6 +117,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Storage preflight | COMPLETE | Upload target `Video_compress` is on C: via `/data`; host 106.55 GiB free, Whisper `/data` 106.53 GiB free, Docker backing volume C: 106.55 GiB free. 2 GiB safety reserve; batch sum and live preflight enforced before create/chunk/finalize. Production synthetic 200 GiB request rejected before session creation with `Insufficient storage: 106.7 GiB free, 202.0 GiB required.` | Recheck before Juan's large-file UAT. | Agent |
 | ENOSPC handling | COMPLETE | Chunk/finalize `ENOSPC` maps to JSON 507 and actionable free-space guidance; low-space finalize/chunk tests preserve prior ACK map. Production low-space preflight returns JSON 507. Upload UT 10 passed. | None; retain coverage. | Agent |
 | Deploy | COMPLETE | Commit `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc` pushed and served; candidate Docker build/import/start and production health pass, including packaged JS asset HTTP 200. Restarted ZMI only, left Caddy running; `/data` bind and `whisper_zmi-model-cache` named volume unchanged. Rollback image `sha256:b2fcff44a7516eac5f0d0dcbca1bcee2709d87afc9fb7d1e0731319082d6d211` retained. Worker 0 active/0 pending. | None. | Agent |
+| Persistent /revisa result contract | COMPLETE | `.agents/CURRENT.json` resolves this canonical SDD; this SDD has one `## CURRENT_RESULT`, latest execution result, and conflict policy. Result is committed and pushed with this update. | None. | Agent |
 | Real multi-GB UAT | OWNER_PENDING | No owner media retried; synthetic 5 GiB resumable test passes. | Juan runs real-file UAT manually after release. | Juan |
 
 | Documentation V2: corpus inventory and resumable regeneration | COMPLETE | Initial scan was 9 total: 1 ready, 1 transcript missing, 1 keyframes missing, 6 missing both. Local-only preprocessing reused valid artifacts and completed missing transcripts/keyframes for all 9; final inventory reports 9 READY. Prep progress is resumable and persisted per media. | None. | Agent |
