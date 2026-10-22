@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import tomllib
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -187,3 +189,8 @@ def test_enospc_is_json_507_for_chunk_and_finalize(client, monkeypatch):
     assert finalized.get_json()["error"].startswith("Insufficient storage:")
     session = client.get(f"/api/uploads/{session_id}").get_json()["session"]
     assert session["state"] == "UPLOADING"
+
+
+def test_upload_javascript_is_in_installed_package_data():
+    config = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
+    assert "static/*.js" in config["tool"]["setuptools"]["package-data"]["transcript_pipeline.dashboard"]
