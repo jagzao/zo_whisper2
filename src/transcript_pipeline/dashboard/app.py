@@ -244,6 +244,8 @@ def _execute_processing_job(mode: str, cancel_check=lambda: False) -> None:
                               finished_at=None, error=None, log_tail="", stage="upload", stages=_fresh_stages())
     try:
         _run_pipeline(mode, cancel_check=cancel_check)
+        if _run_state.get("error"):
+            raise RuntimeError(str(_run_state["error"]))
     finally:
         if _run_state.get("running"):
             _run_state["running"] = False
@@ -610,6 +612,31 @@ def _save_project_overrides(overrides: dict[str, str]) -> bool:
         return True
     except Exception as e:
         logger.error("[PROJECTS] Error saving project_overrides.json: %s", e)
+        return False
+
+
+def _display_names_path() -> Path:
+    return ROOT / "media_display_names.json"
+
+
+def _load_display_names() -> dict[str, str]:
+    try:
+        data = json.loads(_display_names_path().read_text(encoding="utf-8"))
+        names = data.get("names", {})
+        return {str(key): str(value) for key, value in names.items()} if isinstance(names, dict) else {}
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError) as exc:
+        logger.error("[MEDIA] Could not load display names: %s", exc)
+        return {}
+
+
+def _save_display_names(names: dict[str, str]) -> bool:
+    try:
+        _atomic_write_text(_display_names_path(), json.dumps({"names": names}, indent=2, ensure_ascii=False))
+        return True
+    except OSError as exc:
+        logger.error("[MEDIA] Could not save display names: %s", exc)
         return False
 
 
@@ -1110,7 +1137,28 @@ def api_status() -> Any:
     jobs = worker.store.list_jobs()
     active_jobs = [job for job in jobs if job.get("status") in {"ACTIVE", "CANCEL_REQUESTED"}]
     active_job = max(active_jobs, key=lambda job: job.get("started_at") or "") if active_jobs else None
+    state["running"] = active_job is not None
     state["worker"] = worker.status()
+    failed_jobs = [job for job in jobs if job.get("status") in {"FAILED", "RETRYABLE_FAILED"}]
+    state["historical_failure"] = max(failed_jobs, key=lambda job: job.get("finished_at") or "") if failed_jobs else None
+    if state.get("error"):
+        state["error_detail"] = {
+            "classification": "active_processing_failure" if active_job is not None else "historical_processing_failure",
+            "component": "pipeline",
+            "last_error": state["error"],
+            "timestamp": state.get("finished_at"),
+            "stage": next((name for name, value in (state.get("stages") or {}).items()
+                           if value.get("status") == "failed"), state.get("stage")),
+            "affected_file_job": (active_job or state.get("historical_failure") or {}).get("id"),
+        }
+    else:
+        state["error_detail"] = None
+    worker_state = str((state["worker"] or {}).get("state", "")).upper()
+    state["worker_error"] = ({"classification": "worker_error", "component": "processing worker",
+                              "last_error": (state["worker"] or {}).get("last_error"),
+                              "timestamp": (state["worker"] or {}).get("last_error_at"),
+                              "affected_file_job": (active_job or state.get("historical_failure") or {}).get("id")}
+                             if worker_state in {"ERROR", "FAILED"} or (state["worker"] or {}).get("last_error") else None)
     state["running"] = active_job is not None
     if active_job is not None:
         state["mode"] = active_job.get("mode")
@@ -1227,6 +1275,7 @@ def api_folders() -> Any:
 @app.route("/api/files")
 def api_files() -> Any:
     _ensure_folders()
+    display_names = _load_display_names()
     media_files: list[dict] = []
     listed_capture_sessions: set[str] = set()
     listed_logical_videos: set[tuple[str, str]] = set()
@@ -1269,7 +1318,7 @@ def api_files() -> Any:
             file_row = {
                     "media_id": media_id,
                     "relative": str(path.relative_to(ROOT)),
-                    "name": path.name,
+                    "name": f"{display_names.get(media_id, path.stem)}{path.suffix}",
                     "size": media_stat.st_size,
                     "date": media_date.astimezone().isoformat(timespec="seconds"),
                     "date_epoch": media_date.timestamp(),
@@ -1420,6 +1469,41 @@ def api_files() -> Any:
     else:
         media_files.sort(key=lambda item: (item["date_epoch"], item["name"].lower()), reverse=reverse)
     return jsonify({"files": media_files})
+
+
+@app.route("/api/media/display-name", methods=["POST"])
+def api_media_display_name() -> Any:
+    payload = request.get_json(silent=True) or {}
+    media_id = payload.get("id")
+    name = payload.get("name")
+    if not isinstance(media_id, str) or not isinstance(name, str):
+        return jsonify({"ok": False, "error": "Media and name are required"}), 400
+    name = name.strip()
+    if not name:
+        return jsonify({"ok": False, "error": "Name cannot be empty"}), 400
+    if name in {".", ".."} or any(ord(char) < 32 or char in '<>:"/\\|?*' for char in name) or name.endswith("."):
+        return jsonify({"ok": False, "error": "Name contains characters that are unsafe for filenames"}), 400
+    target = _from_media_id(media_id, [MediaRoot.AUDIO, MediaRoot.VIDEOS])
+    if target.suffix.lower() not in SUPPORTED_MEDIA:
+        return jsonify({"ok": False, "error": "Unsupported media file"}), 400
+    if target.is_relative_to(VIDEOS_BASE) and "live_capture" in target.relative_to(VIDEOS_BASE).parts:
+        return jsonify({"ok": False, "error": "Capture-managed media names are not editable"}), 409
+    display_names = _load_display_names()
+    proposed = f"{name}{target.suffix}"
+    for sibling in target.parent.iterdir():
+        if not sibling.is_file() or sibling == target:
+            continue
+        sibling_id = _to_media_id(MediaRoot.AUDIO if sibling.is_relative_to(AUDIO_BASE) else MediaRoot.VIDEOS, sibling)
+        sibling_name = f"{display_names.get(sibling_id, sibling.stem)}{sibling.suffix}"
+        if sibling_name.casefold() == proposed.casefold():
+            return jsonify({"ok": False, "error": "A file with that name already exists in this folder"}), 409
+    if name == target.stem:
+        display_names.pop(media_id, None)
+    else:
+        display_names[media_id] = name
+    if not _save_display_names(display_names):
+        return jsonify({"ok": False, "error": "Could not save the media name"}), 500
+    return jsonify({"ok": True, "name": proposed, "media_id": media_id})
 
 
 @app.route("/api/compression/provenance")
@@ -1633,6 +1717,141 @@ def api_upload() -> Any:
                         VIDEO_COMPRESS, destination.name, destination.stat().st_size)
     return jsonify({"ok": True, "name": destination.name, "project_id": project_id or None,
                     "upload_duration_seconds": round(upload_seconds, 3)})
+
+
+def _resumable_uploads():
+    from transcript_pipeline.dashboard.resumable_uploads import ResumableUploads
+
+    return ResumableUploads(VIDEO_COMPRESS / ".upload_sessions")
+
+
+@app.route("/api/uploads", methods=["GET", "POST"])
+def api_upload_sessions() -> Any:
+    from transcript_pipeline.dashboard.resumable_uploads import UploadError
+
+    service = _resumable_uploads()
+    if request.method == "GET":
+        return jsonify({"ok": True, "sessions": service.list()})
+    payload = request.get_json(silent=True) or {}
+    filename = secure_filename(Path(str(payload.get("filename") or "")).name)
+    project_id = str(payload.get("project_id") or "").strip()
+    try:
+        size = int(payload.get("size", 0))
+    except (TypeError, ValueError):
+        size = 0
+    if not filename or Path(filename).suffix.lower() not in SUPPORTED_MEDIA or size <= 0:
+        return jsonify({"ok": False, "error": "Invalid filename or file size"}), 400
+    if project_id and not any(p.get("id") == project_id or p.get("name") == project_id for p in _load_projects()):
+        return jsonify({"ok": False, "error": "Selected project does not exist"}), 400
+    try:
+        return jsonify({"ok": True, "session": service.create(filename, size, project_id)})
+    except UploadError as exc:
+        status = 507 if str(exc).startswith("Insufficient storage:") else 400
+        return jsonify({"ok": False, "error": str(exc)}), status
+
+
+@app.route("/api/uploads/preflight", methods=["POST"])
+def api_upload_preflight() -> Any:
+    from transcript_pipeline.dashboard.resumable_uploads import UploadError
+
+    payload = request.get_json(silent=True) or {}
+    uploads = payload.get("uploads")
+    if not isinstance(uploads, list) or not uploads:
+        return jsonify({"ok": False, "error": "At least one upload is required"}), 400
+    try:
+        check = _resumable_uploads().storage_preflight(uploads)
+        if not check["ok"]:
+            from transcript_pipeline.dashboard.resumable_uploads import ResumableUploads
+            check["error"] = ResumableUploads.insufficient_storage_message(check)
+            return jsonify(check), 507
+        return jsonify(check)
+    except (UploadError, TypeError, ValueError) as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+
+
+@app.route("/api/uploads/<session_id>/chunks/<int:index>", methods=["PUT"])
+def api_upload_chunk(session_id: str, index: int) -> Any:
+    from transcript_pipeline.dashboard.resumable_uploads import CHUNK_SIZE, UploadError
+
+    try:
+        if request.content_length is not None and request.content_length > CHUNK_SIZE:
+            return jsonify({"ok": False, "error": "Chunk exceeds the configured chunk size"}), 413
+        body = request.stream.read(CHUNK_SIZE + 1)
+        if len(body) > CHUNK_SIZE:
+            return jsonify({"ok": False, "error": "Chunk exceeds the configured chunk size"}), 413
+        result = _resumable_uploads().acknowledge(
+            session_id, index, body, request.headers.get("X-Chunk-SHA256", ""),
+        )
+        return jsonify(result)
+    except UploadError as exc:
+        status = 507 if str(exc).startswith("Insufficient storage:") else 409
+        return jsonify({"ok": False, "error": str(exc)}), status
+    except OSError as exc:
+        if exc.errno == 28:
+            return jsonify({"ok": False, "error": "Insufficient storage: free space before retrying upload. Acknowledged chunks are preserved."}), 507
+        logger.exception("[UPLOAD] Resumable chunk persistence failed for %s/%s", session_id, index)
+        return jsonify({"ok": False, "error": "Temporary chunk storage failure; retry this chunk"}), 502
+
+
+@app.route("/api/uploads/<session_id>/finalize", methods=["POST"])
+def api_upload_finalize(session_id: str) -> Any:
+    from transcript_pipeline.dashboard.resumable_uploads import UploadError
+
+    service = _resumable_uploads()
+    try:
+        _, session = service._manifest(session_id)
+        if session.get("state") == "COMPLETED":
+            job = _get_processing_worker().store.enqueue("full", idempotency_key=f"upload:{session_id}")
+            return jsonify({"ok": True, "name": session["final_name"], "size": session["size"],
+                            "sha256": session["final_sha256"], "project_id": session.get("project_id") or None,
+                            "job_id": job["id"], "duplicate": True})
+        filename = session["filename"]
+        project_id = session.get("project_id", "")
+        project = next((p for p in _load_projects() if p.get("id") == project_id or p.get("name") == project_id), None) if project_id else None
+        if project:
+            prefixes = project.get("match", {}).get("prefix", [])
+            if prefixes and not _find_matching_project(filename):
+                filename = f"{prefixes[0]}{filename}"
+        VIDEO_COMPRESS.mkdir(parents=True, exist_ok=True)
+        destination = _reserve_upload_destination(VIDEO_COMPRESS, filename)
+        try:
+            result = service.finalize(session_id, destination, _is_valid_media_file)
+        except Exception:
+            destination.unlink(missing_ok=True)
+            raise
+        if result["final_name"] != destination.name:
+            destination.unlink(missing_ok=True)
+            destination = VIDEO_COMPRESS / result["final_name"]
+        from transcript_pipeline.pipeline_metrics import record_stage
+
+        record_stage(project.get("name") if project else project_id, destination.name, "upload", 0)
+        job = _get_processing_worker().store.enqueue("full", idempotency_key=f"upload:{session_id}")
+        return jsonify({"ok": True, "name": destination.name, "size": destination.stat().st_size,
+                        "sha256": result["final_sha256"], "project_id": project_id or None,
+                        "job_id": job["id"]})
+    except UploadError as exc:
+        status = 507 if str(exc).startswith("Insufficient storage:") else 409
+        return jsonify({"ok": False, "error": str(exc)}), status
+    except OSError as exc:
+        if exc.errno == 28:
+            return jsonify({"ok": False, "error": "Insufficient storage: free space before retrying upload. Acknowledged chunks are preserved."}), 507
+        logger.exception("[UPLOAD] Resumable finalize failed for %s", session_id)
+        return jsonify({"ok": False, "error": "Upload finalization failed; acknowledged chunks are preserved."}), 500
+
+
+@app.route("/api/uploads/<session_id>", methods=["GET", "DELETE"])
+def api_upload_cancel(session_id: str) -> Any:
+    from transcript_pipeline.dashboard.resumable_uploads import UploadError
+
+    try:
+        service = _resumable_uploads()
+        if request.method == "GET":
+            _, session = service._manifest(session_id)
+            return jsonify({"ok": True, "session": session})
+        service.cancel(session_id)
+        return jsonify({"ok": True})
+    except UploadError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
 
 
 @app.route("/api/run/<mode>", methods=["POST"])
@@ -2233,11 +2452,12 @@ def api_documentation_v2_regenerate() -> Any:
         _doc_generation_inflight.add(media_id)
     try:
         from transcript_pipeline.documentation.regenerate_v2 import regenerate_documentation_v2
-        from transcript_pipeline.documentation.versioning import regenerate_versioned
+        from transcript_pipeline.documentation.versioning import generation_profile, regenerate_versioned
 
         docs_started = time.perf_counter()
         result = regenerate_versioned(
-            frames_parent, media_id, regenerate_documentation_v2, project_config=project
+            frames_parent, media_id, regenerate_documentation_v2, project_config=project,
+            profile=generation_profile(project),
         )
         from transcript_pipeline.pipeline_metrics import record_stage
 

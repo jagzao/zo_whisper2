@@ -83,14 +83,21 @@ class ProcessingJobStore:
         temp.write_text(json.dumps(data, indent=2), encoding="utf-8")
         os.replace(temp, self.path)
 
-    def enqueue(self, mode: str = "full", *, scheduled: bool = False) -> dict[str, Any]:
+    def enqueue(self, mode: str = "full", *, scheduled: bool = False,
+                idempotency_key: str | None = None) -> dict[str, Any]:
         now = datetime.now(timezone.utc).isoformat()
         with self._locked():
             data = self._read()
+            if idempotency_key:
+                previous = next((j for j in data["jobs"] if j.get("idempotency_key") == idempotency_key), None)
+                if previous:
+                    return dict(previous)
             if scheduled and any(j.get("scheduled") and j.get("status") in {"QUEUED", "ACTIVE"} for j in data["jobs"]):
                 return next(j for j in data["jobs"] if j.get("scheduled") and j.get("status") in {"QUEUED", "ACTIVE"})
             job = {"id": uuid.uuid4().hex, "mode": mode, "status": "QUEUED", "scheduled": scheduled,
                    "created_at": now, "updated_at": now, "attempt": 0}
+            if idempotency_key:
+                job["idempotency_key"] = idempotency_key
             data["jobs"].append(job)
             self._write(data)
             return dict(job)
@@ -157,7 +164,8 @@ class ProcessingJobStore:
                 if job.get("id") == job_id and job.get("status") in {"ACTIVE", "CANCEL_REQUESTED"}:
                     if job.get("status") == "CANCEL_REQUESTED":
                         status = "CANCELLED"
-                    job.update(status=status, updated_at=datetime.now(timezone.utc).isoformat())
+                    finished_at = datetime.now(timezone.utc).isoformat()
+                    job.update(status=status, updated_at=finished_at, finished_at=finished_at)
                     if error:
                         job["error"] = error[:500]
                     self._write(data)
@@ -212,6 +220,8 @@ class ProcessingWorker:
         self._thread: threading.Thread | None = None
         self._active: dict[str, threading.Thread] = {}
         self._lock = threading.Lock()
+        self.last_error: str | None = None
+        self.last_error_at: str | None = None
         self.last_scan: datetime | None = None
         self.next_scan: datetime | None = None
 
@@ -282,16 +292,24 @@ class ProcessingWorker:
             if now >= next_scan:
                 try:
                     self.scan_once(now)
-                except Exception:
-                    pass
+                    self.last_error = None
+                    self.last_error_at = None
+                except Exception as exc:
+                    self.last_error = str(exc)
+                    self.last_error_at = datetime.now(timezone.utc).isoformat()
                 next_scan = self.next_scan or (now + timedelta(seconds=self.scan_interval))
-            self.run_pending_once(now)
+            try:
+                self.run_pending_once(now)
+            except Exception as exc:
+                self.last_error = str(exc)
+                self.last_error_at = datetime.now(timezone.utc).isoformat()
             self._stop.wait(self.poll_interval)
 
     def status(self, now: datetime | None = None) -> dict[str, Any]:
         now = now or datetime.now(timezone.utc)
         limit = processing_limit(now, self.timezone_name)
         local_zone = ZoneInfo(self.timezone_name)
-        return self.store.status(running=bool(self._thread and self._thread.is_alive()), limit=limit,
-                                 next_scan=self.next_scan.astimezone(local_zone) if self.next_scan else None,
-                                 last_scan=self.last_scan.astimezone(local_zone) if self.last_scan else None)
+        return {**self.store.status(running=bool(self._thread and self._thread.is_alive()), limit=limit,
+                                   next_scan=self.next_scan.astimezone(local_zone) if self.next_scan else None,
+                                   last_scan=self.last_scan.astimezone(local_zone) if self.last_scan else None),
+                "last_error": self.last_error, "last_error_at": self.last_error_at}

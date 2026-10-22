@@ -32,6 +32,20 @@
 
 Use synthetic media and isolated test roots. Store machine-readable results under existing ignored `artifacts/gates/`; no media/transcript fixtures from real users.
 
+## Mobile reliability and large-file upload V2
+
+- U01 fixed-size chunk slicing, per-chunk SHA-256, size validation and ACK idempotency.
+- U02 retry a chunk after temporary 502/storage failure; already ACKed chunks remain unchanged.
+- U03 restart/resume from persisted server chunk map and reuse ACKed bytes.
+- U04 cancel one session without deleting or modifying another session.
+- U05 finalize refuses missing chunks, validates total size/media, returns final hash and creates one idempotent processing job.
+- U06 adaptive concurrency by file size, pending bytes, active transfers, backend health, network failures and device resources; hard maximum six.
+- U07 dashboard distinguishes offline service, worker error, active processing-stage failure and historical failure; details include component/message/time/job.
+- U08 Wake Lock acquires for active recording/playlist/uploads, releases when inactive/hidden, reacquires after visibility/platform release, and reports unsupported browsers.
+- U09 file cards show name, total/confirmed bytes, percentage, speed, ETA, state and per-file pause/resume/cancel/retry.
+
+Focused evidence: `tests/test_resumable_uploads.py`, `tests/test_pipeline_stages.py`, `tests/test_processing_worker.py`, and `tests/js/upload_reliability.test.cjs`.
+
 ## Black Video Detection / Editing
 
 - B01 synthetic full-black, multiple intervals, start/end, and minimum-duration dark transitions; threshold and duration validation.

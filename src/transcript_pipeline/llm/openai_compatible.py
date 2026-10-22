@@ -15,9 +15,12 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import logging
 import time
 from pathlib import Path
+from urllib.parse import urlparse
+from uuid import NAMESPACE_URL, uuid5
 
 import certifi
 import requests
@@ -178,8 +181,20 @@ class OpenAICompatibleProvider:
     def _make_request(self, payload: dict) -> str:
         base_url = self._settings.llm_base_url.rstrip("/")
         headers = {"Content-Type": "application/json"}
-        if self._settings.llm_api_key:
-            headers["Authorization"] = f"Bearer {self._settings.llm_api_key}"
+        is_opencode = (urlparse(base_url).hostname or "").lower() == "opencode.ai"
+        api_key = self._settings.opencode_api_key if is_opencode else self._settings.llm_api_key
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        if is_opencode:
+            if self._settings.llm_model == "kimi-k2.6":
+                payload.setdefault("thinking", {"type": "disabled"})
+            session_payload = json.dumps(
+                {"model": payload.get("model"), "messages": payload.get("messages")},
+                sort_keys=True,
+                ensure_ascii=False,
+            )
+            headers["x-opencode-session"] = str(uuid5(NAMESPACE_URL, session_payload))
+            headers["User-Agent"] = "whisper-docs-v2/1.0"
 
         attempt = 0
         while True:
@@ -192,7 +207,10 @@ class OpenAICompatibleProvider:
                     verify=certifi.where(),
                 )
                 r.raise_for_status()
-                return r.json()["choices"][0]["message"]["content"].strip()
+                content = r.json()["choices"][0]["message"].get("content")
+                if not isinstance(content, str) or not content.strip():
+                    raise ValueError("LLM response has no assistant content")
+                return content.strip()
             except requests.RequestException as e:
                 if attempt >= self._max_retries or not _is_retryable(e):
                     raise

@@ -130,6 +130,30 @@ Use `--mode KT_SESSION` for an explicit local override or `--evidence-only` to
 rebuild evidence without synthesis. Synthesis remains subject to the existing
 provider and project privacy rules.
 
+Inventory or regenerate every eligible audio/video item from saved mappings:
+
+```bat
+python -m transcript_pipeline.documentation.batch_regenerate_v2 --inventory
+python -m transcript_pipeline.documentation.batch_regenerate_v2 --limit 1
+python -m transcript_pipeline.documentation.batch_regenerate_v2
+```
+
+The batch writes a checkpoint manifest under `DATA_ROOT`, continues after an
+individual failure, and never invokes transcription, FFmpeg, OCR, or vision.
+It requires a non-empty frame mapping with all referenced files present and
+saved transcript evidence. Run the inventory first; it reports missing
+keyframes, transcript, or both. Prepare only those upstream artifacts, then
+rerun the batch. Each generation is versioned and repeat runs are idempotent
+for the same saved evidence and provider/model/privacy profile. A remote
+provider is still blocked unless external LLM use is explicitly enabled by
+the existing privacy policy; local OpenAI-compatible endpoints are allowed
+without that flag.
+
+For OpenCode Go, use `https://opencode.ai/zen/go/v1` and a supported
+`/chat/completions` model such as `kimi-k2.6`. The client sends the required
+stable `x-opencode-session` header. Keep the API key in the runtime environment
+or secret store; never commit it.
+
 ## Security & Privacy
 
 - **Local by default.** Media and transcript content stay local for the

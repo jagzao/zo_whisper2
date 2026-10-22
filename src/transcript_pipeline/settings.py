@@ -158,6 +158,7 @@ class Settings:
     dashboard_key_file: Path | None = None
     upload_concurrency: int = 4
     processing_timezone: str = "America/Mexico_City"
+    opencode_api_key: str | None = None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -181,6 +182,7 @@ class Settings:
             meeting_max_screen_analyses=int(os.getenv("MEETING_MAX_SCREEN_ANALYSES", "30")),
             meeting_keep_frames=_bool("MEETING_KEEP_FRAMES", False),
             llm_api_key=_str_or_none("LLM_API_KEY"),
+            opencode_api_key=_str_or_none("OPENCODE_API_KEY"),
             llm_model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
             llm_base_url=llm_base_url,
             llm_provider_type=provider_type,

@@ -24,6 +24,16 @@ Implement and close gaps recorded in the analysis and canonical W41-W45 plan. Ex
 8. [ ] AC-08 — localhost:5000 and the current LAN HTTPS origin serve the same revision/backend and equivalent video/project/job/docs/worker state from one configured data/database/media root. Evidence: config, served build markers, normalized API parity.
 9. [ ] AC-09 — Synthetic full workflow and Host E2E pass; production services are restarted from final reviewed HEAD and health/UI parity verified. Production UAT uses existing user data read-only except explicitly safe app-generated synthetic records; no real source is deleted as a test. Evidence: gate artifacts and deployment/rollback record.
 10. [ ] AC-10 — Full applicable automated release gates pass under the current resource-aware RAM policy; DELIVERY records exact SHAs, tests, deployment health, residual risks and rollback path. Evidence: machine-readable gate artifacts and final DELIVERY.
+11. [ ] AC-11 — Edit File supports a trimmed, validated display name without a typed extension; preserves the media extension, rejects unsafe/empty/colliding names, and persists the name by stable media ID without moving media or changing transcript, project, documentation, provenance, or processing history. Rename is idempotent and does not trigger processing. Evidence: `tests/test_dashboard_display_name.py`.
+12. [x] AC-12 — Docs V2 supports corpus inventory and resumable batch regeneration from saved evidence, captures provider/model/privacy profile in version history, and never marks evidence-only output as semantic documentation. Missing upstream artifacts are reported separately. Evidence: `transcript_pipeline.documentation.batch_regenerate_v2`, `tests/test_documentation_v2_batch.py`, and per-video version manifests.
+13. [ ] AC-13 — Global health/error presentation distinguishes service offline, worker error, active processing-stage error, and historical job failure. Each visible failure explains component, message, timestamp and affected file/job; resolved historical jobs do not poison current health. Evidence: focused classification/API/UI tests.
+14. [ ] AC-14 — Screen Wake Lock is requested only when recording, continuous playlist capture, or foreground upload needs it; visibility, orientation, release and re-acquire are handled; unsupported browsers report unavailable. Evidence: deterministic Wake Lock lifecycle tests.
+15. [ ] AC-15 — Multi-GB uploads use persistent upload sessions with bounded hashed chunks, ACK map, retry/resume, per-file cancel, and finalize size/hash/media validation before normal processing enqueue. Browser restart can discover resumable sessions and resume already ACKed chunks without re-sending them. Evidence: chunk/API/UT recovery tests.
+16. [ ] AC-16 — Upload queue adapts simultaneous file count to file size, queued bytes, active transfers, backend health, network failures and available resources. Maximum remains six. Upload cards expose size, progress, percentage, speed, ETA, state, pause/resume/cancel/retry. Evidence: scheduler and UI tests.
+
+### 🟥 RULE CONFLICT — adaptive upload concurrency
+
+Earlier accepted SDD behavior fixes default upload concurrency at 4 and maximum at 6. This request explicitly reconciles that rule: adaptive scheduling replaces the fixed default, with the accepted maximum of 6 preserved. The prompt's shorthand “24” / “12” is interpreted as 2–4 medium and 1–2 multi-GB files, consistent with the explicit maximum. Keep this 🟥 RULE CONFLICT record as the change audit trail; the implementation below follows this explicit reconciliation.
 
 ## Non-goals
 
@@ -33,21 +43,22 @@ Implement and close gaps recorded in the analysis and canonical W41-W45 plan. Ex
 - Second Brain publisher feature work.
 - Deploying a different environment/account than the current Whisper desktop+LAN production services.
 
-## Release gates and policy (canonical, 2026-10-19)
+## Release gates and policy (authoritative, 2026-10-22)
 
-This section supersedes the former deterministic-gate list, the fixed `>6 GiB` guard and every earlier requirement that integration tests, full-suite runs, Playwright/E2E, Docker build/E2E, Jenkins, Sonar, soak or phone UAT must pass for release. The hard-blocker list, advisory-test policy, and release workflow are in `docs/plans/WHISPER_LIVE_CAPTURE_EXECUTION_PLAN.md`, section `FINAL SDD RELEASE RUN`. The only active feature-level Kanban is this SDD's `Finalization Kanban` section.
+This policy resolves conflicting earlier SDD and plan rules. It supersedes every earlier release rule, including E2E/security/repo-wide quality requirements and arbitrary RAM thresholds.
 
-Hard blockers — the only conditions that block release:
+Hard deployment gates (only):
+1. Requested production implementation is complete.
+2. Relevant unit tests pass.
+3. Application builds, imports, and starts.
+4. No known data corruption or loss risk.
+5. Enough storage exists for safe operation; unsafe uploads must be rejected before beginning/finalizing.
+6. Restart is safe and preserves active work and persistent data.
 
-1. Incomplete requested implementation.
-2. Relevant unit tests fail.
-3. App build or start fails.
-4. Known data loss or corruption.
-5. Unsafe restart that would lose the active user job and cannot be isolated or recovered.
+Integration, Playwright/E2E, Docker E2E, security scans, repository-wide legacy Ruff/Pyright findings, Jenkins, Sonar, soak, and arbitrary RAM thresholds are advisory. Record results honestly; advisory failures do not block deployment. Storage safety is evaluated for each upload and deployment. Real large-file UAT remains owner-run.
 
-Advisory gates (integration, E2E, Playwright, Host E2E, Docker build/E2E, security and any other optional check) record exactly one result: `PASS`, `FAIL_ADVISORY`, `ENV_BLOCKED`, `NOT_CONFIGURED`, `NOT_RUN`. Advisory results never block release, and `PASS` is never recorded without executed evidence from the current run. Integration tests, Playwright, Host E2E, Docker E2E, heavy gates, fixed RAM thresholds, Jenkins, Sonar, soak, and physical phone UAT are not publication gates. Jenkins, Sonar and soak are `NOT_REQUIRED`. RAM affects execution strategy only (ordering, serialization, deferral); it never decides release eligibility, and no active user job is ever interrupted to manufacture headroom. Physical Galaxy phone UAT is `OWNER_PENDING` owner verification and does not hold release. GLM is the preferred executor; on GLM auth/provider failure degrade to the cheapest available fallback — provider routing is an execution detail, never a project blocker.
+Deploy the requested implementation after all six hard gates pass. Preserve persistent volumes and rollback image. Verify candidate build and served endpoints/UI, including `/api/uploads`, chunks, resume/status, and finalize. Do not start real owner media during smoke tests.
 
-Mandatory engineering Definition of Done: scope complete per this US; no TODO/mock in requested production functionality; relevant unit tests pass; app builds/imports/starts; migrations valid; data safety preserved; code + SDD + Kanban committed and pushed. Deployment requires the final pushed HEAD, a preserved active job/worker, served-revision and shared-data parity verification, and the required lightweight post-deploy smoke (dashboard loads, Videos list renders, worker status, `/setup` reachable, served revision matches).
 
 ## Planning
 
@@ -60,6 +71,18 @@ This is the one active feature inventory and execution table for this SDD. All d
 
 | Feature / Gate | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
+| Mobile reliability + large-file upload V2 | TESTING | Previous one-request production repro confirmed stale served build returned HTML 404 for `POST /api/uploads`; Caddy generic reverse_proxy is correct. Candidate Docker image built and starts isolated; candidate POST `/api/uploads` returns JSON 403 (route exists; auth expected), GET returns JSON 200; UI contains Upload error and Pause/Resume/Retry. Focused upload UT 7 passed; Node 7 passed; import/start and route-map checks passed. Production has 0 active/pending jobs. | Finish production deploy and served-route/smoke verification. | Agent |
+| Resumable Upload API | TESTING | Candidate build/import/start pass; all upload, preflight, chunk, status, and finalize routes registered. Focused upload tests 7 passed, including synthetic 5 GiB resume, simulated 502, ACK preservation. | Verify served production endpoints after deploy. | Agent |
+| Non-JSON error handling | TESTING | Existing HTML response guarded by content type; Node suite 7 passed, including HTML error status handling; candidate serves Upload error UI. | Verify served UI after deploy. | Agent |
+| Storage preflight | TESTING | Host C: free 106.76 GiB; `/data` bind to same C: volume, 106.76 GiB free; batch-size preflight and per-session create check return JSON 507 before session creation. Reserve 2 GiB. | Verify production preflight response. | Agent |
+| ENOSPC handling | TESTING | Chunk/finalize ENOSPC maps to JSON 507 with actionable message; finalize refusal preserves ACK map. UT passes. | Verify served JSON response. | Agent |
+| Deploy | TODO | Isolated candidate Docker build and startup pass; production ZMI healthy, worker has 0 active/0 pending; rollback image and persistent mounts will be preserved. | Deploy current reviewed HEAD without removing volumes. | Agent |
+| Real multi-GB UAT | OWNER_PENDING | No owner media retried; synthetic 5 GiB resumable test passes. | Juan runs real-file UAT manually after release. | Juan |
+
+| Documentation V2: corpus inventory and resumable regeneration | COMPLETE | Initial scan was 9 total: 1 ready, 1 transcript missing, 1 keyframes missing, 6 missing both. Local-only preprocessing reused valid artifacts and completed missing transcripts/keyframes for all 9; final inventory reports 9 READY. Prep progress is resumable and persisted per media. | None. | Agent |
+| Documentation V2: semantic regeneration of full current corpus | COMPLETE | OpenCode Go preflight passed; model Kimi K2.6. Batch completed 9/9 versioned Docs V2 manuals; 9/9 synthesis-validation files valid, 0 failures, 273 items flagged for review, 393 grounded claims, and timestamped transcript/keyframe evidence index references. Version metadata includes generated_at, pipeline_version, source fingerprint, and provenance; rerun is fingerprint-idempotent. | None. | Agent |
+| Edit File: user-visible media name | 🟩 COMPLETE | Display name stored atomically by stable media ID; original path and extension remain unchanged. `watcher/venv/Scripts/python.exe -m pytest tests/test_dashboard_display_name.py -q` — 7 passed; `compileall` passed. Covers UI field, extension, trim, invalid/empty/collision, linked project/transcript/docs, playable media and idempotency. | None. | Agent |
+| LAN availability incident | 🟩 COMPLETE | Follow-up check found ZMI health checks and `docker exec` failing because its overlay rootfs path was missing; HTTP also timed out. Compose labels confirmed project `whisper`, `compose.yml`, service `zmi`. Queue had 0 active/pending jobs and capture sessions were closed. Recreated only ZMI with `docker compose -p whisper -f compose.yml up -d --no-deps --force-recreate zmi`; Caddy was left running. `/data` bind and `whisper_zmi-model-cache` volume remain mounted. ZMI is healthy; Docker Engine 29.5.3; desktop HTTP, LAN HTTPS, LAN `/setup`, and dashboard return 200; worker RUNNING 0/0; Videos 9, projects 4, shared-media references 9/9 valid. Ethernet `192.168.50.20`. | None. | Agent |
 | Live Capture: Camera mode, Audio-only mode, Camera microphone ON by default, visible microphone status | 🟩 COMPLETE | Existing capture API/UI and prior synthetic browser evidence; current relevant root suite passes (1230 passed, 8 skipped). Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Live Capture: rear camera, camera switching, portrait/landscape | 🟩 COMPLETE | Prior synthetic camera/orientation browser coverage; physical device remains owner UAT. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Live Capture: resolution selection, actual resolution display, recording timer | 🟩 COMPLETE | Prior capture API/browser evidence; verified by current root unit suite (1230 passed, 8 skipped). Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
@@ -168,3 +191,11 @@ Expected: 1. INITIAL_SPEC (this frozen US and production publication authorizati
 ## Terminal state
 
 `READY_FOR_DEPLOY` after implementation gates, commit and push; `RELEASED` after production deployment/verification. Galaxy phone UAT may remain `OWNER_PENDING` after release and does not hold automated delivery. `DONE` after required owner phone acceptance when available.
+
+## Docs V2 OpenCode Go Resume Check (2026-10-21)
+
+- Official OpenCode Go endpoint requires a dedicated Go API key. CLI stores that API key under `opencode-go` in `~/.local/share/opencode/auth.json`; `auth login opencode` does not create a reusable session token for the direct `/chat/completions` API.
+- Root cause: `.agents/session/run_docs_v2_opencode_go.py` unconditionally loaded the saved `opencode-go` key and copied it to `LLM_API_KEY`; the compatible client then sent that expired value as Bearer auth. A legacy `LLM_API_KEY` remains in `scan_config.env`, but the OpenCode host now ignores it.
+- Fix: `Settings` supports `OPENCODE_API_KEY`, the OpenCode client uses only that dedicated setting for `opencode.ai`, and the batch runner no longer reads `auth.json` or legacy `LLM_API_KEY`. Secrets are not persisted by the runner.
+- Current validation (2026-10-21): the User-scoped `OPENCODE_API_KEY` was copied only into child processes; no secret was printed or persisted. OpenCode Go tiny preflight passed. Initial 9-media inventory: 1 READY, 1 NEEDS_TRANSCRIPT, 1 NEEDS_KEYFRAMES_ONLY, 6 NEEDS_TRANSCRIPT_AND_KEYFRAMES. Session 41 generated and validated Docs V2 version 2; see Finalization Kanban.
+- Local preprocessing is running resumably from saved evidence. Continue it to completion, refresh the inventory, then generate and validate Docs V2 for all eligible corpus items. Keep failed docs retryable and persist each result in the batch manifest.

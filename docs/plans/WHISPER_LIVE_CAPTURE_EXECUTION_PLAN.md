@@ -849,40 +849,24 @@ Current source findings:
 
 This is the canonical release policy and execution record. The only active feature-level Delivery Kanban is in `.agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md`, section `Finalization Kanban`. Older Kanbans above are dated historical evidence only. This section supersedes every earlier fixed RAM-threshold rule (including the former strict `>6 GiB` hard gate and the later 4/6 GiB ladder) and every earlier policy that made integration tests, full-suite runs, Playwright/E2E, Docker build/E2E, Jenkins, Sonar, soak, or phone UAT mandatory for release. The same supersession applies to the gate sections of `US-ZMI-LIFECYCLE-001` and `PLAN-ZMI-LIFECYCLE-001`.
 
-### Release policy (canonical)
+### Release policy (authoritative, 2026-10-22)
 
-Hard blockers — the ONLY conditions that block release:
+This resolves conflicting older SDD/plan release rules. The only hard deployment gates are:
 
-1. Requested implementation incomplete (SDD/US scope not implemented).
-2. Relevant unit tests fail (tests tied to the change or scope).
-3. App build or app start fails.
-4. Known data loss or corruption.
-5. An unsafe restart that would lose the active user job and cannot be isolated or recovered safely.
+1. Requested production implementation complete.
+2. Relevant Unit Tests pass.
+3. Application builds, imports, and starts.
+4. No known data corruption/loss risk.
+5. Enough storage exists for safe operation; uploads that exceed available space plus reserve are rejected before starting or finalizing.
+6. Restart safely preserves active work and persistent data.
 
-Everything else is advisory. RAM affects execution strategy only — it decides ordering, serialization and deferral of expensive work (for example, one browser/Docker gate at a time, processes released between gates). A low RAM reading is never by itself a release blocker or a gate result.
+These checks are advisory and never deployment blockers: integration, Playwright/E2E, Docker E2E, security scans, repository-wide legacy Ruff/Pyright findings, Jenkins, Sonar, soak, and arbitrary RAM thresholds. Record results accurately. Storage remains a hard safety condition for each upload; it does not by itself block deploying improved safeguards. Never retry owner real large files during smoke. Preserve persistent volumes and rollback image.
 
-Advisory gates — integration, E2E, Playwright, Host E2E, Docker build/E2E, security, and any other optional check — record exactly one result: `PASS`, `FAIL_ADVISORY`, `ENV_BLOCKED`, `NOT_CONFIGURED`, `NOT_RUN`. Advisory results never block release; they are recorded with evidence and become follow-up work. Never record `PASS` without executed evidence from the current run.
+Candidate and served verification must cover build/import/start, `POST /api/uploads`, chunk, resume/status, finalize, JSON error responses, upload error badge and controls. Test small/interrupted synthetic upload, transient 502 retry, resume with ACK retention, and finalize in isolation. Real large-file UAT is `OWNER_PENDING`.
 
-Jenkins, Sonar and soak are `NOT_REQUIRED` for this release. Physical Galaxy phone UAT is owner-only verification tracked as `OWNER_PENDING`; it does not hold an otherwise accepted release.
+### Deployment execution
 
-Model policy: use Z.AI/GLM for normal implementation. On auth failure use OpenCode Go/DeepSeek Flash, then local DeepSeek/Ollama, then the available current coding model. DeepSeek Pro is only for a difficult blocker after cheaper attempts. Record `MODEL_DEGRADED=YES` on GLM auth failure and continue; model access is never a project blocker.
-
-Mandatory engineering Definition of Done — all required before release:
-
-- Scope complete per the SDD/US and the reconciled scope below.
-- No TODO, mock, stub or placeholder left in requested production functionality.
-- Relevant unit tests pass.
-- App builds, imports and starts.
-- Migrations/defaults valid for existing records; no destructive migration.
-- Data safety: no user data deleted or corrupted; active job preserved; shared data root untouched except documented synthetic test records.
-- Code + SDD docs + this Kanban committed and pushed (remote HEAD equals local HEAD).
-
-Deploy verification — all required whenever deploying:
-
-- Deploy only the final reviewed, pushed HEAD, with the previous image/SHA retained as rollback.
-- Deploy only when hard blocker 5 is cleared: the active job is inactive, or can be isolated/recovered without loss. Never stop the worker or the active job to force a deploy, and never deploy behind its back in a way that loses it.
-- Detect the current LAN IP dynamically. Verify desktop HTTP and LAN HTTPS serve that exact HEAD (response header and page meta), health is ONLINE, and shared-data parity matches a pre-deploy count/hash/metadata snapshot (media/projects/jobs/docs/worker).
-- Required lightweight post-deploy smoke: HTTP and HTTPS respond; served revision equals FINAL_HEAD; existing Videos and Projects render; shared data is unchanged; Pipeline occupies the former Overview card cell, Folders is beneath Pipeline on desktop and stacks on mobile, preview video/transcript panels render, manual transcript entry is available; New Recording, Video Editor, and Overview modal open; `/setup` responds. A startup failure or data corruption is a hard blocker and triggers repair/rollback.
+Before deployment report host, Whisper media filesystem, and Docker storage free space; identify the actual upload volume. Check no active job will be lost, save the served image for rollback, deploy without removing volumes, then verify served routes/UI and health. Proceed when the six hard gates pass regardless of advisory results.
 
 ### Reconciled scope and evidence
 

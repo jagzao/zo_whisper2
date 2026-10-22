@@ -81,6 +81,59 @@ def test_fresh_stages_all_pending_no_progress():
         assert stages[name]["progress"] is None
 
 
+def test_status_classifies_active_pipeline_and_historical_job_failures(client, monkeypatch):
+    class Store:
+        rows = []
+        def list_jobs(self): return self.rows
+
+    class Worker:
+        store = Store()
+        error = None
+        def status(self): return {"state": "RUNNING", "active_jobs": 1, "pending_jobs": 0,
+                                  "last_error": self.error, "last_error_at": "2026-10-21T10:02:00" if self.error else None}
+
+    worker = Worker()
+    monkeypatch.setattr(dashboard_app, "_get_processing_worker", lambda: worker)
+    dashboard_app._run_state.update(running=False, error="Vision provider timed out", finished_at="2026-10-21T10:00:00",
+                                    stage="vision_ocr", stages=dashboard_app._fresh_stages())
+    dashboard_app._run_state["stages"]["vision_ocr"]["status"] = "failed"
+    worker.store.rows = [{"id": "job-old", "status": "FAILED", "finished_at": "2026-10-20T12:00:00", "error": "old failure"}]
+    result = client.get("/api/status").get_json()
+    assert result["worker"]["state"] == "RUNNING"
+    assert result["error_detail"]["classification"] == "historical_processing_failure"
+    assert result["error_detail"]["component"] == "pipeline"
+    assert result["error_detail"]["stage"] == "vision_ocr"
+    assert result["historical_failure"]["id"] == "job-old"
+    assert result["worker_error"] is None
+
+    worker.error = "Queue scan failed"
+    result = client.get("/api/status").get_json()
+    assert result["worker_error"]["classification"] == "worker_error"
+    assert result["worker_error"]["component"] == "processing worker"
+    assert result["worker_error"]["timestamp"] == "2026-10-21T10:02:00"
+    worker.error = None
+
+    worker.store.rows = [{"id": "job-active", "status": "ACTIVE", "started_at": "2026-10-21T10:01:00"}]
+    dashboard_app._run_state["running"] = True
+    result = client.get("/api/status").get_json()
+    assert result["error_detail"]["classification"] == "active_processing_failure"
+    assert result["error_detail"]["affected_file_job"] == "job-active"
+    _reset_run_state()
+
+
+def test_pipeline_error_marks_worker_job_failed(monkeypatch):
+    _reset_run_state()
+
+    def fail(_mode, cancel_check=None):
+        dashboard_app._run_state.update(running=False, error="OCR provider failed", finished_at="2026-10-21T10:00:00")
+
+    monkeypatch.setattr(dashboard_app, "_run_pipeline", fail)
+    with pytest.raises(RuntimeError, match="OCR provider failed"):
+        dashboard_app._execute_processing_job("full")
+    assert dashboard_app._run_state["error"] == "OCR provider failed"
+    _reset_run_state()
+
+
 # ── derivation from real log markers ─────────────────────────────────────
 
 def test_infer_stage_marks_compress_completed_analyze_running():

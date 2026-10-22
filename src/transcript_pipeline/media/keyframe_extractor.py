@@ -4,6 +4,7 @@ Keyframe Extractor Module
 Extracts keyframes from tutorial videos using FFmpeg
 """
 
+import json
 import logging
 import os
 import subprocess
@@ -179,7 +180,7 @@ class KeyframeExtractor:
 
     def _get_video_duration(self, video_path: Path) -> float:
         """
-        Obtiene la duración del video usando FFprobe/FFmpeg.
+        Obtiene la duración del video desde los metadatos de FFprobe.
 
         Args:
             video_path: Ruta al video
@@ -188,35 +189,21 @@ class KeyframeExtractor:
             Duración en segundos (0 si hay error)
         """
         try:
-            cmd = [
-                self.ffmpeg_path,
-                "-i", str(video_path),
-                "-f", "null",
-                "-"
-            ]
-
+            ffmpeg = Path(self.ffmpeg_path)
+            ffprobe = str(ffmpeg.with_name("ffprobe.exe" if os.name == "nt" else "ffprobe")) if ffmpeg.parent != Path(".") else "ffprobe"
             result = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                [ffprobe, "-v", "error", "-show_entries", "format=duration:stream=duration", "-of", "json", str(video_path)],
+                capture_output=True,
                 text=True,
-                timeout=30
+                timeout=15,
+                check=True,
             )
-
-            # Buscar duración en la salida
-            for line in result.stdout.split('\n'):
-                if "Duration:" in line:
-                    # Formato: "Duration: 00:01:23.45, start: 0.000000, bitrate: 1234 kb/s"
-                    duration_str = line.split("Duration:")[1].split(",")[0].strip()
-                    # Parsear HH:MM:SS.mmm
-                    parts = duration_str.split(":")
-                    if len(parts) == 3:
-                        hours = float(parts[0])
-                        minutes = float(parts[1])
-                        seconds = float(parts[2])
-                        return hours * 3600 + minutes * 60 + seconds
-
-            return 0.0
+            metadata = json.loads(result.stdout)
+            duration = (metadata.get("format") or {}).get("duration")
+            if duration is None:
+                stream_durations = [float(stream["duration"]) for stream in metadata.get("streams", []) if stream.get("duration")]
+                duration = max(stream_durations, default=0.0)
+            return float(duration or 0.0)
 
         except Exception as e:
             logger.warning(f"[KEYFRAMES] Error obteniendo duración: {e}")

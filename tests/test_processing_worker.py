@@ -44,6 +44,21 @@ def test_duplicate_worker_claim_prevention(tmp_path):
     assert sum(result is not None for result in results) == 1
 
 
+def test_upload_enqueue_is_idempotent_by_session_id(tmp_path):
+    store = ProcessingJobStore(tmp_path)
+    first = store.enqueue("full", idempotency_key="upload:session-a")
+    duplicate = store.enqueue("full", idempotency_key="upload:session-a")
+    other = store.enqueue("full", idempotency_key="upload:session-b")
+    assert duplicate["id"] == first["id"]
+    assert other["id"] != first["id"]
+    store.claim_next(1)
+    store.finish(first["id"], "FAILED", "synthetic failure")
+    failed = next(job for job in store.list_jobs() if job["id"] == first["id"])
+    assert failed["finished_at"]
+    assert store.enqueue("full", idempotency_key="upload:session-a")["id"] == first["id"]
+    assert len(store.list_jobs()) == 2
+
+
 def test_shared_queue_lock_recreates_removed_state_directory(tmp_path):
     store = ProcessingJobStore(tmp_path)
     shutil.rmtree(store.directory)

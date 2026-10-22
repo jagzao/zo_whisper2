@@ -19,7 +19,7 @@ boolean-py==5.0
     # via license-expression
 cachecontrol==0.14.4
     # via pip-audit
-certifi==2026.7.22
+certifi==2026.10.19
     # via
     #   transcript-pipeline (pyproject.toml)
     #   httpcore
@@ -178,7 +178,7 @@ pdfminer-six==20260107
     #   pdfplumber
 pdfplumber==0.11.10
     # via markitdown
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   transcript-pipeline (pyproject.toml)
     #   imagehash
@@ -220,7 +220,7 @@ pygments==2.20.0
     #   rich
 pyparsing==3.3.2
     # via pip-requirements-parser
-pypdf==6.20.1
+pypdf==6.21.2
     # via transcript-pipeline (pyproject.toml)
 pypdfium2==5.14.0
     # via pdfplumber

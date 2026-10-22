@@ -65,6 +65,47 @@ def test_generate_summary_sends_bearer_token(provider):
     assert headers["Authorization"] == "Bearer test-key"
 
 
+def test_opencode_go_sends_stable_session_header():
+    configured = OpenAICompatibleProvider(_settings(
+        llm_base_url="https://opencode.ai/zen/go/v1", opencode_api_key="go-key"
+    ))
+    with patch("transcript_pipeline.llm.openai_compatible.requests.post", return_value=_ok_response()) as mock_post:
+        configured.generate_summary("docs evidence")
+        first = mock_post.call_args.kwargs["headers"]
+        configured.generate_summary("docs evidence")
+        second = mock_post.call_args.kwargs["headers"]
+
+    assert first["x-opencode-session"] == second["x-opencode-session"]
+    assert first["User-Agent"] == "whisper-docs-v2/1.0"
+    assert first["Authorization"] == "Bearer go-key"
+
+
+def test_opencode_kimi_disables_reasoning_to_preserve_response_content():
+    configured = OpenAICompatibleProvider(_settings(
+        llm_base_url="https://opencode.ai/zen/go/v1",
+        llm_model="kimi-k2.6",
+        opencode_api_key="go-key",
+    ))
+    with patch("transcript_pipeline.llm.openai_compatible.requests.post", return_value=_ok_response()) as mock_post:
+        configured.generate_summary("tiny probe")
+    assert mock_post.call_args.kwargs["json"]["thinking"] == {"type": "disabled"}
+
+
+def test_empty_assistant_content_raises_clear_error(provider):
+    response = _ok_response()
+    response.json.return_value["choices"][0]["message"]["content"] = None
+    with patch("transcript_pipeline.llm.openai_compatible.requests.post", return_value=response):
+        with pytest.raises(ValueError, match="no assistant content"):
+            provider.generate_summary("text")
+
+
+def test_opencode_ignores_legacy_llm_key():
+    configured = OpenAICompatibleProvider(_settings(llm_base_url="https://opencode.ai/zen/go/v1"))
+    with patch("transcript_pipeline.llm.openai_compatible.requests.post", return_value=_ok_response()) as mock_post:
+        configured.generate_summary("tiny probe")
+    assert "Authorization" not in mock_post.call_args.kwargs["headers"]
+
+
 def test_retries_on_connection_error_then_succeeds(provider):
     with patch(
         "transcript_pipeline.llm.openai_compatible.requests.post",

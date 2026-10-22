@@ -47,6 +47,30 @@ def test_failed_generation_preserves_current_docs(tmp_path):
     assert list_versions(frames) == []
 
 
+def test_invalid_synthesis_is_retried_for_same_evidence(tmp_path):
+    frames = tmp_path / "frames"
+    frames.mkdir()
+    (frames / "frame_mapping.json").write_text('{"frames": []}', encoding="utf-8")
+    calls = []
+
+    def generate(root, **kwargs):
+        calls.append(1)
+        manual = root / "manual"
+        manual.mkdir(exist_ok=True)
+        if len(calls) == 1:
+            return {"status": "SYNTHESIS_INVALID"}
+        (manual / "MANUAL.md").write_text("valid synthesis", encoding="utf-8")
+        return {"status": "SYNTHESIS_READY"}
+
+    failed = regenerate_versioned(frames, "videos:sample.mp4", generate)
+    retried = regenerate_versioned(frames, "videos:sample.mp4", generate)
+
+    assert failed["version"]["generation_status"] == "SYNTHESIS_INVALID"
+    assert retried["version"]["documentation_version"] == 2
+    assert retried["version"]["generation_status"] == "SYNTHESIS_READY"
+    assert calls == [1, 1]
+
+
 def test_changed_evidence_creates_linked_version_and_preserves_previous(tmp_path):
     frames = tmp_path / "frames"
     frames.mkdir()

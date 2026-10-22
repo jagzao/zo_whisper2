@@ -14,6 +14,11 @@
 
 ## Execution rules
 
+## Authoritative deployment policy (2026-10-22)
+
+This explicitly resolves earlier conflicting release rules in this plan and the SDD. Hard deployment gates only: (1) requested production implementation complete, (2) relevant UT pass, (3) build/import/start pass, (4) no known data corruption/loss risk, (5) sufficient storage for safe operation, and (6) restart preserves active work and persistent data. Integration, Playwright/E2E, Docker E2E, security, repo-wide legacy Ruff/Pyright, Jenkins, Sonar, soak, and arbitrary RAM thresholds are advisory and never block deployment. Reject unsafe uploads before beginning/finalizing and report actionable free/required space. Preserve production volumes and rollback image. Real large-file UAT is owner-run.
+
+
 - No worktree. Preserve all existing working-tree edits; never reset, stash, or clean. Commit coherent checkpoints and push them.
 - Model order: Z.AI/GLM; if auth/provider unavailable, OpenCode Go/DeepSeek Flash; then local DeepSeek/Ollama; then any available current coding model. DeepSeek Pro only for a difficult blocker after cheaper attempts. GLM auth failure is `MODEL_DEGRADED=YES`, never a project blocker.
 - Synthetic/isolated data for tests. Never test destructive cleanup against user originals.
@@ -75,10 +80,10 @@
 
 ## WP-09 — Authorized production deployment and UAT readiness
 
-- Confirm the final pushed SHA equals origin; capture production config/service identities, pre-deploy shared-data snapshot, and backup/rollback steps. Advisory gates are not prerequisites.
-- Preserve the active processing job. Restart only if inactive or if web can be isolated from the worker without loss; otherwise wait for job completion while continuing independent work.
+- Confirm candidate source identity; capture production config/service identities, storage free-space evidence, pre-deploy shared-data snapshot, and backup/rollback steps. Advisory gates are not prerequisites.
+- Preserve the active processing job. Restart only if inactive or if web can be isolated from the worker without loss; otherwise wait for job completion while continuing independent work. Check safe host/media/Docker storage before restart.
 - Deploy/restart only the current Whisper desktop and LAN services, from the same reviewed SHA and shared data root. No account/environment substitution, schema reset, data copy, or deletion/migration of user media.
-- Verify health, served HEAD markers, localhost/LAN normalized video/project/job/docs/worker parity, Videos, New Recording, Video Editor, Overview modal, and `/setup`. Confirm rollback command and previous image/SHA.
+- Verify health, served revision, `/api/uploads`, chunk/resume/finalize routes, JSON error handling, upload UI, localhost/LAN data parity, Videos, New Recording, Video Editor, Overview modal, and `/setup`. Confirm rollback command and previous image/SHA.
 - Record deployment and checks in DELIVERY. Stop at `READY_FOR_HUMAN_ACCEPTANCE`; owner performs final real-phone UAT before `DONE`.
 
 ## Delivery Kanban — black video completion, 2026-10-19

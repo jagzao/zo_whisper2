@@ -177,6 +177,7 @@
         .pipeline-stage.done { color: var(--ok); border-color: rgba(0,230,118,0.35); }
         .pipeline-stage.running { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(0,229,255,0.2); }
         .pipeline-stage.failed { color: var(--danger); border-color: rgba(255,80,80,0.4); }
+        .pipeline-stage.failed-history { color: var(--muted); border-color: var(--border); }
         .pipeline-progress {
             display: inline-block;
             width: 2.25rem;
@@ -956,6 +957,7 @@
                 <label for="uploadProject">Project (optional):</label>
                 <select id="uploadProject"><option value="">Auto-detect</option></select>
             </div>
+            <div id="uploadWakeLockState" class="muted" style="font-size:.8rem; margin-top:.4rem;">Screen awake: inactive</div>
             <div id="uploadQueue" class="row" style="margin-top:0.75rem; flex-direction:column; align-items:stretch;" aria-live="polite"></div>
             <button id="startUploadBatch" class="secondary" style="width:100%;" data-upload-concurrency="{{ upload_concurrency }}" onclick="startUploadBatch()" disabled>Upload selected files (0)</button>
         </div>
@@ -1038,6 +1040,9 @@
             <div class="edit-transcription">
                 <input type="hidden" id="editTxId">
                 <input type="hidden" id="editMediaId">
+                <label for="editMediaName" style="display:block; margin-bottom:0.35rem; color:var(--muted);">Name:</label>
+                <input id="editMediaName" type="text" autocomplete="off" aria-describedby="editMediaNameError">
+                <div id="editMediaNameError" role="alert" style="min-height:1.25rem; color:var(--danger); font-size:0.9rem;"></div>
                 <div class="row" style="align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
                     <label for="editProject" style="min-width:5rem;">Project:</label>
                     <select id="editProject"><option value="">Auto-detect</option></select>
@@ -1364,6 +1369,7 @@
         </div>
     </div>
 
+    <script src="{{ url_for('static', filename='upload_reliability.js') }}"></script>
     <script>
         // Generated fresh per dashboard process (see app.py) — required on every
         // mutating request so this localhost-only dashboard can't be driven by
@@ -1375,8 +1381,8 @@
             document.getElementById('mobileSetupCard')?.remove();
         }
         if (localStorage.getItem('whisperMobileSetupDismissed') === '1') document.getElementById('mobileSetupCard')?.remove();
-        const api = path => fetch(path, { headers: { 'Accept': 'application/json' }}).then(r => r.json());
-        const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: JSON.stringify(body) }).then(r => r.json());
+        const api = path => fetch(path, { headers: { 'Accept': 'application/json' }}).then(r => whisperReadDashboardJson(r));
+        const post = (path, body) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: JSON.stringify(body) }).then(r => whisperReadDashboardJson(r));
         const showToast = msg => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); };
         let lastCompressionRefreshAt = null;
 
@@ -1421,12 +1427,17 @@
             el.innerHTML = stages.map((stage, idx) => {
                 let cls = '';
                 let progress = null;
+                let title = '';
                 if (stagesState && stagesState[stage]) {
                     const st = stagesState[stage].status;
                     progress = stagesState[stage].progress;
                     if (st === 'completed') cls = 'done';
                     else if (st === 'running') cls = 'running';
-                    else if (st === 'failed') cls = 'failed';
+                    else if (st === 'failed') {
+                        const detail = status?.error_detail;
+                        cls = detail?.classification === 'active_processing_failure' ? 'failed' : 'failed-history';
+                        if (detail) title = `${detail.component}: ${detail.last_error} · ${detail.timestamp || 'time unavailable'} · ${detail.affected_file_job || 'job unavailable'}`;
+                    }
                 } else {
                     if (idx < currentIdx || (idx === currentIdx && !running)) cls = 'done';
                     else if (idx === currentIdx && running) cls = 'running';
@@ -1435,7 +1446,7 @@
                 const prog = progress != null
                     ? `<span class="pipeline-progress"><span class="pipeline-progress-bar" style="width:${Math.max(0, Math.min(100, progress))}%"></span></span>`
                     : '';
-                return `${arrow}<span class="pipeline-stage ${cls}">${PIPELINE_STAGE_LABELS[stage]}${prog}</span>`;
+                return `${arrow}<span class="pipeline-stage ${cls}"${title ? ` title="${escapeHtml(title)}"` : ''}>${PIPELINE_STAGE_LABELS[stage]}${prog}</span>`;
             }).join('');
         }
 
@@ -1874,7 +1885,7 @@
                 let result;
                 while (true) {
                     const response = await fetch(`/api/video/edit-jobs/${encodeURIComponent(state.editJobId)}`, { headers:{'X-Local-Dashboard-Token':DASHBOARD_TOKEN} });
-                    result = await response.json();
+                    result = await whisperReadDashboardJson(response);
                     if (!response.ok || !result.ok) throw new Error(result.error || 'Edit job status unavailable');
                     if (result.status === 'FAILED') throw new Error(result.message || 'Edit failed; original video was preserved.');
                     document.getElementById('videoTrimStatus').textContent = result.status === 'VALIDATING'
@@ -2224,7 +2235,7 @@
                 const response = await fetch(`/api/run/${mode}`, {
                     method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }
                 });
-                const res = await response.json().catch(() => ({}));
+                const res = await whisperReadDashboardJson(response);
                 if (!response.ok || !res.ok) {
                     showToast(res.error || `Could not start pipeline (HTTP ${response.status}).`);
                     return;
@@ -2237,24 +2248,49 @@
         }
 
         async function updateRunStatus() {
-            const status = await api('/api/status');
+            let status;
+            try { status = await api('/api/status'); }
+            catch (_) {
+                const offline = document.getElementById('runStatus');
+                offline.textContent = 'Service offline'; offline.className = 'status error';
+                offline.title = 'Dashboard backend did not respond. Check the service connection.';
+                const worker = document.getElementById('workerStatus');
+                worker.textContent = 'Worker status unavailable · service offline';
+                worker.title = offline.title;
+                return;
+            }
             const worker = status.worker || {};
             const workerEl = document.getElementById('workerStatus');
             workerEl.textContent = `Worker: ${worker.state || 'UNKNOWN'} · Pending: ${worker.pending_jobs ?? 0} · Active: ${worker.active_jobs ?? 0} · Limit: ${worker.concurrency_limit ?? '?'}`;
-            workerEl.title = `Next scan: ${worker.next_scan || 'starting'}; Last scan: ${worker.last_scan || 'none'}`;
+            workerEl.title = `Next scan: ${worker.next_scan || 'starting'}; Last scan: ${worker.last_scan || 'none'}${status.worker_error ? `; Error: ${status.worker_error.last_error || 'worker failed'} (${status.worker_error.timestamp || 'time unavailable'})` : ''}`;
             const el = document.getElementById('runStatus');
             const buttons = ['btnRunFull','btnRunCompress','btnRunTranscribe'];
             buttons.forEach(id => document.getElementById(id).disabled = status.running);
-            if (status.running) {
+            const uploadFailure = uploadItems.find(item => item.state === 'FAILED');
+            if (uploadFailure) {
+                el.textContent = 'Upload error';
+                el.className = 'status error';
+                el.title = `${uploadFailure.error || 'Upload failed'} · ${uploadFailure.filename || 'file unavailable'}`;
+            } else if (status.error_detail?.classification === 'active_processing_failure') {
+                const detail = status.error_detail;
+                el.textContent = `Processing error · ${detail.stage || 'stage unknown'}`;
+                el.className = 'status error';
+                el.title = `${detail.component}: ${detail.last_error} · ${detail.timestamp || 'time unavailable'} · ${detail.affected_file_job || 'job unavailable'}`;
+            } else if (status.worker_error) {
+                el.textContent = 'Worker error';
+                el.className = 'status error';
+                el.title = `${status.worker_error.component}: ${status.worker_error.last_error || 'unknown'} · ${status.worker_error.timestamp || 'time unavailable'} · ${status.worker_error.affected_file_job || 'job unavailable'}`;
+            } else if (status.running) {
                 el.textContent = `Running: ${status.mode}`;
                 el.className = 'status pending';
-            } else if (status.error) {
-                el.textContent = 'Error';
-                el.className = 'status error';
             } else {
                 el.textContent = 'Ready';
                 el.className = 'status processed';
+                const history = status.historical_failure ? `Historical job failure: ${status.historical_failure.error || status.historical_failure.message || 'details unavailable'} · ${status.historical_failure.finished_at || 'time unavailable'} · ${status.historical_failure.id}` : '';
+                const lastRun = status.error_detail ? `Last processing failure at ${status.error_detail.stage || 'unknown stage'}: ${status.error_detail.last_error} · ${status.error_detail.timestamp || 'time unavailable'} · ${status.error_detail.affected_file_job || 'job unavailable'}` : '';
+                el.title = [history, lastRun, 'No current processing error'].filter(Boolean).join('\n');
             }
+            el.onclick = el.title ? () => showToast(el.title) : null;
             if (!status.running && status.finished_at) {
                 loadFolders(); loadFiles(); loadMetrics();
                 if (lastCompressionRefreshAt !== status.finished_at) {
@@ -2274,7 +2310,7 @@
             let online = false;
             try {
                 const res = await fetch('/api/health', { headers: { 'Accept': 'application/json' }});
-                const data = res.ok ? await res.json() : {};
+                const data = res.ok ? await whisperReadDashboardJson(res) : {};
                 online = res.ok && data.status === 'ONLINE';
             } catch (e) {
                 online = false;
@@ -2661,7 +2697,7 @@
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
                 body: JSON.stringify({ step_id: stepId, instruction: textarea.value }),
-            }).then(r => r.json());
+            }).then(r => whisperReadDashboardJson(r));
             if (res.ok) { showToast('Step updated'); applyStepUpdate(res.step); }
             else showToast(res.error || 'Error updating step');
         }
@@ -2671,7 +2707,7 @@
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
                 body: JSON.stringify({ step_id: stepId, reviewed }),
-            }).then(r => r.json());
+            }).then(r => whisperReadDashboardJson(r));
             if (res.ok) { showToast(reviewed ? 'Marked reviewed' : 'Marked unreviewed'); applyStepUpdate(res.step); }
             else showToast(res.error || 'Error updating step');
         }
@@ -2681,7 +2717,7 @@
             const res = await fetch(
                 `/api/documentation/step?id=${encodeURIComponent(window._mediaId)}&step_id=${encodeURIComponent(stepId)}`,
                 { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }
-            ).then(r => r.json());
+            ).then(r => whisperReadDashboardJson(r));
             if (res.ok) { showToast('Step removed'); loadDocs(); }
             else showToast(res.error || 'Error removing step');
         }
@@ -2689,7 +2725,7 @@
         async function regenerateDocs() {
             const res = await fetch('/api/documentation/v2/regenerate?id=' + encodeURIComponent(window._mediaId), {
                 method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
-            }).then(r => r.json());
+            }).then(r => whisperReadDashboardJson(r));
             if (res.ok) { showToast('Documentation V2 regenerated from saved evidence'); loadDocs(); }
             else showToast(res.error || 'Error regenerating documentation');
         }
@@ -2697,7 +2733,7 @@
         async function reprocessVideo() {
             const res = await fetch('/api/video/reprocess?id=' + encodeURIComponent(window._mediaId), {
                 method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
-            }).then(r => r.json());
+            }).then(r => whisperReadDashboardJson(r));
             if (res.ok) showToast('Video media processing started');
             else showToast(res.error || 'Error reprocessing video');
         }
@@ -2817,6 +2853,9 @@
             document.querySelector('#editModal .modal-header h2').textContent = txId ? 'Edit file' : 'Add transcription';
 
             const file = (window._allFiles || []).find(f => f.media_id === mediaId) || {};
+            const suffix = file.name ? file.name.slice(file.name.lastIndexOf('.')) : '';
+            document.getElementById('editMediaName').value = suffix ? file.name.slice(0, -suffix.length) : (file.name || '');
+            document.getElementById('editMediaNameError').textContent = '';
             await populateEditProject(file.project, file.project_source);
 
             document.getElementById('editModal').classList.remove('hidden');
@@ -2858,6 +2897,31 @@
             const text = document.getElementById('editTxText').value;
             const mediaId = document.getElementById('editMediaId').value;
             const project = document.getElementById('editProject').value;
+            const nameField = document.getElementById('editMediaName');
+            const displayName = nameField.value.trim();
+            const nameError = document.getElementById('editMediaNameError');
+            const currentFile = (window._allFiles || []).find(file => file.media_id === mediaId) || {};
+            const extension = currentFile.name ? currentFile.name.slice(currentFile.name.lastIndexOf('.')) : '';
+            const unsafe = /[<>:"/\\|?*\x00-\x1f]/;
+            const collision = (window._allFiles || []).some(file => file.media_id !== mediaId
+                && file.relative && currentFile.relative
+                && file.relative.slice(0, file.relative.lastIndexOf('\\') >= 0 ? file.relative.lastIndexOf('\\') : file.relative.lastIndexOf('/'))
+                    === currentFile.relative.slice(0, currentFile.relative.lastIndexOf('\\') >= 0 ? currentFile.relative.lastIndexOf('\\') : currentFile.relative.lastIndexOf('/'))
+                && file.name.toLocaleLowerCase() === `${displayName}${extension}`.toLocaleLowerCase());
+            if (!displayName || displayName === '.' || displayName === '..' || unsafe.test(displayName) || displayName.endsWith('.') || collision) {
+                nameError.textContent = !displayName ? 'Name cannot be empty.'
+                    : collision ? 'A file with that name already exists in this folder.'
+                    : 'Enter a valid name without path or filesystem characters.';
+                nameField.focus();
+                return;
+            }
+            nameError.textContent = '';
+            const rename = await post('/api/media/display-name', { id: mediaId, name: displayName });
+            if (!rename.ok) {
+                nameError.textContent = rename.error || 'Could not save the media name.';
+                nameField.focus();
+                return;
+            }
             const page = window._currentPage || 1;
             const res = await post('/api/transcription', { id, text, project, media_id: mediaId });
             if (res.ok) {
@@ -2881,7 +2945,7 @@
                 : 'Delete file and its transcription?';
             if (!confirm(message)) return;
             const suffix = captureSession ? '&confirm=true' : '';
-            const res = await fetch('/api/file?id=' + encodeURIComponent(id) + suffix, { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => r.json());
+            const res = await fetch('/api/file?id=' + encodeURIComponent(id) + suffix, { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } }).then(r => whisperReadDashboardJson(r));
             if (res.ok) {
                 showToast('File deleted');
                 if (captureSession) {
@@ -2930,7 +2994,7 @@
             try {
                 const res = await fetch('/api/documentation/generate?id=' + encodeURIComponent(id), {
                     method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
-                }).then(r => r.json());
+                }).then(r => whisperReadDashboardJson(r));
                 if (res.ok) {
                     showToast('Documentation generated');
                     const page = window._currentPage || 1;
@@ -2959,48 +3023,73 @@
         });
         fileInput.addEventListener('change', e => handleFiles(e.target.files));
 
-        const UPLOAD_CONCURRENCY = {{ upload_concurrency }};
+        const UPLOAD_CONCURRENCY_MAX = Math.min(6, Math.max(1,
+            Number(document.getElementById('startUploadBatch')?.dataset.uploadConcurrency) || 4));
         const uploadItems = [];
         let activeUploadCount = 0;
         let uploadBatchStarted = false;
-        let uploadWakeLock = null;
-        let uploadWakeLockRequest = null;
+        let uploadWakeLockState = 'inactive';
+        const screenWakeLock = new WhisperScreenWakeLock(navigator, document, state => {
+            uploadWakeLockState = state;
+            renderWakeLockState();
+        });
+        let uploadBackendHealthy = true;
+        let uploadRecentFailures = 0;
+        let resumableSessions = [];
 
-        async function syncUploadWakeLock() {
-            const shouldStayAwake = activeUploadCount > 0 && document.visibilityState === 'visible';
-            if (!shouldStayAwake) {
-                if (uploadWakeLock) {
-                    const lock = uploadWakeLock;
-                    uploadWakeLock = null;
-                    await lock.release().catch(() => {});
-                }
-                return;
-            }
-            if (!navigator.wakeLock || uploadWakeLock || uploadWakeLockRequest) return;
-            try {
-                uploadWakeLockRequest = navigator.wakeLock.request('screen');
-                const lock = await uploadWakeLockRequest;
-                if (activeUploadCount === 0 || document.visibilityState !== 'visible') {
-                    await lock.release().catch(() => {});
-                    return;
-                }
-                uploadWakeLock = lock;
-                uploadWakeLock.addEventListener('release', () => { uploadWakeLock = null; });
-            } catch (_) {
-                uploadWakeLock = null;
-            } finally {
-                uploadWakeLockRequest = null;
-            }
+        function screenWakeLockWanted() {
+            return activeUploadCount > 0 || (typeof capture !== 'undefined' && capture.state === 'recording');
         }
 
+        function renderWakeLockState() {
+            const el = document.getElementById('uploadWakeLockState');
+            if (el) el.textContent = uploadWakeLockState === 'unavailable'
+                ? 'Screen awake: wake lock unavailable'
+                : uploadWakeLockState === 'awake' ? 'Screen awake' : 'Screen awake: inactive';
+        }
+
+        function syncUploadWakeLock() { return screenWakeLock.setRequired(screenWakeLockWanted()); }
+
         document.addEventListener('visibilitychange', syncUploadWakeLock);
+        window.addEventListener('orientationchange', syncUploadWakeLock);
+
+        async function loadResumableUploadSessions() {
+            try {
+                const response = await api('/api/uploads');
+                if (response.ok) {
+                    resumableSessions = response.sessions || [];
+                    const existing = new Set(uploadItems.map(row => row.sessionId));
+                    resumableSessions.forEach(session => {
+                        if (!existing.has(session.id)) uploadItems.push({ id: session.id, sessionId: session.id,
+                            filename: session.filename, size: session.size, projectId: session.project_id || '',
+                            file: null, state: 'PAUSED', attempts: 0, controller: null, received: session.received || [] });
+                    });
+                    renderUploadQueue();
+                }
+            } catch (_) { uploadBackendHealthy = false; }
+        }
+        loadResumableUploadSessions();
+
+        function formatUploadBytes(bytes) {
+            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+            let size = Number(bytes) || 0;
+            let unit = 0;
+            while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit += 1; }
+            return `${size.toFixed(unit >= 2 ? 1 : 0)} ${units[unit]}`;
+        }
 
         async function handleFiles(files) {
+            await loadResumableUploadSessions();
             const selectedFiles = Array.from(files || []);
             const projectId = document.getElementById('uploadProject').value;
             for (const file of selectedFiles) {
-                const duplicate = uploadItems.some(item => item.file.name === file.name && item.file.size === file.size && item.file.lastModified === file.lastModified && item.state !== 'REMOVED');
-                if (!duplicate) uploadItems.push({ id: globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, file, projectId, state: 'QUEUED', attempts: 0, controller: null });
+                const resume = resumableSessions.find(session => session.filename === file.name && session.size === file.size);
+                const duplicate = uploadItems.some(item => item.filename === file.name && item.size === file.size && item.file && item.state !== 'REMOVED');
+                if (!duplicate) {
+                    const pendingResume = uploadItems.find(item => item.sessionId === resume?.id && !item.file);
+                    if (pendingResume) { pendingResume.file = file; pendingResume.state = 'QUEUED'; }
+                    else uploadItems.push({ id: resume?.id || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, sessionId: resume?.id || null, file, filename: file.name, size: file.size, projectId, state: 'QUEUED', attempts: 0, controller: null, received: resume?.received || [] });
+                }
             }
             fileInput.value = '';
             renderUploadQueue();
@@ -3009,18 +3098,26 @@
         function renderUploadQueue() {
             const queue = document.getElementById('uploadQueue');
             queue.innerHTML = uploadItems.filter(item => item.state !== 'REMOVED').map(item => {
-                const action = item.state === 'QUEUED'
-                    ? `<button class="secondary" onclick="removeUploadItem('${item.id}')">Remove</button>`
-                    : item.state === 'UPLOADING'
-                        ? `<button class="danger" onclick="cancelUploadItem('${item.id}')">Cancelar subida</button>`
+                const action = item.state === 'PAUSED' && !item.file
+                    ? `<button class="secondary" onclick="document.getElementById('fileInput').click()">Choose file to resume</button>`
+                    : item.state === 'QUEUED'
+                    ? `<button class="danger" onclick="cancelUploadItem('${item.id}')">Cancel</button>`
+                    : ['UPLOADING', 'RETRYING', 'FINALIZING'].includes(item.state)
+                        ? `${['UPLOADING', 'RETRYING'].includes(item.state) ? `<button class="secondary" onclick="pauseUploadItem('${item.id}')">Pause</button>` : ''}<button class="danger" onclick="cancelUploadItem('${item.id}')">Cancel</button>`
+                        : item.state === 'PAUSED' ? `<button class="secondary" onclick="resumeUploadItem('${item.id}')">Resume</button><button class="danger" onclick="cancelUploadItem('${item.id}')">Cancel</button>`
                         : ['FAILED', 'UPLOAD_CANCELLED'].includes(item.state)
-                            ? `<button class="secondary" onclick="retryUploadItem('${item.id}')">Retry</button>` : '';
-                const state = item.state === 'UPLOADING' ? `Uploading · intento ${item.attempts}`
-                    : item.state === 'UPLOADED' ? `OK ${item.resultName || item.file.name}`
+                            ? `<button class="secondary" onclick="retryUploadItem('${item.id}')">Retry</button><button class="danger" onclick="cancelUploadItem('${item.id}')">Cancel</button>` : '';
+                const percent = item.size ? Math.floor((item.uploadedBytes || 0) * 100 / item.size) : 0;
+                const speed = item.speed || 0;
+                const eta = speed > 0 ? Math.ceil((item.size - (item.uploadedBytes || 0)) / speed) : null;
+                const state = item.state === 'UPLOADING' || item.state === 'RETRYING' || item.state === 'FINALIZING'
+                    ? `${item.state} · ${formatUploadBytes(item.uploadedBytes || 0)} / ${formatUploadBytes(item.size || item.file?.size || 0)} · ${percent}% · ${(speed / 1048576).toFixed(1)} MB/s · ETA ${eta == null ? '—' : `${Math.floor(eta / 60)}m ${String(eta % 60).padStart(2, '0')}s`}`
+                    : item.state === 'COMPLETED' ? `Completed · ${item.resultName || item.filename}`
                         : item.state === 'FAILED' ? `Failed · ${item.error || 'upload error'}`
-                            : item.state === 'UPLOAD_CANCELLED' ? 'Upload cancelled' : 'Ready to upload · pending';
+                            : item.state === 'CANCELLED' || item.state === 'UPLOAD_CANCELLED' ? 'CANCELLED'
+                                : item.state === 'PAUSED' ? 'PAUSED · upload can resume' : 'QUEUED';
                 return `<div class="upload-file-row" data-upload-id="${item.id}" data-project-id="${escapeHtml(item.projectId)}">
-                    <span class="upload-file-name">${escapeHtml(item.file.name)} · ${Number(item.file.size).toLocaleString()} bytes</span>
+                    <span class="upload-file-name">${escapeHtml(item.filename || item.file?.name || '')} · ${formatUploadBytes(item.size || item.file?.size || 0)}</span>
                     <span class="upload-file-state">${escapeHtml(state)}${item.projectId ? ` · ${escapeHtml(item.projectId)}` : ''}</span>${action}
                 </div>`;
             }).join('');
@@ -3030,22 +3127,26 @@
             start.textContent = `Upload selected files (${pending})`;
         }
 
-        function removeUploadItem(id) {
-            const item = uploadItems.find(row => row.id === id);
-            if (item && item.state === 'QUEUED') item.state = 'REMOVED';
-            renderUploadQueue();
-        }
-
         function cancelUploadItem(id) {
             const item = uploadItems.find(row => row.id === id);
-            if (item && item.state === 'UPLOADING') item.controller.abort();
+            if (item?.state === 'QUEUED' && !item.sessionId) { item.state = 'CANCELLED'; renderUploadQueue(); }
+            else if (item && ['UPLOADING', 'RETRYING', 'FINALIZING'].includes(item.state)) { item.cancelRequested = true; item.controller?.abort(); }
+            else if (item?.sessionId) {
+                item.state = 'CANCELLED';
+                fetch(`/api/uploads/${item.sessionId}`, { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } });
+                renderUploadQueue();
+            }
         }
+
+        function pauseUploadItem(id) { const item = uploadItems.find(row => row.id === id); if (item && ['UPLOADING', 'RETRYING'].includes(item.state)) { item.controller?.abort(); } }
+        function resumeUploadItem(id) { const item = uploadItems.find(row => row.id === id); if (item?.file && item.state === 'PAUSED') { item.state = 'QUEUED'; uploadBatchStarted = true; pumpUploadQueue(); } else if (!item?.file) document.getElementById('fileInput').click(); }
 
         function retryUploadItem(id) {
             const item = uploadItems.find(row => row.id === id);
-            if (item && ['FAILED', 'UPLOAD_CANCELLED'].includes(item.state)) {
+            if (item && ['FAILED', 'UPLOAD_CANCELLED', 'PAUSED'].includes(item.state)) {
                 item.state = 'QUEUED';
                 item.error = '';
+                item.cancelRequested = false;
                 uploadBatchStarted = true;
                 renderUploadQueue();
                 pumpUploadQueue();
@@ -3053,13 +3154,27 @@
         }
 
         function startUploadBatch() {
+            if (uploadBatchStarted) return;
+            const queued = uploadItems.filter(row => row.state === 'QUEUED');
+            if (!queued.length) return;
             uploadBatchStarted = true;
-            pumpUploadQueue();
+            fetch('/api/uploads/preflight', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                body: JSON.stringify({ uploads: queued.map(row => ({ session_id: row.sessionId || null, size: Number(row.size || row.file?.size || 0) })) }) })
+                .then(async response => {
+                    const result = await whisperReadUploadJson(response);
+                    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+                    pumpUploadQueue();
+                })
+                .catch(error => {
+                    queued.forEach(row => { row.state = 'FAILED'; row.error = error.message; });
+                    uploadBatchStarted = false;
+                    renderUploadQueue();
+                });
         }
 
         function pumpUploadQueue() {
             if (!uploadBatchStarted) return;
-            while (activeUploadCount < UPLOAD_CONCURRENCY) {
+            while (activeUploadCount < adaptiveUploadLimit()) {
                 const item = uploadItems.find(row => row.state === 'QUEUED');
                 if (!item) break;
                 item.state = 'UPLOADING';
@@ -3076,32 +3191,94 @@
                     const active = uploadItems.some(row => row.state === 'UPLOADING' || row.state === 'QUEUED');
                     if (!active) {
                         uploadBatchStarted = false;
-                        if (uploadItems.some(row => row.state === 'UPLOADED')) { loadFolders(); loadMetrics(); }
+                        if (uploadItems.some(row => row.state === 'COMPLETED')) { loadFolders(); loadMetrics(); }
                     }
                     pumpUploadQueue();
                 });
             }
         }
 
+        function adaptiveUploadLimit() {
+            const pendingBytes = uploadItems.filter(row => ['QUEUED', 'UPLOADING', 'RETRYING'].includes(row.state))
+                .reduce((sum, row) => sum + Number(row.size || row.file?.size || 0), 0);
+            return whisperAdaptiveUploadLimit(uploadItems, { deviceMemory: Number(navigator.deviceMemory || 8),
+                backendHealthy: uploadBackendHealthy, recentFailures: uploadRecentFailures,
+                pendingBytes, active: activeUploadCount, max: UPLOAD_CONCURRENCY_MAX });
+        }
+
         async function uploadOneFile(item) {
-            const form = new FormData();
-            form.append('file', item.file);
-            form.append('upload_id', item.id);
-            if (item.projectId) form.append('project_id', item.projectId);
             try {
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
-                    body: form,
-                    signal: item.controller.signal,
-                });
-                const result = await response.json();
+                if (!item.sessionId) {
+                    const init = await fetch('/api/uploads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                        body: JSON.stringify({ filename: item.file.name, size: item.file.size, project_id: item.projectId }) });
+                    const created = await whisperReadUploadJson(init);
+                    if (!init.ok || !created.ok) throw new Error(created.error || `HTTP ${init.status}`);
+                    item.sessionId = created.session.id;
+                    item.chunkSize = created.session.chunk_size;
+                }
+                const stateResponse = await fetch(`/api/uploads/${item.sessionId}`);
+                const statePayload = await whisperReadUploadJson(stateResponse);
+                const serverSession = statePayload.session;
+                if (serverSession?.state === 'COMPLETED') {
+                    const response = await fetch(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, signal: item.controller.signal });
+                    const result = await whisperReadUploadJson(response);
+                    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+                    item.state = 'COMPLETED'; item.resultName = result.name; item.uploadedBytes = item.file.size; item.file = null;
+                    return;
+                }
+                const received = new Set(serverSession ? Object.keys(serverSession.chunks).map(Number) : []);
+                const chunkSize = item.chunkSize || 8 * 1024 * 1024;
+                const count = Math.ceil(item.file.size / chunkSize);
+                item.startedAt = Date.now(); item.uploadedBytes = Array.from(received).reduce((sum, i) => sum + Math.min(chunkSize, item.file.size - i * chunkSize), 0);
+                for (let index = 0; index < count; index++) {
+                    if (received.has(index)) continue;
+                    const blob = item.file.slice(index * chunkSize, Math.min(item.file.size, (index + 1) * chunkSize));
+                    const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+                    const sha256 = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+                    let acknowledged = false;
+                    for (let attempt = 0; attempt < 5 && !acknowledged; attempt++) {
+                        item.state = attempt ? 'RETRYING' : 'UPLOADING';
+                        try {
+                            const response = await fetch(`/api/uploads/${item.sessionId}/chunks/${index}`, { method: 'PUT',
+                                headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN, 'X-Chunk-SHA256': sha256 }, body: blob, signal: item.controller.signal });
+                            const result = await whisperReadUploadJson(response);
+                            if (response.ok && result.ok) acknowledged = true;
+                            else if (response.status < 500 || attempt === 4) {
+                                const failure = new Error(result.error || `HTTP ${response.status}`);
+                                failure.status = response.status;
+                                throw failure;
+                            }
+                            else { uploadBackendHealthy = false; uploadRecentFailures += 1; }
+                        } catch (error) {
+                            if (error.name === 'AbortError' || (error.status && error.status < 500) || attempt === 4) throw error;
+                            uploadBackendHealthy = false;
+                            uploadRecentFailures += 1;
+                        }
+                        if (acknowledged && uploadRecentFailures < 2) uploadBackendHealthy = true;
+                        if (!acknowledged) await new Promise(resolve => setTimeout(resolve, Math.min(8000, 500 * (2 ** attempt))));
+                    }
+                    item.uploadedBytes += blob.size;
+                    item.speed = item.uploadedBytes / Math.max(0.1, (Date.now() - item.startedAt) / 1000);
+                    renderUploadQueue();
+                }
+                item.state = 'FINALIZING'; renderUploadQueue();
+                const response = await fetch(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } });
+                const result = await whisperReadUploadJson(response);
                 if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
-                item.state = 'UPLOADED';
+                item.state = 'COMPLETED';
                 item.resultName = result.name;
+                item.uploadedBytes = item.file.size; item.file = null;
+                resumableSessions = resumableSessions.filter(session => session.id !== item.sessionId);
+                uploadRecentFailures = Math.max(0, uploadRecentFailures - 1);
+                uploadBackendHealthy = uploadRecentFailures < 2;
             } catch (error) {
-                if (error.name === 'AbortError') item.state = 'UPLOAD_CANCELLED';
-                else { item.state = 'FAILED'; item.error = error.message; }
+                if (error.name === 'AbortError') item.state = item.cancelRequested ? 'CANCELLED' : 'PAUSED';
+                else {
+                    item.state = 'FAILED'; item.error = error.message;
+                    uploadRecentFailures += 1;
+                    uploadBackendHealthy = false;
+                }
+                if (item.cancelRequested && item.sessionId) fetch(`/api/uploads/${item.sessionId}`, { method: 'DELETE', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } });
             }
         }
 
@@ -3480,6 +3657,7 @@
 
         function setCaptureState(state, error) {
             capture.state = state;
+            syncUploadWakeLock();
             if (error) capture.lastError = error;
             else if (state !== 'stalled') capture.lastError = '';
             const badge = document.getElementById('captureState');
@@ -4029,7 +4207,7 @@
                     form.append('fragment_sequence', String(Math.max(1, capture.fragmentSeq)));
                     const response = await fetch(`/api/capture/sessions/${capture.sessionId}/title-samples`, {
                         method: 'POST', headers: {'X-Local-Dashboard-Token': DASHBOARD_TOKEN}, body: form,
-                    }).then(r => r.json());
+                    }).then(r => whisperReadDashboardJson(r));
                     if (response.ok) {
                         renderLogicalVideos(response);
                         const status = document.getElementById('captureTitleStatus');
@@ -5320,8 +5498,8 @@
             }
         }
 
-        window.addEventListener('pagehide', emergencyStopCapture);
-        window.addEventListener('beforeunload', emergencyStopCapture);
+        window.addEventListener('pagehide', () => { emergencyStopCapture(); screenWakeLock.dispose(); });
+        window.addEventListener('beforeunload', () => { emergencyStopCapture(); screenWakeLock.dispose(); });
         // W7 reconnect: retry stalled uploads and restore durable pending
         // fragments with their original IDs. The server is idempotent per
         // capture-session + fragment ID, so a reconnect never duplicates media.

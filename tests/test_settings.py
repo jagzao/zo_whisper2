@@ -22,7 +22,7 @@ def _clean_env(monkeypatch):
             "WHISPER_MODEL", "WORD_TIMESTAMPS", "CLEAN_TRANSCRIPTION",
             "KEYFRAMES_REQUIRED", "KEYFRAME_METHOD", "FILE_TRACKER_HASH_MODE", "VIDEO_COMPRESS_CRF",
             "TESSERACT_CMD", "MEETING_FRAME_INTERVAL", "MEETING_MAX_SCREEN_ANALYSES",
-            "MEETING_KEEP_FRAMES", "LLM_API_KEY", "LLM_MODEL", "LLM_BASE_URL",
+            "MEETING_KEEP_FRAMES", "LLM_API_KEY", "OPENCODE_API_KEY", "LLM_MODEL", "LLM_BASE_URL",
             "LLM_PROVIDER_TYPE", "ALLOW_EXTERNAL_LLM", "FRAME_DESCRIPTIONS",
             "FRAME_DESCRIPTION_MAX", "ALLOW_IMAGE_UPLOAD", "ALLOW_FRAME_UPLOAD",
             "RETENTION_DAYS", "DASHBOARD_HOST", "DASHBOARD_PORT", "UPLOAD_MAX_MB", "WHISPER_UPLOAD_CONCURRENCY",
@@ -42,6 +42,13 @@ def test_defaults_are_privacy_conservative():
     assert s.retention_days == 0
     assert s.upload_concurrency == 4
     assert s.processing_timezone == "America/Mexico_City"
+    assert s.opencode_api_key is None
+
+
+def test_opencode_go_key_uses_dedicated_environment_variable(monkeypatch):
+    monkeypatch.setenv("OPENCODE_API_KEY", "go-test-key")
+    monkeypatch.setenv("LLM_API_KEY", "legacy-key")
+    assert Settings.from_env().opencode_api_key == "go-test-key"
 
 
 def test_processing_timezone_is_configurable(monkeypatch):

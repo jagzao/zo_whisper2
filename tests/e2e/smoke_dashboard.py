@@ -165,6 +165,10 @@ def main() -> int:
         )
 
         # Operational metrics + pipeline stepper (US-001 Ã‚Â§3.3/Ã‚Â§3.4)
+        page.wait_for_function(
+            "document.querySelectorAll('#metrics .metric').length === 4",
+            timeout=TIMEOUT_MS,
+        )
         all_ok &= check("metrics_visible", page.locator("#metrics .metric").count() == 4)
         all_ok &= check(
             "pipeline_stepper_visible", page.locator("#pipelineStepper .pipeline-stage").count() == 8
@@ -214,7 +218,9 @@ def main() -> int:
             page.wait_for_timeout(400)
         row = page.locator(f"#filesList table tbody tr:has-text('{target['name']}')")
         ver_button = row.locator("button[aria-label='View']")
-        edit_button = row.locator("button[aria-label='Edit']")
+        edit_button = row.locator(
+            "button[aria-label='Edit transcription'], button[aria-label='Add transcription']"
+        )
         all_ok &= check("view_btn_enabled", ver_button.is_enabled())
         all_ok &= check("edit_btn_enabled", edit_button.is_enabled())
 
@@ -430,7 +436,9 @@ def main() -> int:
                 )
 
                 # Edit â†’ manual B â†’ Save.
-                row.locator("button[aria-label='Edit']").click()
+                row.locator(
+                    "button[aria-label='Edit transcription'], button[aria-label='Add transcription']"
+                ).click()
                 page.wait_for_selector("#editModal:not(.hidden)", timeout=TIMEOUT_MS)
                 page.wait_for_function(
                     "document.getElementById('editTxText').value !== 'Loading...'", timeout=TIMEOUT_MS
@@ -503,7 +511,9 @@ def main() -> int:
 
                 # Edit â†’ Auto-detect â†’ Save â†’ back to A.
                 row = page.locator(f"#filesList table tbody tr:has-text('{stem}')")
-                row.locator("button[aria-label='Edit']").click()
+                row.locator(
+                    "button[aria-label='Edit transcription'], button[aria-label='Add transcription']"
+                ).click()
                 page.wait_for_selector("#editModal:not(.hidden)", timeout=TIMEOUT_MS)
                 page.wait_for_function(
                     "document.getElementById('editTxText').value !== 'Loading...'", timeout=TIMEOUT_MS
