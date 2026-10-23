@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tomllib
 from pathlib import Path
 from types import SimpleNamespace
@@ -241,3 +242,23 @@ def test_upload_session_list_reports_semantic_state_and_ack_activity(tmp_path, m
     manifest["state"] = "PAUSED"
     service._save(directory / "session.json", manifest)
     assert service.list()[0]["logical_state"] == "PAUSED_RESUMABLE"
+
+
+def test_legacy_upload_session_activity_uses_chunk_write_time(tmp_path, monkeypatch):
+    import time
+
+    monkeypatch.setattr(upload_module, "CHUNK_SIZE", 4)
+    service = upload_module.ResumableUploads(tmp_path / "sessions")
+    session = service.create("legacy.mp4", 4)
+    directory, manifest = service._manifest(session["id"])
+    manifest.pop("last_ack_at")
+    manifest.pop("last_activity_at")
+    service._save(directory / "session.json", manifest)
+    part = directory / "00000000.part"
+    part.write_bytes(b"data")
+    os.utime(part, (time.time(), time.time()))
+    assert service.list()[0]["logical_state"] == "ACTIVE_TRANSFERRING"
+
+    old = time.time() - 300
+    os.utime(part, (old, old))
+    assert service.list()[0]["logical_state"] == "STALE_RESUMABLE"

@@ -119,6 +119,11 @@ class ResumableUploads:
                     state = data.get("state")
                     if state in {"UPLOADING", "FINALIZING", "PAUSED", "COMPLETED", "FAILED"}:
                         ack_at = float(data.get("last_ack_at") or 0)
+                        if not ack_at:
+                            activity_files = [*path.glob("*.part"), *path.glob("*.tmp")]
+                            ack_at = max((item.stat().st_mtime for item in activity_files), default=0)
+                        data["last_ack_at"] = ack_at or None
+                        data["last_activity_at"] = ack_at or data.get("last_activity_at")
                         data["received"] = sorted(int(index) for index in data.get("chunks", {}))
                         data["logical_state"] = ("COMPLETED" if state == "COMPLETED" else "FAILED" if state == "FAILED"
                             else "PAUSED_RESUMABLE" if state == "PAUSED" else "ACTIVE_TRANSFERRING"
