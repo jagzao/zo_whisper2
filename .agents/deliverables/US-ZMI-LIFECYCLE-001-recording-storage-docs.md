@@ -5,24 +5,34 @@
 
 ## CURRENT_RESULT
 
-STATUS=PARTIAL_BLOCKED
-HEAD=IMPLEMENTATION_HEAD=7c0969be8e9b10e2cc230be282c5a47015a8d9fe; RESULT_COMMIT_HEAD=commit containing this CURRENT_RESULT section
-REMOTE_HEAD=will be recorded after result commit push
+STATUS=PARTIAL
+HEAD=IMPLEMENTATION_HEAD=7c0969be8e9b10e2cc230be282c5a47015a8d9fe; RESULT_COMMIT_HEAD=this result update
+REMOTE_HEAD=origin/main verified after result update push
 SERVED_HEAD=7c0969be8e9b10e2cc230be282c5a47015a8d9fe
 DEVELOPMENT_COMPLETE=NO - remaining runtime and user-facing journeys remain blocked or unverified
 UNIT=PASS - 98 focused dashboard/API tests plus 21 capture-fragment tests; syntax and diff checks passed
-INTEGRATION=PARTIAL - served dashboard/cards/table/filter journey passes; processing, Docs semantic regeneration, crop, playlist and other journeys remain unverified
-DEPLOYED=YES - exact image marker 7c0969be8e9b10e2cc230be282c5a47015a8d9fe; ZMI healthy; shared /data and /cache mounts preserved
-KANBAN_COMPLETE=7
+INTEGRATION=PASS for counters - live UI, /api/files and default unfiltered rows reconcile; other lifecycle journeys remain unverified
+DEPLOYED=YES - image marker 7c0969be8e9b10e2cc230be282c5a47015a8d9fe already serves on desktop HTTP and LAN HTTPS; no restart needed
+KANBAN_COMPLETE=8
 KANBAN_IN_PROGRESS=0
-KANBAN_TESTING=59
+KANBAN_TESTING=58
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
-CURRENT_WORK=Continue worker stale-job/runtime investigation and remaining served journeys; preserve resumable uploads
-LAST_COMPLETED=Dashboard logical counters deployed and served; cards reconcile with unfiltered /api/files and table; filters verified unchanged
-BLOCKER=Owner worker job a5baabf678944da7b463677ed566140f remains ACTIVE with pending queue 0; runtime restart root cause unproven. Docs provider key absent and ALLOW_EXTERNAL_LLM=false. Five uploads are paused/stale resumable; ACKs preserved and resume entries visible.
-NEXT_ACTION=Investigate worker lease/runtime under recorded recovery policy; resume Docs semantic regeneration only after provider configuration is available; continue remaining testing rows.
+CURRENT_WORK=Continue remaining lifecycle journeys; preserve five resumable uploads
+LAST_COMPLETED=Dashboard logical counters live-verified against /api/files and visible UI at served revision 7c0969b
+BLOCKER=NONE for logical counters/deployment. /api/folders timed out during raw-storage diagnostics; broader lifecycle work remains open.
+NEXT_ACTION=Owner may resume the five uploads; continue remaining lifecycle Kanban items.
 RULE_CONFLICT=YES - owner completion semantics supersede prior implementation/test-based green statuses
+
+UPLOAD_SESSIONS=5 UPLOADING plus one separate COMPLETED manifest; all persisted in shared /data
+ACTIVELY_TRANSFERRING=0 - ACKed bytes/chunks unchanged over 20 seconds; Brave HTTPS socket was present but could not be attributed to an upload
+STALE_OR_PAUSED=5 - four STALE_RESUMABLE; S43.mp4 PAUSED_RESUMABLE
+ACKS_PRESERVED=YES - same session IDs, ACK maps and bytes served after deployment; no session/chunk deleted or cancelled
+VIDEOS_LOGICAL=10
+AUDIO_LOGICAL=0
+TRANSCRIBED_LOGICAL=9
+RAW_STORAGE_DIAGNOSTICS=Collapsed under Storage diagnostics; /api/folders exceeded 15 seconds, so current raw totals were not revalidated
+COUNTERS_MATCH_TABLE=PASS - /api/files has 10 rows and metrics videos=10/audio=0/transcribed=9; UI cards show 10/0/9 and pending=0
 
 DROPAREA_REAL_UPLOAD=PARTIAL - two synthetic files finalized and processing queued; worker blockage prevented validation in Videos
 DROPAREA_AUTO_START=PASS - selecting two synthetic files started both without pressing Upload Selected
@@ -37,15 +47,25 @@ LIVE_CAPTURE=TESTING - served fake-device capture finalized fragments with audio
 REAL_CROP=TESTING - prior synthetic evidence only; current served capture/crop journey unverified
 PLAYLIST=TESTING - current served continuous capture/review journey unverified
 VIDEO_EDITOR=TESTING - served MP4 and WebM Edit/Apply created playable video+audio derivatives; both originals preserved; prior source-specific large WebM failure source is unavailable for safe reproduction
-WORKER=BLOCKED - active owner job, pending queue 0; stale lease/restart cause still under investigation; no job/session data altered
+WORKER=BLOCKED - no active/pending jobs at verification; last run failed at vision_ocr with exit 1; worker service RUNNING; diagnose before new processing
 VIDEOS_TABLE=TESTING - current served logical count and name-filter reset verified; full columns/sort/delete reason/internal-fragment journey remains unverified
 HTTPS_MOBILE=TESTING - LAN HTTPS health and build marker pass; physical phone certificate/onboarding remains OWNER_PENDING
 
-### Latest execution result
+### Latest execution result — logical counters and upload safety (2026-10-23)
 
-Dashboard logical inventory deployed and verified (2026-10-23). Commit `7c0969be8e9b10e2cc230be282c5a47015a8d9fe` is served by ZMI with healthy status. Focused tests: 98 dashboard/API tests and 21 capture-fragment tests passed. Browser journey reports Pending 0, Videos 10, Audio 0, Transcribed 9; `/api/files` contains 10 logical rows (10 video, 0 audio, 9 usable transcripts), matching the cards and unfiltered table. Name filter narrowed to 4 and clearing restored 10; default project/status/language filters remain All. Storage diagnostics are collapsed and retain raw physical counts Video_compress=3, Videos=46, audio=0, CarpetaTranscripciones=55. No browser errors.
+The Docker image already serves revision `7c0969be8e9b10e2cc230be282c5a47015a8d9fe`; a no-cache request confirmed that marker on desktop HTTP, direct dashboard HTTP, and LAN HTTPS. The browser displayed Videos 10, Audio 0, Transcribed 9, Pending 0 with no page errors. `/api/files` returned 10 logical rows and metrics `{videos: 10, audio: 0, transcribed: 9}`. Default filters are All. The implementation is already deployed, so this run did not restart the container. The `/api/folders` raw-diagnostics endpoint exceeded a 15-second read-only timeout; its data remains secondary under collapsed Storage diagnostics.
 
-Five sessions inspected; zero were transferring during the observed window and no established dashboard transfer connections were visible: `09893e522b9d4a7f892c717b1e3e73e7` (20261020_211838.mp4, 135 ACK chunks / 1,132,462,080 B, STALE_RESUMABLE); `6025ca5bdd5c474eb40525f3ebc3ec7f` (20261021_195800.mp4, 901 / 7,558,135,808 B, STALE_RESUMABLE); `827e52166b2541499949c4e27a73d761` (S43.mp4, 121 / 1,015,021,568 B, PAUSED_RESUMABLE); `aff70b06780045aaa3eaa5ffbcb25cfd` (Shadow_bridge_ams_app_support_211026.mp4, 8 / 67,108,864 B, STALE_RESUMABLE); `d9dcaa5acc4d4c5faeba1427a0562264` (AMS_KAP_-_Compliance_-_Session_2.mp4, 1 / 8,388,608 B, STALE_RESUMABLE). States remain UPLOADING in the API but served UI correctly offers resume. All IDs and ACK counts matched after deployment; no data was cancelled or deleted.
+Five `UPLOADING` sessions were observed twice, 20 seconds apart. No ACK map, ACKed-byte count, or last-activity timestamp advanced; no temporary chunk write was visible. One persistent Brave connection to LAN HTTPS was visible at both snapshots; it was not attributable to an upload and no transfer connection was established to the dashboard port. `last_activity_at` below is derived from the latest part-file UTC write because session manifests do not store that field. All ACK maps remain exposed by the deployed `/api/uploads` resume listing.
+
+| Session ID | File | State | Last activity (UTC) | ACKed chunks / bytes |
+|---|---|---|---|---:|
+| `09893e522b9d4a7f892c717b1e3e73e7` | `20261020_211838.mp4` | STALE_RESUMABLE | 2026-10-22T20:12:18Z | 135 / 1,132,462,080 B |
+| `6025ca5bdd5c474eb40525f3ebc3ec7f` | `20261021_195800.mp4` | STALE_RESUMABLE | 2026-10-22T19:49:29Z | 901 / 7,558,135,808 B |
+| `827e52166b2541499949c4e27a73d761` | `S43.mp4` | PAUSED_RESUMABLE | 2026-10-22T22:56:55Z | 121 / 1,015,021,568 B |
+| `aff70b06780045aaa3eaa5ffbcb25cfd` | `Shadow_bridge_ams_app_support_211026.mp4` | STALE_RESUMABLE | 2026-10-22T18:12:04Z | 8 / 67,108,864 B |
+| `d9dcaa5acc4d4c5faeba1427a0562264` | `AMS_KAP_-_Compliance_-_Session_2.mp4` | STALE_RESUMABLE | 2026-10-22T19:52:23Z | 1 / 8,388,608 B |
+
+The same five IDs and ACK maps were present in the deployed API; no upload was cancelled or deleted. Two sessions also contain an unACKed `.part` file; both were preserved. One separate `COMPLETED` manifest (`f8e5fd25ee234a74906305fbfa26edfa`, Shadow Bridge, 801 chunks) remains outside the five resumable sessions. Worker API last reported 0 active and 0 pending jobs. The implementation, focused unit results (98 dashboard/API plus 21 capture-fragment tests), and previous filter journey remain unchanged.
 
 DROPAREA_REAL_UPLOAD=PARTIAL - two synthetic files finalized and processing queued; worker blockage prevented validation in Videos
 DROPAREA_AUTO_START=PASS - selecting two synthetic files started both without pressing Upload Selected
@@ -60,21 +80,21 @@ LIVE_CAPTURE=TESTING - served fake-device capture finalized fragments with audio
 REAL_CROP=TESTING - prior synthetic evidence only; current served capture/crop journey unverified
 PLAYLIST=TESTING - current served continuous capture/review journey unverified
 VIDEO_EDITOR=TESTING - served MP4 and WebM Edit/Apply created playable video+audio derivatives; both originals preserved; prior source-specific large WebM failure source is unavailable for safe reproduction
-WORKER=BLOCKED - stale ACTIVE owner job and repeated container restarts; synthetic processing did not reach Videos
+WORKER=BLOCKED - worker API reports 0 active/0 pending and service RUNNING; last pipeline run failed at vision_ocr (exit 1); synthetic processing remains unverified
 VIDEOS_TABLE=TESTING - selected listing/player/docs paths opened; full columns/sort/delete reason/internal-fragment journey not verified
 HTTPS_MOBILE=TESTING - LAN HTTPS health and build marker pass; physical phone certificate/onboarding remains OWNER_PENDING
 
-### Latest execution result
+### Historical implementation snapshot — before served deployment verification
 
 Dashboard inventory counter phase (2026-10-23): `/api/files` now includes logical `videos`, `audio`, and nonempty-transcription metrics computed from its exact visible row set; primary cards consume those values. `/api/folders` retains raw filesystem diagnostics and exposes the pending upload queue count separately. Added secondary, collapsed Storage diagnostics. Targeted tests: 98 passed, including 48 physical video files / 12 visible logical rows, hidden capture fragments, test session exclusion, audio, orphan/empty transcript exclusion and API reconciliation. `py_compile` and `git diff --check` pass. Implementation commit `3ec6bb6` and result commit `ff0a802` are pushed; Docker image built successfully with exact final HEAD marker `ff0a8022a9282557b63215977c6ed41826a17640`. Deployment waits because five existing sessions remain `UPLOADING`. Prior served API baseline: 12 logical videos, 0 audio, 9 transcribed; response has no metrics field. A read-only `/api/folders` probe timed out. Status stays TESTING until deployment and actual UI/table comparison. No owner media or upload data was changed.
 
-DASHBOARD_COUNTERS_LOGICAL=IMPLEMENTED; not served yet
+DASHBOARD_COUNTERS_LOGICAL=IMPLEMENTED; pre-deployment snapshot, superseded by the result above
 VIDEOS_LOGICAL_COUNT=12 prior served /api/files rows; 12 fixture rows from 48 physical files
 AUDIO_LOGICAL_COUNT=0 prior served /api/files rows; logical audio fixture passes
 TRANSCRIBED_LOGICAL_COUNT=9 prior served logical rows; fixture excludes orphan/empty .txt files
 RAW_STORAGE_DIAGNOSTICS=preserved in collapsed secondary section; served raw diagnostics probe timed out
-COUNTERS_MATCH_FILES_API=PASS in isolated tests; served comparison pending
-SERVED_VALIDATION=BLOCKED_PENDING_UPLOADS (5 sessions UPLOADING; old app still served)
+COUNTERS_MATCH_FILES_API=PASS in isolated tests; served comparison was pending at this snapshot
+SERVED_VALIDATION=BLOCKED_PENDING_UPLOADS at this historical snapshot; superseded by live verification above
 WORKER=BLOCKED; owner job remains active, ~5.2h heartbeat age, stale threshold 6h; 0 pending
 DOCS_V2_REGENERATE=BLOCKED; provider key absent and ALLOW_EXTERNAL_LLM=false
 VIDEO_EDITOR=TESTING (prior source-specific large WebM failure unresolved)
@@ -253,14 +273,14 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Multi-upload: multiple files, streaming/bounded memory | 🟨 TESTING | Prior browser/memory evidence: 6x24 MiB upload, +79.7 MiB; no current-candidate rerun. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Multi-upload: concurrency default 4, configurable maximum 6, per-file retry/cancel | 🟨 TESTING | Prior 4/6 concurrency browser checks and upload retry/cancel evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Worker: periodic scan, day limit 1, night limit 3 | 🟨 TESTING | Worker configuration and scheduling tests exist; live API currently reports worker RUNNING, zero active/pending. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
-| Worker: stale recovery, idempotent claim, cancellation, no duplicate processing | 🟥 BLOCKED | Focused worker tests pass, but served worker is held by a pre-existing ACTIVE owner job and synthetic processing did not reach Videos; app had four restarts (exit 0, OOM=false; cause unknown). | Diagnose orphaned lease/worker liveness without canceling or changing the owner job; prove a synthetic job completes in Videos. | Agent |
+| Worker: stale recovery, idempotent claim, cancellation, no duplicate processing | 🟥 BLOCKED | Latest `/api/status`: worker RUNNING, 0 active and 0 pending; pipeline `running=false`, last error `transcript_pipeline.pipeline.master failed (exit code 1)` at `vision_ocr`. No job was active during counter verification. | Diagnose the previous pipeline failure; prove a synthetic job completes in Videos before changing runtime behavior. | Agent |
 | Documentation Synthesis V2: Evidence Timeline, semantic grouping, procedures | 🟨 TESTING | Current root unit suite passes 1230 with 8 skipped; synthetic Live Capture -> keyframe -> Docs V2 integration selection passes 15 tests with 5 HTTPS interception skips. | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Documentation Synthesis V2: decisions, claims/evidence, ambiguity/review queue, source mapping | 🟨 TESTING | Docs V2 evidence-grounding and source mapping implementation/tests exist. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Documentation regeneration boundary: regenerate from saved evidence without transcription/FFmpeg/OCR/vision; separate reprocess; version history | 🟨 TESTING | Regeneration isolation, versioning and separation unit suites pass in current root run (1230 passed, 8 skipped). | None; UI/browser check advisory. | Agent |
 | Documentation Synthesis V2: regenerate documentation, reprocess video, documentation versioning | 🟨 TESTING | Prior regeneration/versioning tests passed; UI keeps regeneration separate from reprocessing. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Video list: Project, Date, Duration, sorting, Show/player | 🟨 TESTING | Final served `/api/files` returns 60 rows; projects API returns 5 projects; smoke confirmed no chunk-named rows. Unit suite passes 1230 with 8 skipped. | None. | Agent |
 | Video list: delete eligibility/reason; hide internal chunks | 🟨 TESTING | Prior API/UI state-matrix and fragment visibility evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
-| Dashboard logical inventory counters | 🟨 TESTING | `/api/files` returns counts from the same logical rows used by Videos; targeted fixture has 48 physical media files and 12 visible rows, with 98 focused tests passing. Image marked exact final HEAD `ff0a802` built; deployment waits to protect five UPLOADING sessions. Prior served baseline: 12 videos, 0 audio, 9 transcribed. | After uploads settle, deploy final image, compare cards with unfiltered table and validate filters remain unchanged. | Agent |
+| Dashboard logical inventory counters | 🟩 COMPLETE | Live revision `7c0969be8e9b10e2cc230be282c5a47015a8d9fe` serves desktop HTTP and LAN HTTPS. UI cards 10/0/9; `/api/files` has 10 logical rows with matching 10/0/9 metrics; Pending 0, no browser errors. Five resumable uploads retained with unchanged ACK maps; no active byte transfer in a 20-second observation. | Preserve the five resumable sessions; monitor the separately tracked raw-diagnostics timeout. | Agent |
 | HTTPS/mobile: desktop/LAN shared data, HTTPS certificate, /setup, public CA, QR onboarding | 🟨 TESTING | Focused LAN/setup tests pass 31/31. Final desktop HTTP and LAN HTTPS return 200 with marker matching HEAD; `/setup` and QR return 200; `/api/network` reports configured HTTP/HTTPS ports 5000/5001, LAN IP `192.168.50.20`, and certificate fingerprint. | Juan installs public CA and validates phone onboarding during UAT. | Agent |
 | Overview Stats Modal: toolbar icon opens modal; reuse existing metrics; four required metrics | 🟨 TESTING | `tests/e2e/overview_stats_modal.py`: 12 browser checks pass on final app source; four metric labels/values match existing metrics. | None. | Agent |
 | Dashboard compact layout: Drop Area left; Pipeline and Folders stacked right; responsive, content-sized cards | 🟨 TESTING | Playwright layout test at 1440x1000 verifies two-column left/right stack; at 390x844 verifies one-column order and no horizontal overflow. CSS cards align to content; no fixed heights. | None; Juan may review live appearance during UAT. | Agent |
