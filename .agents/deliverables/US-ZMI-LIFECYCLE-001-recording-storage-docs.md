@@ -6,23 +6,46 @@
 ## CURRENT_RESULT
 
 STATUS=PARTIAL_BLOCKED
-HEAD=IMPLEMENTATION_HEAD=3ec6bb6fc22c4ef665275c8ef5947521fc2b1cf9; RESULT_COMMIT_HEAD=commit containing this CURRENT_RESULT section
-REMOTE_HEAD=origin/main contains implementation 3ec6bb6fc22c4ef665275c8ef5947521fc2b1cf9; latest result commit is recorded by Git history
-SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba (prior app; new image built but deployment held to protect active uploads)
-DEVELOPMENT_COMPLETE=NO - served validation and several software journeys/runtime stability remain blocked or unverified
-UNIT=PASS - 98 focused dashboard/API tests; py_compile and git diff --check pass
-INTEGRATION=PARTIAL - served upload, auto-start, P&G defaults, Docs UI/history, resume, MP4/WebM editor playback tested; processing, Docs semantic regeneration, crop, playlist and several other journeys remain unverified
-DEPLOYED=NO for 3ec6bb6 - prior app is served; ZMI healthy, restart count 1 since recreation; exit 0/OOM=false; cause of prior restarts unproven
+HEAD=IMPLEMENTATION_HEAD=7c0969be8e9b10e2cc230be282c5a47015a8d9fe; RESULT_COMMIT_HEAD=commit containing this CURRENT_RESULT section
+REMOTE_HEAD=will be recorded after result commit push
+SERVED_HEAD=7c0969be8e9b10e2cc230be282c5a47015a8d9fe
+DEVELOPMENT_COMPLETE=NO - remaining runtime and user-facing journeys remain blocked or unverified
+UNIT=PASS - 98 focused dashboard/API tests plus 21 capture-fragment tests; syntax and diff checks passed
+INTEGRATION=PARTIAL - served dashboard/cards/table/filter journey passes; processing, Docs semantic regeneration, crop, playlist and other journeys remain unverified
+DEPLOYED=YES - exact image marker 7c0969be8e9b10e2cc230be282c5a47015a8d9fe; ZMI healthy; shared /data and /cache mounts preserved
 KANBAN_COMPLETE=7
 KANBAN_IN_PROGRESS=0
-KANBAN_TESTING=60
+KANBAN_TESTING=59
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
-CURRENT_WORK=Preserve five active owner uploads and stale worker lease; deploy logical counters after uploads complete; continue runtime and remaining served journeys
-LAST_COMPLETED=Served MP4 and WebM editor Apply flows created playable derivatives with audio and preserved originals; capture shell reached fake-device recording and finalized fragments
-BLOCKER=Five existing resumable upload sessions remain UPLOADING; deployment restart could interrupt them. Owner job `a5baabf678944da7b463677ed566140f` remains ACTIVE with ~5.2h heartbeat age under the six-hour recovery threshold; do not alter. Worker queue now reports 0 pending. Docs provider key absent and ALLOW_EXTERNAL_LLM=false. /api/folders timed out during read-only served sampling; restart cause unproven.
-NEXT_ACTION=Wait for owner uploads to settle, then deploy image marked ff0a8022a9282557b63215977c6ed41826a17640 and verify actual served cards/table. Keep watching worker via existing policy; do not cancel/requeue owner work. Resume Docs only when authorized provider configuration is available.
+CURRENT_WORK=Continue worker stale-job/runtime investigation and remaining served journeys; preserve resumable uploads
+LAST_COMPLETED=Dashboard logical counters deployed and served; cards reconcile with unfiltered /api/files and table; filters verified unchanged
+BLOCKER=Owner worker job a5baabf678944da7b463677ed566140f remains ACTIVE with pending queue 0; runtime restart root cause unproven. Docs provider key absent and ALLOW_EXTERNAL_LLM=false. Five uploads are paused/stale resumable; ACKs preserved and resume entries visible.
+NEXT_ACTION=Investigate worker lease/runtime under recorded recovery policy; resume Docs semantic regeneration only after provider configuration is available; continue remaining testing rows.
 RULE_CONFLICT=YES - owner completion semantics supersede prior implementation/test-based green statuses
+
+DROPAREA_REAL_UPLOAD=PARTIAL - two synthetic files finalized and processing queued; worker blockage prevented validation in Videos
+DROPAREA_AUTO_START=PASS - selecting two synthetic files started both without pressing Upload Selected
+DROPAREA_MULTI_FILE=PASS - two synthetic files independently completed upload/finalize
+DEFAULT_PROJECT_UPLOAD=PASS - P&G selected by default and assigned to both uploads
+DEFAULT_PROJECT_RECORDING=PASS - P&G selected in New Recording; explicit Zo Interviews choice persisted on reopen
+DOCS_V2_REAL_UI=PARTIAL - P&G Tidal documentation opened with summary/manual, evidence links, review count, metadata, and separate Reprocess control
+DOCS_V2_REAL_DOCUMENT=PARTIAL - existing v2 shown; full semantic evidence/timeline content and all requested fields not validated end-to-end
+DOCS_V2_REGENERATE=BLOCKED - served regeneration created v3 SYNTHESIS_BLOCKED_PRIVACY; no remote corpus sent
+DOCS_V2_VERSION_HISTORY=PASS - regeneration selected v3; prior v1/v2 remained accessible; v1 reopened
+LIVE_CAPTURE=TESTING - served fake-device capture finalized fragments with audio; legacy automation timed out expecting Preview after Start (served state is Recording); physical device remains OWNER_PENDING
+REAL_CROP=TESTING - prior synthetic evidence only; current served capture/crop journey unverified
+PLAYLIST=TESTING - current served continuous capture/review journey unverified
+VIDEO_EDITOR=TESTING - served MP4 and WebM Edit/Apply created playable video+audio derivatives; both originals preserved; prior source-specific large WebM failure source is unavailable for safe reproduction
+WORKER=BLOCKED - active owner job, pending queue 0; stale lease/restart cause still under investigation; no job/session data altered
+VIDEOS_TABLE=TESTING - current served logical count and name-filter reset verified; full columns/sort/delete reason/internal-fragment journey remains unverified
+HTTPS_MOBILE=TESTING - LAN HTTPS health and build marker pass; physical phone certificate/onboarding remains OWNER_PENDING
+
+### Latest execution result
+
+Dashboard logical inventory deployed and verified (2026-10-23). Commit `7c0969be8e9b10e2cc230be282c5a47015a8d9fe` is served by ZMI with healthy status. Focused tests: 98 dashboard/API tests and 21 capture-fragment tests passed. Browser journey reports Pending 0, Videos 10, Audio 0, Transcribed 9; `/api/files` contains 10 logical rows (10 video, 0 audio, 9 usable transcripts), matching the cards and unfiltered table. Name filter narrowed to 4 and clearing restored 10; default project/status/language filters remain All. Storage diagnostics are collapsed and retain raw physical counts Video_compress=3, Videos=46, audio=0, CarpetaTranscripciones=55. No browser errors.
+
+Five sessions inspected; zero were transferring during the observed window and no established dashboard transfer connections were visible: `09893e522b9d4a7f892c717b1e3e73e7` (20261020_211838.mp4, 135 ACK chunks / 1,132,462,080 B, STALE_RESUMABLE); `6025ca5bdd5c474eb40525f3ebc3ec7f` (20261021_195800.mp4, 901 / 7,558,135,808 B, STALE_RESUMABLE); `827e52166b2541499949c4e27a73d761` (S43.mp4, 121 / 1,015,021,568 B, PAUSED_RESUMABLE); `aff70b06780045aaa3eaa5ffbcb25cfd` (Shadow_bridge_ams_app_support_211026.mp4, 8 / 67,108,864 B, STALE_RESUMABLE); `d9dcaa5acc4d4c5faeba1427a0562264` (AMS_KAP_-_Compliance_-_Session_2.mp4, 1 / 8,388,608 B, STALE_RESUMABLE). States remain UPLOADING in the API but served UI correctly offers resume. All IDs and ACK counts matched after deployment; no data was cancelled or deleted.
 
 DROPAREA_REAL_UPLOAD=PARTIAL - two synthetic files finalized and processing queued; worker blockage prevented validation in Videos
 DROPAREA_AUTO_START=PASS - selecting two synthetic files started both without pressing Upload Selected
