@@ -1479,7 +1479,7 @@
                 { id: 'metric-audio', label: 'Audio', count: metrics.audio },
                 { id: 'metric-transcribed', label: 'Transcribed', count: metrics.transcribed },
             ].map(metric => `<div class="folder"><div class="count" id="${metric.id}">${metric.count}</div><div class="label">${metric.label}</div></div>`).join('');
-            await loadFolders();
+            loadFolders();
             populateProjectFilter(window._allFiles);
             applyFileFilters();
         }

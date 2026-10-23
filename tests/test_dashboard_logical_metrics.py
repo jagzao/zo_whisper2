@@ -62,6 +62,7 @@ def test_logical_metrics_match_files_while_storage_diagnostics_keep_physical_cou
     assert "Storage diagnostics" in html
     assert "label: 'Transcribed'" in html
     assert "metric-videos" in html and "metrics.videos" in html
+    assert "await loadFolders()" not in html
 
 
 def test_logical_audio_and_transcribed_count_media_not_transcript_artifacts(media_roots):
