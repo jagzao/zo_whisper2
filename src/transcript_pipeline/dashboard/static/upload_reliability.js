@@ -99,10 +99,43 @@
         throw new Error('Upload request failed after retries');
     }
 
+
+    function suppressReselection(item) {
+        return ['UPLOADING', 'RETRYING', 'FINALIZING', 'COMPLETED'].includes(item?.state);
+    }
+
+    function shouldResetUploadPump(batchStarted, activeCount, activeItems, preflightPending) {
+        return !!batchStarted && activeCount === 0 && !preflightPending &&
+            !activeItems.some(item => ['UPLOADING', 'RETRYING', 'FINALIZING'].includes(item.state));
+    }
+
+    async function fetchUploadWithTimeout(url, options = {}, { timeoutMs = 90000, fetcher = globalThis.fetch,
+        setTimer = setTimeout, clearTimer = clearTimeout } = {}) {
+        const controller = new AbortController();
+        const parent = options.signal;
+        const abortFromParent = () => controller.abort(parent.reason);
+        if (parent?.aborted) abortFromParent();
+        else parent?.addEventListener('abort', abortFromParent, { once: true });
+        let timedOut = false;
+        const timer = setTimer(() => { timedOut = true; controller.abort(); }, timeoutMs);
+        try {
+            return await fetcher(url, { ...options, signal: controller.signal });
+        } catch (error) {
+            if (timedOut) { const timeout = new Error(`No response for ${Math.round(timeoutMs / 1000)}s`); timeout.code = 'UPLOAD_TIMEOUT'; throw timeout; }
+            throw error;
+        } finally {
+            clearTimer(timer);
+            parent?.removeEventListener('abort', abortFromParent);
+        }
+    }
+
+    globalThis.whisperSuppressUploadReselection = suppressReselection;
+    globalThis.whisperShouldResetUploadPump = shouldResetUploadPump;
     globalThis.WhisperScreenWakeLock = ScreenWakeLock;
     globalThis.whisperAdaptiveUploadLimit = adaptiveUploadLimit;
     globalThis.whisperReadDashboardJson = response => readResponseJson(response);
     globalThis.whisperReadUploadJson = response => readResponseJson(response, true);
-    globalThis.whisperFetchUploadWithRetry = (url, options) => fetchUploadWithRetry(url, options);
-    if (typeof module !== 'undefined') module.exports = { ScreenWakeLock, adaptiveUploadLimit, readResponseJson, fetchUploadWithRetry };
+    globalThis.whisperFetchUploadWithRetry = (url, options, config) => fetchUploadWithRetry(url, options, config);
+    globalThis.whisperFetchUploadWithTimeout = (url, options, config) => fetchUploadWithTimeout(url, options, config);
+    if (typeof module !== 'undefined') module.exports = { ScreenWakeLock, adaptiveUploadLimit, readResponseJson, fetchUploadWithRetry, fetchUploadWithTimeout, suppressReselection, shouldResetUploadPump };
 })();

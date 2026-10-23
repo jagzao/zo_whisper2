@@ -1375,7 +1375,7 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='upload_reliability.js') }}"></script>
+    <script src="{{ url_for('static', filename='upload_reliability.js', v=build_revision) }}"></script>
     <script>
         // Generated fresh per dashboard process (see app.py) — required on every
         // mutating request so this localhost-only dashboard can't be driven by
@@ -3101,7 +3101,7 @@
                     resumableSessions.forEach(session => {
                         if (!existing.has(session.id)) uploadItems.push({ id: session.id, sessionId: session.id,
                             filename: session.filename, size: session.size, projectId: session.project_id || '',
-                            file: null, state: 'PAUSED', attempts: 0, controller: null, received: session.received || [] });
+                            file: null, state: session.logical_state === 'COMPLETED' ? 'COMPLETED' : session.logical_state === 'FAILED' ? 'FAILED' : 'PAUSED', attempts: 0, controller: null, received: session.received || [], serverState: session.logical_state, lastAckAt: session.last_ack_at ? session.last_ack_at * 1000 : null });
                     });
                     renderUploadQueue();
                 }
@@ -3124,12 +3124,18 @@
             const projectId = document.getElementById('uploadProject').value;
             for (const file of selectedFiles) {
                 const resume = resumableSessions.find(session => session.filename === file.name && session.size === file.size);
-                const duplicate = uploadItems.some(item => item.filename === file.name && item.size === file.size && item.file && item.state !== 'REMOVED');
-                if (!duplicate) {
-                    const pendingResume = uploadItems.find(item => item.sessionId === resume?.id && !item.file);
-                    if (pendingResume) { pendingResume.file = file; pendingResume.state = 'QUEUED'; }
-                    else uploadItems.push({ id: resume?.id || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, sessionId: resume?.id || null, file, filename: file.name, size: file.size, projectId, state: 'QUEUED', attempts: 0, controller: null, received: resume?.received || [] });
-                }
+                const matching = uploadItems.find(item => item.filename === file.name && item.size === file.size && item.state !== 'REMOVED');
+                if (matching && whisperSuppressUploadReselection(matching)) continue;
+                const existing = matching || uploadItems.find(item => item.sessionId === resume?.id);
+                if (existing) {
+                    existing.sessionId = resume?.id || existing.sessionId;
+                    existing.file = file;
+                    existing.projectId = existing.projectId || projectId;
+                    existing.received = resume?.received || existing.received || [];
+                    existing.state = 'QUEUED';
+                    existing.error = '';
+                    existing.cancelRequested = false;
+                } else uploadItems.push({ id: resume?.id || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, sessionId: resume?.id || null, file, filename: file.name, size: file.size, projectId, state: 'QUEUED', attempts: 0, controller: null, received: resume?.received || [] });
             }
             fileInput.value = '';
             renderUploadQueue();
@@ -3151,14 +3157,14 @@
                 const percent = item.size ? Math.floor((item.uploadedBytes || 0) * 100 / item.size) : 0;
                 const speed = item.speed || 0;
                 const eta = speed > 0 ? Math.ceil((item.size - (item.uploadedBytes || 0)) / speed) : null;
-                const state = item.state === 'UPLOADING' || item.state === 'RETRYING' || item.state === 'FINALIZING'
-                    ? `${item.state} · ${formatUploadBytes(item.uploadedBytes || 0)} / ${formatUploadBytes(item.size || item.file?.size || 0)} · ${percent}% · ${(speed / 1048576).toFixed(1)} MB/s · ETA ${eta == null ? '—' : `${Math.floor(eta / 60)}m ${String(eta % 60).padStart(2, '0')}s`}`
-                    : item.state === 'COMPLETED' ? `Completed · ${item.resultName || item.filename}`
-                        : item.state === 'FAILED' ? `Failed · ${item.error || 'upload error'}`
-                            : item.state === 'CANCELLED' || item.state === 'UPLOAD_CANCELLED' ? 'CANCELLED'
-                                : item.state === 'PAUSED' ? 'PAUSED · upload can resume' : 'QUEUED';
+                const progress = `${formatUploadBytes(item.uploadedBytes || 0)} / ${formatUploadBytes(item.size || item.file?.size || 0)} (${percent}%) | ${(speed / 1048576).toFixed(1)} MB/s | ETA ${eta == null ? 'n/a' : `${Math.floor(eta / 60)}m ${String(eta % 60).padStart(2, '0')}s`}`;
+                const state = ['UPLOADING', 'RETRYING', 'FINALIZING'].includes(item.state) ? `${item.state} | ${progress}`
+                    : item.state === 'COMPLETED' ? `Completed | ${item.resultName || item.filename} | ${progress}`
+                        : item.state === 'FAILED' ? `Failed | ${progress} | ${item.error || 'upload error'} | ${item.phase || 'UNKNOWN'}${item.currentChunk == null ? '' : ` chunk ${item.currentChunk}`}${item.httpStatus ? ` | HTTP ${item.httpStatus}` : ''} | last ACK ${item.lastAckAt ? new Date(item.lastAckAt).toLocaleTimeString() : 'none'}`
+                            : item.state === 'CANCELLED' || item.state === 'UPLOAD_CANCELLED' ? `CANCELLED | ${progress}`
+                                : item.state === 'PAUSED' ? `PAUSED | ${progress} | upload can resume` : `QUEUED | ${progress}`;
                 return `<div class="upload-file-row" data-upload-id="${item.id}" data-project-id="${escapeHtml(item.projectId)}">
-                    <span class="upload-file-name">${escapeHtml(item.filename || item.file?.name || '')} · ${formatUploadBytes(item.size || item.file?.size || 0)}</span>
+                    <span class="upload-file-name">${escapeHtml(item.filename || item.file?.name || '')} | ${formatUploadBytes(item.size || item.file?.size || 0)} | Session ${escapeHtml((item.sessionId || 'pending').slice(0, 8))}</span>
                     <span class="upload-file-state">${escapeHtml(state)}${item.projectId ? ` · ${escapeHtml(item.projectId)}` : ''}</span>${action}
                 </div>`;
             }).join('');
@@ -3193,22 +3199,38 @@
             }
         }
 
+        let uploadPreflightPromise = null;
+
+        function ensureUploadPump() {
+            const hasActiveItem = uploadItems.some(row => ['UPLOADING', 'RETRYING', 'FINALIZING'].includes(row.state));
+            if (whisperShouldResetUploadPump(uploadBatchStarted, activeUploadCount, uploadItems, !!uploadPreflightPromise)) uploadBatchStarted = false;
+            if (!uploadItems.some(row => row.state === 'QUEUED' && row.file)) return;
+            if (uploadBatchStarted && (activeUploadCount > 0 || hasActiveItem)) { pumpUploadQueue(); return; }
+            startUploadBatch();
+        }
+
         function startUploadBatch() {
-            if (uploadBatchStarted) return;
-            const queued = uploadItems.filter(row => row.state === 'QUEUED');
+            const queued = uploadItems.filter(row => row.state === 'QUEUED' && row.file);
             if (!queued.length) return;
+            if (uploadBatchStarted && activeUploadCount > 0) { pumpUploadQueue(); return; }
+            if (uploadPreflightPromise) return;
             uploadBatchStarted = true;
-            whisperFetchUploadWithRetry('/api/uploads/preflight', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
-                body: JSON.stringify({ uploads: queued.map(row => ({ session_id: row.sessionId || null, size: Number(row.size || row.file?.size || 0) })) }) })
+            uploadPreflightPromise = whisperFetchUploadWithRetry('/api/uploads/preflight', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                body: JSON.stringify({ uploads: queued.map(row => ({ session_id: row.sessionId || null, size: Number(row.size || row.file?.size || 0) })) }) },
+                { attempts: 5, fetcher: (target, requestOptions) => whisperFetchUploadWithTimeout(target, requestOptions, { timeoutMs: 90000 }) })
                 .then(async response => {
                     const result = await whisperReadUploadJson(response);
-                    if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
+                    if (!response.ok || !result.ok) { const error = new Error(result.error || `HTTP ${response.status}`); error.status = response.status; throw error; }
                     pumpUploadQueue();
                 })
                 .catch(error => {
-                    queued.forEach(row => { row.state = 'FAILED'; row.error = error.message; });
-                    uploadBatchStarted = false;
+                    queued.filter(row => row.state === 'QUEUED').forEach(row => { row.state = 'FAILED'; row.error = error.message; row.phase = 'PREFLIGHT'; row.httpStatus = error.status || null; });
                     renderUploadQueue();
+                })
+                .finally(() => {
+                    uploadPreflightPromise = null;
+                    if (!activeUploadCount) uploadBatchStarted = false;
+                    ensureUploadPump();
                 });
         }
 
@@ -3228,12 +3250,9 @@
                     activeUploadCount -= 1;
                     syncUploadWakeLock();
                     renderUploadQueue();
-                    const active = uploadItems.some(row => row.state === 'UPLOADING' || row.state === 'QUEUED');
-                    if (!active) {
-                        uploadBatchStarted = false;
-                        if (uploadItems.some(row => row.state === 'COMPLETED')) { loadFolders(); loadMetrics(); }
-                    }
-                    pumpUploadQueue();
+                    const active = uploadItems.some(row => ['UPLOADING', 'RETRYING', 'FINALIZING', 'QUEUED'].includes(row.state));
+                    if (!active && uploadItems.some(row => row.state === 'COMPLETED')) { loadFolders(); loadMetrics(); }
+                    ensureUploadPump();
                 });
             }
         }
@@ -3246,17 +3265,28 @@
                 pendingBytes, active: activeUploadCount, max: UPLOAD_CONCURRENCY_MAX });
         }
 
+        async function uploadRequest(item, url, options, phase) {
+            item.phase = phase;
+            const chunkMatch = phase.match(/^CHUNK_(\d+)$/);
+            item.currentChunk = chunkMatch ? Number(chunkMatch[1]) : null;
+            item.currentRequest = url;
+            item.lastProgressAt = Date.now();
+            const response = await whisperFetchUploadWithRetry(url, options, { attempts: phase.startsWith('CHUNK_') ? 1 : 5, fetcher: (target, requestOptions) => whisperFetchUploadWithTimeout(target, requestOptions, { timeoutMs: 90000 }) });
+            item.lastProgressAt = Date.now();
+            return response;
+        }
+
         async function uploadOneFile(item) {
             try {
                 if (!item.sessionId) {
-                    const init = await whisperFetchUploadWithRetry('/api/uploads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
-                        body: JSON.stringify({ filename: item.file.name, size: item.file.size, project_id: item.projectId }) });
+                    const init = await uploadRequest(item, '/api/uploads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
+                        body: JSON.stringify({ filename: item.file.name, size: item.file.size, project_id: item.projectId }), signal: item.controller.signal }, 'CREATE_SESSION');
                     const created = await whisperReadUploadJson(init);
                     if (!init.ok || !created.ok) throw new Error(created.error || `HTTP ${init.status}`);
                     item.sessionId = created.session.id;
-                    item.chunkSize = created.session.chunk_size;
+                    item.chunkSize = created.session.chunk_size; item.lastAckAt = created.session.last_ack_at ? created.session.last_ack_at * 1000 : null;
                 }
-                const stateResponse = await whisperFetchUploadWithRetry(`/api/uploads/${item.sessionId}`);
+                const stateResponse = await uploadRequest(item, `/api/uploads/${item.sessionId}`, { signal: item.controller.signal }, 'GET_STATE');
                 const statePayload = await whisperReadUploadJson(stateResponse);
                 const serverSession = statePayload.session;
                 if (serverSession?.state === 'COMPLETED') {
@@ -3269,7 +3299,7 @@
                 const received = new Set(serverSession ? Object.keys(serverSession.chunks).map(Number) : []);
                 const chunkSize = item.chunkSize || 8 * 1024 * 1024;
                 const count = Math.ceil(item.file.size / chunkSize);
-                item.startedAt = Date.now(); item.uploadedBytes = Array.from(received).reduce((sum, i) => sum + Math.min(chunkSize, item.file.size - i * chunkSize), 0);
+                item.startedAt = Date.now(); item.lastProgressAt = item.startedAt; item.ackedChunks = received.size; item.uploadedBytes = Array.from(received).reduce((sum, i) => sum + Math.min(chunkSize, item.file.size - i * chunkSize), 0);
                 for (let index = 0; index < count; index++) {
                     if (received.has(index)) continue;
                     const blob = item.file.slice(index * chunkSize, Math.min(item.file.size, (index + 1) * chunkSize));
@@ -3279,10 +3309,10 @@
                     for (let attempt = 0; attempt < 5 && !acknowledged; attempt++) {
                         item.state = attempt ? 'RETRYING' : 'UPLOADING';
                         try {
-                            const response = await fetch(`/api/uploads/${item.sessionId}/chunks/${index}`, { method: 'PUT',
-                                headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN, 'X-Chunk-SHA256': sha256 }, body: blob, signal: item.controller.signal });
+                            const response = await uploadRequest(item, `/api/uploads/${item.sessionId}/chunks/${index}`, { method: 'PUT',
+                                headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN, 'X-Chunk-SHA256': sha256 }, body: blob, signal: item.controller.signal }, `CHUNK_${index}`);
                             const result = await whisperReadUploadJson(response);
-                            if (response.ok && result.ok) acknowledged = true;
+                            if (response.ok && result.ok) { acknowledged = true; item.lastAckAt = Date.now(); item.lastProgressAt = item.lastAckAt; item.ackedChunks = (item.ackedChunks || 0) + 1; }
                             else if (response.status < 500 || attempt === 4) {
                                 const failure = new Error(result.error || `HTTP ${response.status}`);
                                 failure.status = response.status;
@@ -3298,11 +3328,12 @@
                         if (!acknowledged) await new Promise(resolve => setTimeout(resolve, Math.min(8000, 500 * (2 ** attempt))));
                     }
                     item.uploadedBytes += blob.size;
+                    item.lastProgressAt = Date.now();
                     item.speed = item.uploadedBytes / Math.max(0.1, (Date.now() - item.startedAt) / 1000);
                     renderUploadQueue();
                 }
                 item.state = 'FINALIZING'; renderUploadQueue();
-                const response = await whisperFetchUploadWithRetry(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN } });
+                const response = await uploadRequest(item, `/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, signal: item.controller.signal }, 'FINALIZE');
                 const result = await whisperReadUploadJson(response);
                 if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
                 item.state = 'COMPLETED';
@@ -3314,8 +3345,7 @@
             } catch (error) {
                 if (error.name === 'AbortError') item.state = item.cancelRequested ? 'CANCELLED' : 'PAUSED';
                 else {
-                    item.state = 'FAILED'; item.error = error instanceof TypeError
-                        ? `Connection interrupted; Retry resumes acknowledged chunks. (${error.message})` : error.message;
+                    item.state = 'FAILED'; item.httpStatus = error.status || null; item.error = `${error instanceof TypeError ? 'Network request failed' : error.message}; phase ${item.phase || 'UNKNOWN'}${item.httpStatus ? `; HTTP ${item.httpStatus}` : ''}. ACKed chunks are preserved.`;
                     uploadRecentFailures += 1;
                     uploadBackendHealthy = false;
                 }

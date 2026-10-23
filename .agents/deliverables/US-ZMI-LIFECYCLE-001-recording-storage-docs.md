@@ -4,6 +4,24 @@
 `RELEASED_OWNER_UAT_PENDING`
 
 ## CURRENT_RESULT
+### Owner evidence override - 2026-10-23T19:16:23Z
+
+CURRENT_RESULT V2 supersedes all earlier merged or agent-only PASS claims. Truth layers stay distinct:
+
+REPO_STATE=IN_PROGRESS - source and release evidence under investigation
+AGENT_SERVED_CHECK=PRIOR_PASS_NOT_AUTHORITATIVE - prior synthetic/served results do not prove Juan's current browser journey
+OWNER_UAT=FAIL - DASHBOARD_COUNTERS: Juan continues seeing physical counters; DROPAREA: selecting/dropping real videos does not reliably start/progress upload
+EVIDENCE_CONFLICT=YES - agent-served checks differ from current owner observations; owner evidence controls feature completion
+
+DASHBOARD_COUNTERS_OWNER_UAT=FAIL
+DASHBOARD_COUNTERS_OWNER_UAT_AT=2026-10-23T19:16:23Z
+DASHBOARD_COUNTERS_OWNER_UAT_BUILD=UNKNOWN
+DROPAREA_OWNER_UAT=FAIL
+DROPAREA_OWNER_UAT_AT=2026-10-23T19:16:23Z
+DROPAREA_OWNER_UAT_BUILD=UNKNOWN
+
+Owner failures remain FAIL until Juan validates a corrected owner-observed session. Current journey states: DROPAREA=TESTING; DASHBOARD_COUNTERS=TESTING; DOCS_V2=TESTING; LIVE_CAPTURE=TESTING; VIDEO_EDITOR=TESTING.
+
 
 STATUS=PARTIAL
 HEAD=IMPLEMENTATION_HEAD=7c0969be8e9b10e2cc230be282c5a47015a8d9fe; RESULT_COMMIT_HEAD=this result update
@@ -229,7 +247,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 
 | Feature / Gate | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
-| Drop Area: auto-start, two-file resumable upload, P&G assignment | 🟨 TESTING | Served build `74799c2`; two synthetic MP4s auto-uploaded/finalized and queued without extra click; P&G assigned; no JS/network errors. Worker did not process them into Videos; synthetic records cleaned. | Fix worker/runtime; repeat through Videos with safe synthetic media. | Agent |
+| Drop Area: auto-start, two-file resumable upload, P&G assignment | ?? BLOCKED | Juan reports real select/drop does not reliably upload. Prior synthetic served checks do not override this owner failure. | Repair client state machine, timeout/retry and verify actual served browser flow; Juan validates real device. | Owner UAT pending |
 | Upload retry/resume after simulated 502 | 🟨 TESTING | Served synthetic 12.4 MB upload: five chunk 502s, ACK 0 preserved, upload-specific 502 shown; fresh-page reselect resumed and completed. Retry-in-place stalled during service instability. Test records cleaned. | Stabilize ZMI and repeat pause/retry/resume journey; verify processing result. | Agent |
 | P&G default: uploads and New Recording | 🟨 TESTING | Served UI selected P&G for uploads and New Recording; explicit Zo Interviews choice persisted after reopening. Camera/audio/playlist capture not started. | Verify project inheritance through real served capture and playlist journeys; phone-only hardware checks by Juan. | Agent |
 | Docs V2 served UI, document and version history | 🟨 TESTING | Served P&G Tidal v2 opened with manual/package, metadata, evidence links, review count, versions v1/v2 and separate Reprocess. Regeneration selected v3; v1/v2 stayed accessible. Full semantic panels/source-grounding content not fully validated. | Validate one full P&G document including timeline, claims, mappings and review queue; verify version history. | Agent |
@@ -280,7 +298,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Documentation Synthesis V2: regenerate documentation, reprocess video, documentation versioning | 🟨 TESTING | Prior regeneration/versioning tests passed; UI keeps regeneration separate from reprocessing. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Video list: Project, Date, Duration, sorting, Show/player | 🟨 TESTING | Final served `/api/files` returns 60 rows; projects API returns 5 projects; smoke confirmed no chunk-named rows. Unit suite passes 1230 with 8 skipped. | None. | Agent |
 | Video list: delete eligibility/reason; hide internal chunks | 🟨 TESTING | Prior API/UI state-matrix and fragment visibility evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
-| Dashboard logical inventory counters | 🟩 COMPLETE | Live revision `7c0969be8e9b10e2cc230be282c5a47015a8d9fe` serves desktop HTTP and LAN HTTPS. UI cards 10/0/9; `/api/files` has 10 logical rows with matching 10/0/9 metrics; Pending 0, no browser errors. Five resumable uploads retained with unchanged ACK maps; no active byte transfer in a 20-second observation. | Preserve the five resumable sessions; monitor the separately tracked raw-diagnostics timeout. | Agent |
+| Dashboard logical inventory counters | ?? TESTING | Juan reports old physical counters in his actual browser. Prior agent served check showed 10/0/9 but conflicts with owner UAT and cannot complete the feature. | Fix deterministic build/cache identity, then Juan revalidates. | Owner UAT pending |
 | HTTPS/mobile: desktop/LAN shared data, HTTPS certificate, /setup, public CA, QR onboarding | 🟨 TESTING | Focused LAN/setup tests pass 31/31. Final desktop HTTP and LAN HTTPS return 200 with marker matching HEAD; `/setup` and QR return 200; `/api/network` reports configured HTTP/HTTPS ports 5000/5001, LAN IP `192.168.50.20`, and certificate fingerprint. | Juan installs public CA and validates phone onboarding during UAT. | Agent |
 | Overview Stats Modal: toolbar icon opens modal; reuse existing metrics; four required metrics | 🟨 TESTING | `tests/e2e/overview_stats_modal.py`: 12 browser checks pass on final app source; four metric labels/values match existing metrics. | None. | Agent |
 | Dashboard compact layout: Drop Area left; Pipeline and Folders stacked right; responsive, content-sized cards | 🟨 TESTING | Playwright layout test at 1440x1000 verifies two-column left/right stack; at 390x844 verifies one-column order and no horizontal overflow. CSS cards align to content; no fixed heights. | None; Juan may review live appearance during UAT. | Agent |

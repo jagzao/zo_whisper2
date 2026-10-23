@@ -220,3 +220,24 @@ def test_enospc_is_json_507_for_chunk_and_finalize(client, monkeypatch):
 def test_upload_javascript_is_in_installed_package_data():
     config = tomllib.loads(Path("pyproject.toml").read_text(encoding="utf-8"))
     assert "static/*.js" in config["tool"]["setuptools"]["package-data"]["transcript_pipeline.dashboard"]
+
+
+def test_upload_session_list_reports_semantic_state_and_ack_activity(tmp_path, monkeypatch):
+    monkeypatch.setattr(upload_module, "CHUNK_SIZE", 4)
+    service = upload_module.ResumableUploads(tmp_path / "sessions")
+    session = service.create("video.mp4", 8)
+    listed = service.list()[0]
+    assert listed["logical_state"] == "STALE_RESUMABLE"
+    assert listed["received"] == []
+
+    first = b"1234"
+    service.acknowledge(session["id"], 0, first, hashlib.sha256(first).hexdigest())
+    listed = service.list()[0]
+    assert listed["logical_state"] == "ACTIVE_TRANSFERRING"
+    assert listed["received"] == [0]
+    assert listed["last_ack_at"]
+
+    directory, manifest = service._manifest(session["id"])
+    manifest["state"] = "PAUSED"
+    service._save(directory / "session.json", manifest)
+    assert service.list()[0]["logical_state"] == "PAUSED_RESUMABLE"

@@ -8,6 +8,7 @@ import os
 import re
 import tempfile
 import threading
+import time
 import uuid
 from pathlib import Path
 import shutil
@@ -98,7 +99,8 @@ class ResumableUploads:
             directory = self._dir(session_id)
             directory.mkdir()
             data = {"id": session_id, "filename": filename, "size": size, "project_id": project_id,
-                    "chunk_size": CHUNK_SIZE, "chunks": {}, "state": "UPLOADING"}
+                    "chunk_size": CHUNK_SIZE, "chunks": {}, "state": "UPLOADING",
+                    "created_at": time.time(), "last_activity_at": time.time(), "last_ack_at": None}
             self._save(directory / "session.json", data)
             return data
 
@@ -109,11 +111,18 @@ class ResumableUploads:
 
     def list(self) -> list[dict[str, Any]]:
         sessions = []
+        now = time.time()
         for path in self.root.iterdir():
             if path.is_dir():
                 try:
                     _, data = self._manifest(path.name)
-                    if data.get("state") in {"UPLOADING", "FINALIZING"}:
+                    state = data.get("state")
+                    if state in {"UPLOADING", "FINALIZING", "PAUSED", "COMPLETED", "FAILED"}:
+                        ack_at = float(data.get("last_ack_at") or 0)
+                        data["received"] = sorted(int(index) for index in data.get("chunks", {}))
+                        data["logical_state"] = ("COMPLETED" if state == "COMPLETED" else "FAILED" if state == "FAILED"
+                            else "PAUSED_RESUMABLE" if state == "PAUSED" else "ACTIVE_TRANSFERRING"
+                            if ack_at and now - ack_at <= 120 else "STALE_RESUMABLE")
                         sessions.append(data)
                 except UploadError:
                     continue
@@ -156,6 +165,8 @@ class ResumableUploads:
                     os.fsync(handle.fileno())
                 os.replace(temporary, part)
             data["chunks"][str(index)] = actual
+            data["last_ack_at"] = time.time()
+            data["last_activity_at"] = data["last_ack_at"]
             self._save(directory / "session.json", data)
         return {"ok": True, "index": index, "sha256": actual, "received": sorted(map(int, data["chunks"]))}
 

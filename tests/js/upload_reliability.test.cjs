@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { ScreenWakeLock, adaptiveUploadLimit, fetchUploadWithRetry } = require('../../src/transcript_pipeline/dashboard/static/upload_reliability.js');
+const { ScreenWakeLock, adaptiveUploadLimit, fetchUploadWithRetry, fetchUploadWithTimeout, suppressReselection, shouldResetUploadPump } = require('../../src/transcript_pipeline/dashboard/static/upload_reliability.js');
 
 class FakeDocument {
     visibilityState = 'visible';
@@ -109,4 +109,22 @@ test('upload request retries a network rejection but does not retry cancellation
     await assert.rejects(fetchUploadWithRetry('/api/uploads/session', {}, { attempts: 3, sleep: async () => {},
         fetcher: async () => { calls += 1; const error = new Error('aborted'); error.name = 'AbortError'; throw error; } }), /aborted/);
     assert.equal(calls, 1);
+});
+
+test('reselect retries failed and paused rows but suppresses active and completed duplicates', () => {
+    for (const state of ['FAILED', 'PAUSED', 'UPLOAD_CANCELLED', 'CANCELLED', 'QUEUED']) assert.equal(suppressReselection({ state }), false);
+    for (const state of ['UPLOADING', 'RETRYING', 'FINALIZING', 'COMPLETED']) assert.equal(suppressReselection({ state }), true);
+});
+
+test('stuck upload batch flag resets only when no activity exists', () => {
+    assert.equal(shouldResetUploadPump(true, 0, [{ state: 'FAILED' }], false), true);
+    assert.equal(shouldResetUploadPump(true, 0, [{ state: 'QUEUED' }], false), true);
+    assert.equal(shouldResetUploadPump(true, 1, [{ state: 'UPLOADING' }], false), false);
+    assert.equal(shouldResetUploadPump(true, 0, [], true), false);
+});
+
+test('upload request aborts after its bounded timeout', async () => {
+    await assert.rejects(fetchUploadWithTimeout('/chunk', {}, { timeoutMs: 1,
+        fetcher: (_url, { signal }) => new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')))) }),
+        error => error.code === 'UPLOAD_TIMEOUT' && /No response/.test(error.message));
 });
