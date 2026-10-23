@@ -6,22 +6,22 @@
 ## CURRENT_RESULT
 
 STATUS=PARTIAL_BLOCKED
-HEAD=IMPLEMENTATION_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba; RESULT_COMMIT_HEAD=commit containing this CURRENT_RESULT section
-REMOTE_HEAD=origin/main contains RESULT_COMMIT_HEAD; latest publishing SHA is recorded by Git history after push
-SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba (same served revision; healthy Docker probe; one transient HTTP health timeout during upload activity)
-DEVELOPMENT_COMPLETE=NO - several software journeys and runtime stability remain unverified or blocked
-UNIT=PASS - 92 Python focused tests; 9 Node upload reliability tests
+HEAD=IMPLEMENTATION_HEAD=3ec6bb6fc22c4ef665275c8ef5947521fc2b1cf9; RESULT_COMMIT_HEAD=commit containing this CURRENT_RESULT section
+REMOTE_HEAD=origin/main contains implementation 3ec6bb6fc22c4ef665275c8ef5947521fc2b1cf9; this result update will be pushed separately
+SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba (prior app; new image built but deployment held to protect active uploads)
+DEVELOPMENT_COMPLETE=NO - served validation and several software journeys/runtime stability remain blocked or unverified
+UNIT=PASS - 98 focused dashboard/API tests; py_compile and git diff --check pass
 INTEGRATION=PARTIAL - served upload, auto-start, P&G defaults, Docs UI/history, resume, MP4/WebM editor playback tested; processing, Docs semantic regeneration, crop, playlist and several other journeys remain unverified
-DEPLOYED=YES - current implementation is served; Docker healthy; restart count 4, exit 0, OOM=false; restart cause not established
-KANBAN_COMPLETE=8
+DEPLOYED=NO for 3ec6bb6 - prior app is served; ZMI healthy, restart count 1 since recreation; exit 0/OOM=false; cause of prior restarts unproven
+KANBAN_COMPLETE=7
 KANBAN_IN_PROGRESS=0
-KANBAN_TESTING=59
+KANBAN_TESTING=60
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
-CURRENT_WORK=Reconcile served product journeys; preserve the active owner upload and stale worker lease; repair/verify Docs provider and remaining software journeys
+CURRENT_WORK=Preserve five active owner uploads and stale worker lease; deploy logical counters after uploads complete; continue runtime and remaining served journeys
 LAST_COMPLETED=Served MP4 and WebM editor Apply flows created playable derivatives with audio and preserved originals; capture shell reached fake-device recording and finalized fragments
-BLOCKER=Owner job `a5baabf678944da7b463677ed566140f` remains ACTIVE on prior container `ef201c211f9f`, within the six-hour stale threshold; do not alter it. Docs provider preflight is blocked because host/container OPENCODE_API_KEY is absent and ALLOW_EXTERNAL_LLM=false. Four restarts have no proven cause; one health request timed out during observed upload activity, then health passed. Software journeys remain unverified.
-NEXT_ACTION=Wait for the configured stale lease threshold and recover only via existing worker policy; obtain the authorized key in process/container env for tiny Docs preflight; diagnose restarts from retained host/Compose events; continue served journeys without interfering with owner uploads.
+BLOCKER=Five existing resumable upload sessions remain UPLOADING; deployment restart could interrupt them. Owner job `a5baabf678944da7b463677ed566140f` remains ACTIVE with ~5.1h heartbeat age under the six-hour recovery threshold; do not alter. Docs provider key absent and ALLOW_EXTERNAL_LLM=false. /api/folders timed out during read-only served sampling; restart cause unproven.
+NEXT_ACTION=Wait for owner uploads to settle, then deploy 3ec6bb6 and verify actual served cards/table. Keep watching worker via existing policy; do not cancel/requeue owner work. Resume Docs only when authorized provider configuration is available.
 RULE_CONFLICT=YES - owner completion semantics supersede prior implementation/test-based green statuses
 
 DROPAREA_REAL_UPLOAD=PARTIAL - two synthetic files finalized and processing queued; worker blockage prevented validation in Videos
@@ -43,30 +43,30 @@ HTTPS_MOBILE=TESTING - LAN HTTPS health and build marker pass; physical phone ce
 
 ### Latest execution result
 
-Dashboard inventory counter phase (2026-10-23): `/api/files` now includes logical `videos`, `audio`, and nonempty-transcription metrics computed from its exact visible row set; primary cards consume those values. `/api/folders` retains raw filesystem diagnostics and exposes the pending upload queue count separately. Added secondary, collapsed Storage diagnostics. Targeted tests: 98 passed, including 48 physical video files / 12 visible logical rows, hidden capture fragments, test session exclusion, audio, orphan/empty transcript exclusion and API reconciliation. `py_compile` and `git diff --check` pass. Status remains TESTING until the final committed image is served and live cards reconcile with the table. No owner media or uploads were accessed.
+Dashboard inventory counter phase (2026-10-23): `/api/files` now includes logical `videos`, `audio`, and nonempty-transcription metrics computed from its exact visible row set; primary cards consume those values. `/api/folders` retains raw filesystem diagnostics and exposes the pending upload queue count separately. Added secondary, collapsed Storage diagnostics. Targeted tests: 98 passed, including 48 physical video files / 12 visible logical rows, hidden capture fragments, test session exclusion, audio, orphan/empty transcript exclusion and API reconciliation. `py_compile` and `git diff --check` pass. Commit `3ec6bb6` is pushed; Docker image built successfully with this revision. Deployment waits because five existing sessions are `UPLOADING`. Prior served API baseline: 12 logical videos, 0 audio, 9 transcribed; response has no metrics field. A read-only `/api/folders` probe timed out. Status stays TESTING until deployment and actual UI/table comparison. No owner media or upload data was changed.
 
-DASHBOARD_COUNTERS_LOGICAL=IMPLEMENTED; SERVED_PENDING
-VIDEOS_LOGICAL_COUNT=12 in isolated 48-file regression fixture; live served count pending
-AUDIO_LOGICAL_COUNT=fixture verified; live served count pending
-TRANSCRIBED_LOGICAL_COUNT=fixture verified for nonempty media-linked transcripts; live served count pending
-RAW_STORAGE_DIAGNOSTICS=preserved in collapsed secondary section
-COUNTERS_MATCH_FILES_API=PASS in targeted API fixture; served check pending
-SERVED_VALIDATION=PENDING
-WORKER=BLOCKED (prior owner active job/stale lease preserved)
-DOCS_V2_REGENERATE=BLOCKED (authorized provider credential/privacy configuration absent)
+DASHBOARD_COUNTERS_LOGICAL=IMPLEMENTED; not served yet
+VIDEOS_LOGICAL_COUNT=12 prior served /api/files rows; 12 fixture rows from 48 physical files
+AUDIO_LOGICAL_COUNT=0 prior served /api/files rows; logical audio fixture passes
+TRANSCRIBED_LOGICAL_COUNT=9 prior served logical rows; fixture excludes orphan/empty .txt files
+RAW_STORAGE_DIAGNOSTICS=preserved in collapsed secondary section; served raw diagnostics probe timed out
+COUNTERS_MATCH_FILES_API=PASS in isolated tests; served comparison pending
+SERVED_VALIDATION=BLOCKED_PENDING_UPLOADS (5 sessions UPLOADING; old app still served)
+WORKER=BLOCKED; owner job remains active, ~5.1h heartbeat age, stale threshold 6h
+DOCS_V2_REGENERATE=BLOCKED; provider key absent and ALLOW_EXTERNAL_LLM=false
 VIDEO_EDITOR=TESTING (prior source-specific large WebM failure unresolved)
 LIVE_CAPTURE=TESTING
 REAL_CROP=TESTING
 PLAYLIST=TESTING
 VIDEOS_TABLE=TESTING
 DEVELOPMENT_COMPLETE=NO
-KANBAN_COMPLETE=8
-KANBAN_TESTING=59
+KANBAN_COMPLETE=7
+KANBAN_TESTING=60
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
-SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba (prior; deployment pending)
-BLOCKER=Served validation pending; active owner worker job remains protected
-NEXT_ACTION=Build and deploy committed dashboard change, compare served cards and unfiltered table, then continue worker/runtime diagnosis.
+SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba
+BLOCKER=Five active uploads; deployment restart held to protect them
+NEXT_ACTION=After uploads settle, deploy 3ec6bb6, compare cards to unfiltered table, validate filters unchanged, then resume worker/runtime and remaining SDD priorities.
 
 Actual served revision `74799c205c6f399aeecfa927a8baefba73aa69ba` returned HTTPS `/api/health` 200 JSON and `/api/uploads` 200 JSON. Container is running/healthy at report time with restart count 4; inspect reports exit 0 and OOM=false, while retained logs do not identify the restart cause. During test execution the app timed out/unresponded and restarted. Caddy remained up. Persistent media and acknowledged owner upload sessions were not altered.
 
@@ -191,7 +191,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | P&G default: uploads and New Recording | 🟨 TESTING | Served UI selected P&G for uploads and New Recording; explicit Zo Interviews choice persisted after reopening. Camera/audio/playlist capture not started. | Verify project inheritance through real served capture and playlist journeys; phone-only hardware checks by Juan. | Agent |
 | Docs V2 served UI, document and version history | 🟨 TESTING | Served P&G Tidal v2 opened with manual/package, metadata, evidence links, review count, versions v1/v2 and separate Reprocess. Regeneration selected v3; v1/v2 stayed accessible. Full semantic panels/source-grounding content not fully validated. | Validate one full P&G document including timeline, claims, mappings and review queue; verify version history. | Agent |
 | Docs V2 semantic regeneration from saved evidence | 🟥 BLOCKED | Served regeneration created v3 `SYNTHESIS_BLOCKED_PRIVACY`; no remote corpus sent. Host/container lacks OPENCODE_API_KEY; `ALLOW_EXTERNAL_LLM=false`; privacy policy forbids bypass. | Restore authorized provider/auth configuration without exposing credentials; retry one document only. | Agent |
-| ZMI runtime and worker processing | 🟥 BLOCKED | At report time health is 200 and container healthy, build exact; restart count 4 with intermittent timeouts. Old owner job remains ACTIVE; no synthetic upload reached Videos. | Diagnose restart/stale recovery safely; preserve owner jobs/uploads; validate one synthetic processing job. | Agent |
+| ZMI runtime and worker processing | 🟥 BLOCKED | Health is 200 and container healthy; one restart since current container recreation, exit 0/OOM=false. Retained Docker events have no die/OOM event explaining earlier restarts. Owner job remains ACTIVE at ~5.1h heartbeat age (<6h stale threshold); one queued job remains. Five upload sessions are still UPLOADING. | Preserve owner jobs/uploads; wait for stale policy and uploads; validate a synthetic job only after safe availability. | Agent |
 | Mobile reliability + large-file upload V2 | 🟨 TESTING | Deployed through ZMI image `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc`; root cause was a stale served image missing `/api/uploads` and the package omitted its static helper. Caddy HTTP and LAN HTTPS return JSON 200 for GET `/api/uploads`; authenticated POST creates a synthetic session (200); chunk ACK, resume status and idempotent retry work; finalize returns JSON validation response for synthetic invalid media; synthetic session deleted. The served helper JS returns 200 and guards non-JSON responses. Storage preflight and oversize create return JSON 507 with free/required GiB. Served UI contains badge, bytes/total, percentage, speed, ETA and Pause/Resume/Cancel/Retry. No real owner files retried. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
 | Resumable upload recovery after transient app outage | 🟨 TESTING | ZMI deployed at `a99effb`; transient 5xx/network retry on preflight/create/status/finalize, with chunk ACK retry preserved. Python 10 and Node 9 pass. Candidate and served LAN HTTPS synthetic create/chunk/resume/finalize-error/cleanup passed. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
 | Resumable Upload API | 🟩 COMPLETE | Production through Caddy HTTP/HTTPS: GET/POST `/api/uploads`, chunk PUT, resume GET, finalize POST return JSON; small synthetic ACK/resume/retry and cleanup passed. 10 focused Python tests pass, covering synthetic 5 GiB, transient 502, resume, successful finalize, ACK preservation, ENOSPC mapping and packaged asset. 7 Node tests pass. | None; retain coverage. | Agent |
@@ -237,7 +237,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Documentation Synthesis V2: regenerate documentation, reprocess video, documentation versioning | 🟨 TESTING | Prior regeneration/versioning tests passed; UI keeps regeneration separate from reprocessing. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Video list: Project, Date, Duration, sorting, Show/player | 🟨 TESTING | Final served `/api/files` returns 60 rows; projects API returns 5 projects; smoke confirmed no chunk-named rows. Unit suite passes 1230 with 8 skipped. | None. | Agent |
 | Video list: delete eligibility/reason; hide internal chunks | 🟨 TESTING | Prior API/UI state-matrix and fragment visibility evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
-| Dashboard logical inventory counters | 🟨 TESTING | `/api/files` returns counts from the same logical rows used by Videos; targeted fixture has 48 physical media files and 12 visible rows, with 98 focused tests passing. Raw folder/transcript counts remain in collapsed Storage diagnostics. | Deploy final HEAD, compare cards with unfiltered table and validate filters remain unchanged. | Agent |
+| Dashboard logical inventory counters | 🟨 TESTING | `/api/files` returns counts from the same logical rows used by Videos; targeted fixture has 48 physical media files and 12 visible rows, with 98 focused tests passing. Image for `3ec6bb6` built; deployment waits to protect five UPLOADING sessions. Prior served baseline: 12 videos, 0 audio, 9 transcribed. | After uploads settle, deploy `3ec6bb6`, compare cards with unfiltered table and validate filters remain unchanged. | Agent |
 | HTTPS/mobile: desktop/LAN shared data, HTTPS certificate, /setup, public CA, QR onboarding | 🟨 TESTING | Focused LAN/setup tests pass 31/31. Final desktop HTTP and LAN HTTPS return 200 with marker matching HEAD; `/setup` and QR return 200; `/api/network` reports configured HTTP/HTTPS ports 5000/5001, LAN IP `192.168.50.20`, and certificate fingerprint. | Juan installs public CA and validates phone onboarding during UAT. | Agent |
 | Overview Stats Modal: toolbar icon opens modal; reuse existing metrics; four required metrics | 🟨 TESTING | `tests/e2e/overview_stats_modal.py`: 12 browser checks pass on final app source; four metric labels/values match existing metrics. | None. | Agent |
 | Dashboard compact layout: Drop Area left; Pipeline and Folders stacked right; responsive, content-sized cards | 🟨 TESTING | Playwright layout test at 1440x1000 verifies two-column left/right stack; at 390x844 verifies one-column order and no horizontal overflow. CSS cards align to content; no fixed heights. | None; Juan may review live appearance during UAT. | Agent |
@@ -265,7 +265,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Release candidate integrity | 🟨 TESTING | RC `32be478a8a7e9ef837b4d12e9435ed0480acbcf4` matched feature branch and `origin/feat/zmi-documentation-synthesis-v2`; clean three-way merge parent preserved. | None. | Agent |
 | Merge to production branch (`main`) | 🟩 COMPLETE | Merge commit `a497f4f19ca401902afa653c37a1c214fc9143d4`; parents are pre-merge production `f14ed96b76d2ea48b137eb1910ccc68f7d347ff5` and validated RC. Post-merge unit suite passed 1232, 8 skipped; production branch and subsequent SDD updates are pushed. | None. | Agent |
 | Release tag | 🟩 COMPLETE | Annotated original tag `whisper-2026-10-20` preserved at `77108a2`; patch tag `whisper-2026-10-20.2` pushed at final production SHA `f0800e22ccf9e4412087f0e0034c282dc4d79296`. | None. | Agent |
-| Production deploy | 🟩 COMPLETE | Implementation HEAD `74799c205c6f399aeecfa927a8baefba73aa69ba` is served by production ZMI via LAN HTTPS; exact X-Whisper-Build confirmed. This Kanban/result update does not change the app image. | Publish this documentation result; investigate repeated runtime restarts. | Agent |
+| Production deploy | 🟨 TESTING | Previous HEAD `74799c2` remains served. New image for pushed `3ec6bb6` built successfully; no container recreation while five owner upload sessions remain UPLOADING. | Recheck upload state, then deploy and verify exact build marker/health without changing data or model-cache mounts. | Agent |
 | Production smoke | 🟨 TESTING | Served release and functional smoke passed; exact results recorded above. | None. | Agent |
 | Galaxy UAT | OWNER_PENDING | Juan's physical phone validation remains final acceptance. | Juan validates capture/audio/crop/playback. | Juan |
 ## Evidence
