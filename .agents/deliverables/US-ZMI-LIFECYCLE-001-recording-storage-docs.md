@@ -15,7 +15,7 @@ INTEGRATION=PARTIAL - served upload, auto-start, P&G defaults, Docs UI/history, 
 DEPLOYED=YES - current implementation is served; Docker healthy; restart count 4, exit 0, OOM=false; restart cause not established
 KANBAN_COMPLETE=8
 KANBAN_IN_PROGRESS=0
-KANBAN_TESTING=58
+KANBAN_TESTING=59
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
 CURRENT_WORK=Reconcile served product journeys; preserve the active owner upload and stale worker lease; repair/verify Docs provider and remaining software journeys
@@ -42,6 +42,31 @@ VIDEOS_TABLE=TESTING - selected listing/player/docs paths opened; full columns/s
 HTTPS_MOBILE=TESTING - LAN HTTPS health and build marker pass; physical phone certificate/onboarding remains OWNER_PENDING
 
 ### Latest execution result
+
+Dashboard inventory counter phase (2026-10-23): `/api/files` now includes logical `videos`, `audio`, and nonempty-transcription metrics computed from its exact visible row set; primary cards consume those values. `/api/folders` retains raw filesystem diagnostics and exposes the pending upload queue count separately. Added secondary, collapsed Storage diagnostics. Targeted tests: 98 passed, including 48 physical video files / 12 visible logical rows, hidden capture fragments, test session exclusion, audio, orphan/empty transcript exclusion and API reconciliation. `py_compile` and `git diff --check` pass. Status remains TESTING until the final committed image is served and live cards reconcile with the table. No owner media or uploads were accessed.
+
+DASHBOARD_COUNTERS_LOGICAL=IMPLEMENTED; SERVED_PENDING
+VIDEOS_LOGICAL_COUNT=12 in isolated 48-file regression fixture; live served count pending
+AUDIO_LOGICAL_COUNT=fixture verified; live served count pending
+TRANSCRIBED_LOGICAL_COUNT=fixture verified for nonempty media-linked transcripts; live served count pending
+RAW_STORAGE_DIAGNOSTICS=preserved in collapsed secondary section
+COUNTERS_MATCH_FILES_API=PASS in targeted API fixture; served check pending
+SERVED_VALIDATION=PENDING
+WORKER=BLOCKED (prior owner active job/stale lease preserved)
+DOCS_V2_REGENERATE=BLOCKED (authorized provider credential/privacy configuration absent)
+VIDEO_EDITOR=TESTING (prior source-specific large WebM failure unresolved)
+LIVE_CAPTURE=TESTING
+REAL_CROP=TESTING
+PLAYLIST=TESTING
+VIDEOS_TABLE=TESTING
+DEVELOPMENT_COMPLETE=NO
+KANBAN_COMPLETE=8
+KANBAN_TESTING=59
+KANBAN_BLOCKED=4
+KANBAN_OWNER_PENDING=3
+SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba (prior; deployment pending)
+BLOCKER=Served validation pending; active owner worker job remains protected
+NEXT_ACTION=Build and deploy committed dashboard change, compare served cards and unfiltered table, then continue worker/runtime diagnosis.
 
 Actual served revision `74799c205c6f399aeecfa927a8baefba73aa69ba` returned HTTPS `/api/health` 200 JSON and `/api/uploads` 200 JSON. Container is running/healthy at report time with restart count 4; inspect reports exit 0 and OOM=false, while retained logs do not identify the restart cause. During test execution the app timed out/unresponded and restarted. Caddy remained up. Persistent media and acknowledged owner upload sessions were not altered.
 
@@ -212,6 +237,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Documentation Synthesis V2: regenerate documentation, reprocess video, documentation versioning | 🟨 TESTING | Prior regeneration/versioning tests passed; UI keeps regeneration separate from reprocessing. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Video list: Project, Date, Duration, sorting, Show/player | 🟨 TESTING | Final served `/api/files` returns 60 rows; projects API returns 5 projects; smoke confirmed no chunk-named rows. Unit suite passes 1230 with 8 skipped. | None. | Agent |
 | Video list: delete eligibility/reason; hide internal chunks | 🟨 TESTING | Prior API/UI state-matrix and fragment visibility evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
+| Dashboard logical inventory counters | 🟨 TESTING | `/api/files` returns counts from the same logical rows used by Videos; targeted fixture has 48 physical media files and 12 visible rows, with 98 focused tests passing. Raw folder/transcript counts remain in collapsed Storage diagnostics. | Deploy final HEAD, compare cards with unfiltered table and validate filters remain unchanged. | Agent |
 | HTTPS/mobile: desktop/LAN shared data, HTTPS certificate, /setup, public CA, QR onboarding | 🟨 TESTING | Focused LAN/setup tests pass 31/31. Final desktop HTTP and LAN HTTPS return 200 with marker matching HEAD; `/setup` and QR return 200; `/api/network` reports configured HTTP/HTTPS ports 5000/5001, LAN IP `192.168.50.20`, and certificate fingerprint. | Juan installs public CA and validates phone onboarding during UAT. | Agent |
 | Overview Stats Modal: toolbar icon opens modal; reuse existing metrics; four required metrics | 🟨 TESTING | `tests/e2e/overview_stats_modal.py`: 12 browser checks pass on final app source; four metric labels/values match existing metrics. | None. | Agent |
 | Dashboard compact layout: Drop Area left; Pipeline and Folders stacked right; responsive, content-sized cards | 🟨 TESTING | Playwright layout test at 1440x1000 verifies two-column left/right stack; at 390x844 verifies one-column order and no horizontal overflow. CSS cards align to content; no fixed heights. | None; Juan may review live appearance during UAT. | Agent |

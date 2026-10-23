@@ -970,8 +970,12 @@
             </div>
 
             <div class="card" id="foldersCard">
-                <h2>Folders</h2>
-                <div class="folders" id="folders"></div>
+                <h2>Media inventory</h2>
+                <div class="folders" id="mediaMetrics"></div>
+                <details style="margin-top:.75rem;">
+                    <summary>Storage diagnostics</summary>
+                    <div class="folders" id="folders"></div>
+                </details>
             </div>
         </div>
 
@@ -1458,14 +1462,24 @@
             el.innerHTML = data.folders.map(f => `
                 <div class="folder">
                     <div class="count">${f.count}</div>
-                    <div class="label">${f.name}</div>
+                    <div class="label">${f.name} files</div>
                 </div>
             `).join('');
+            const pending = document.getElementById('metric-pending');
+            if (pending) pending.textContent = data.pending_count;
         }
 
         async function loadFiles() {
             const data = await api('/api/files');
             window._allFiles = data.files || [];
+            const metrics = data.metrics || { videos: 0, audio: 0, transcribed: 0 };
+            document.getElementById('mediaMetrics').innerHTML = [
+                { id: 'metric-pending', label: 'Pending processing', count: 0 },
+                { id: 'metric-videos', label: 'Videos', count: metrics.videos },
+                { id: 'metric-audio', label: 'Audio', count: metrics.audio },
+                { id: 'metric-transcribed', label: 'Transcribed', count: metrics.transcribed },
+            ].map(metric => `<div class="folder"><div class="count" id="${metric.id}">${metric.count}</div><div class="label">${metric.label}</div></div>`).join('');
+            await loadFolders();
             populateProjectFilter(window._allFiles);
             applyFileFilters();
         }

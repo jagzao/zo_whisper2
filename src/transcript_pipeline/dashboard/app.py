@@ -1250,6 +1250,7 @@ def api_folders() -> Any:
     _ensure_folders()
     return jsonify(
         {
+            "pending_count": _count_files(VIDEO_COMPRESS, SUPPORTED_MEDIA, recursive=False),
             "folders": [
                 {
                     "name": "Video_compress",
@@ -1468,7 +1469,18 @@ def api_files() -> Any:
                                            item.get("duration_sec") or 0), reverse=reverse)
     else:
         media_files.sort(key=lambda item: (item["date_epoch"], item["name"].lower()), reverse=reverse)
-    return jsonify({"files": media_files})
+    return jsonify({
+        "files": media_files,
+        "metrics": {
+            "videos": sum(item.get("media_kind") == "video" for item in media_files),
+            "audio": sum(item.get("media_kind") == "audio" for item in media_files),
+            "transcribed": sum(
+                isinstance(item.get("transcription"), dict)
+                and (item["transcription"].get("size") or 0) > 0
+                for item in media_files
+            ),
+        },
+    })
 
 
 @app.route("/api/media/display-name", methods=["POST"])
