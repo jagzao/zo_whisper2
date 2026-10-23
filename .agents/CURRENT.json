@@ -1,8 +1,8 @@
 {
-    "project":  "whisper",
-    "active_sdd":  ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
-    "branch":  "main",
-    "served_revision":  "7c0969be8e9b10e2cc230be282c5a47015a8d9fe",
-    "last_result":  "owner_uat_fail_droparea_and_counters",
-    "updated_at":  "2026-10-23T19:16:23Z"
+  "project": "whisper",
+  "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
+  "branch": "main",
+  "served_revision": "abe0f0941fa169c3f4bdc8a2f711cbcea353f46d",
+  "last_result": "discrepancy_owner_uat_pending",
+  "updated_at": "2026-10-23T19:38:22Z"
 }
