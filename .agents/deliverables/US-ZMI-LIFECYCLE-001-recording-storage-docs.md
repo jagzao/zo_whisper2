@@ -7,7 +7,7 @@
 
 STATUS=PARTIAL_BLOCKED
 HEAD=IMPLEMENTATION_HEAD=3ec6bb6fc22c4ef665275c8ef5947521fc2b1cf9; RESULT_COMMIT_HEAD=commit containing this CURRENT_RESULT section
-REMOTE_HEAD=origin/main contains implementation 3ec6bb6fc22c4ef665275c8ef5947521fc2b1cf9; this result update will be pushed separately
+REMOTE_HEAD=origin/main contains implementation 3ec6bb6fc22c4ef665275c8ef5947521fc2b1cf9; latest result commit is recorded by Git history
 SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba (prior app; new image built but deployment held to protect active uploads)
 DEVELOPMENT_COMPLETE=NO - served validation and several software journeys/runtime stability remain blocked or unverified
 UNIT=PASS - 98 focused dashboard/API tests; py_compile and git diff --check pass
@@ -21,7 +21,7 @@ KANBAN_OWNER_PENDING=3
 CURRENT_WORK=Preserve five active owner uploads and stale worker lease; deploy logical counters after uploads complete; continue runtime and remaining served journeys
 LAST_COMPLETED=Served MP4 and WebM editor Apply flows created playable derivatives with audio and preserved originals; capture shell reached fake-device recording and finalized fragments
 BLOCKER=Five existing resumable upload sessions remain UPLOADING; deployment restart could interrupt them. Owner job `a5baabf678944da7b463677ed566140f` remains ACTIVE with ~5.1h heartbeat age under the six-hour recovery threshold; do not alter. Docs provider key absent and ALLOW_EXTERNAL_LLM=false. /api/folders timed out during read-only served sampling; restart cause unproven.
-NEXT_ACTION=Wait for owner uploads to settle, then deploy 3ec6bb6 and verify actual served cards/table. Keep watching worker via existing policy; do not cancel/requeue owner work. Resume Docs only when authorized provider configuration is available.
+NEXT_ACTION=Wait for owner uploads to settle, then deploy image marked ff0a8022a9282557b63215977c6ed41826a17640 and verify actual served cards/table. Keep watching worker via existing policy; do not cancel/requeue owner work. Resume Docs only when authorized provider configuration is available.
 RULE_CONFLICT=YES - owner completion semantics supersede prior implementation/test-based green statuses
 
 DROPAREA_REAL_UPLOAD=PARTIAL - two synthetic files finalized and processing queued; worker blockage prevented validation in Videos
@@ -43,7 +43,7 @@ HTTPS_MOBILE=TESTING - LAN HTTPS health and build marker pass; physical phone ce
 
 ### Latest execution result
 
-Dashboard inventory counter phase (2026-10-23): `/api/files` now includes logical `videos`, `audio`, and nonempty-transcription metrics computed from its exact visible row set; primary cards consume those values. `/api/folders` retains raw filesystem diagnostics and exposes the pending upload queue count separately. Added secondary, collapsed Storage diagnostics. Targeted tests: 98 passed, including 48 physical video files / 12 visible logical rows, hidden capture fragments, test session exclusion, audio, orphan/empty transcript exclusion and API reconciliation. `py_compile` and `git diff --check` pass. Commit `3ec6bb6` is pushed; Docker image built successfully with this revision. Deployment waits because five existing sessions are `UPLOADING`. Prior served API baseline: 12 logical videos, 0 audio, 9 transcribed; response has no metrics field. A read-only `/api/folders` probe timed out. Status stays TESTING until deployment and actual UI/table comparison. No owner media or upload data was changed.
+Dashboard inventory counter phase (2026-10-23): `/api/files` now includes logical `videos`, `audio`, and nonempty-transcription metrics computed from its exact visible row set; primary cards consume those values. `/api/folders` retains raw filesystem diagnostics and exposes the pending upload queue count separately. Added secondary, collapsed Storage diagnostics. Targeted tests: 98 passed, including 48 physical video files / 12 visible logical rows, hidden capture fragments, test session exclusion, audio, orphan/empty transcript exclusion and API reconciliation. `py_compile` and `git diff --check` pass. Implementation commit `3ec6bb6` and result commit `ff0a802` are pushed; Docker image built successfully with exact final HEAD marker `ff0a8022a9282557b63215977c6ed41826a17640`. Deployment waits because five existing sessions remain `UPLOADING`. Prior served API baseline: 12 logical videos, 0 audio, 9 transcribed; response has no metrics field. A read-only `/api/folders` probe timed out. Status stays TESTING until deployment and actual UI/table comparison. No owner media or upload data was changed.
 
 DASHBOARD_COUNTERS_LOGICAL=IMPLEMENTED; not served yet
 VIDEOS_LOGICAL_COUNT=12 prior served /api/files rows; 12 fixture rows from 48 physical files
@@ -66,7 +66,7 @@ KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
 SERVED_HEAD=74799c205c6f399aeecfa927a8baefba73aa69ba
 BLOCKER=Five active uploads; deployment restart held to protect them
-NEXT_ACTION=After uploads settle, deploy 3ec6bb6, compare cards to unfiltered table, validate filters unchanged, then resume worker/runtime and remaining SDD priorities.
+NEXT_ACTION=After uploads settle, deploy image marked ff0a8022a9282557b63215977c6ed41826a17640, compare cards to unfiltered table, validate filters unchanged, then resume worker/runtime and remaining SDD priorities.
 
 Actual served revision `74799c205c6f399aeecfa927a8baefba73aa69ba` returned HTTPS `/api/health` 200 JSON and `/api/uploads` 200 JSON. Container is running/healthy at report time with restart count 4; inspect reports exit 0 and OOM=false, while retained logs do not identify the restart cause. During test execution the app timed out/unresponded and restarted. Caddy remained up. Persistent media and acknowledged owner upload sessions were not altered.
 
@@ -237,7 +237,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Documentation Synthesis V2: regenerate documentation, reprocess video, documentation versioning | 🟨 TESTING | Prior regeneration/versioning tests passed; UI keeps regeneration separate from reprocessing. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Video list: Project, Date, Duration, sorting, Show/player | 🟨 TESTING | Final served `/api/files` returns 60 rows; projects API returns 5 projects; smoke confirmed no chunk-named rows. Unit suite passes 1230 with 8 skipped. | None. | Agent |
 | Video list: delete eligibility/reason; hide internal chunks | 🟨 TESTING | Prior API/UI state-matrix and fragment visibility evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
-| Dashboard logical inventory counters | 🟨 TESTING | `/api/files` returns counts from the same logical rows used by Videos; targeted fixture has 48 physical media files and 12 visible rows, with 98 focused tests passing. Image for `3ec6bb6` built; deployment waits to protect five UPLOADING sessions. Prior served baseline: 12 videos, 0 audio, 9 transcribed. | After uploads settle, deploy `3ec6bb6`, compare cards with unfiltered table and validate filters remain unchanged. | Agent |
+| Dashboard logical inventory counters | 🟨 TESTING | `/api/files` returns counts from the same logical rows used by Videos; targeted fixture has 48 physical media files and 12 visible rows, with 98 focused tests passing. Image marked exact final HEAD `ff0a802` built; deployment waits to protect five UPLOADING sessions. Prior served baseline: 12 videos, 0 audio, 9 transcribed. | After uploads settle, deploy final image, compare cards with unfiltered table and validate filters remain unchanged. | Agent |
 | HTTPS/mobile: desktop/LAN shared data, HTTPS certificate, /setup, public CA, QR onboarding | 🟨 TESTING | Focused LAN/setup tests pass 31/31. Final desktop HTTP and LAN HTTPS return 200 with marker matching HEAD; `/setup` and QR return 200; `/api/network` reports configured HTTP/HTTPS ports 5000/5001, LAN IP `192.168.50.20`, and certificate fingerprint. | Juan installs public CA and validates phone onboarding during UAT. | Agent |
 | Overview Stats Modal: toolbar icon opens modal; reuse existing metrics; four required metrics | 🟨 TESTING | `tests/e2e/overview_stats_modal.py`: 12 browser checks pass on final app source; four metric labels/values match existing metrics. | None. | Agent |
 | Dashboard compact layout: Drop Area left; Pipeline and Folders stacked right; responsive, content-sized cards | 🟨 TESTING | Playwright layout test at 1440x1000 verifies two-column left/right stack; at 390x844 verifies one-column order and no horizontal overflow. CSS cards align to content; no fixed heights. | None; Juan may review live appearance during UAT. | Agent |
@@ -265,7 +265,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Release candidate integrity | 🟨 TESTING | RC `32be478a8a7e9ef837b4d12e9435ed0480acbcf4` matched feature branch and `origin/feat/zmi-documentation-synthesis-v2`; clean three-way merge parent preserved. | None. | Agent |
 | Merge to production branch (`main`) | 🟩 COMPLETE | Merge commit `a497f4f19ca401902afa653c37a1c214fc9143d4`; parents are pre-merge production `f14ed96b76d2ea48b137eb1910ccc68f7d347ff5` and validated RC. Post-merge unit suite passed 1232, 8 skipped; production branch and subsequent SDD updates are pushed. | None. | Agent |
 | Release tag | 🟩 COMPLETE | Annotated original tag `whisper-2026-10-20` preserved at `77108a2`; patch tag `whisper-2026-10-20.2` pushed at final production SHA `f0800e22ccf9e4412087f0e0034c282dc4d79296`. | None. | Agent |
-| Production deploy | 🟨 TESTING | Previous HEAD `74799c2` remains served. New image for pushed `3ec6bb6` built successfully; no container recreation while five owner upload sessions remain UPLOADING. | Recheck upload state, then deploy and verify exact build marker/health without changing data or model-cache mounts. | Agent |
+| Production deploy | 🟨 TESTING | Previous HEAD `74799c2` remains served. New image marked pushed HEAD `ff0a802` built successfully; no container recreation while five owner upload sessions remain UPLOADING. | Recheck upload state, then deploy and verify exact build marker/health without changing data or model-cache mounts. | Agent |
 | Production smoke | 🟨 TESTING | Served release and functional smoke passed; exact results recorded above. | None. | Agent |
 | Galaxy UAT | OWNER_PENDING | Juan's physical phone validation remains final acceptance. | Juan validates capture/audio/crop/playback. | Juan |
 ## Evidence
