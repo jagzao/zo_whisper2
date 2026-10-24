@@ -650,6 +650,10 @@ class SimpleScanProcessor:
         """
         if not TUTORIAL_FEATURES_AVAILABLE:
             return
+        pg_docs_enabled = os.environ.get("PG_DOCUMENTS_V2_ENABLED", "false").strip().casefold() in {"1", "true", "yes"}
+        if project_config and project_config.get("name") == "P&G" and not pg_docs_enabled:
+            logger.info("[DOCS] P&G synthesis frozen pending Session 41 Documents V2 approval: %s", audio_path.name)
+            return
         try:
             frames_dir = Path(frame_info["frames_dir"])
             summary = generate_documentation(frames_dir, audio_path.name, project_config=project_config)

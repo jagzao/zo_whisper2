@@ -113,6 +113,13 @@ def run_batch(
     projects = load_projects(projects_path)
     projects_by_name = {project.get("name"): project for project in projects}
     items = _discover(projects)
+    pg_docs_enabled = os.environ.get("PG_DOCUMENTS_V2_ENABLED", "false").strip().casefold() in {"1", "true", "yes"}
+    if not pg_docs_enabled:
+        for item in items:
+            if item["project_name"] == "P&G":
+                item["evidence_state"] = item["state"]
+                item["state"] = "DOCUMENT_SYNTHESIS_PENDING_V2"
+                item["documentation_status"] = "DOCUMENT_SYNTHESIS_PENDING_V2"
     payload: dict[str, Any] = {
         "schema_version": 1,
         "updated_at": datetime.now(timezone.utc).isoformat(),

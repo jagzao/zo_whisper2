@@ -696,6 +696,11 @@ def _effective_project(media_id: str, filename: str) -> tuple[dict | None, str]:
     return None, "none"
 
 
+def _pg_documentation_frozen(project: dict | None) -> bool:
+    enabled = os.environ.get("PG_DOCUMENTS_V2_ENABLED", "false").strip().casefold() in {"1", "true", "yes"}
+    return bool(project and project.get("name") == "P&G" and not enabled)
+
+
 def _count_files(folder: Path, extensions: set[str] | None = None, recursive: bool = True) -> int:
     if not folder.exists():
         return 0
@@ -781,6 +786,40 @@ def _resolve_transcription(media_path: Path) -> dict | None:
                 "modified": datetime.fromtimestamp(candidate.stat().st_mtime).isoformat(),
             }
     return None
+
+
+def _transcript_coverage(transcript_path: Path, media_duration: float | None, expected_video: Path | None = None) -> dict:
+    result = {"status": "TRANSCRIPT_MISSING", "last_timestamp": None, "coverage_percent": None}
+    if not transcript_path.is_file():
+        return result
+    text = transcript_path.read_text(encoding="utf-8", errors="replace").strip()
+    if not text:
+        return {**result, "status": "TRANSCRIPT_EMPTY"}
+    segments_path = transcript_path.with_name(f"{transcript_path.stem}_segments.json")
+    try:
+        payload = json.loads(segments_path.read_text(encoding="utf-8"))
+        segments = payload.get("segments", [])
+        timed_segments = sorted(
+            (float(segment["start"]), float(segment["end"]))
+            for segment in segments if segment.get("start") is not None and segment.get("end") is not None
+        )
+        last_timestamp = max(end for _start, end in timed_segments)
+        recorded_source = payload.get("audio_file")
+        if expected_video and recorded_source and Path(recorded_source).name.casefold() != expected_video.name.casefold():
+            return {**result, "status": "TRANSCRIPT_PARTIAL"}
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return {**result, "status": "TRANSCRIPT_PARTIAL"}
+    coverage = (last_timestamp / media_duration * 100) if media_duration and media_duration > 0 else None
+    max_internal_gap = max((b[0] - a[1] for a, b in zip(timed_segments, timed_segments[1:])), default=0.0)
+    leading_gap = max(0.0, timed_segments[0][0])
+    trailing_gap = max(0.0, media_duration - last_timestamp) if media_duration else None
+    status = "TRANSCRIPT_READY"
+    if (coverage is None or last_timestamp > media_duration * 1.05 or leading_gap > 300
+            or max_internal_gap > 300 or (trailing_gap is not None and trailing_gap > 300)):
+        status = "TRANSCRIPT_PARTIAL"
+    return {"status": status, "last_timestamp": last_timestamp, "coverage_percent": coverage,
+            "leading_gap_seconds": leading_gap, "max_internal_gap_seconds": max_internal_gap,
+            "trailing_gap_seconds": trailing_gap}
 
 
 def _count_words(text: str) -> int:
@@ -943,7 +982,7 @@ def _documentation_dirs(media_path: Path) -> Path | None:
     return output_folder / f"{media_path.stem}_Frames" / media_path.stem
 
 
-def _resolve_documentation(media_path: Path, root: MediaRoot) -> dict | None:
+def _resolve_documentation(media_path: Path, root: MediaRoot, project_override: str | None = None) -> dict | None:
     """Reports whether the video-to-documentation engine already produced a
     manual/AI package for this source video, without loading their content
     (kept cheap since this runs once per row in `/api/files`).
@@ -957,6 +996,19 @@ def _resolve_documentation(media_path: Path, root: MediaRoot) -> dict | None:
     frames_parent = _documentation_dirs(media_path)
     if frames_parent is None:
         return None
+    media_id = _to_media_id(root, media_path)
+    project, _ = _effective_project(media_id, media_path.name)
+    if project_override:
+        project = {"name": project_override}
+    if _pg_documentation_frozen(project):
+        return {
+            "has_manual": False,
+            "has_ai_package": False,
+            "has_semantic_manual": False,
+            "has_evidence_timeline": (frames_parent / "evidence" / "evidence.jsonl").is_file(),
+            "documentation_status": "DOCUMENT_SYNTHESIS_PENDING_V2",
+            "media_id": media_id,
+        }
     manual_meta = frames_parent / "manual" / "metadata.json"
     ai_manifest = frames_parent / "ai-package" / "manifest.json"
     has_manual = manual_meta.exists()
@@ -1331,7 +1383,9 @@ def api_files() -> Any:
                     "project": project.get("name") if project else None,
                     "project_source": project_source,
                     "transcription": transcription,
-                    "documentation": _resolve_documentation(path, root),
+                    "documentation": _resolve_documentation(
+                        path, root, capture_session.project_id if capture_session is not None else None
+                    ),
                 }
             if capture_session is not None:
                 file_row["project"] = capture_session.project_id
@@ -1349,6 +1403,16 @@ def api_files() -> Any:
                 file_row["duration_pending"] = False
             duration = file_row.get("duration_sec")
             file_row["duration"] = _format_media_duration(duration) if isinstance(duration, (int, float)) and math.isfinite(duration) and duration > 0 else None
+            if file_row.get("project") == "P&G" and transcription:
+                transcript_path = _from_media_id(transcription["id"], [MediaRoot.TRANSCRIPTIONS])
+                file_row["transcript_validation"] = _transcript_coverage(transcript_path, duration, path)
+            elif file_row.get("project") == "P&G":
+                file_row["transcript_validation"] = {"status": "TRANSCRIPT_MISSING", "last_timestamp": None, "coverage_percent": None}
+            if (file_row.get("project") == "P&G" and file_row.get("user_state") in
+                    {"PROCESSING", "PROCESSING_MEDIA", "GENERATING_DOCUMENTATION"}):
+                file_row["transcript_validation"] = {"status": "TRANSCRIPT_PROCESSING", "last_timestamp": None, "coverage_percent": None}
+            elif file_row.get("project") == "P&G" and str(file_row.get("status", "")).upper() == "FAILED":
+                file_row["transcript_validation"] = {"status": "TRANSCRIPT_FAILED", "last_timestamp": None, "coverage_percent": None}
             capture_active = capture_session is not None and capture_session.status is capture_models.SessionStatus.ACTIVE
             file_row["delete_allowed"], file_row["delete_reason"] = _delete_action(
                 str(file_row.get("user_state") or file_row.get("status") or ""), capture_active=capture_active
@@ -2327,13 +2391,20 @@ def serve_frame() -> Any:
 def api_documentation() -> Any:
     """Human manual + AI package summary for a source video (US-001 §3.6)."""
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    project, _ = _effective_project(_to_media_id(root, target), target.name)
+    if _pg_documentation_frozen(project):
+        return jsonify({"ok": True, "documentation_status": "DOCUMENT_SYNTHESIS_PENDING_V2",
+                        "message": "Documentation V2 pending regeneration after Session 41 approval."})
     frames_parent = _documentation_dirs(target)
     if frames_parent is None:
         return jsonify({"ok": False, "error": "No documentation available"}), 404
 
     manual_dir = frames_parent / "manual"
     ai_dir = frames_parent / "ai-package"
-    manual_md_path = manual_dir / "MANUAL.md"
+    manual_md_path = manual_dir / f"{target.stem}.md"
+    if not manual_md_path.is_file():
+        manual_md_path = manual_dir / "MANUAL.md"
     manifest_path = ai_dir / "manifest.json"
 
     if not manual_md_path.exists() and not manifest_path.exists():
@@ -2343,9 +2414,14 @@ def api_documentation() -> Any:
         asset_id = _to_media_id(MediaRoot.TRANSCRIPTIONS, manual_dir / relative_to_manual_dir)
         return f"/doc-asset?id={quote(asset_id, safe='')}"
 
-    manual_pdf_path = manual_dir / "MANUAL.pdf"
+    manual_pdf_path = manual_dir / f"{target.stem}.pdf"
+    if not manual_pdf_path.is_file():
+        manual_pdf_path = manual_dir / "MANUAL.pdf"
     manual_pdf_available = manual_pdf_path.exists()
-    manual_pdf_url = asset_url("MANUAL.pdf") if manual_pdf_available else None
+    manual_pdf_url = asset_url(manual_pdf_path.name) if manual_pdf_available else None
+    manual_markdown_url = asset_url(manual_md_path.name) if manual_md_path.is_file() else None
+    manual_json_path = manual_dir / f"{target.stem}.json"
+    manual_json_url = asset_url(manual_json_path.name) if manual_json_path.is_file() else None
     manual_pdf_error = None
     if not manual_pdf_available:
         # Surface WHY the PDF is absent instead of silently pretending the
@@ -2418,6 +2494,12 @@ def api_documentation() -> Any:
         "manual_pdf_url": manual_pdf_url,
         "manual_pdf_available": manual_pdf_available,
         "manual_pdf_error": manual_pdf_error,
+        "manual_markdown_url": manual_markdown_url,
+        "manual_markdown_filename": manual_md_path.name if manual_md_path.is_file() else None,
+        "manual_json_url": manual_json_url,
+        "manual_json_filename": manual_json_path.name if manual_json_path.is_file() else None,
+        "manual_filename_stem": target.stem,
+        "manual_pdf_filename": manual_pdf_path.name if manual_pdf_available else None,
     })
 
 
@@ -2426,6 +2508,10 @@ def api_documentation_update_step() -> Any:
     """Human review edit (US-001 §4.8): edit a step's title/instruction, or
     toggle its reviewed flag, and regenerate both bundles — no re-transcription."""
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    project, _ = _effective_project(_to_media_id(root, target), target.name)
+    if _pg_documentation_frozen(project):
+        return jsonify({"ok": False, "error": "Documentation V2 synthesis is frozen pending Session 41 approval."}), 423
     frames_parent = _documentation_dirs(target)
     if frames_parent is None or not (frames_parent / "manual" / "steps.json").exists():
         return jsonify({"ok": False, "error": "No documentation available"}), 404
@@ -2452,6 +2538,10 @@ def api_documentation_remove_step() -> Any:
     """Human review removal (US-001 §4.8): delete an invalid step and
     regenerate both bundles — no re-transcription."""
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    project, _ = _effective_project(_to_media_id(root, target), target.name)
+    if _pg_documentation_frozen(project):
+        return jsonify({"ok": False, "error": "Documentation V2 synthesis is frozen pending Session 41 approval."}), 423
     frames_parent = _documentation_dirs(target)
     if frames_parent is None or not (frames_parent / "manual" / "steps.json").exists():
         return jsonify({"ok": False, "error": "No documentation available"}), 404
@@ -2473,6 +2563,10 @@ def api_documentation_regenerate() -> Any:
     from the current steps.json without touching frame_mapping.json or
     re-transcribing — useful after hand-editing steps.json directly."""
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    project, _ = _effective_project(_to_media_id(root, target), target.name)
+    if _pg_documentation_frozen(project):
+        return jsonify({"ok": False, "error": "Documentation V2 synthesis is frozen pending Session 41 approval."}), 423
     frames_parent = _documentation_dirs(target)
     if frames_parent is None or not (frames_parent / "manual" / "steps.json").exists():
         return jsonify({"ok": False, "error": "No documentation available"}), 404
@@ -2484,6 +2578,10 @@ def api_documentation_regenerate() -> Any:
 @app.route("/api/documentation/v2/regenerate", methods=["POST"])
 def api_documentation_v2_regenerate() -> Any:
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    project, _ = _effective_project(_to_media_id(root, target), target.name)
+    if _pg_documentation_frozen(project):
+        return jsonify({"ok": False, "error": "Documentation V2 synthesis is frozen pending Session 41 approval."}), 423
     frames_parent = _documentation_dirs(target)
     if frames_parent is None or not (frames_parent / "frame_mapping.json").exists():
         return jsonify({"ok": False, "error": "Saved frame mapping is required; reprocess the video first."}), 409
@@ -2520,6 +2618,12 @@ def api_documentation_v2_regenerate() -> Any:
 @app.route("/api/documentation/versions")
 def api_documentation_versions() -> Any:
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    project, _ = _effective_project(_to_media_id(root, target), target.name)
+    if _pg_documentation_frozen(project):
+        return jsonify({"ok": True, "versions": []}) if request.args.get("version") is None else (
+            jsonify({"ok": False, "error": "No approved documentation version is available."}), 404
+        )
     frames_parent = _documentation_dirs(target)
     if frames_parent is None:
         return jsonify({"ok": False, "error": "No documentation available"}), 404
@@ -2531,7 +2635,9 @@ def api_documentation_versions() -> Any:
         return jsonify({"ok": True, "versions": versions})
     version_dir = frames_parent / "documentation_versions" / f"{selected:06d}"
     manifest = version_dir / "version.json"
-    manual = version_dir / "manual" / "MANUAL.md"
+    manual = version_dir / "manual" / f"{target.stem}.md"
+    if not manual.is_file():
+        manual = version_dir / "manual" / "MANUAL.md"
     evidence_dir = version_dir / "evidence"
     if not manifest.is_file():
         return jsonify({"ok": False, "error": "Documentation version not found"}), 404
@@ -2585,6 +2691,10 @@ def api_documentation_generate() -> Any:
     an actionable error when the prerequisites are missing, and rejects a
     concurrent duplicate generation for the same media_id."""
     target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    root = MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO
+    project, _ = _effective_project(_to_media_id(root, target), target.name)
+    if _pg_documentation_frozen(project):
+        return jsonify({"ok": False, "error": "Documentation V2 synthesis is frozen pending Session 41 approval."}), 423
     frames_parent = _documentation_dirs(target)
     if frames_parent is None or not (frames_parent / "frame_mapping.json").exists():
         return jsonify({

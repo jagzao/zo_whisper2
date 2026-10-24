@@ -24,5 +24,20 @@
       "version": 1,
       "path": "apps/north-america-central-product-research-testing-panelist-payments/v000001"
     }
-  }
+  },
+  "status": "INVALIDATED_OWNER_REQUEST",
+  "generation_status": "DOCUMENT_SYNTHESIS_PENDING_V2",
+  "invalidated_at": "2026-10-24T16:19:45.883377+00:00",
+  "invalidation_record": "invalidation-record.json",
+  "deleted_outputs": [
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\SESSION_MANUAL.md",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\SESSION_MANUAL.pdf",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\knowledge-document.json",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\apps\\pgregdoc.com\\v000001\\APP_MISSION_PACK.md",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\apps\\pgregdoc.com\\v000001\\APP_MISSION_PACK.pdf",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\apps\\pgregdoc.com\\v000001\\app-knowledge.json",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\apps\\north-america-central-product-research-testing-panelist-payments\\v000001\\APP_MISSION_PACK.md",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\apps\\north-america-central-product-research-testing-panelist-payments\\v000001\\APP_MISSION_PACK.pdf",
+    ".agents\\artifacts\\docs-v2\\session-41\\v000003\\apps\\north-america-central-product-research-testing-panelist-payments\\v000001\\app-knowledge.json"
+  ]
 }

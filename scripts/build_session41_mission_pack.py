@@ -25,7 +25,7 @@ from transcript_pipeline.documentation.mission_pack import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "000003"
+VERSION = "000004"
 SESSION_ID = "AMS_KAP_-_App_Support_-_Session_41"
 FRAME_STEM = "pg_AMS_KAP_-_App_Support_-_Session_41"
 SOURCE_VIDEO = ROOT / "Videos/general" / f"{SESSION_ID}.mp4"
@@ -522,7 +522,7 @@ def markdown_for_session(source: dict[str, Any], gates: dict[str, Any], app_docs
         lines.append(f"| {name} | {result['status']} | {result['evidence']} |")
     lines.extend(["", "## Applications Identified", "", "This recording is segmented into two independent application packs. Neither is promoted to FULLY_GROUNDED while source coverage is incomplete.", ""])
     for app_id, app_doc in app_docs.items():
-        rel = "apps/" + APP_IDS[app_id] + "/v000001/APP_MISSION_PACK.md"
+        rel = "apps/" + APP_IDS[app_id] + "/v000001/" + SESSION_ID + "__" + APP_IDS[app_id] + ".md"
         lines.extend([f"### {app_id}", "", f"[Open application mission pack]({rel})", ""])
     lines.extend([
         "## Cross-session Knowledge",
@@ -619,13 +619,14 @@ def main() -> None:
         app_root = OUT / "apps" / APP_IDS[app_id] / "v000001"
         app_root.mkdir(parents=True, exist_ok=True)
         app_doc = markdown_for_app(app_id, sections, assets)
-        (app_root / "APP_MISSION_PACK.md").write_text(app_doc, encoding="utf-8")
+        app_stem = SESSION_ID + "__" + APP_IDS[app_id]
+        (app_root / f"{app_stem}.md").write_text(app_doc, encoding="utf-8")
         data = app_knowledge(app_id)
-        (app_root / "app-knowledge.json").write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        (app_root / f"{app_stem}.json").write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         pdf_sections = list(sections)
         if app_id != "pgregdoc.com":
             pdf_sections.insert(1, ("Application Catalogue Evidence", ["Source frame V-004; OCR and visual review support the limited catalogue details included above. Exact owner and application ID are intentionally omitted because they are not legible enough."]))
-        render_pdf(app_root / "APP_MISSION_PACK.pdf", f"Application Mission Pack - {app_id}", "Operational support knowledge | version 1 | evidence-limited baseline", pdf_sections, image_paths=assets)
+        render_pdf(app_root / f"{app_stem}.pdf", f"Application Mission Pack - {app_id}", "Operational support knowledge | version 1 | evidence-limited baseline", pdf_sections, image_paths=assets)
         app_packs[app_id] = data
         app_markdown[app_id] = app_doc
 
@@ -665,7 +666,7 @@ def main() -> None:
                 "screenshotCandidates": [eid for eid in ("V-001", "V-002", "V-003", "V-004") if eid in refs],
                 "order": index,
             })
-    (OUT / "knowledge-document.json").write_text(json.dumps(knowledge, indent=2, ensure_ascii=False), encoding="utf-8")
+    (OUT / f"{SESSION_ID}.json").write_text(json.dumps(knowledge, indent=2, ensure_ascii=False), encoding="utf-8")
     (OUT / "evidence-timeline.json").write_text(json.dumps({
         "schema_version": "evidence-timeline-v1",
         "source_coverage": coverage,
@@ -698,7 +699,7 @@ def main() -> None:
     }
     (OUT / "quality-report.json").write_text(json.dumps(quality_report, indent=2, ensure_ascii=False), encoding="utf-8")
     session_markdown = markdown_for_session(source, gates, app_markdown, source_map, assets)
-    (OUT / "SESSION_MANUAL.md").write_text(session_markdown, encoding="utf-8")
+    (OUT / f"{SESSION_ID}.md").write_text(session_markdown, encoding="utf-8")
     pdf_sections: list[tuple[str, list[str]]] = [
         ("Source Coverage", [f"Video {coverage['duration_formatted']}; transcript ends {coverage['transcript_last_timestamp_formatted']}; end-time coverage {coverage['transcript_last_timestamp_coverage_percent']:.2f}%; unexplained final gap {coverage['trailing_gap_formatted']}. Visual evidence is sparse sampled imagery, not continuous coverage."]),
         ("Quality Gate Matrix", [f"{name}: {result['status']} - {result['evidence']}" for name, result in gates["gates"].items()]),
@@ -711,20 +712,20 @@ def main() -> None:
         ("Source Map", [f"{item.get('evidence_id', item.get('source_id'))}: {item.get('path', item.get('source_path'))}; {item.get('source_type')}" for item in source_map]),
         ("Ambiguities and Review", [f"{item['id']} {item['timestamp']}: {item['ambiguity']}" for item in REVIEW_ITEMS]),
     ])
-    render_pdf(OUT / "SESSION_MANUAL.pdf", "Session 41 - AMS / Application Support Mission Pack", "Session evidence manual | version 3 | SOURCE_INCOMPLETE", pdf_sections, image_paths=assets)
+    render_pdf(OUT / f"{SESSION_ID}.pdf", "Session 41 - AMS / Application Support Mission Pack", "Session evidence manual | version 3 | SOURCE_INCOMPLETE", pdf_sections, image_paths=assets)
     quality_report["SESSION_SECTION_COUNT"] = sum(line.startswith("#") for line in session_markdown.splitlines())
     quality_report["NEW_SECTION_COUNT"] = quality_report["SESSION_SECTION_COUNT"] + 2 * 21
     (OUT / "quality-report.json").write_text(json.dumps(quality_report, indent=2, ensure_ascii=False), encoding="utf-8")
     manifest = {
         "artifact_version": VERSION,
         "session_id": SESSION_ID,
-        "previous_version": "000002",
+        "previous_version": "000003",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source_video_sha256": coverage["video_sha256"],
         "source_coverage_status": coverage["status"],
         "quality_status": gates["status"],
         "fully_grounded": gates["fully_grounded"],
-        "outputs": ["SESSION_MANUAL.md", "SESSION_MANUAL.pdf", "knowledge-document.json", "evidence-timeline.json", "review-queue.json", "quality-report.json"],
+        "outputs": [f"{SESSION_ID}.md", f"{SESSION_ID}.pdf", f"{SESSION_ID}.json", "evidence-timeline.json", "review-queue.json", "quality-report.json"],
         "application_packs": {app: {"version": 1, "path": f"apps/{APP_IDS[app]}/v000001"} for app in APP_SECTIONS},
     }
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -732,17 +733,17 @@ def main() -> None:
     runtime_version = RUNTIME_ROOT / "documentation_versions" / VERSION
     for subdir in ("manual", "evidence", "applications"):
         (runtime_version / subdir).mkdir(parents=True, exist_ok=True)
-    for name in ("SESSION_MANUAL.md", "SESSION_MANUAL.pdf", "knowledge-document.json"):
+    for name in (f"{SESSION_ID}.md", f"{SESSION_ID}.pdf", f"{SESSION_ID}.json"):
         shutil.copy2(OUT / name, runtime_version / "manual" / name)
-    shutil.copy2(OUT / "SESSION_MANUAL.md", RUNTIME_ROOT / "manual" / "MANUAL.md")
-    shutil.copy2(OUT / "SESSION_MANUAL.pdf", RUNTIME_ROOT / "manual" / "MANUAL.pdf")
-    shutil.copy2(OUT / "knowledge-document.json", RUNTIME_ROOT / "manual" / "knowledge-document.json")
+    shutil.copy2(OUT / f"{SESSION_ID}.md", RUNTIME_ROOT / "manual" / f"{SESSION_ID}.md")
+    shutil.copy2(OUT / f"{SESSION_ID}.pdf", RUNTIME_ROOT / "manual" / f"{SESSION_ID}.pdf")
+    shutil.copy2(OUT / f"{SESSION_ID}.json", RUNTIME_ROOT / "manual" / f"{SESSION_ID}.json")
     for name in ("evidence-timeline.json", "review-queue.json"):
         shutil.copy2(OUT / name, runtime_version / "evidence" / name)
         shutil.copy2(OUT / name, RUNTIME_ROOT / "evidence" / name)
-    shutil.copy2(OUT / "SESSION_MANUAL.pdf", runtime_version / "manual" / "MANUAL.pdf")
+    shutil.copy2(OUT / f"{SESSION_ID}.pdf", runtime_version / "manual" / f"{SESSION_ID}.pdf")
     (runtime_version / "version.json").write_text(json.dumps({
-        "documentation_version": 3,
+        "documentation_version": 4,
         "pipeline_version": "documentation-v2-mission-pack-v1",
         "generated_at": manifest["generated_at"],
         "source_video_id": SESSION_ID,
@@ -751,7 +752,7 @@ def main() -> None:
         "generation_status": "SOURCE_INCOMPLETE",
         "quality_status": "FAIL",
         "fully_grounded": False,
-        "previous_version": 2,
+        "previous_version": 3,
     }, indent=2), encoding="utf-8")
     metadata = {"schema_version": 3, "video_name": SESSION_ID + ".mp4", "duration": coverage["video_duration_seconds"],
                 "generated_at": manifest["generated_at"], "documentation_mode": "AMS_SUPPORT_MISSION_PACK",
@@ -764,9 +765,9 @@ def main() -> None:
         runtime_app.mkdir(parents=True, exist_ok=True)
         (runtime_version / "applications" / APP_IDS[app_id]).mkdir(parents=True, exist_ok=True)
         tracked_app = OUT / "apps" / APP_IDS[app_id] / "v000001"
-        for filename in ("APP_MISSION_PACK.md", "APP_MISSION_PACK.pdf", "app-knowledge.json"):
+        for suffix in (".md", ".pdf", ".json"):
+            filename = SESSION_ID + "__" + APP_IDS[app_id] + suffix
             shutil.copy2(tracked_app / filename, runtime_app / filename)
-        for filename in ("APP_MISSION_PACK.md", "APP_MISSION_PACK.pdf", "app-knowledge.json"):
             shutil.copy2(tracked_app / filename, runtime_version / "applications" / APP_IDS[app_id] / filename)
     print(json.dumps(quality_report, indent=2, ensure_ascii=False))
 

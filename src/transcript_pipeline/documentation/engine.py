@@ -511,7 +511,14 @@ def write_manual(
                 f"{step.visual_description}\n\n"
             )
 
-    (manual_dir / "MANUAL.md").write_text("".join(lines), encoding="utf-8")
+    markdown = "".join(lines)
+    document_stem = Path(source.video_name).stem
+    (manual_dir / f"{document_stem}.md").write_text(markdown, encoding="utf-8")
+    (manual_dir / "MANUAL.md").write_text(markdown, encoding="utf-8")
+    (manual_dir / f"{document_stem}.json").write_text(
+        json.dumps({"schema_version": SCHEMA_VERSION, "source": source.to_dict(), "steps": [s.to_dict() for s in steps]}, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
 
     metadata = {
         "schema_version": SCHEMA_VERSION,

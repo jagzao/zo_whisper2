@@ -2156,6 +2156,7 @@
                     const statusClass = ['FAILED', 'CANCELLED'].includes(shownState) || shownState === 'failed_routed'
                         ? 'error' : (['READY', 'UPLOADING', 'QUEUED', 'PROCESSING', 'PROCESSING_MEDIA', 'CANCEL_REQUESTED', 'GENERATING_DOCUMENTATION'].includes(shownState) || shownState === 'pending' ? 'pending' : 'processed');
                     const tx = f.transcription;
+                    const transcriptValidation = f.transcript_validation;
                     const doc = f.documentation;
                     const lang = f.language || 'auto';
                     const ext = f.name.split('.').pop().toLowerCase();
@@ -2174,7 +2175,9 @@
                         <td>${f.project || '-'} ${projBadge}</td>
                         <td><span class="status ${lang === 'auto' ? 'pending' : 'processed'}">${lang}</span></td>
                         <td><span class="status ${statusClass}">${statusLabel(shownState)}</span></td>
-                        <td>${tx ? `<span class="status processed">Yes</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
+                        <td>${transcriptValidation
+                            ? `<span class="status ${transcriptValidation.status === 'TRANSCRIPT_READY' ? 'processed' : (['TRANSCRIPT_PARTIAL', 'TRANSCRIPT_PROCESSING'].includes(transcriptValidation.status) ? 'pending' : 'error')}">${transcriptValidation.status.replace('TRANSCRIPT_', '')}</span>${transcriptValidation.coverage_percent != null ? ` (${transcriptValidation.coverage_percent.toFixed(1)}%)` : ''}`
+                            : tx ? `<span class="status processed">READY</span> (${(tx.size/1024).toFixed(1)} KB)` : '<span class="status pending">Pending</span>'}</td>
                         <td>${formatMediaDate(f.date)}</td>
                     <td>${escapeHtml(f.duration || (f.duration_pending ? 'Checking…' : '—'))}</td>
                         <td>
@@ -2186,7 +2189,9 @@
                                     <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </button>
                                 ${fileType === 'Video' && !f.logical_video ? `<button class="btn-edit tooltip" onclick="openVideoTrimEditor('${encodeURIComponent(f.media_id)}', '${encodeURIComponent(f.name)}')" aria-label="Edit video" title="Preview and edit time ranges or frame crop">Edit video</button>` : ''}
-                                ${doc
+                                ${doc && doc.documentation_status === 'DOCUMENT_SYNTHESIS_PENDING_V2'
+                                    ? '<span class="status pending" title="Documentation V2 pending regeneration">PENDING V2</span>'
+                                    : doc
                                     ? `<button class="btn-docs tooltip" data-tip="View Documentation" onclick="preview('${encodeURIComponent(f.media_id)}', '${tx && tx.id ? encodeURIComponent(tx.id) : ''}', true)" aria-label="View Documentation" title="View Documentation">
                                         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                                     </button>`
@@ -2621,6 +2626,10 @@
                 el.innerHTML = `<p style="color:var(--muted)">${res.error || 'No documentation generated for this video yet.'}</p>`;
                 return;
             }
+            if (res.documentation_status === 'DOCUMENT_SYNTHESIS_PENDING_V2') {
+                el.innerHTML = '<p class="status pending">Documentation V2 pending regeneration after Session 41 approval.</p>';
+                return;
+            }
             window._docsSteps = res.steps || [];
             const manifest = res.manifest;
             const lowCount = (res.steps || []).filter(s => s.confidence === 'low').length;
@@ -2631,9 +2640,13 @@
                 .map(k => `<a href="${files[k]}" target="_blank" rel="noopener" class="ai-package-link">${k}</a>`)
                 .join(' · ');
             const pdfLink = res.manual_pdf_url
-                ? `<a href="${res.manual_pdf_url}" target="_blank" rel="noopener" class="ai-package-link manual-pdf-link">Open / Download MANUAL.pdf</a>`
-                : `<span class="manual-pdf-missing" style="color:var(--warn)">MANUAL.pdf not generated${res.manual_pdf_error ? ` — ${res.manual_pdf_error}` : ''}</span>`;
-            const humanBundle = `<div class="ai-package-summary"><strong>Human manual:</strong> MANUAL.md · ${pdfLink}</div>`;
+                ? `<a href="${res.manual_pdf_url}" target="_blank" rel="noopener" class="ai-package-link manual-pdf-link">${escapeHtml(res.manual_pdf_filename)}</a>`
+                : `<span class="manual-pdf-missing" style="color:var(--warn)">${escapeHtml(res.manual_filename_stem)}.pdf not generated${res.manual_pdf_error ? ` — ${res.manual_pdf_error}` : ''}</span>`;
+            const markdownLink = res.manual_markdown_url
+                ? `<a href="${res.manual_markdown_url}" target="_blank" rel="noopener" class="ai-package-link">${escapeHtml(res.manual_markdown_filename)}</a>` : '';
+            const jsonLink = res.manual_json_url
+                ? `<a href="${res.manual_json_url}" target="_blank" rel="noopener" class="ai-package-link">${escapeHtml(res.manual_json_filename)}</a>` : '';
+            const humanBundle = `<div class="ai-package-summary"><strong>Human manual:</strong> ${markdownLink} · ${pdfLink} ${jsonLink ? `· ${jsonLink}` : ''}</div>`;
             const aiSummary = manifest
                 ? `<div class="ai-package-summary">
                     <strong>AI-ready package:</strong> ${manifest.procedures.length} step(s),

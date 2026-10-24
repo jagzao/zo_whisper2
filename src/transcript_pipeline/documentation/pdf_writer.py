@@ -15,6 +15,7 @@ cross-platform, no native Windows deps. When it is missing,
 from __future__ import annotations
 
 import logging
+import shutil
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -262,7 +263,7 @@ def write_manual_pdf(
     `engine.write_manual` — no re-extraction, no OCR/vision. Returns the
     written PDF path."""
     manual_dir.mkdir(parents=True, exist_ok=True)
-    pdf_path = manual_dir / "MANUAL.pdf"
+    pdf_path = manual_dir / f"{Path(source.video_name).stem}.pdf"
     styles = _styles()
 
     story: list = [Paragraph(escape(source.video_name), styles["title"])]
@@ -293,6 +294,7 @@ def write_manual_pdf(
     )
     footer = _footer_callback(source.video_name)
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
+    shutil.copyfile(pdf_path, manual_dir / "MANUAL.pdf")
     return pdf_path
 
 

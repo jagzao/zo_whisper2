@@ -258,6 +258,8 @@ def test_generate_documentation_writes_manual_and_ai_package(tmp_path):
     assert "confidence: **low**" in manual_text
     assert (manual_dir / "assets" / "step-0001.png").exists()
     assert (manual_dir / "steps.json").exists()
+    assert (manual_dir / "demo.md").read_text(encoding="utf-8") == manual_text
+    assert json.loads((manual_dir / "demo.json").read_text(encoding="utf-8"))["source"]["video_name"] == "demo.mp4"
 
     ai_dir = frames_dir / "ai-package"
     manifest = json.loads((ai_dir / "manifest.json").read_text(encoding="utf-8"))

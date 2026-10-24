@@ -5,6 +5,36 @@
 
 ## CURRENT_RESULT
 
+OLD_MANUALS_FOUND=249
+OLD_MANUALS_DELETED=249 - exact generated documentation targets, hash-logged before deletion
+TRANSCRIPTS_DELETED=0
+RAW_EVIDENCE_PRESERVED=PASS - 11 evidence.jsonl files; Session 41 timeline, OCR, frames, transcript, provenance retained
+MANUAL_NAMING_RULE=source video basename with .md/.pdf/.json; API prefers named output
+GENERATION_FREEZE=DOCUMENT_SYNTHESIS_PENDING_V2 - P&G synthesis blocked by default pending Session 41 owner approval
+PG_LOGICAL_VIDEO_COUNT=16 - reconciled project media, SFTPGo, Video_compress aliases; Session 18 assignment and S43 identity conflicts retained
+PG_VALID_TRANSCRIPTIONS=4 baseline; recovery running
+PG_MISSING_TRANSCRIPTIONS=6 baseline; recovery running
+PG_PARTIAL_TRANSCRIPTIONS=4 baseline; recovery running
+PG_FAILED_TRANSCRIPTIONS=2 - corrupt SFTPGo MP4 sources, moov atom missing
+PG_TRANSCRIPTION_COMPLETE=FAIL - focused large-v3 recovery active; no PASS asserted
+SESSION_41_VIDEO_DURATION=00:35:05.367
+SESSION_41_TRANSCRIPT_LAST_TIMESTAMP=00:23:55.890 (pre-recovery)
+SESSION_41_TRANSCRIPT_COVERAGE=68.20% (pre-recovery)
+SESSION_41_SOURCE_GAP=00:11:09.477 - audio tail contains speech; recovery active
+DOCUMENTS_V2=TESTING - synthesis frozen; invalid outputs removed
+SESSION_41_GOLDEN_SAMPLE=TESTING - recovery transcript not yet emitted; v4 not generated
+APP_MISSION_PACK=OWNER_PENDING - blocked until Session 41 passes gate and Juan approves
+REPO_STATE=TESTING - targeted source changes; 60 focused tests pass
+AGENT_SERVED_CHECK=NOT_RUN - deployment held while host transcription job is active
+OWNER_UAT=FAIL - prior Session 41 output rejected; new sample awaits owner review
+EVIDENCE_CONFLICT=NO - owner rejection accepted; source assignment/identity conflicts are explicitly recorded
+KANBAN_COMPLETE=8
+KANBAN_TESTING=65
+KANBAN_BLOCKED=3
+KANBAN_OWNER_PENDING=5
+BLOCKER=Large-v3 CPU recovery active; two SFTPGo videos are corrupt and require source retransmission or owner review
+NEXT_ACTION=Finish transcript recovery and validation; rebuild only zmi after processing is idle; generate Session 41 alone after the source gate passes
+
 STATUS=DISCREPANCY
 HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c
 FEATURE_STATUS=TESTING - implementation and agent-served checks pass; owner validation remains required
@@ -65,10 +95,10 @@ UNIT=PASS - 22 Python tests, 12 JS tests, py_compile; served Playwright flow pas
 BUILD_START=2026-10-24T03:15Z
 DEPLOYED=YES - 2026-10-24T03:18:14Z; ZMI recreated only; /data and model-cache volume preserved; Caddy untouched
 SERVED_HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c
-KANBAN_COMPLETE=7
-KANBAN_TESTING=61
+KANBAN_COMPLETE=8
+KANBAN_TESTING=65
 KANBAN_BLOCKED=3
-KANBAN_OWNER_PENDING=4
+KANBAN_OWNER_PENDING=5
 BLOCKER=OWNER_UAT_REQUIRED - real upload, dashboard counters, and Session 41 Documents V2 remain owner FAIL
 NEXT_ACTION=Juan reviews Session 41 v3 and validates corrected upload/counter journeys; do not regenerate other P&G sessions before Session 41 approval
 
@@ -110,7 +140,7 @@ SESSION_41_QUALITY_GATE=FAIL - SOURCE_INCOMPLETE; not FULLY_GROUNDED
 DOCS_V2_BUILD_START=2026-10-24 (UTC time not captured; local artifact build)
 DEPLOYED=NO - no deployment requested/performed
 SERVED_HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c (unchanged; artifact-only work)
-KANBAN_OWNER_PENDING=4
+KANBAN_OWNER_PENDING=5
 BLOCKER=Juan owner validation of Session 41 v3 and source gap resolution; full corpus generation held
 NEXT_ACTION=Juan reviews v3 mission packs; then provide missing transcript/source for 00:23:55.890-00:35:05.367 and owner-revalidate before corpus regeneration
 
@@ -174,7 +204,7 @@ REAL_CROP=TESTING
 PLAYLIST=TESTING
 VIDEOS_TABLE=TESTING
 DEVELOPMENT_COMPLETE=NO
-KANBAN_COMPLETE=7
+KANBAN_COMPLETE=8
 KANBAN_TESTING=60
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
@@ -306,6 +336,12 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Docs V2 served UI, document and version history | 🟨 TESTING | Served P&G Tidal v2 opened with manual/package, metadata, evidence links, review count, versions v1/v2 and separate Reprocess. Regeneration selected v3; v1/v2 stayed accessible. Full semantic panels/source-grounding content not fully validated. | Validate one full P&G document including timeline, claims, mappings and review queue; verify version history. | Agent |
 | Docs V2 semantic regeneration from saved evidence | 🟥 BLOCKED | Served regeneration created v3 `SYNTHESIS_BLOCKED_PRIVACY`; no remote corpus sent. Host/container lacks OPENCODE_API_KEY; `ALLOW_EXTERNAL_LLM=false`; privacy policy forbids bypass. | Restore authorized provider/auth configuration without exposing credentials; retry one document only. | Agent |
 | ZMI runtime and worker processing | 🟥 BLOCKED | Health is 200 and container healthy; one restart since current container recreation, exit 0/OOM=false. Retained Docker events have no die/OOM event explaining earlier restarts. Owner job remains ACTIVE at ~5.2h heartbeat age (<6h stale threshold); worker now reports 0 pending. Five upload sessions are still UPLOADING. | Preserve owner jobs/uploads; wait for stale policy and uploads; validate a synthetic job only after safe availability. | Agent |
+| Old P&G Documents V2 cleanup | COMPLETE | 249 exact generated manual/semantic files inventoried by size and SHA-256, logged, invalidated and deleted; 0 transcripts removed; raw evidence and provenance retained. | Keep invalidation ledger with release record. | Agent |
+| Manual filename normalization | TESTING | Writers and Session 41 builder now emit source-stem `.md`, `.pdf`, `.json`; compatibility aliases remain internal. Focused tests pass. | Verify Session 41 v4 golden output after transcript recovery. | Agent |
+| P&G media inventory reconciliation | TESTING | SFTPGo mount, Videos, Video_compress aliases, API assignments and transcript sidecars are being reconciled; Session 18 remains an explicit assignment conflict. | Finish logical deduplication and duration/status inventory. | Agent |
+| P&G transcript completeness | TESTING | Large-v3 focused recovery is running serially; two SFTPGo MP4 sources have no `moov` atom and cannot be decoded. | Finish recoverable sources; gate fails until damaged source is retransferred or explicitly reviewed. | Agent |
+| Session 41 Documents V2 golden sample | TESTING | v3 user-facing synthesis deleted and invalidated; quality report and source evidence retained. Source transcript recovery is running. | Reassess transcript/tail, then generate one named v4 sample only after coverage is understood. | Agent |
+| Application Mission Pack generation | OWNER_PENDING | Full corpus synthesis remains frozen; Session 41 approval is required before corpus-wide regeneration. | Juan reviews the quality-gated Session 41 sample. | Owner |
 | Mobile reliability + large-file upload V2 | 🟨 TESTING | Deployed through ZMI image `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc`; root cause was a stale served image missing `/api/uploads` and the package omitted its static helper. Caddy HTTP and LAN HTTPS return JSON 200 for GET `/api/uploads`; authenticated POST creates a synthetic session (200); chunk ACK, resume status and idempotent retry work; finalize returns JSON validation response for synthetic invalid media; synthetic session deleted. The served helper JS returns 200 and guards non-JSON responses. Storage preflight and oversize create return JSON 507 with free/required GiB. Served UI contains badge, bytes/total, percentage, speed, ETA and Pause/Resume/Cancel/Retry. No real owner files retried. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
 | Resumable upload recovery after transient app outage | 🟨 TESTING | ZMI deployed at `a99effb`; transient 5xx/network retry on preflight/create/status/finalize, with chunk ACK retry preserved. Python 10 and Node 9 pass. Candidate and served LAN HTTPS synthetic create/chunk/resume/finalize-error/cleanup passed. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
 | Resumable Upload API | 🟩 COMPLETE | Production through Caddy HTTP/HTTPS: GET/POST `/api/uploads`, chunk PUT, resume GET, finalize POST return JSON; small synthetic ACK/resume/retry and cleanup passed. 10 focused Python tests pass, covering synthetic 5 GiB, transient 502, resume, successful finalize, ACK preservation, ENOSPC mapping and packaged asset. 7 Node tests pass. | None; retain coverage. | Agent |

@@ -52,12 +52,13 @@ def write_semantic_manual(
 
     asset_names = _copy_assets(assets_dir, selection)
 
-    (manual_dir / "MANUAL.md").write_text(
-        _render_markdown(document, timeline, asset_names), encoding="utf-8"
-    )
-    (manual_dir / "knowledge-document.json").write_text(
-        document.to_json(), encoding="utf-8"
-    )
+    markdown = _render_markdown(document, timeline, asset_names)
+    document_stem = Path(source.video_name).stem
+    (manual_dir / f"{document_stem}.md").write_text(markdown, encoding="utf-8")
+    (manual_dir / "MANUAL.md").write_text(markdown, encoding="utf-8")
+    document_json = document.to_json()
+    (manual_dir / f"{document_stem}.json").write_text(document_json, encoding="utf-8")
+    (manual_dir / "knowledge-document.json").write_text(document_json, encoding="utf-8")
 
     metadata = {
         "schema_version": 2,
