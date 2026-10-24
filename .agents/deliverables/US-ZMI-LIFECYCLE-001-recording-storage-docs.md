@@ -6,26 +6,27 @@
 ## CURRENT_RESULT
 
 STATUS=DISCREPANCY
-HEAD=abe0f0941fa169c3f4bdc8a2f711cbcea353f46d
-REPO_STATE=PASS - upload reselect/state and semantic-session changes committed at abe0f09; focused tests pass; Kanban keeps owner failures non-green
-AGENT_SERVED_CHECK=PASS - served build abe0f09 on Caddy HTTP and LAN HTTPS (upload journey exercised on 69d05b6; final runtime adds legacy mtime classification); real browser selected two safe 9 MiB MP4s, acknowledged chunks, reloaded/reselected, resumed same sessions, showed 100%, finalized, and queued processing; no JS errors
-OWNER_UAT=FAIL - Juan reports physical dashboard counters and real video selection/upload still fail on his device; no corrected owner-observed retest yet
-EVIDENCE_CONFLICT=YES - owner report conflicts with earlier agent PASS; owner evidence controls completion
+HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c
+FEATURE_STATUS=TESTING - implementation and agent-served checks pass; owner validation remains required
+REPO_STATE=PASS - compact upload listing, reselect/retry and active-transfer semantics committed; focused tests pass
+AGENT_SERVED_CHECK=PASS - served build 217a95d on HTTP and LAN HTTPS; real safe MP4 browser flow acknowledged, resumed after failure/pause, and completed two files; logical counters reconciled
+OWNER_UAT=FAIL - Juan reports physical dashboard counters and real video select/drop upload failure; corrected owner-observed retest pending
+EVIDENCE_CONFLICT=YES - owner failures disagree with agent-served checks; OWNER_UAT controls completion
 
-DROPAREA_REPO=PASS - failed/retryable file selection reuses matching row/session, reattaches File, queues; batch pump reconciles stale flags; request timeout/retry diagnostics and ACK activity persisted
-DROPAREA_AGENT=PASS - two-file served browser journey completed on build 69d05b6; same session IDs survived reload/reselect with ACK 0 preserved, chunk 1 ACKed, both rows reached 100%/Completed; both safe test artifacts cleaned afterward
-DROPAREA_OWNER=FAIL - Juan's actual select/drop remains unreliable until he revalidates
-DASHBOARD_COUNTERS_REPO=PASS - logical /api/files metrics are the table source; HTML and API are no-store; static JS URL carries served build version
-DASHBOARD_COUNTERS_AGENT=PASS - served UI after test cleanup showed Videos 10 / Audio 0 / Transcribed 9; /api/files returned 10 rows and metrics 10/0/9
-DASHBOARD_COUNTERS_OWNER=FAIL - Juan continues to see old physical counters; prior owner report recorded at 2026-10-23T19:16:23Z, build UNKNOWN
+DROPAREA_REPO=PASS
+DROPAREA_AGENT=PASS - served real-file UI flow, reselect after interruption/pause, two-file auto-start and completion
+DROPAREA_OWNER=FAIL - owner revalidation pending
+DASHBOARD_COUNTERS_REPO=PASS - logical /api/files metrics drive counters; build marker and versioned no-store assets
+DASHBOARD_COUNTERS_AGENT=PASS - UI/API both report 10/0/9 on HTTP and LAN HTTPS
+DASHBOARD_COUNTERS_OWNER=FAIL - Juan reports physical values
 
 DROPAREA:
   REPO=PASS
-  AGENT=PASS - real served two-file test flow
+  AGENT=PASS - served real-file UI flow
   OWNER=FAIL
 DASHBOARD_COUNTERS:
   REPO=PASS
-  AGENT=PASS - UI/table/API 10/0/9
+  AGENT=PASS - UI/API 10/0/9
   OWNER=FAIL
 DOCS_V2:
   REPO=TESTING
@@ -40,38 +41,50 @@ VIDEO_EDITOR:
   AGENT=TESTING
   OWNER=UNKNOWN
 
-UPLOAD_RESELECT_FAILED=PASS_AFTER_INTERRUPTION - forced chunk-1 network abort after ACK 0, page reload/reselect reused each same session ID and resumed chunk 1; terminal FAILED card state was not captured before reload
-UPLOAD_RESELECT_PAUSED=PASS - server-listed resumable rows loaded as PAUSED and reselect attached the new File and auto-started
-UPLOAD_STALE_RESUME=PASS - ACKs were older than the 120-second activity window on reselect; server classifies these sessions STALE_RESUMABLE; IDs and ACK map preserved
-UPLOAD_BATCH_STATE_RECOVERY=PASS_UNIT - stale batch flag predicate resets only with no active count/state or preflight
-UPLOAD_NO_PROGRESS_RECOVERY=PASS_UNIT - bounded abort timeout test; chunk retry is bounded to five attempts with exponential delays; HTTP 502 and network retry tests pass
-UPLOAD_TWO_FILES=PASS - two safe files independently auto-started, ACKed, resumed, finalized, and displayed Completed
-UPLOAD_FIRST_ACK=PASS - API showed ACKed chunk 0 for both sessions before reload; both later ACKed chunk 1
-UPLOAD_PROGRESS=PASS - both rows reached 100%; speed/ETA and session IDs visible
+UPLOAD_RESELECT_FAILED=PASS - injected interruption after ACK 0; reload/reselect reused same session and resumed at 8.0 MB
+UPLOAD_RESELECT_PAUSED=PASS - reload/reselect reused session and finalized
+UPLOAD_STALE_RESUME=PASS - stale session resumed from preserved ACK map
+UPLOAD_BATCH_STATE_RECOVERY=PASS_UNIT - stale batch flag recovery invariant tested
+UPLOAD_NO_PROGRESS_RECOVERY=PASS_UNIT - bounded timeout, ACK preservation, retry behavior tested
+UPLOAD_502_RETRY=PASS_UNIT
+UPLOAD_TWO_FILES=PASS - both selected files auto-started and finalized independently
+UPLOAD_FIRST_ACK=PASS - served browser observed ACK 0
+UPLOAD_PROGRESS=PASS - ACK bytes restored after reload; both files completed
 
-BUILD_ID_VISIBLE=PASS - Build abe0f09 visible in dashboard
-STATIC_CACHE_IDENTITY=PASS - root and static JS return no-store; JS URL has ?v=abe0f09; X-Whisper-Build matches; no service workers; desktop and LAN HTTPS use the same ZMI instance
+BUILD_ID_VISIBLE=PASS - visible Build 217a95d matches served SHA
+STATIC_CACHE_IDENTITY=PASS - HTML/static no-store; JS URL versioned by SHA; no service worker; HTTP/HTTPS agree
+
 VIDEOS_LOGICAL=10
 AUDIO_LOGICAL=0
 TRANSCRIBED_LOGICAL=9
 
-UNIT=PASS - 63 Python tests, 12 JS tests, rendered dashboard JavaScript node --check; real served Playwright flow passed
-BUILD_START=2026-10-23T19:34:00Z
-DEPLOYED=YES - 2026-10-23T19:37:49Z; only ZMI recreated; /data bind and model-cache volume preserved; Caddy not restarted
-SERVED_HEAD=abe0f0941fa169c3f4bdc8a2f711cbcea353f46d
+UNIT=PASS - 22 Python tests, 12 JS tests, py_compile; served Playwright flow passed
+BUILD_START=2026-10-24T03:15Z
+DEPLOYED=YES - 2026-10-24T03:18:14Z; ZMI recreated only; /data and model-cache volume preserved; Caddy untouched
+SERVED_HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c
 KANBAN_COMPLETE=7
 KANBAN_TESTING=60
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=3
-BLOCKER=OWNER_UAT_REQUIRED; both safe upload jobs finalized and queued, then the pre-existing worker pipeline failed at master/vision_ocr (exit 1)
-NEXT_ACTION=Juan validates real upload/resume and logical counters on Build abe0f09; diagnose worker vision_ocr separately
+BLOCKER=OWNER_UAT_REQUIRED - Juan still observes failed real uploads and inconsistent counters
+NEXT_ACTION=Juan validates real select/drop/resume and logical counters on Build 217a95d
 
 DASHBOARD_COUNTERS_OWNER_UAT=FAIL
-DASHBOARD_COUNTERS_OWNER_UAT_AT=2026-10-23T19:16:23Z
+DASHBOARD_COUNTERS_OWNER_UAT_AT=2026-10-24T03:23:07Z
 DASHBOARD_COUNTERS_OWNER_UAT_BUILD=UNKNOWN
 DROPAREA_OWNER_UAT=FAIL
-DROPAREA_OWNER_UAT_AT=2026-10-23T19:16:23Z
+DROPAREA_OWNER_UAT_AT=2026-10-24T03:23:07Z
 DROPAREA_OWNER_UAT_BUILD=UNKNOWN
+OWNER_UAT_AT=2026-10-24T03:23:07Z
+OWNER_UAT_BUILD=UNKNOWN
+
+### Current execution result (2026-10-24)
+
+Build `217a95dc6aa69c6259a066740a0da0790a2e3e3c` is served on desktop HTTP and LAN HTTPS; visible build badge, response header, HTML metadata, and versioned JS agree. HTML and JS responses are `no-store`; no service worker is registered. Browser UI counters reconcile with `/api/files` at 10 videos, 0 audio, and 9 transcribed.
+
+The served browser selected safe MP4 files through the actual file input. It observed preflight, session creation, chunk 0 ACK, restored 8.0 MB after reselect, resumed after injected failure and pause, then auto-started and finalized two files independently under P&G. No browser JS errors; test files and sessions were cleaned. `/api/uploads` now returns compact ACK indices; detailed hashes remain in per-session state. Manifests without a live chunk request are reported `STALE_RESUMABLE`, not `UPLOADING` based on historical state.
+
+Focused gates: 22 Python tests and 12 JS tests passed; browser verification passed on both served routes. Owner-reported counter and upload failures remain `FAIL`; Kanban stays `TESTING` pending Juan's device validation.
 
 ### Latest execution result — logical counters and upload safety (2026-10-23)
 
@@ -251,7 +264,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 
 | Feature / Gate | Status | Evidence | Next Action | Owner |
 |---|---|---|---|---|
-| Drop Area: auto-start, two-file resumable upload, P&G assignment | 🟨 TESTING | Juan reported no reliable upload; upload journey on served build 69d05b6 completed two safe 9 MiB files; final build abe0f09 includes legacy activity timestamp fallback with ACK/resume after reload. Owner failure remains open; both synthetic media/sessions were cleaned. | Juan validates real device select/drop and resume. | Owner UAT pending |
+| Drop Area: auto-start, two-file resumable upload, P&G assignment | 🟨 TESTING | Build 217a95d served; browser observed first ACK, failure and paused reselect resume, and two files auto-start/finalize. Owner UAT remains FAIL. | Juan validates real device select/drop and resume. | Owner UAT pending |
 | Upload retry/resume after simulated 502 | 🟨 TESTING | Served synthetic 12.4 MB upload: five chunk 502s, ACK 0 preserved, upload-specific 502 shown; fresh-page reselect resumed and completed. Retry-in-place stalled during service instability. Test records cleaned. | Stabilize ZMI and repeat pause/retry/resume journey; verify processing result. | Agent |
 | P&G default: uploads and New Recording | 🟨 TESTING | Served UI selected P&G for uploads and New Recording; explicit Zo Interviews choice persisted after reopening. Camera/audio/playlist capture not started. | Verify project inheritance through real served capture and playlist journeys; phone-only hardware checks by Juan. | Agent |
 | Docs V2 served UI, document and version history | 🟨 TESTING | Served P&G Tidal v2 opened with manual/package, metadata, evidence links, review count, versions v1/v2 and separate Reprocess. Regeneration selected v3; v1/v2 stayed accessible. Full semantic panels/source-grounding content not fully validated. | Validate one full P&G document including timeline, claims, mappings and review queue; verify version history. | Agent |
@@ -302,7 +315,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Documentation Synthesis V2: regenerate documentation, reprocess video, documentation versioning | 🟨 TESTING | Prior regeneration/versioning tests passed; UI keeps regeneration separate from reprocessing. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
 | Video list: Project, Date, Duration, sorting, Show/player | 🟨 TESTING | Final served `/api/files` returns 60 rows; projects API returns 5 projects; smoke confirmed no chunk-named rows. Unit suite passes 1230 with 8 skipped. | None. | Agent |
 | Video list: delete eligibility/reason; hide internal chunks | 🟨 TESTING | Prior API/UI state-matrix and fragment visibility evidence. Relevant current root unit suite: 1230 passed, 8 skipped (2026-10-20). | None; optional browser checks and owner phone UAT remain separate. | Agent |
-| Dashboard logical inventory counters | 🟨 TESTING | Juan still sees physical values. Served UI and /api/files agree at 10/0/9 after test cleanup on build abe0f09; identity is visible and cache-busted. | Juan revalidates counters on his browser/device. | Owner UAT pending |
+| Dashboard logical inventory counters | 🟨 TESTING | Build 217a95d HTTP and LAN HTTPS show UI/API 10/0/9 with matching SHA and no-store assets. Juan still reports physical values. | Juan revalidates counters on his browser/device. | Owner UAT pending |
 | HTTPS/mobile: desktop/LAN shared data, HTTPS certificate, /setup, public CA, QR onboarding | 🟨 TESTING | Focused LAN/setup tests pass 31/31. Final desktop HTTP and LAN HTTPS return 200 with marker matching HEAD; `/setup` and QR return 200; `/api/network` reports configured HTTP/HTTPS ports 5000/5001, LAN IP `192.168.50.20`, and certificate fingerprint. | Juan installs public CA and validates phone onboarding during UAT. | Agent |
 | Overview Stats Modal: toolbar icon opens modal; reuse existing metrics; four required metrics | 🟨 TESTING | `tests/e2e/overview_stats_modal.py`: 12 browser checks pass on final app source; four metric labels/values match existing metrics. | None. | Agent |
 | Dashboard compact layout: Drop Area left; Pipeline and Folders stacked right; responsive, content-sized cards | 🟨 TESTING | Playwright layout test at 1440x1000 verifies two-column left/right stack; at 390x844 verifies one-column order and no horizontal overflow. CSS cards align to content; no fixed heights. | None; Juan may review live appearance during UAT. | Agent |
