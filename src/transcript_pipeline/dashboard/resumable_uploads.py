@@ -10,6 +10,7 @@ import tempfile
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 import shutil
 from typing import Any
@@ -20,6 +21,19 @@ _SESSION_ID = re.compile(r"^[a-f0-9]{32}$")
 _ACK_LOCK = threading.Lock()
 _FINALIZE_LOCK = threading.Lock()
 _CREATE_LOCK = threading.Lock()
+_ACTIVE_TRANSFER_LOCK = threading.Lock()
+_ACTIVE_TRANSFERS: set[str] = set()
+
+
+@contextmanager
+def active_transfer(session_id: str):
+    with _ACTIVE_TRANSFER_LOCK:
+        _ACTIVE_TRANSFERS.add(session_id)
+    try:
+        yield
+    finally:
+        with _ACTIVE_TRANSFER_LOCK:
+            _ACTIVE_TRANSFERS.discard(session_id)
 
 
 class UploadError(ValueError):
@@ -111,7 +125,6 @@ class ResumableUploads:
 
     def list(self, include_chunks: bool = True) -> list[dict[str, Any]]:
         sessions = []
-        now = time.time()
         for path in self.root.iterdir():
             if path.is_dir():
                 try:
@@ -125,9 +138,11 @@ class ResumableUploads:
                         data["last_ack_at"] = ack_at or None
                         data["last_activity_at"] = ack_at or data.get("last_activity_at")
                         data["received"] = sorted(int(index) for index in data.get("chunks", {}))
+                        with _ACTIVE_TRANSFER_LOCK:
+                            active = path.name in _ACTIVE_TRANSFERS
                         data["logical_state"] = ("COMPLETED" if state == "COMPLETED" else "FAILED" if state == "FAILED"
                             else "PAUSED_RESUMABLE" if state == "PAUSED" else "ACTIVE_TRANSFERRING"
-                            if ack_at and now - ack_at <= 120 else "STALE_RESUMABLE")
+                            if active else "STALE_RESUMABLE")
                         if not include_chunks:
                             data.pop("chunks", None)
                         sessions.append(data)

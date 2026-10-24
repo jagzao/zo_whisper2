@@ -1785,7 +1785,7 @@ def api_upload_preflight() -> Any:
 
 @app.route("/api/uploads/<session_id>/chunks/<int:index>", methods=["PUT"])
 def api_upload_chunk(session_id: str, index: int) -> Any:
-    from transcript_pipeline.dashboard.resumable_uploads import CHUNK_SIZE, UploadError
+    from transcript_pipeline.dashboard.resumable_uploads import CHUNK_SIZE, UploadError, active_transfer
 
     try:
         if request.content_length is not None and request.content_length > CHUNK_SIZE:
@@ -1793,9 +1793,10 @@ def api_upload_chunk(session_id: str, index: int) -> Any:
         body = request.stream.read(CHUNK_SIZE + 1)
         if len(body) > CHUNK_SIZE:
             return jsonify({"ok": False, "error": "Chunk exceeds the configured chunk size"}), 413
-        result = _resumable_uploads().acknowledge(
-            session_id, index, body, request.headers.get("X-Chunk-SHA256", ""),
-        )
+        with active_transfer(session_id):
+            result = _resumable_uploads().acknowledge(
+                session_id, index, body, request.headers.get("X-Chunk-SHA256", ""),
+            )
         return jsonify(result)
     except UploadError as exc:
         status = 507 if str(exc).startswith("Insufficient storage:") else 409

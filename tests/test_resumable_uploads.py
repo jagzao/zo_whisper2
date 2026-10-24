@@ -287,9 +287,12 @@ def test_upload_session_list_reports_semantic_state_and_ack_activity(tmp_path, m
     assert listed["received"] == []
 
     first = b"1234"
+    with upload_module.active_transfer(session["id"]):
+        listed = service.list()[0]
+        assert listed["logical_state"] == "ACTIVE_TRANSFERRING"
     service.acknowledge(session["id"], 0, first, hashlib.sha256(first).hexdigest())
     listed = service.list()[0]
-    assert listed["logical_state"] == "ACTIVE_TRANSFERRING"
+    assert listed["logical_state"] == "STALE_RESUMABLE"
     assert listed["received"] == [0]
     assert listed["last_ack_at"]
 
@@ -312,7 +315,7 @@ def test_legacy_upload_session_activity_uses_chunk_write_time(tmp_path, monkeypa
     part = directory / "00000000.part"
     part.write_bytes(b"data")
     os.utime(part, (time.time(), time.time()))
-    assert service.list()[0]["logical_state"] == "ACTIVE_TRANSFERRING"
+    assert service.list()[0]["logical_state"] == "STALE_RESUMABLE"
 
     old = time.time() - 300
     os.utime(part, (old, old))
