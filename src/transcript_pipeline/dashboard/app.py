@@ -1866,6 +1866,22 @@ def api_upload_cancel(session_id: str) -> Any:
         return jsonify({"ok": False, "error": str(exc)}), 400
 
 
+@app.route("/api/uploads/<session_id>/resume", methods=["POST"])
+def api_upload_resume(session_id: str) -> Any:
+    from transcript_pipeline.dashboard.resumable_uploads import UploadError
+
+    try:
+        payload = request.get_json(silent=True) or {}
+        project_id = str(payload.get("project_id") or "").strip()
+        projects = _load_projects()
+        if project_id and not any(p.get("id") == project_id or p.get("name") == project_id for p in projects):
+            return jsonify({"ok": False, "error": "Selected project does not exist"}), 400
+        session = _resumable_uploads().resume(session_id, project_id)
+        return jsonify({"ok": True, "session": session})
+    except UploadError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 409
+
+
 @app.route("/api/run/<mode>", methods=["POST"])
 def api_run(mode: str) -> Any:
     if mode not in ("full", "compress", "transcribe"):

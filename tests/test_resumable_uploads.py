@@ -73,6 +73,56 @@ def test_resume_partial_upload_and_finalize_hash_size(client):
     assert duplicate["job_id"] == finalized["job_id"]
 
 
+@pytest.mark.parametrize("state", ["PAUSED", "FAILED", "FINALIZING"])
+def test_resume_endpoint_reactivates_incomplete_session_and_preserves_acks(client, state):
+    session_id = _new_session(client)
+    assert _put(client, session_id, 0, b"abcd").status_code == 200
+    service = dashboard_app._resumable_uploads()
+    directory, manifest = service._manifest(session_id)
+    manifest["state"] = state
+    service._save(directory / "session.json", manifest)
+
+    response = client.post(f"/api/uploads/{session_id}/resume", headers=AUTH)
+
+    assert response.status_code == 200
+    resumed = response.get_json()["session"]
+    assert resumed["state"] == "UPLOADING"
+    assert resumed["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
+    assert _put(client, session_id, 1, b"efgh").status_code == 200
+
+
+def test_completed_upload_cannot_be_resumed(client):
+    session_id = _new_session(client)
+    for index, chunk in enumerate((b"abcd", b"efgh", b"ij")):
+        assert _put(client, session_id, index, chunk).status_code == 200
+    assert client.post(f"/api/uploads/{session_id}/finalize", headers=AUTH).status_code == 200
+
+    response = client.post(f"/api/uploads/{session_id}/resume", headers=AUTH)
+
+    assert response.status_code == 409
+    assert response.get_json()["error"] == "Completed upload cannot be resumed"
+
+
+def test_stale_upload_session_resumes_from_acknowledged_map(client):
+    import time
+
+    session_id = _new_session(client)
+    assert _put(client, session_id, 0, b"abcd").status_code == 200
+    service = dashboard_app._resumable_uploads()
+    directory, manifest = service._manifest(session_id)
+    manifest["last_ack_at"] = time.time() - 600
+    service._save(directory / "session.json", manifest)
+    stale = next(item for item in service.list() if item["id"] == session_id)
+    assert stale["logical_state"] == "STALE_RESUMABLE"
+
+    resumed = client.post(f"/api/uploads/{session_id}/resume", json={"project_id": "P&G"}, headers=AUTH)
+
+    assert resumed.status_code == 200
+    assert resumed.get_json()["session"]["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
+    assert resumed.get_json()["session"]["project_id"] == "P&G"
+    assert _put(client, session_id, 1, b"efgh").status_code == 200
+
+
 def test_cancel_one_session_preserves_another(client):
     first, second = _new_session(client, "one.mp4"), _new_session(client, "two.mp4")
     _put(client, first, 0, b"abcd")

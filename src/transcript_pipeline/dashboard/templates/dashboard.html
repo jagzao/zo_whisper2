@@ -3132,10 +3132,16 @@
                     existing.file = file;
                     existing.projectId = existing.projectId || projectId;
                     existing.received = resume?.received || existing.received || [];
+                    existing.chunkSize = resume?.chunk_size || existing.chunkSize;
+                    if (resume) {
+                        existing.ackedChunks = existing.received.length;
+                        existing.uploadedBytes = existing.received.reduce((sum, index) => sum + Math.min(existing.chunkSize, file.size - index * existing.chunkSize), 0);
+                        existing.lastAckAt = resume.last_ack_at ? resume.last_ack_at * 1000 : existing.lastAckAt;
+                    }
                     existing.state = 'QUEUED';
                     existing.error = '';
                     existing.cancelRequested = false;
-                } else uploadItems.push({ id: resume?.id || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, sessionId: resume?.id || null, file, filename: file.name, size: file.size, projectId, state: 'QUEUED', attempts: 0, controller: null, received: resume?.received || [] });
+                } else uploadItems.push({ id: resume?.id || globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`, sessionId: resume?.id || null, file, filename: file.name, size: file.size, projectId, state: 'QUEUED', attempts: 0, controller: null, received: resume?.received || [], chunkSize: resume?.chunk_size, ackedChunks: resume?.received?.length || 0, uploadedBytes: resume ? resume.received.reduce((sum, index) => sum + Math.min(resume.chunk_size, file.size - index * resume.chunk_size), 0) : 0, lastAckAt: resume?.last_ack_at ? resume.last_ack_at * 1000 : null });
             }
             fileInput.value = '';
             renderUploadQueue();
@@ -3158,11 +3164,12 @@
                 const speed = item.speed || 0;
                 const eta = speed > 0 ? Math.ceil((item.size - (item.uploadedBytes || 0)) / speed) : null;
                 const progress = `${formatUploadBytes(item.uploadedBytes || 0)} / ${formatUploadBytes(item.size || item.file?.size || 0)} (${percent}%) | ${(speed / 1048576).toFixed(1)} MB/s | ETA ${eta == null ? 'n/a' : `${Math.floor(eta / 60)}m ${String(eta % 60).padStart(2, '0')}s`}`;
-                const state = ['UPLOADING', 'RETRYING', 'FINALIZING'].includes(item.state) ? `${item.state} | ${progress}`
+                const diagnostics = `${item.phase || 'WAITING'}${item.currentChunk == null ? '' : ` chunk ${item.currentChunk}`} | ${item.currentRequest || 'no request'} | last ACK ${item.lastAckAt ? new Date(item.lastAckAt).toLocaleTimeString() : 'none'}`;
+                const state = ['UPLOADING', 'RETRYING', 'FINALIZING'].includes(item.state) ? `${item.state} | ${progress} | ${diagnostics}`
                     : item.state === 'COMPLETED' ? `Completed | ${item.resultName || item.filename} | ${progress}`
-                        : item.state === 'FAILED' ? `Failed | ${progress} | ${item.error || 'upload error'} | ${item.phase || 'UNKNOWN'}${item.currentChunk == null ? '' : ` chunk ${item.currentChunk}`}${item.httpStatus ? ` | HTTP ${item.httpStatus}` : ''} | last ACK ${item.lastAckAt ? new Date(item.lastAckAt).toLocaleTimeString() : 'none'}`
+                            : item.state === 'FAILED' ? `Failed | ${progress} | ${item.error || 'upload error'} | ${item.phase || 'UNKNOWN'}${item.currentChunk == null ? '' : ` chunk ${item.currentChunk}`}${item.httpStatus ? ` | HTTP ${item.httpStatus}` : ''} | endpoint ${item.currentRequest || 'unknown'} | last ACK ${item.lastAckAt ? new Date(item.lastAckAt).toLocaleTimeString() : 'none'}`
                             : item.state === 'CANCELLED' || item.state === 'UPLOAD_CANCELLED' ? `CANCELLED | ${progress}`
-                                : item.state === 'PAUSED' ? `PAUSED | ${progress} | upload can resume` : `QUEUED | ${progress}`;
+                                : item.state === 'PAUSED' ? `PAUSED | ${progress} | upload can resume` : `QUEUED | ${progress} | ${diagnostics}`;
                 return `<div class="upload-file-row" data-upload-id="${item.id}" data-project-id="${escapeHtml(item.projectId)}">
                     <span class="upload-file-name">${escapeHtml(item.filename || item.file?.name || '')} | ${formatUploadBytes(item.size || item.file?.size || 0)} | Session ${escapeHtml((item.sessionId || 'pending').slice(0, 8))}</span>
                     <span class="upload-file-state">${escapeHtml(state)}${item.projectId ? ` · ${escapeHtml(item.projectId)}` : ''}</span>${action}
@@ -3215,6 +3222,8 @@
             if (uploadBatchStarted && activeUploadCount > 0) { pumpUploadQueue(); return; }
             if (uploadPreflightPromise) return;
             uploadBatchStarted = true;
+            queued.forEach(item => { item.phase = 'PREFLIGHT'; item.currentRequest = '/api/uploads/preflight'; item.lastProgressAt = Date.now(); });
+            renderUploadQueue();
             uploadPreflightPromise = whisperFetchUploadWithRetry('/api/uploads/preflight', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN },
                 body: JSON.stringify({ uploads: queued.map(row => ({ session_id: row.sessionId || null, size: Number(row.size || row.file?.size || 0) })) }) },
                 { attempts: 5, fetcher: (target, requestOptions) => whisperFetchUploadWithTimeout(target, requestOptions, { timeoutMs: 90000 }) })
@@ -3288,13 +3297,20 @@
                 }
                 const stateResponse = await uploadRequest(item, `/api/uploads/${item.sessionId}`, { signal: item.controller.signal }, 'GET_STATE');
                 const statePayload = await whisperReadUploadJson(stateResponse);
-                const serverSession = statePayload.session;
+                let serverSession = statePayload.session;
                 if (serverSession?.state === 'COMPLETED') {
-                    const response = await whisperFetchUploadWithRetry(`/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, signal: item.controller.signal });
+                    const response = await uploadRequest(item, `/api/uploads/${item.sessionId}/finalize`, { method: 'POST', headers: { 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, signal: item.controller.signal }, 'FINALIZE');
                     const result = await whisperReadUploadJson(response);
                     if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
                     item.state = 'COMPLETED'; item.resultName = result.name; item.uploadedBytes = item.file.size; item.file = null;
                     return;
+                }
+                if (serverSession?.state !== 'UPLOADING') {
+                    const resumeResponse = await uploadRequest(item, `/api/uploads/${item.sessionId}/resume`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Local-Dashboard-Token': DASHBOARD_TOKEN }, body: JSON.stringify({ project_id: item.projectId || '' }), signal: item.controller.signal }, 'RESUME_SESSION');
+                    const resumed = await whisperReadUploadJson(resumeResponse);
+                    if (!resumeResponse.ok || !resumed.ok) throw new Error(resumed.error || `HTTP ${resumeResponse.status}`);
+                    serverSession = resumed.session;
+                    item.projectId = serverSession.project_id || item.projectId;
                 }
                 const received = new Set(serverSession ? Object.keys(serverSession.chunks).map(Number) : []);
                 const chunkSize = item.chunkSize || 8 * 1024 * 1024;
@@ -3345,7 +3361,7 @@
             } catch (error) {
                 if (error.name === 'AbortError') item.state = item.cancelRequested ? 'CANCELLED' : 'PAUSED';
                 else {
-                    item.state = 'FAILED'; item.httpStatus = error.status || null; item.error = `${error instanceof TypeError ? 'Network request failed' : error.message}; phase ${item.phase || 'UNKNOWN'}${item.httpStatus ? `; HTTP ${item.httpStatus}` : ''}. ACKed chunks are preserved.`;
+                    item.state = 'FAILED'; item.httpStatus = error.status || null; item.error = `${error instanceof TypeError ? 'Network request failed' : error.message}; endpoint ${item.currentRequest || 'unknown'}; phase ${item.phase || 'UNKNOWN'}${item.currentChunk == null ? '' : ` chunk ${item.currentChunk}`}${item.httpStatus ? `; HTTP ${item.httpStatus}` : ''}. ACKed chunks are preserved.`;
                     uploadRecentFailures += 1;
                     uploadBackendHealthy = false;
                 }

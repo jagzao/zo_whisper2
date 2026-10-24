@@ -137,6 +137,24 @@ class ResumableUploads:
         with _ACK_LOCK:
             return self._acknowledge(session_id, index, body, digest)
 
+    def resume(self, session_id: str, project_id: str = "") -> dict[str, Any]:
+        with _ACK_LOCK:
+            directory, data = self._manifest(session_id)
+            if data.get("state") == "COMPLETED":
+                raise UploadError("Completed upload cannot be resumed")
+            expected_count = (int(data["size"]) + CHUNK_SIZE - 1) // CHUNK_SIZE
+            try:
+                acknowledged = {int(index) for index in data.get("chunks", {})}
+            except (TypeError, ValueError) as exc:
+                raise UploadError("Upload session has an invalid acknowledgement map") from exc
+            if any(index < 0 or index >= expected_count for index in acknowledged):
+                raise UploadError("Upload session has an invalid acknowledgement map")
+            data["state"] = "UPLOADING"
+            data["project_id"] = data.get("project_id") or project_id
+            data["last_activity_at"] = time.time()
+            self._save(directory / "session.json", data)
+            return data
+
     def _acknowledge(self, session_id: str, index: int, body: bytes, digest: str) -> dict[str, Any]:
         directory, data = self._manifest(session_id)
         if data["state"] != "UPLOADING" or index < 0:
