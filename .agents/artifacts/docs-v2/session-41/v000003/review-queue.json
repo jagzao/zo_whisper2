@@ -1,0 +1,118 @@
+{
+  "schema_version": "review-queue-v1",
+  "items": [
+    {
+      "id": "RQ-001",
+      "type": "SOURCE_UNCERTAIN",
+      "application": "pgregdoc.com",
+      "ambiguity": "REACH was glossed as 'regulations' by a speaker who said they were not familiar with it.",
+      "timestamp": "00:01:49",
+      "raw_transcript": "I'm not quite familiar with REACH, but when I tried to search within PNG documentation, this simply means regulations.",
+      "reason": "Speaker explicitly disclaims familiarity; do not convert the gloss into a canonical definition.",
+      "possible_interpretation": null,
+      "needs_human_review": true,
+      "evidence_refs": [
+        "C-005"
+      ]
+    },
+    {
+      "id": "RQ-002",
+      "type": "TRANSCRIPT_CONFLICT",
+      "application": "pgregdoc.com",
+      "ambiguity": "Transcript exports render the spoken authentication provider phrase differently (being solutions/spin solutions); flow diagram V-002 labels PingID.",
+      "timestamp": "00:06:55",
+      "raw_transcript": "Authentication being used as spin solutions and users are ...",
+      "reason": "Visual evidence labels PingID, but confirm current identity configuration and the spoken-term discrepancy before operational use.",
+      "possible_interpretation": "PingID is the provider shown in the sampled application flow diagram.",
+      "needs_human_review": true,
+      "evidence_refs": [
+        "C-013",
+        "V-002"
+      ]
+    },
+    {
+      "id": "RQ-003",
+      "type": "SEMANTIC_ANOMALY",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "ambiguity": "transition to corruption mining",
+      "timestamp": "00:20:51",
+      "raw_transcript": "But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
+      "reason": "Phrase is semantically suspicious in a lifecycle discussion and unsupported by other evidence.",
+      "possible_interpretation": null,
+      "needs_human_review": true,
+      "evidence_refs": [
+        "C-025"
+      ]
+    },
+    {
+      "id": "RQ-004",
+      "type": "SOURCE_UNCERTAIN",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "ambiguity": "data floor",
+      "timestamp": "00:15:31",
+      "raw_transcript": "Something like a date floor. So all the codes, I mean, all the scripts are coded in the, I mean, the floor.",
+      "reason": "Transcript variants and surrounding context do not verify the platform/repository name.",
+      "possible_interpretation": null,
+      "needs_human_review": true,
+      "evidence_refs": [
+        "C-022"
+      ]
+    },
+    {
+      "id": "RQ-005",
+      "type": "INCOMPLETE_STATEMENT",
+      "application": "pgregdoc.com",
+      "ambiguity": "Application maturity and 'open source' intent.",
+      "timestamp": "00:07:09",
+      "raw_transcript": "I think the only thing missing is the fact that the application is not fully developed. So we are trying to keep this as an open source, but in the end, the application will...",
+      "reason": "Sentence trails off; current development state and intent cannot be safely inferred.",
+      "possible_interpretation": null,
+      "needs_human_review": true,
+      "evidence_refs": [
+        "C-014"
+      ]
+    },
+    {
+      "id": "RQ-006",
+      "type": "UNEXPLAINED_COVERAGE_GAP",
+      "application": "SESSION",
+      "ambiguity": "Transcript missing from 00:23:55.890 to 00:35:05.367.",
+      "timestamp": "00:23:55.890-00:35:05.367",
+      "raw_transcript": "No transcript segments available in this interval.",
+      "reason": "The 669.477-second gap includes most of the meeting tail; visual samples after 00:24:39 show gallery, not application evidence.",
+      "possible_interpretation": null,
+      "needs_human_review": true,
+      "evidence_refs": [
+        "E-024"
+      ]
+    },
+    {
+      "id": "RQ-007",
+      "type": "INTERNAL_SPEECH_GAP",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "ambiguity": "74.78 seconds without transcript after 'Give me a few minutes' while switching/retrieving access.",
+      "timestamp": "00:17:00.550-00:18:15.330",
+      "raw_transcript": "The prior segment says 'Give me a few minutes'; the next available segment is 'I think I should retrieve the new password from...'.",
+      "reason": "Context suggests an access pause but the content of the gap is not recorded in transcript.",
+      "possible_interpretation": "A pause while attempting access is supported by the adjacent statements; no technical facts can be inferred.",
+      "needs_human_review": true,
+      "evidence_refs": [
+        "E-018"
+      ]
+    },
+    {
+      "id": "RQ-008",
+      "type": "VISUAL_OCR_REVIEW",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "ambiguity": "Some ServiceNow-style catalogue text is small/soft in the sampled screen.",
+      "timestamp": "00:20:51.840",
+      "raw_transcript": "Frame V-004 contains a catalogue description; exact app ID and named owner are not legible enough to report.",
+      "reason": "The app purpose/lifecycle phrases are readable, but exact owner and identifier remain unclear.",
+      "possible_interpretation": null,
+      "needs_human_review": true,
+      "evidence_refs": [
+        "V-004"
+      ]
+    }
+  ]
+}

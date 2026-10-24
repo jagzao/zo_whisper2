@@ -1,0 +1,395 @@
+{
+  "schema_version": "evidence-timeline-v1",
+  "source_coverage": {
+    "video_duration_seconds": 2105.366667,
+    "transcript_first_timestamp_seconds": 47.04,
+    "transcript_last_timestamp_seconds": 1435.89,
+    "transcript_last_timestamp_coverage_percent": 68.2,
+    "transcript_span_coverage_percent": 65.97,
+    "leading_gap_seconds": 47.04,
+    "trailing_gap_seconds": 669.477,
+    "visual_frame_count": 36,
+    "visual_first_timestamp_seconds": 56.9018018108108,
+    "visual_last_timestamp_seconds": 2048.464865189189,
+    "visual_sampled_span_percent": 94.59,
+    "visual_sampling_is_continuous": false,
+    "unexplained_gaps": [
+      {
+        "start": 1020.55,
+        "end": 1095.33,
+        "seconds": 74.77999999999997
+      },
+      {
+        "start": 1435.89,
+        "end": 2105.366667,
+        "seconds": 669.4766669999997,
+        "kind": "trailing"
+      },
+      {
+        "start": 0.0,
+        "end": 47.04,
+        "seconds": 47.04,
+        "kind": "leading"
+      }
+    ],
+    "status": "SOURCE_INCOMPLETE",
+    "video_filename": "AMS_KAP_-_App_Support_-_Session_41.mp4",
+    "video_sha256": "3bd7aa3d20cd8622572d66d048e4ee4fb0e4cbfb2e0070143a93927a445b3669",
+    "duration_formatted": "00:35:05.367",
+    "transcript_last_timestamp_formatted": "00:23:55.890",
+    "trailing_gap_formatted": "00:11:09.477",
+    "transcript_variants": [
+      "AMS_KAP_-_App_Support_-_Session_41_segments.json",
+      "pg_AMS_KAP_-_App_Support_-_Session_41_segments.json"
+    ],
+    "transcript_variant_last_timestamps": [
+      1435.89,
+      1435.35
+    ],
+    "visual_sampling_interval_seconds": 56.902,
+    "visual_frame_count_after_transcript_end": 11,
+    "visual_post_transcript_review": "Sampled frames after transcript end show meeting gallery only; no legible application evidence."
+  },
+  "events": [
+    {
+      "id": "E-001",
+      "start": "00:00:47",
+      "end": "00:01:17",
+      "application": "SESSION",
+      "summary": "Opening identifies two applications and names the North America application.",
+      "claim_ids": [
+        "C-001"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-002",
+      "start": "00:01:26",
+      "end": "00:01:47",
+      "application": "pgregdoc.com",
+      "summary": "PG RegDoc custom backend, P&G Azure (slide), SQL and mail subscription service.",
+      "claim_ids": [
+        "C-002"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-001"
+      ]
+    },
+    {
+      "id": "E-003",
+      "start": "00:01:47",
+      "end": "00:02:09",
+      "application": "pgregdoc.com",
+      "summary": "Public SDS/technical documents and REACH reference; speaker disclaims REACH familiarity.",
+      "claim_ids": [
+        "C-003",
+        "C-004",
+        "C-005"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-005",
+      "start": "00:02:09",
+      "end": "00:03:25",
+      "application": "pgregdoc.com",
+      "summary": "Subscriptions, notifications, admin functions, and role descriptions.",
+      "claim_ids": [
+        "C-006",
+        "C-007"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-001"
+      ]
+    },
+    {
+      "id": "E-007",
+      "start": "00:04:24",
+      "end": "00:04:38",
+      "application": "pgregdoc.com",
+      "summary": "Question and response establish public website support via backend; frontend boundary remains unclear.",
+      "claim_ids": [
+        "C-008"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-008",
+      "start": "00:05:07",
+      "end": "00:05:41",
+      "application": "pgregdoc.com",
+      "summary": "Manual SDS maintenance/PDF retrieval and developer configuration; data-flow slide.",
+      "claim_ids": [
+        "C-009",
+        "C-010"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-002"
+      ]
+    },
+    {
+      "id": "E-009",
+      "start": "00:05:53",
+      "end": "00:06:40",
+      "application": "pgregdoc.com",
+      "summary": "Production/development, Azure SQL, Data Factory, private endpoints and virtual networks.",
+      "claim_ids": [
+        "C-011"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-003"
+      ]
+    },
+    {
+      "id": "E-010",
+      "start": "00:06:40",
+      "end": "00:07:09",
+      "application": "pgregdoc.com",
+      "summary": "Owner/classification/BIA; authentication term uncertain and IT Access named.",
+      "claim_ids": [
+        "C-012",
+        "C-013"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-003"
+      ]
+    },
+    {
+      "id": "E-011",
+      "start": "00:07:09",
+      "end": "00:07:56",
+      "application": "pgregdoc.com",
+      "summary": "Incomplete application maturity/open-source statement.",
+      "claim_ids": [
+        "C-014"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-012",
+      "start": "00:08:00",
+      "end": "00:09:50",
+      "application": "pgregdoc.com",
+      "summary": "Technical presentation deferred; presenter says not prepared and lacks access.",
+      "claim_ids": [
+        "C-015"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-015",
+      "start": "00:11:53",
+      "end": "00:12:45",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Presenter reports no resource-group permission.",
+      "claim_ids": [
+        "C-023"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-016",
+      "start": "00:12:46",
+      "end": "00:13:18",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Participant advises trying AMS Admin identity; result not shown.",
+      "claim_ids": [
+        "C-023"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-017",
+      "start": "00:15:00",
+      "end": "00:16:20",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Data floor/code/scripts, access problem, and no prepared slides.",
+      "claim_ids": [
+        "C-022",
+        "C-024"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-018",
+      "start": "00:16:42",
+      "end": "00:18:40",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Attempt to switch to AMS Admin account/retrieve access; 74.78-second speech gap occurs in this interval.",
+      "claim_ids": [
+        "C-023"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-020",
+      "start": "00:20:51",
+      "end": "00:20:51",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Application catalogue screenshot shows app description, lifecycle, access context, and support group.",
+      "claim_ids": [
+        "C-016",
+        "C-017",
+        "C-018",
+        "C-019"
+      ],
+      "source_types": [
+        "VIDEO_FRAME_OCR",
+        "V-004"
+      ]
+    },
+    {
+      "id": "E-021",
+      "start": "00:18:23",
+      "end": "00:20:34",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Sunset to leverage optimized; decommissioning undecided.",
+      "claim_ids": [
+        "C-019"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-022",
+      "start": "00:20:34",
+      "end": "00:20:50",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Limited tickets/use impression and future decommission request expectation.",
+      "claim_ids": [
+        "C-020",
+        "C-021"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-023",
+      "start": "00:20:50",
+      "end": "00:20:56",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Suspicious phrase 'transition to corruption mining'.",
+      "claim_ids": [
+        "C-025"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-024",
+      "start": "00:23:55.890",
+      "end": "00:35:05.367",
+      "application": "SESSION",
+      "summary": "No transcript segment reaches this final 669.477-second video interval; later sampled frames show gallery only.",
+      "claim_ids": [],
+      "source_types": [
+        "SOURCE_COVERAGE",
+        "VIDEO_FRAME"
+      ]
+    }
+  ],
+  "source_map": [
+    {
+      "source_id": "S-VIDEO",
+      "source_type": "VIDEO",
+      "path": "Videos\\general\\AMS_KAP_-_App_Support_-_Session_41.mp4",
+      "sha256": "3bd7aa3d20cd8622572d66d048e4ee4fb0e4cbfb2e0070143a93927a445b3669",
+      "duration_seconds": 2105.366667
+    },
+    {
+      "source_id": "S-TRANSCRIPT-PRIMARY",
+      "source_type": "TRANSCRIPT_SEGMENTS",
+      "path": "CarpetaTranscripciones\\general\\AMS_KAP_-_App_Support_-_Session_41_segments.json",
+      "sha256": "0b532c51d118dacf279ce0898298258c119772d9d562477327e15d80744f7a31",
+      "segments": 172,
+      "last_timestamp_seconds": 1435.89
+    },
+    {
+      "source_id": "S-TRANSCRIPT-SECONDARY",
+      "source_type": "TRANSCRIPT_SEGMENTS",
+      "path": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_App_Support_-_Session_41_segments.json",
+      "sha256": "aa7b71eeaae96c1ae0533a93cd8cb69a3d205dfce6ac73dd4b4a97731de25d47",
+      "segments": 131,
+      "last_timestamp_seconds": 1435.35
+    },
+    {
+      "source_id": "S-FRAME-MAP",
+      "source_type": "FRAME_MAPPING",
+      "path": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_App_Support_-_Session_41_Frames\\pg_AMS_KAP_-_App_Support_-_Session_41\\frame_mapping.json",
+      "sha256": "2664bfedc5b5dc752e34815001e268d7360b0a132ea568b2290c3ba8ac27ad46",
+      "frames": 36,
+      "sampling_method": "sampled_interval"
+    },
+    {
+      "evidence_id": "V-001",
+      "source_type": "VIDEO_FRAME",
+      "timestamp_seconds": 56.9018018108108,
+      "timestamp": "00:00:56.902",
+      "source_path": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_App_Support_-_Session_41_Frames\\pg_AMS_KAP_-_App_Support_-_Session_41\\frame_0000.png",
+      "derived_asset": "assets/pgregdoc-overview.png",
+      "sha256": "3215de271e42997a18a5eea3ea1335a1d9975efbcb027448aaa6b87f3623a9a0"
+    },
+    {
+      "evidence_id": "V-002",
+      "source_type": "VIDEO_FRAME",
+      "timestamp_seconds": 341.4108108648648,
+      "timestamp": "00:05:41.411",
+      "source_path": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_App_Support_-_Session_41_Frames\\pg_AMS_KAP_-_App_Support_-_Session_41\\frame_0005.png",
+      "derived_asset": "assets/pgregdoc-data-flow.png",
+      "sha256": "b4bd950657abd36a99f334f5278e52d025dd899718bdea0224a39960e459e0bf"
+    },
+    {
+      "evidence_id": "V-003",
+      "source_type": "VIDEO_FRAME",
+      "timestamp_seconds": 398.3126126756756,
+      "timestamp": "00:06:38.313",
+      "source_path": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_App_Support_-_Session_41_Frames\\pg_AMS_KAP_-_App_Support_-_Session_41\\frame_0006.png",
+      "derived_asset": "assets/pgregdoc-technical-architecture.png",
+      "sha256": "ad46801dee960a050e31fcbed93696b48b9ce318e1478d52927df48dd7c6062d"
+    },
+    {
+      "evidence_id": "V-004",
+      "source_type": "VIDEO_FRAME",
+      "timestamp_seconds": 1251.8396398378377,
+      "timestamp": "00:20:51.840",
+      "source_path": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_App_Support_-_Session_41_Frames\\pg_AMS_KAP_-_App_Support_-_Session_41\\frame_0021.png",
+      "derived_asset": "assets/north-america-catalogue-description.png",
+      "sha256": "5f05977b34b012403b46f06682326435a45746abf46b775834bd986b538b7dba"
+    },
+    {
+      "evidence_id": "V-005",
+      "source_type": "VIDEO_FRAME",
+      "timestamp_seconds": 1251.8396398378377,
+      "timestamp": "00:20:51.840",
+      "source_path": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_App_Support_-_Session_41_Frames\\pg_AMS_KAP_-_App_Support_-_Session_41\\frame_0021.png",
+      "derived_asset": "assets/north-america-lifecycle-status.png",
+      "sha256": "5f05977b34b012403b46f06682326435a45746abf46b775834bd986b538b7dba"
+    }
+  ]
+}

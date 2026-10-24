@@ -1,0 +1,141 @@
+{
+  "OLD_SECTION_COUNT": 11,
+  "NEW_SECTION_COUNT": 52,
+  "SESSION_SECTION_COUNT": 10,
+  "APPLICATION_SECTION_HEADINGS_PER_PACK": 21,
+  "APPLICATION_OPERATIONAL_SECTIONS_PER_PACK": 18,
+  "VIDEO_DURATION": "00:35:05.367",
+  "TRANSCRIPT_COVERAGE": "68.20% by end timestamp; 65.97% from first transcript timestamp",
+  "COVERAGE_GAP": "00:11:09.477",
+  "GROUNDED_CLAIMS": 20,
+  "UNCERTAIN_CLAIMS": 4,
+  "CLAIMS_NEEDS_REVIEW": 1,
+  "AMBIGUITIES": 5,
+  "OPEN_QUESTIONS": 23,
+  "PROCEDURES": 0,
+  "APPLICATIONS_IDENTIFIED": 2,
+  "EXTERNAL_VERIFIED_FACTS": 0,
+  "MINERU_INTEGRATION": "EVALUATED_NOT_CONNECTED_OR_INSTALLED",
+  "SESSION_41_QUALITY_GATE": "FAIL - SOURCE_INCOMPLETE; not FULLY_GROUNDED",
+  "quality_gate": {
+    "status": "FAIL",
+    "fully_grounded": false,
+    "gates": {
+      "SOURCE_COVERAGE": {
+        "status": "FAIL",
+        "evidence": "Transcript ends at 1435.89s; trailing gap is 669.477s."
+      },
+      "CLAIM_GROUNDING": {
+        "status": "PARTIAL",
+        "evidence": "All claims have source fields and refs; source-uncertain claims remain flagged; no external facts used."
+      },
+      "AMBIGUITY_HANDLING": {
+        "status": "PASS",
+        "evidence": "Eight items are isolated in review-queue; unsupported interpretations are null."
+      },
+      "APP_SEGMENTATION": {
+        "status": "PASS",
+        "evidence": "PG RegDoc and North America application have distinct mission packs and claim sets."
+      },
+      "SUPPORT_SCOPE": {
+        "status": "PARTIAL",
+        "evidence": "PG public-site/backend support stated; exact frontend boundary and North America vendor boundary remain open."
+      },
+      "DATA_FLOW": {
+        "status": "PARTIAL",
+        "evidence": "PG manual document flow and North America catalogue ETL summary exist; schedules/error paths are missing."
+      },
+      "ARCHITECTURE": {
+        "status": "PARTIAL",
+        "evidence": "Named PG Azure components are grounded; detailed diagram labels and North America service topology are unverified."
+      },
+      "ACCESS_AUTH": {
+        "status": "PARTIAL",
+        "evidence": "Roles and access issue documented; provider term conflicts; approved grants and identity config unknown."
+      },
+      "OWNERSHIP": {
+        "status": "PARTIAL",
+        "evidence": "PG business owner recorded; technical/support contacts for both apps incomplete."
+      },
+      "OPERATIONS": {
+        "status": "PARTIAL",
+        "evidence": "Recurring PG admin tasks known; monitoring/incident/change routines absent; North America operations incomplete."
+      },
+      "RISKS": {
+        "status": "PARTIAL",
+        "evidence": "Source gap, access/lifecycle uncertainty, unsupported architecture details and anomaly identified."
+      },
+      "OPEN_QUESTIONS": {
+        "status": "PASS",
+        "evidence": "Application-specific questions listed for missing technical, support, access, ownership and lifecycle information."
+      },
+      "FOLLOW_UPS": {
+        "status": "PASS",
+        "evidence": "Deferred technical walkthroughs and targeted validation tasks recorded."
+      },
+      "EVIDENCE_TIMELINE": {
+        "status": "PASS",
+        "evidence": "Timestamped evidence events link claims to transcript/frame sources."
+      },
+      "SOURCE_MAPPING": {
+        "status": "PASS",
+        "evidence": "Transcript exports, video hash, frame map and selected frames are listed."
+      }
+    }
+  },
+  "source_coverage": {
+    "video_duration_seconds": 2105.366667,
+    "transcript_first_timestamp_seconds": 47.04,
+    "transcript_last_timestamp_seconds": 1435.89,
+    "transcript_last_timestamp_coverage_percent": 68.2,
+    "transcript_span_coverage_percent": 65.97,
+    "leading_gap_seconds": 47.04,
+    "trailing_gap_seconds": 669.477,
+    "visual_frame_count": 36,
+    "visual_first_timestamp_seconds": 56.9018018108108,
+    "visual_last_timestamp_seconds": 2048.464865189189,
+    "visual_sampled_span_percent": 94.59,
+    "visual_sampling_is_continuous": false,
+    "unexplained_gaps": [
+      {
+        "start": 1020.55,
+        "end": 1095.33,
+        "seconds": 74.77999999999997
+      },
+      {
+        "start": 1435.89,
+        "end": 2105.366667,
+        "seconds": 669.4766669999997,
+        "kind": "trailing"
+      },
+      {
+        "start": 0.0,
+        "end": 47.04,
+        "seconds": 47.04,
+        "kind": "leading"
+      }
+    ],
+    "status": "SOURCE_INCOMPLETE",
+    "video_filename": "AMS_KAP_-_App_Support_-_Session_41.mp4",
+    "video_sha256": "3bd7aa3d20cd8622572d66d048e4ee4fb0e4cbfb2e0070143a93927a445b3669",
+    "duration_formatted": "00:35:05.367",
+    "transcript_last_timestamp_formatted": "00:23:55.890",
+    "trailing_gap_formatted": "00:11:09.477",
+    "transcript_variants": [
+      "AMS_KAP_-_App_Support_-_Session_41_segments.json",
+      "pg_AMS_KAP_-_App_Support_-_Session_41_segments.json"
+    ],
+    "transcript_variant_last_timestamps": [
+      1435.89,
+      1435.35
+    ],
+    "visual_sampling_interval_seconds": 56.902,
+    "visual_frame_count_after_transcript_end": 11,
+    "visual_post_transcript_review": "Sampled frames after transcript end show meeting gallery only; no legible application evidence."
+  },
+  "claim_state_counts": {
+    "NEEDS_REVIEW": 1,
+    "SOURCE_CONFIRMED": 20,
+    "SOURCE_UNCERTAIN": 4
+  }
+}

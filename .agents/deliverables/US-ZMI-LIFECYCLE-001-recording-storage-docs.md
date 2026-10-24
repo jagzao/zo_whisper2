@@ -29,9 +29,12 @@ DASHBOARD_COUNTERS:
   AGENT=PASS - UI/API 10/0/9
   OWNER=FAIL
 DOCS_V2:
-  REPO=TESTING
-  AGENT=TESTING
-  OWNER=UNKNOWN
+  REPO=TESTING - Session 41 v3 generated; source coverage gate FAIL; artifacts are not fully grounded
+  AGENT=NOT_RUN - no served UI verification for this rebuild
+  OWNER=FAIL - Juan says current MANUAL.pdf is meeting-summary-like and not operational AMS support knowledge
+DOCS_V2_OWNER_UAT=FAIL
+DOCS_V2_OWNER_UAT_AT=2026-10-24T15:23:26Z
+DOCS_V2_OWNER_UAT_BUILD=UNKNOWN
 LIVE_CAPTURE:
   REPO=TESTING
   AGENT=TESTING
@@ -63,11 +66,11 @@ BUILD_START=2026-10-24T03:15Z
 DEPLOYED=YES - 2026-10-24T03:18:14Z; ZMI recreated only; /data and model-cache volume preserved; Caddy untouched
 SERVED_HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c
 KANBAN_COMPLETE=7
-KANBAN_TESTING=60
-KANBAN_BLOCKED=4
-KANBAN_OWNER_PENDING=3
-BLOCKER=OWNER_UAT_REQUIRED - Juan still observes failed real uploads and inconsistent counters
-NEXT_ACTION=Juan validates real select/drop/resume and logical counters on Build 217a95d
+KANBAN_TESTING=61
+KANBAN_BLOCKED=3
+KANBAN_OWNER_PENDING=4
+BLOCKER=OWNER_UAT_REQUIRED - real upload, dashboard counters, and Session 41 Documents V2 remain owner FAIL
+NEXT_ACTION=Juan reviews Session 41 v3 and validates corrected upload/counter journeys; do not regenerate other P&G sessions before Session 41 approval
 
 DASHBOARD_COUNTERS_OWNER_UAT=FAIL
 DASHBOARD_COUNTERS_OWNER_UAT_AT=2026-10-24T03:23:07Z
@@ -75,8 +78,41 @@ DASHBOARD_COUNTERS_OWNER_UAT_BUILD=UNKNOWN
 DROPAREA_OWNER_UAT=FAIL
 DROPAREA_OWNER_UAT_AT=2026-10-24T03:23:07Z
 DROPAREA_OWNER_UAT_BUILD=UNKNOWN
-OWNER_UAT_AT=2026-10-24T03:23:07Z
+OWNER_UAT_AT=2026-10-24T15:23:26Z
 OWNER_UAT_BUILD=UNKNOWN
+
+DOCS_V2_CURRENT_RESULT_AT=2026-10-24T15:23:26Z
+DOCS_V2_STATUS=TESTING - owner UAT FAIL; Session 41 source quality gate FAIL
+DOCS_V2_REPO_STATE=PASS - versioned Session 41 v3 package and both app-level baseline packs generated; focused quality tests pass
+DOCS_V2_AGENT_SERVED_CHECK=NOT_RUN - local artifact validation only; no served browser journey claimed
+DOCS_V2_OWNER=FAIL - current MANUAL.pdf is a meeting-summary-like output, not the required operational AMS support package
+DOCS_V2_EVIDENCE_CONFLICT=NO - owner finding is accepted; output remains non-green until Juan validates corrected v3
+SOURCE_COVERAGE=SOURCE_INCOMPLETE - video 00:35:05.367, transcript ends 00:23:55.890, end-time coverage 68.20%, final gap 00:11:09.477; 36 discrete frames are not continuous evidence; 11 post-transcript samples show gallery only
+CLAIM_GROUNDING=20 SOURCE_CONFIRMED; 4 SOURCE_UNCERTAIN; 1 NEEDS_REVIEW; 0 EXTERNAL_VERIFIED
+AMBIGUITY_HANDLING=PASS - 8 review items include REACH, auth audio conflict, data floor, incomplete statement, corruption-mining anomaly, coverage and speech gaps, OCR limits
+APP_SEGMENTATION=PASS - PG RegDoc and North America CPRT Panelist Payments independent
+SUPPORT_SCOPE=PARTIAL; DATA_FLOW=PARTIAL; ARCHITECTURE=PARTIAL; ACCESS_AUTH=PARTIAL; OWNERSHIP=PARTIAL; OPERATIONS=PARTIAL; RISKS=PARTIAL
+OPEN_QUESTIONS=PASS (23); FOLLOW_UPS=PASS; EVIDENCE_TIMELINE=PASS; SOURCE_MAPPING=PASS
+OLD_SECTION_COUNT=11
+NEW_SECTION_COUNT=52 total Markdown headings (10 session-level + 21 per application; 18 operational sections each)
+VIDEO_DURATION=00:35:05.367
+TRANSCRIPT_COVERAGE=68.20% by final timestamp; 65.97% first-to-last span
+COVERAGE_GAP=00:11:09.477
+GROUNDED_CLAIMS=20
+UNCERTAIN_CLAIMS=4
+AMBIGUITIES=5 semantic/claim ambiguities; 8 total review-queue items
+OPEN_QUESTIONS=23
+PROCEDURES=0 evidence-supported SOPs
+APPLICATIONS_IDENTIFIED=2
+EXTERNAL_VERIFIED_FACTS=0
+MINERU_INTEGRATION=EVALUATED_NOT_CONNECTED_OR_INSTALLED - [Document Explorer MCP](https://github.com/opendatalab/MinerU-Document-Explorer/blob/main/docs/mcp.md) offers retrieval/deep reading, TOC/grep and element/table/figure extraction; [MinerU Open MCP](https://github.com/opendatalab/MinerU-Ecosystem/blob/main/mcp/README.md) parses PDF/Office/images with OCR via remote API. Not used as semantic writer; no AMS source sent. Review privacy/API requirements before onboarding.
+SESSION_41_QUALITY_GATE=FAIL - SOURCE_INCOMPLETE; not FULLY_GROUNDED
+DOCS_V2_BUILD_START=2026-10-24 (UTC time not captured; local artifact build)
+DEPLOYED=NO - no deployment requested/performed
+SERVED_HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c (unchanged; artifact-only work)
+KANBAN_OWNER_PENDING=4
+BLOCKER=Juan owner validation of Session 41 v3 and source gap resolution; full corpus generation held
+NEXT_ACTION=Juan reviews v3 mission packs; then provide missing transcript/source for 00:23:55.890-00:35:05.367 and owner-revalidate before corpus regeneration
 
 ### Current execution result (2026-10-24)
 
@@ -398,5 +434,4 @@ Expected: 1. INITIAL_SPEC (this frozen US and production publication authorizati
 - Official OpenCode Go endpoint requires a dedicated Go API key. CLI stores that API key under `opencode-go` in `~/.local/share/opencode/auth.json`; `auth login opencode` does not create a reusable session token for the direct `/chat/completions` API.
 - Root cause: `.agents/session/run_docs_v2_opencode_go.py` unconditionally loaded the saved `opencode-go` key and copied it to `LLM_API_KEY`; the compatible client then sent that expired value as Bearer auth. A legacy `LLM_API_KEY` remains in `scan_config.env`, but the OpenCode host now ignores it.
 - Fix: `Settings` supports `OPENCODE_API_KEY`, the OpenCode client uses only that dedicated setting for `opencode.ai`, and the batch runner no longer reads `auth.json` or legacy `LLM_API_KEY`. Secrets are not persisted by the runner.
-- Current validation (2026-10-21): the User-scoped `OPENCODE_API_KEY` was copied only into child processes; no secret was printed or persisted. OpenCode Go tiny preflight passed. Initial 9-media inventory: 1 READY, 1 NEEDS_TRANSCRIPT, 1 NEEDS_KEYFRAMES_ONLY, 6 NEEDS_TRANSCRIPT_AND_KEYFRAMES. Session 41 generated and validated Docs V2 version 2; see Finalization Kanban.
-- Local preprocessing is running resumably from saved evidence. Continue it to completion, refresh the inventory, then generate and validate Docs V2 for all eligible corpus items. Keep failed docs retryable and persist each result in the batch manifest.
+- Historical inventory/preprocessing results remain below as records only. Session 41 v3 is now the quality benchmark and remains OWNER_UAT=FAIL / SOURCE_INCOMPLETE. Do not regenerate any other P&G corpus item until Juan validates Session 41 v3.

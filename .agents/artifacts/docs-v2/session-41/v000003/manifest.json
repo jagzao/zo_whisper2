@@ -1,0 +1,28 @@
+{
+  "artifact_version": "000003",
+  "session_id": "AMS_KAP_-_App_Support_-_Session_41",
+  "previous_version": "000002",
+  "generated_at": "2026-10-24T15:29:34.895186+00:00",
+  "source_video_sha256": "3bd7aa3d20cd8622572d66d048e4ee4fb0e4cbfb2e0070143a93927a445b3669",
+  "source_coverage_status": "SOURCE_INCOMPLETE",
+  "quality_status": "FAIL",
+  "fully_grounded": false,
+  "outputs": [
+    "SESSION_MANUAL.md",
+    "SESSION_MANUAL.pdf",
+    "knowledge-document.json",
+    "evidence-timeline.json",
+    "review-queue.json",
+    "quality-report.json"
+  ],
+  "application_packs": {
+    "pgregdoc.com": {
+      "version": 1,
+      "path": "apps/pgregdoc.com/v000001"
+    },
+    "North America Central Product Research Testing Panelist Payments": {
+      "version": 1,
+      "path": "apps/north-america-central-product-research-testing-panelist-payments/v000001"
+    }
+  }
+}
