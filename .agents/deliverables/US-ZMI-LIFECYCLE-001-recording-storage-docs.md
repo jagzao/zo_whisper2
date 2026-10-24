@@ -5,7 +5,7 @@
 
 ## CURRENT_RESULT
 
-FOLDER_LOCATION_LINK=IMPLEMENTED - Folder cell opens the row's safe /stream URL in a new tab
+FOLDER_LOCATION_LINK=PASS - served Folder cell links to /stream?id=<encoded media_id>; HEAD returns 200 video/mp4
 OLD_MANUALS_FOUND=249
 OLD_MANUALS_DELETED=249 - exact generated documentation targets, hash-logged before deletion
 TRANSCRIPTS_DELETED=0
@@ -26,7 +26,7 @@ DOCUMENTS_V2=TESTING - synthesis frozen; invalid outputs removed
 SESSION_41_GOLDEN_SAMPLE=TESTING - recovery transcript emitted; v4 not generated pending coverage validation
 APP_MISSION_PACK=OWNER_PENDING - blocked until Session 41 passes gate and Juan approves
 REPO_STATE=TESTING - targeted source changes; 60 focused tests pass
-AGENT_SERVED_CHECK=NOT_RUN - deployment held while host transcription job is active
+AGENT_SERVED_CHECK=PARTIAL - folder link served on 987219438c9cc8bd920dfe1e928f292e70a7fd03; P&G documentation state still needs served verification
 OWNER_UAT=FAIL - prior Session 41 output rejected; new sample awaits owner review
 EVIDENCE_CONFLICT=NO - owner rejection accepted; source assignment/identity conflicts are explicitly recorded
 KANBAN_COMPLETE=8
@@ -34,7 +34,7 @@ KANBAN_TESTING=65
 KANBAN_BLOCKED=3
 KANBAN_OWNER_PENDING=5
 BLOCKER=Validate emitted transcripts and restore two corrupt SFTPGo sources; finalized capture source path unresolved
-NEXT_ACTION=Reconcile recovered segment coverage and source identity, then finish missing/partial recovery; deploy zmi only with worker idle
+NEXT_ACTION=Reconcile recovered segment coverage and source identity, then finish missing/partial recovery; keep Documents V2 frozen
 
 STATUS=DISCREPANCY
 HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c
