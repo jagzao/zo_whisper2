@@ -5,6 +5,7 @@
 
 ## CURRENT_RESULT
 
+FOLDER_LOCATION_LINK=IMPLEMENTED - Folder cell opens the row's safe /stream URL in a new tab
 OLD_MANUALS_FOUND=249
 OLD_MANUALS_DELETED=249 - exact generated documentation targets, hash-logged before deletion
 TRANSCRIPTS_DELETED=0
@@ -12,17 +13,17 @@ RAW_EVIDENCE_PRESERVED=PASS - 11 evidence.jsonl files; Session 41 timeline, OCR,
 MANUAL_NAMING_RULE=source video basename with .md/.pdf/.json; API prefers named output
 GENERATION_FREEZE=DOCUMENT_SYNTHESIS_PENDING_V2 - P&G synthesis blocked by default pending Session 41 owner approval
 PG_LOGICAL_VIDEO_COUNT=16 - reconciled project media, SFTPGo, Video_compress aliases; Session 18 assignment and S43 identity conflicts retained
-PG_VALID_TRANSCRIPTIONS=4 baseline; recovery running
-PG_MISSING_TRANSCRIPTIONS=6 baseline; recovery running
-PG_PARTIAL_TRANSCRIPTIONS=4 baseline; recovery running
-PG_FAILED_TRANSCRIPTIONS=2 - corrupt SFTPGo MP4 sources, moov atom missing
-PG_TRANSCRIPTION_COMPLETE=FAIL - focused large-v3 recovery active; no PASS asserted
+PG_VALID_TRANSCRIPTIONS=4 baseline; recovered outputs await validation
+PG_MISSING_TRANSCRIPTIONS=6 baseline; recovered outputs await validation
+PG_PARTIAL_TRANSCRIPTIONS=4 baseline; recovered outputs await validation
+PG_FAILED_TRANSCRIPTIONS=2 - corrupt SFTPGo MP4 sources, moov atom missing; finalized capture source also absent on host
+PG_TRANSCRIPTION_COMPLETE=FAIL - recovery batch emitted outputs; source identity and coverage validation remains
 SESSION_41_VIDEO_DURATION=00:35:05.367
-SESSION_41_TRANSCRIPT_LAST_TIMESTAMP=00:23:55.890 (pre-recovery)
-SESSION_41_TRANSCRIPT_COVERAGE=68.20% (pre-recovery)
-SESSION_41_SOURCE_GAP=00:11:09.477 - audio tail contains speech; recovery active
+SESSION_41_TRANSCRIPT_LAST_TIMESTAMP=await recovered-segment validation
+SESSION_41_TRANSCRIPT_COVERAGE=await recovered-segment validation
+SESSION_41_SOURCE_GAP=prior transcript gap 00:11:09.477; recovered output needs validation
 DOCUMENTS_V2=TESTING - synthesis frozen; invalid outputs removed
-SESSION_41_GOLDEN_SAMPLE=TESTING - recovery transcript not yet emitted; v4 not generated
+SESSION_41_GOLDEN_SAMPLE=TESTING - recovery transcript emitted; v4 not generated pending coverage validation
 APP_MISSION_PACK=OWNER_PENDING - blocked until Session 41 passes gate and Juan approves
 REPO_STATE=TESTING - targeted source changes; 60 focused tests pass
 AGENT_SERVED_CHECK=NOT_RUN - deployment held while host transcription job is active
@@ -32,8 +33,8 @@ KANBAN_COMPLETE=8
 KANBAN_TESTING=65
 KANBAN_BLOCKED=3
 KANBAN_OWNER_PENDING=5
-BLOCKER=Large-v3 CPU recovery active; two SFTPGo videos are corrupt and require source retransmission or owner review
-NEXT_ACTION=Finish transcript recovery and validation; rebuild only zmi after processing is idle; generate Session 41 alone after the source gate passes
+BLOCKER=Validate emitted transcripts and restore two corrupt SFTPGo sources; finalized capture source path unresolved
+NEXT_ACTION=Reconcile recovered segment coverage and source identity, then finish missing/partial recovery; deploy zmi only with worker idle
 
 STATUS=DISCREPANCY
 HEAD=217a95dc6aa69c6259a066740a0da0790a2e3e3c

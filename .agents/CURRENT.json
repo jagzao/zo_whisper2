@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "main",
   "served_revision": "217a95dc6aa69c6259a066740a0da0790a2e3e3c",
-  "last_result": "pg_corpus_docs_invalidated_transcription_recovery_running",
-  "updated_at": "2026-10-24T17:20:00Z"
+  "last_result": "folder_stream_link_implemented_pg_recovery_outputs_pending_validation",
+  "updated_at": "2026-10-24T23:42:12Z"
 }
