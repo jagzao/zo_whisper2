@@ -164,7 +164,7 @@ def main() -> int:
             check("failed_upload_keeps_acked_chunk", failed.get("received") == [0], f"received={failed.get('received')}")
 
             page.reload(wait_until="domcontentloaded")
-            page.wait_for_selector("#fileInput", timeout=20000)
+            page.wait_for_selector("#uploadProject", state="visible", timeout=20000)
             page.evaluate("window.__zmiUploadMode = 'hold'")
             page.locator("#fileInput").set_input_files(str(resume_file))
             page.wait_for_function("window.__zmiChunkOneBlocked === true", timeout=30000)
