@@ -1743,7 +1743,9 @@ def api_upload_sessions() -> Any:
 
     service = _resumable_uploads()
     if request.method == "GET":
-        return jsonify({"ok": True, "sessions": service.list()})
+        response = jsonify({"ok": True, "sessions": service.list(include_chunks=False)})
+        response.headers["Cache-Control"] = "no-store"
+        return response
     payload = request.get_json(silent=True) or {}
     filename = secure_filename(Path(str(payload.get("filename") or "")).name)
     project_id = str(payload.get("project_id") or "").strip()

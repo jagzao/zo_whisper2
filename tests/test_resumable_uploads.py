@@ -59,9 +59,14 @@ def test_chunk_split_ack_is_idempotent_and_rejects_bad_hash(client):
 def test_resume_partial_upload_and_finalize_hash_size(client):
     session_id = _new_session(client)
     assert _put(client, session_id, 0, b"abcd").status_code == 200
-    listing = client.get("/api/uploads").get_json()["sessions"]
+    listing_response = client.get("/api/uploads")
+    listing = listing_response.get_json()["sessions"]
     saved = next(item for item in listing if item["id"] == session_id)
-    assert saved["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
+    assert saved["received"] == [0]
+    assert "chunks" not in saved
+    assert client.get(f"/api/uploads/{session_id}").get_json()["session"]["chunks"] == {
+        "0": hashlib.sha256(b"abcd").hexdigest()
+    }
     for index, chunk in enumerate((b"efgh", b"ij"), start=1):
         _put(client, session_id, index, chunk)
     finalized = client.post(f"/api/uploads/{session_id}/finalize", headers=AUTH).get_json()
@@ -149,7 +154,7 @@ def test_failed_chunk_request_recovers_without_restarting_file(client, monkeypat
     assert recovered.status_code == 200
     saved = next(row for row in client.get("/api/uploads").get_json()["sessions"] if row["id"] == session_id)
     assert saved["size"] == 10
-    assert saved["chunks"] == {"0": hashlib.sha256(b"abcd").hexdigest()}
+    assert saved["received"] == [0]
 
 
 def test_retry_adopts_matching_chunk_file_left_before_manifest_ack(client):

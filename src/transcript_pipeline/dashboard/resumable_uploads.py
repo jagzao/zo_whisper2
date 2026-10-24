@@ -109,7 +109,7 @@ class ResumableUploads:
         gib = 1024**3
         return f"Insufficient storage: {check['free_bytes'] / gib:.1f} GiB free, {check['required_bytes'] / gib:.1f} GiB required. Free space before uploading."
 
-    def list(self) -> list[dict[str, Any]]:
+    def list(self, include_chunks: bool = True) -> list[dict[str, Any]]:
         sessions = []
         now = time.time()
         for path in self.root.iterdir():
@@ -128,6 +128,8 @@ class ResumableUploads:
                         data["logical_state"] = ("COMPLETED" if state == "COMPLETED" else "FAILED" if state == "FAILED"
                             else "PAUSED_RESUMABLE" if state == "PAUSED" else "ACTIVE_TRANSFERRING"
                             if ack_at and now - ack_at <= 120 else "STALE_RESUMABLE")
+                        if not include_chunks:
+                            data.pop("chunks", None)
                         sessions.append(data)
                 except UploadError:
                     continue

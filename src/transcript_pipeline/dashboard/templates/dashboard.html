@@ -3246,7 +3246,7 @@
         function pumpUploadQueue() {
             if (!uploadBatchStarted) return;
             while (activeUploadCount < adaptiveUploadLimit()) {
-                const item = uploadItems.find(row => row.state === 'QUEUED');
+                const item = uploadItems.find(row => row.state === 'QUEUED' && row.file);
                 if (!item) break;
                 item.state = 'UPLOADING';
                 item.attempts += 1;
@@ -3280,8 +3280,10 @@
             item.currentChunk = chunkMatch ? Number(chunkMatch[1]) : null;
             item.currentRequest = url;
             item.lastProgressAt = Date.now();
+            renderUploadQueue();
             const response = await whisperFetchUploadWithRetry(url, options, { attempts: phase.startsWith('CHUNK_') ? 1 : 5, fetcher: (target, requestOptions) => whisperFetchUploadWithTimeout(target, requestOptions, { timeoutMs: 90000 }) });
             item.lastProgressAt = Date.now();
+            renderUploadQueue();
             return response;
         }
 

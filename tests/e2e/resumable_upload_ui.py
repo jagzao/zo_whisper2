@@ -55,7 +55,7 @@ def wait_for_session(base: str, filename: str, timeout: int = 30) -> dict:
 
 def wait_for_completed(page, filename: str, timeout: int = 90) -> None:
     row = page.locator("#uploadQueue [data-upload-id]").filter(has_text=filename)
-    page.wait_for_function("name => [...document.querySelectorAll('#uploadQueue [data-upload-id]')].some(row => row.innerText.includes(name) && row.innerText.includes('Completed'))", filename, timeout=timeout * 1000)
+    page.wait_for_function("name => [...document.querySelectorAll('#uploadQueue [data-upload-id]')].some(row => row.innerText.includes(name) && row.innerText.includes('Completed'))", arg=filename, timeout=timeout * 1000)
 
 
 def inspect_identity(playwright, url: str, revision: str) -> None:
@@ -95,7 +95,7 @@ def main() -> int:
         resume_file = root / f"safe-resume-{test_id}.mp4"
         second_file = root / f"safe-two-a-{test_id}.mp4"
         third_file = root / f"safe-two-b-{test_id}.mp4"
-        make_video(resume_file, 10)
+        make_video(resume_file, 30)
         make_video(second_file, 2, "2M")
         make_video(third_file, 2, "2M")
         check("resume_fixture_crosses_chunk_boundary", resume_file.stat().st_size > CHUNK_SIZE, f"bytes={resume_file.stat().st_size}")
@@ -105,24 +105,26 @@ def main() -> int:
         browser = None
         context = None
         page = None
+        cleanup_token = ""
+        playwright = sync_playwright().start()
         try:
-            with sync_playwright() as playwright:
-                inspect_identity(playwright, DESKTOP_URL, revision)
-                inspect_identity(playwright, LAN_URL, revision)
-                browser = playwright.chromium.launch(headless=True)
-                context = browser.new_context(ignore_https_errors=True, service_workers="block")
-                page = context.new_page()
-                errors: list[str] = []
-                upload_requests: list[str] = []
-                finalize_responses: list[dict] = []
-                page.on("pageerror", lambda error: errors.append(str(error)))
-                page.on("request", lambda request: upload_requests.append(request.url) if "/api/uploads" in request.url else None)
-                page.on("response", lambda response: finalize_responses.append(response.json()) if response.url.endswith("/finalize") and response.ok else None)
-                page.add_init_script("""(() => {
+            inspect_identity(playwright, DESKTOP_URL, revision)
+            inspect_identity(playwright, LAN_URL, revision)
+            browser = playwright.chromium.launch(headless=True)
+            context = browser.new_context(ignore_https_errors=True, service_workers="block")
+            page = context.new_page()
+            errors: list[str] = []
+            upload_requests: list[str] = []
+            finalize_responses: list[dict] = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            page.on("request", lambda request: upload_requests.append(request.url) if "/api/uploads" in request.url else None)
+            page.on("response", lambda response: finalize_responses.append(response.json()) if response.url.endswith("/finalize") and response.ok else None)
+            page.add_init_script("""(() => {
+                  window.__zmiUploadMode = 'fail';
                   const nativeFetch = window.fetch.bind(window);
                   window.fetch = (input, init = {}) => {
                     const url = String(input);
-                    const mode = localStorage.getItem('zmi-upload-test-chunk1') || 'fail';
+                    const mode = window.__zmiUploadMode;
                     if (url.includes('/api/uploads/') && url.endsWith('/chunks/1') && mode === 'fail') {
                       window.__zmiChunkOneFailures = (window.__zmiChunkOneFailures || 0) + 1;
                       return Promise.reject(new TypeError('Synthetic interruption after first ACK'));
@@ -138,67 +140,72 @@ def main() -> int:
                     return nativeFetch(input, init);
                   };
                 })();""")
-                page.goto(DESKTOP_URL, wait_until="domcontentloaded", timeout=30000)
-                page.wait_for_selector("#filesList", timeout=30000)
-                page.wait_for_function("[...document.querySelector('#uploadProject').options].some(option => option.value.toLowerCase() === 'p&g')", timeout=20000)
-                project = page.locator("#uploadProject").input_value()
-                check("pg_default_project", project.lower() == "p&g", project)
+            page.goto(DESKTOP_URL, wait_until="domcontentloaded", timeout=30000)
+            page.wait_for_selector("#filesList", timeout=30000)
+            cleanup_token = page.evaluate("typeof DASHBOARD_TOKEN === 'string' ? DASHBOARD_TOKEN : ''")
+            page.wait_for_function("[...document.querySelector('#uploadProject').options].some(option => option.value.toLowerCase() === 'p&g')", timeout=20000)
+            project = page.locator("#uploadProject").input_value()
+            check("pg_default_project", project.lower() == "p&g", project)
 
-                page.locator("#fileInput").set_input_files(str(resume_file))
-                first = wait_for_session(DESKTOP_URL, resume_file.name)
-                session_ids.add(first["id"])
-                check("new_file_autostarts_with_session", first.get("state") == "UPLOADING", f"session={first['id']} state={first.get('state')}")
-                deadline = time.monotonic() + 20
-                while time.monotonic() < deadline:
-                    first = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
-                    if 0 in first.get("received", []):
-                        break
-                    time.sleep(0.2)
-                check("first_chunk_ack_observed", 0 in first.get("received", []), f"received={first.get('received')}")
-                check("bytes_acknowledged", first.get("size", 0) > 0 and first.get("last_ack_at") is not None, f"size={first.get('size')}; ack={first.get('last_ack_at')}")
-                page.wait_for_function("name => [...document.querySelectorAll('#uploadQueue [data-upload-id]')].some(row => row.innerText.includes(name) && row.innerText.includes('Failed'))", resume_file.name, timeout=60000)
-                failed = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
-                check("failed_upload_keeps_acked_chunk", failed.get("received") == [0], f"received={failed.get('received')}")
+            page.locator("#fileInput").set_input_files(str(resume_file))
+            first = wait_for_session(DESKTOP_URL, resume_file.name)
+            session_ids.add(first["id"])
+            check("new_file_autostarts_with_session", first.get("state") == "UPLOADING", f"session={first['id']} state={first.get('state')}")
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                first = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
+                if 0 in first.get("received", []):
+                    break
+                time.sleep(0.2)
+            check("first_chunk_ack_observed", 0 in first.get("received", []), f"received={first.get('received')}")
+            check("bytes_acknowledged", first.get("size", 0) > 0 and first.get("last_ack_at") is not None, f"size={first.get('size')}; ack={first.get('last_ack_at')}")
+            page.wait_for_function("name => [...document.querySelectorAll('#uploadQueue [data-upload-id]')].some(row => row.innerText.includes(name) && row.innerText.includes('Failed'))", arg=resume_file.name, timeout=60000)
+            failed = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
+            check("failed_upload_keeps_acked_chunk", failed.get("received") == [0], f"received={failed.get('received')}")
 
-                page.evaluate("localStorage.setItem('zmi-upload-test-chunk1', 'hold')")
-                page.reload(wait_until="domcontentloaded")
-                page.wait_for_selector("#uploadQueue [data-upload-id]", timeout=20000)
-                page.locator("#fileInput").set_input_files(str(resume_file))
-                page.wait_for_function("window.__zmiChunkOneBlocked === true", timeout=30000)
-                resumed_row = page.locator("#uploadQueue [data-upload-id]").filter(has_text=resume_file.name)
-                page.wait_for_function("name => { const row=[...document.querySelectorAll('#uploadQueue [data-upload-id]')].find(item=>item.innerText.includes(name)); return row && row.innerText.includes('8.0 MB /'); }", resume_file.name, timeout=15000)
-                check("reselect_restores_ack_progress", "8.0 MB /" in resumed_row.inner_text(), resumed_row.inner_text())
-                resumed = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
-                check("reselect_reuses_session_and_ack", resumed["id"] == first["id"] and resumed.get("received") == [0], f"id={resumed['id']}; received={resumed.get('received')}")
-                page.locator("#uploadQueue [data-upload-id]").filter(has_text=resume_file.name).get_by_role("button", name="Pause").click()
-                page.wait_for_function("name => [...document.querySelectorAll('#uploadQueue [data-upload-id]')].some(row => row.innerText.includes(name) && row.innerText.includes('PAUSED'))", resume_file.name, timeout=15000)
-                paused = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
-                check("pause_preserves_ack_map", paused.get("received") == [0], f"received={paused.get('received')}")
-                page.evaluate("localStorage.setItem('zmi-upload-test-chunk1', 'off')")
-                page.reload(wait_until="domcontentloaded")
-                page.wait_for_selector("#uploadQueue [data-upload-id]", timeout=20000)
-                page.locator("#fileInput").set_input_files(str(resume_file))
-                wait_for_completed(page, resume_file.name)
-                completed = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
-                check("reload_reselect_resumes_to_completion", completed.get("logical_state") == "COMPLETED", f"state={completed.get('logical_state')} acked={len(completed.get('received', []))}")
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_selector("#uploadQueue [data-upload-id]", timeout=20000)
+            page.evaluate("window.__zmiUploadMode = 'hold'")
+            page.locator("#fileInput").set_input_files(str(resume_file))
+            page.wait_for_function("window.__zmiChunkOneBlocked === true", timeout=30000)
+            resumed_row = page.locator("#uploadQueue [data-upload-id]").filter(has_text=resume_file.name)
+            page.wait_for_function("name => { const row=[...document.querySelectorAll('#uploadQueue [data-upload-id]')].find(item=>item.innerText.includes(name)); return row && row.innerText.includes('8.0 MB /'); }", arg=resume_file.name, timeout=15000)
+            check("upload_reselect_failed", "8.0 MB /" in resumed_row.inner_text(), resumed_row.inner_text())
+            resumed = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
+            check("reselect_reuses_session_and_ack", resumed["id"] == first["id"] and resumed.get("received") == [0], f"id={resumed['id']}; received={resumed.get('received')}")
+            page.locator("#uploadQueue [data-upload-id]").filter(has_text=resume_file.name).get_by_role("button", name="Pause").click()
+            page.wait_for_function("name => [...document.querySelectorAll('#uploadQueue [data-upload-id]')].some(row => row.innerText.includes(name) && row.innerText.includes('PAUSED'))", arg=resume_file.name, timeout=15000)
+            paused = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
+            check("pause_preserves_ack_map", paused.get("received") == [0], f"received={paused.get('received')}")
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_selector("#uploadQueue [data-upload-id]", timeout=20000)
+            page.evaluate("window.__zmiUploadMode = 'off'")
+            page.locator("#fileInput").set_input_files(str(resume_file))
+            wait_for_completed(page, resume_file.name)
+            completed = next(item for item in sessions(DESKTOP_URL) if item["id"] == first["id"])
+            check("upload_reselect_paused", completed.get("logical_state") == "COMPLETED", f"state={completed.get('logical_state')} acked={len(completed.get('received', []))}")
 
-                page.locator("#fileInput").set_input_files([str(second_file), str(third_file)])
-                for path in (second_file, third_file):
-                    wait_for_completed(page, path.name)
-                both = [item for item in sessions(DESKTOP_URL) if item.get("filename") in {second_file.name, third_file.name}]
-                session_ids.update(item["id"] for item in both)
-                check("two_files_auto_start_and_complete", len(both) == 2 and all(item.get("logical_state") == "COMPLETED" for item in both), json.dumps([{key: item.get(key) for key in ("filename", "id", "logical_state", "project_id")} for item in both]))
-                check("served_upload_network_activity", any("/api/uploads/preflight" in url for url in upload_requests) and any("/chunks/0" in url for url in upload_requests), f"requests={len(upload_requests)}")
-                check("all_uploads_keep_pg", all(item.get("project_id") == project for item in [completed, *both]), json.dumps([item.get("project_id") for item in [completed, *both]]))
-                check("browser_has_no_js_errors", not errors, " | ".join(errors))
-                check("finalize_requests_succeeded", len(finalize_responses) >= 3, f"successful finalize responses={len(finalize_responses)}")
-                job_ids.update(str(item["job_id"]) for item in finalize_responses if item.get("job_id"))
+            page.locator("#fileInput").set_input_files([str(second_file), str(third_file)])
+            for path in (second_file, third_file):
+                wait_for_completed(page, path.name)
+            both = [item for item in sessions(DESKTOP_URL) if item.get("filename") in {second_file.name, third_file.name}]
+            session_ids.update(item["id"] for item in both)
+            check("two_files_auto_start_and_complete", len(both) == 2 and all(item.get("logical_state") == "COMPLETED" for item in both), json.dumps([{key: item.get(key) for key in ("filename", "id", "logical_state", "project_id")} for item in both]))
+            check("served_upload_network_activity", any("/api/uploads/preflight" in url for url in upload_requests) and any("/chunks/0" in url for url in upload_requests), f"requests={len(upload_requests)}")
+            check("all_uploads_keep_pg", all(item.get("project_id") == project for item in [completed, *both]), json.dumps([item.get("project_id") for item in [completed, *both]]))
+            check("browser_has_no_js_errors", not errors, " | ".join(errors))
+            check("finalize_requests_succeeded", len(finalize_responses) >= 3, f"successful finalize responses={len(finalize_responses)}")
+            job_ids.update(str(item["job_id"]) for item in finalize_responses if item.get("job_id"))
         except Exception as error:
-            check("served_browser_upload_flow", False, f"{type(error).__name__}: {error}")
+            try:
+                queue = page.locator("#uploadQueue").inner_text(timeout=2000) if page and not page.is_closed() else "unavailable"
+            except Exception:
+                queue = "unavailable"
+            recent = upload_requests[-12:] if "upload_requests" in locals() else []
+            check("served_browser_upload_flow", False, f"{type(error).__name__}: {error}; queue={queue}; requests={json.dumps(recent)}")
         finally:
-            if page is not None:
-                token = page.evaluate("typeof DASHBOARD_TOKEN === 'string' ? DASHBOARD_TOKEN : ''") if not page.is_closed() else ""
-                headers = {"X-Local-Dashboard-Token": token, "Origin": DESKTOP_URL} if token else {}
+            headers = {"X-Local-Dashboard-Token": cleanup_token, "Origin": DESKTOP_URL} if cleanup_token else {}
+            if cleanup_token:
                 try:
                     session_ids.update(item["id"] for item in sessions(DESKTOP_URL) if item.get("filename") in uploaded_names)
                 except requests.RequestException:
@@ -238,6 +245,7 @@ def main() -> int:
                 context.close()
             if browser:
                 browser.close()
+            playwright.stop()
     output = Path(os.environ.get("UPLOAD_UI_REPORT", "resumable_upload_ui_report.json"))
     output.write_text(json.dumps({"revision": revision, "checks": REPORT}, indent=2), encoding="utf-8")
     failures = [item for item in REPORT if item["status"] != "PASS"]
