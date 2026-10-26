@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 from typing import Any
 
 CLAIM_STATES = {
@@ -34,6 +33,9 @@ QUALITY_GATES = (
     "SOURCE_MAPPING",
 )
 TRANSCRIPT_STATES = {"VALID", "PARTIAL", "MISSING", "FAILED", "NEEDS_REVIEW"}
+NON_SPEECH_VAD_CLASSES = {
+    "NOISE", "MUSIC", "REMOTE_AUDIO_ARTIFACT", "SILENCE_BOUNDARY", "FALSE_POSITIVE_VAD",
+}
 CLAIM_FIELDS = {
     "claim_id",
     "application_id",
@@ -205,6 +207,39 @@ def assess_transcript_quality(
         "trailing_gap_classification": trailing_gap_classification or "NEEDS_REVIEW",
         "vad_speech_coverage_percent": round(speech_coverage, 2) if speech_coverage is not None else None,
         "vad_untranscribed_speech_gaps": vad_untranscribed,
+    }
+
+
+def reconcile_speech_interval_coverage(
+    vad_speech_seconds: float,
+    transcribed_speech_seconds: float,
+    interval_classifications: list[dict[str, Any]],
+    *,
+    valid_coverage_percent: float = 95.0,
+) -> dict[str, Any]:
+    """Separate non-speech VAD positives from actual missing or unintelligible speech."""
+    total = max(0.0, float(vad_speech_seconds))
+    transcribed = min(total, max(0.0, float(transcribed_speech_seconds)))
+    excluded = sum(max(0.0, float(item.get("seconds", 0))) for item in interval_classifications
+                   if item.get("classification") in NON_SPEECH_VAD_CLASSES)
+    meaningful = sum(max(0.0, float(item.get("seconds", 0))) for item in interval_classifications
+                     if item.get("classification") in {"ACTUAL_MISSING_SPEECH", "UNINTELLIGIBLE"})
+    unresolved = sum(max(0.0, float(item.get("seconds", 0))) for item in interval_classifications
+                     if item.get("classification") not in NON_SPEECH_VAD_CLASSES | {
+                         "ACTUAL_MISSING_SPEECH", "UNINTELLIGIBLE", "COVERED"
+                     })
+    denominator = max(0.0, total - min(total, excluded))
+    effective = min(100.0, 100.0 * transcribed / denominator) if denominator else 100.0
+    return {
+        "vad_speech_seconds": round(total, 3),
+        "transcribed_speech_seconds": round(transcribed, 3),
+        "uncovered_speech_seconds": round(max(0.0, total - transcribed), 3),
+        "excluded_non_speech_vad_seconds": round(min(total, excluded), 3),
+        "meaningful_uncovered_speech_seconds": round(meaningful, 3),
+        "unclassified_seconds": round(unresolved, 3),
+        "raw_speech_coverage_percent": round(100.0 * transcribed / total, 2) if total else 0.0,
+        "effective_speech_coverage_percent": round(effective, 2),
+        "state": "VALID" if effective >= valid_coverage_percent and unresolved == 0 else "NEEDS_REVIEW",
     }
 
 
@@ -415,23 +450,6 @@ def consolidate_application_claims(
         if fact.get("status") not in {"CONFLICTING", "SUPERSEDED"} and len(fact.get("supporting_sessions", [])) > 1:
             fact["status"] = "CONFIRMED"
     return facts
-
-
-def golden_overfit_violations(source_root: Path) -> list[str]:
-    """Find golden-specific identifiers in runtime synthesis modules."""
-    patterns = (
-        r"PGRegDoc", r"CPRT", r"AMS_KAP_-_App_Support_-_Session_41",
-        r"frame_0005", r"frame_0006", r"frame_0021", r"C-00[0-9]",
-    )
-    violations = []
-    for path in sorted(source_root.glob("*.py")):
-        if path.resolve() == Path(__file__).resolve():
-            continue
-        content = path.read_text(encoding="utf-8")
-        for pattern in patterns:
-            if re.search(pattern, content, re.I):
-                violations.append(f"{path.name}:{pattern}")
-    return violations
 
 
 def _fact_key(item: dict[str, Any]) -> str:

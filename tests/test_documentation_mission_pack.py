@@ -1,3 +1,5 @@
+import re
+
 from transcript_pipeline.documentation.mission_pack import (
     QUALITY_GATES,
     assess_content_quality,
@@ -6,6 +8,7 @@ from transcript_pipeline.documentation.mission_pack import (
     evaluate_quality_gates,
     measure_source_coverage,
     merge_application_facts,
+    reconcile_speech_interval_coverage,
     validate_claim_records,
 )
 
@@ -170,8 +173,24 @@ def test_generic_cross_session_consolidation_keeps_exact_application_identity():
 
 
 def test_golden_overfit_audit_detects_session_specific_production_literals(tmp_path):
-    from transcript_pipeline.documentation.mission_pack import golden_overfit_violations
-
     (tmp_path / "generic.py").write_text('APP = "PGRegDoc"\n', encoding="utf-8")
+    forbidden = (r"PGRegDoc", r"CPRT", r"AMS_KAP_-_App_Support_-_Session_41",
+                 r"frame_0005", r"frame_0006", r"frame_0021", r"C-00[0-9]")
+    violations = [f"{path.name}:{pattern}" for path in tmp_path.glob("*.py")
+                  for pattern in forbidden if re.search(pattern, path.read_text(encoding="utf-8"), re.I)]
+    assert violations == ["generic.py:PGRegDoc"]
 
-    assert golden_overfit_violations(tmp_path) == ["generic.py:PGRegDoc"]
+
+def test_speech_interval_reconciliation_excludes_vad_noise_but_keeps_missing_speech():
+    result = reconcile_speech_interval_coverage(
+        100,
+        90,
+        [{"seconds": 5, "classification": "SILENCE_BOUNDARY"},
+         {"seconds": 3, "classification": "NOISE"},
+         {"seconds": 2, "classification": "ACTUAL_MISSING_SPEECH"}],
+    )
+
+    assert result["raw_speech_coverage_percent"] == 90.0
+    assert result["effective_speech_coverage_percent"] == 97.83
+    assert result["meaningful_uncovered_speech_seconds"] == 2.0
+    assert result["state"] == "VALID"

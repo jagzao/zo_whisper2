@@ -2,7 +2,7 @@
 
 V2 MANUAL.md/PDF render the KnowledgeDocument — semantic sections, concise
 grounded claims, representative screenshots, compact evidence references
-like `[E-001 @ 00:13:34]` — NOT one heading per captured frame.
+like a concise claim with its source timestamp, not one heading per captured frame.
 
 Also persists:
 - manual/knowledge-document.json  (the editable semantic document, AC-22);

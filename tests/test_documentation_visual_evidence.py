@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PIL import Image, ImageDraw
 
 from transcript_pipeline.documentation import visual_evidence
@@ -39,6 +41,51 @@ def test_ocr_retries_preprocessed_image_once_and_records_retry_count(tmp_path, m
     assert result["retry_count"] == 1
     assert result["engine"] == "tesseract"
     assert result["provenance"] == {"frame_id": "screen.png", "timestamp": 20.0, "image_path": str(path)}
+
+
+def test_important_low_confidence_frame_retries_crop_and_preserves_original(tmp_path, monkeypatch):
+    path = _image(tmp_path / "flow.png")
+    monkeypatch.setattr(visual_evidence, "_ocr_attempts", lambda _: ([("data flow", "--psm 6", .3)], 2, False))
+    monkeypatch.setattr(visual_evidence.pytesseract, "image_to_string", lambda *args, **kwargs: "Input -> Application")
+    monkeypatch.setattr(visual_evidence.pytesseract, "image_to_data", lambda *args, **kwargs: {"conf": ["81"]})
+    result = visual_evidence.analyze_frame(
+        {"frame_file": path.name, "timestamp": 8, "transcript_text": "The data flow starts here."}, tmp_path
+    )
+
+    assert result["ocr_status"] == "SUCCESS"
+    assert result["retry_count"] == 3
+    assert result["source_image"] == str(path)
+    assert result["preprocessed_image"] != result["source_image"]
+    assert Path(result["preprocessed_image"]).is_file()
+
+
+def test_cached_low_confidence_technical_frame_uses_bounded_retry(tmp_path, monkeypatch):
+    path = _image(tmp_path / "screen.png")
+    monkeypatch.setattr(visual_evidence, "_retry_important_frame",
+                        lambda *args: ("Configuration table", .78, tmp_path / "derived.png"))
+    result = visual_evidence.analyze_frames(
+        [{"frame_file": path.name, "timestamp": 4, "transcript_text": "Configuration settings."}], tmp_path,
+        existing_ocr={path.name: {"ocr_status": "LOW_CONFIDENCE", "ocr_text": "Confiquration", "ocr_confidence": .3,
+                                  "retry_count": 2, "engine": "tesseract"}},
+    )
+    frame = result["frames"][0]
+    assert frame["ocr_status"] == "SUCCESS"
+    assert frame["ocr_text"] == "Configuration table"
+    assert frame["preprocessed_image"] == str(tmp_path / "derived.png")
+
+
+def test_cached_frame_semantics_recompute_with_generic_classifier(tmp_path):
+    path = _image(tmp_path / "flow.png")
+    cached = {"frame_id": path.name, "timestamp": 4, "source_image": str(path), "ocr_status": "SUCCESS",
+              "ocr_text": "DATA FLOW", "ocr_confidence": .8, "visual_type": "FLOW_DIAGRAM",
+              "semantic_topic": "WORKFLOW:SESSION_GENERAL", "application": "SESSION_GENERAL",
+              "transcript_text": "The application is running.", "selected": True, "edges": [], "nodes": [],
+              "topic": "FLOW_DIAGRAM:SESSION_GENERAL", "unique_information": [], "provenance": {}}
+    result = visual_evidence.analyze_frames(
+        [{"frame_file": path.name, "timestamp": 4, "transcript_text": cached["transcript_text"]}], tmp_path,
+        existing_ocr={path.name: cached},
+    )
+    assert result["frames"][0]["semantic_topic"] == "FLOW_DIAGRAM:SESSION_GENERAL"
 
 
 def test_visual_type_and_keyframe_selection_keep_provenance_and_suppress_gallery_black_duplicates(tmp_path, monkeypatch):
@@ -124,8 +171,9 @@ def test_participant_name_grid_is_suppressed_but_shared_application_screen_is_re
 
 def test_visual_topics_use_nearby_evidence_instead_of_one_generic_ui_bucket():
     assert visual_evidence._topic_for(
-        "APPLICATION_UI", "SESSION_GENERAL", "records the daily production matrix"
+        "APPLICATION_UI", "SESSION_GENERAL", "records the daily process"
     ) == "WORKFLOW:SESSION_GENERAL"
+    assert visual_evidence._frame_title("toolbar noise\n2.3. DATA FLOW\nbody text") == "2.3. DATA FLOW"
     assert visual_evidence._topic_for(
         "APPLICATION_UI", "SESSION_GENERAL", "AMS support is responsible for access tickets"
     ) == "ACCESS:SESSION_GENERAL"
@@ -147,6 +195,16 @@ def test_semantic_topic_audit_does_not_change_existing_v2_visual_gate():
     assert result["visual_coverage_gate"] == "PASS"
     assert result["semantic_topic_coverage_gate"] == "FAIL"
     assert result["semantic_topics_uncovered"] == ["WORKFLOW:SESSION_GENERAL"]
+
+
+def test_low_confidence_workflow_frame_can_be_covered_by_transcript_plus_visual():
+    frame = {"visual_type": "APPLICATION_UI", "application": "SESSION_GENERAL",
+             "semantic_topic": "WORKFLOW:SESSION_GENERAL", "ocr_status": "LOW_CONFIDENCE",
+             "transcript_text": "It records and displays the daily production workflow."}
+
+    assert visual_evidence._semantic_topic_sources(frame) == ["TRANSCRIPT", "VISUAL_FRAME"]
+    frame["transcript_text"] = "Maybe this is the workflow."
+    assert visual_evidence._semantic_topic_sources(frame) == []
 
 
 def test_reviewed_visual_topics_cover_distinct_content_with_frame_provenance():

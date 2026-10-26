@@ -23,6 +23,8 @@ VISUAL_TYPES = {
 OCR_STATUSES = {"SUCCESS", "NO_TEXT", "LOW_CONFIDENCE", "FAILED", "NOT_REQUIRED"}
 SELECTION_REASONS = {"SCENE_CHANGE", "OCR_CHANGE", "TOPIC_BOUNDARY", "ARCHITECTURE", "PROCEDURE", "ERROR", "UNIQUE_UI", "OTHER"}
 _RETRY_CONFIGS = ("--psm 6", "--psm 11", "--psm 11")
+_RETRY_VISUAL_TYPES = {"ARCHITECTURE_DIAGRAM", "FLOW_DIAGRAM", "CONFIGURATION", "ADMIN_SCREEN",
+                       "CLOUD_PORTAL", "ERROR_MESSAGE", "TABLE", "CODE_OR_SCRIPT", "DATABASE"}
 
 
 def _is_black(path: Path) -> bool:
@@ -94,6 +96,34 @@ def _ocr_attempts(path: Path) -> tuple[list[tuple[str, str, float]], int, bool]:
     return results, max(0, min(2, len(_RETRY_CONFIGS) - 1)), errors == len(_RETRY_CONFIGS)
 
 
+def _retry_important_frame(path: Path, visual_type: str, transcript_text: str) -> tuple[str, float, Path] | None:
+    if pytesseract is None or Image is None:
+        return None
+    cues = re.search(r"\b(architecture|workflow|data flow|configuration|setting|portal|error|table|code|database|permission|access)\b",
+                     transcript_text, re.I)
+    if visual_type not in _RETRY_VISUAL_TYPES and not cues:
+        return None
+    try:
+        from PIL import ImageEnhance, ImageFilter
+
+        with Image.open(path) as source:
+            width, height = source.size
+            image = source.crop((int(width * 0.08), int(height * 0.08), int(width * 0.92), int(height * 0.9)))
+            image = ImageEnhance.Contrast(ImageOps.autocontrast(image.convert("L"))).enhance(1.25)
+            image = image.filter(ImageFilter.UnsharpMask(radius=1.4, percent=140, threshold=3))
+            image = image.resize((image.width * 2, image.height * 2))
+        output = path.parent / "evidence" / "ocr-preprocessed" / f"{path.stem}-crop-contrast-sharp.png"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        image.save(output)
+        text = pytesseract.image_to_string(image, config="--psm 11").strip()
+        data = pytesseract.image_to_data(image, config="--psm 11", output_type=Output.DICT)
+        scores = [float(value) for value in data.get("conf", []) if str(value).strip() not in {"", "-1"}]
+        confidence = max(0.0, min(1.0, sum(scores) / max(1, len(scores)) / 100.0))
+        return (text, confidence, output) if text else None
+    except Exception:
+        return None
+
+
 def _classify(text: str, confidence: float, black: bool, speaker_tile: bool = False) -> tuple[str, list[str], list[str]]:
     if black:
         return "BLACK_OR_EMPTY", [], []
@@ -109,7 +139,7 @@ def _classify(text: str, confidence: float, black: bool, speaker_tile: bool = Fa
         if 2 <= len(words) <= 7 and line == line.strip() and all(word[:1].isupper() or word.isupper() for word in words):
             name_lines.append(words)
     operational_cues = re.search(
-        r"\b(regdoc|azure|database|application overview|technical overview|data flow|configuration|environment|support group|lifecycle|api|server|role|permissions|authentication|workflow|subscription|description|department|category|owner)\b",
+        r"\b(azure|database|application overview|technical overview|data flow|configuration|environment|support group|lifecycle|api|server|role|permissions|authentication|workflow|subscription|description|department|category|owner)\b",
         lowered,
     )
     word_count = sum(len(re.findall(r"[A-Za-z][A-Za-z'-]*", line)) for line in lines)
@@ -151,6 +181,13 @@ def _normalize_text(text: str) -> str:
     return re.sub(r"\W+", " ", text.lower()).strip()
 
 
+def _frame_title(text: str) -> str | None:
+    lines = [re.sub(r"\s+", " ", line).strip(" .:-") for line in text.splitlines() if line.strip()]
+    heading = re.compile(r"\b(overview|architecture|data flow|workflow|configuration|authentication|support scope|database|environment|troubleshooting)\b", re.I)
+    preferred = next((line for line in lines if heading.search(line) and 2 <= len(line.split()) <= 12), None)
+    return preferred or next((line for line in lines if 2 <= len(line.split()) <= 8 and len(re.findall(r"[A-Za-z]{2,}", line)) >= 2), None)
+
+
 def _topic_for(visual_type: str, application: str, evidence_text: str = "") -> str:
     text = evidence_text.lower()
     categories = (
@@ -159,12 +196,28 @@ def _topic_for(visual_type: str, application: str, evidence_text: str = "") -> s
         ("DATABASE", r"\b(database|sql|query|table|schema|stored procedure)\b"),
         ("CONFIGURATION", r"\b(configuration|config|settings|server|iis|php|deployment|environment)\b"),
         ("ACCESS", r"\b(authentication|authorization|access|permissions?|role|account|credential)\b"),
-        ("WORKFLOW", r"\b(workflow|process|production matrix|kanban|recording and viewing|step)\b"),
+        ("WORKFLOW", r"\b(workflow|process|step)\b"),
         ("SUPPORT_SCOPE", r"\b(ams|support|responsible|responsibility|boundary|ticket)\b"),
-        ("LIFECYCLE", r"\b(lifecycle|decommission|retire|sunset|production|development)\b"),
+        ("LIFECYCLE", r"\b(lifecycle|decommission|retire|sunset|end of life)\b"),
     )
     category = next((name for name, pattern in categories if re.search(pattern, text)), visual_type)
     return f"{category}:{application}"
+
+
+def _semantic_topic_sources(frame: dict[str, Any]) -> list[str]:
+    if frame.get("visual_type") in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}:
+        return []
+    if frame.get("ocr_status") == "SUCCESS":
+        return ["VISUAL_OCR", "VISUAL_FRAME"]
+    transcript = str(frame.get("transcript_text", ""))
+    if re.search(r"\b(?:maybe|possibly|i think|not sure|unclear|could be|might be)\b", transcript, re.I):
+        return []
+    topic = str(frame.get("semantic_topic", ""))
+    transcript_topic = _topic_for(str(frame.get("visual_type", "OTHER")),
+                                  str(frame.get("application", "SESSION_GENERAL")), transcript) if transcript else ""
+    if transcript_topic == topic and topic.split(":", 1)[0] != frame.get("visual_type"):
+        return ["TRANSCRIPT", "VISUAL_FRAME"]
+    return []
 
 
 def _extract_explicit_graph(text: str, provenance: dict[str, Any]) -> dict[str, Any]:
@@ -216,10 +269,23 @@ def analyze_frame(
     transcript_text = str(frame.get("transcript_text") or "")
     speaker_tile = _has_centered_speaker_tile(image_path, text) if not black else False
     visual_type, labels, errors = _classify(text, confidence or 0.0, black, speaker_tile)
+    preprocessed_image = None
+    if status == "LOW_CONFIDENCE":
+        retry = _retry_important_frame(image_path, visual_type, transcript_text)
+        if retry and (retry[1] > (confidence or 0.0) or len(retry[0]) > len(text)):
+            text, confidence, preprocessed_image = retry
+            retries += 1
+            if confidence >= 0.45:
+                status = "SUCCESS"
+            visual_type, labels, errors = _classify(text, confidence, black, speaker_tile)
     normalized = _normalize_text(text)
     provenance = {"frame_id": frame_id, "timestamp": timestamp, "image_path": str(image_path)}
     graph = _extract_explicit_graph(text, provenance)
     application = _application_for(f"{text} {transcript_text}")
+    transcript_topic = _topic_for(visual_type, application, transcript_text) if transcript_text else None
+    ocr_topic = _topic_for(visual_type, application, text)
+    transcript_topic_is_specific = transcript_topic and transcript_topic.split(":", 1)[0] != visual_type
+    semantic_topic = transcript_topic if transcript_topic_is_specific else ocr_topic
     return {
         "frame_id": frame_id,
         "timestamp": timestamp,
@@ -229,13 +295,16 @@ def analyze_frame(
         "retry_count": retries,
         "engine": engine if status != "NOT_REQUIRED" else None,
         "source_image": str(image_path),
+        "preprocessed_image": str(preprocessed_image) if preprocessed_image else None,
         "visual_type": visual_type,
-        "title": labels[0] if labels else None,
+        "title": _frame_title(text),
         "application": application,
         "topic": _topic_for(visual_type, application),
-        "semantic_topic": _topic_for(visual_type, application, f"{text} {transcript_text}"),
+        "semantic_topic": semantic_topic,
+        "semantic_topic_sources": ["TRANSCRIPT", "VISUAL_FRAME"] if transcript_topic_is_specific else (
+            ["VISUAL_OCR", "VISUAL_FRAME"] if status == "SUCCESS" else ["LOW_CONFIDENCE_OCR"]),
         "topic_basis": "OCR_AND_NEARBY_TRANSCRIPT" if transcript_text else "OCR",
-        "topic_title": labels[0] if labels else None,
+        "topic_title": _frame_title(text),
         "transcript_text": transcript_text,
         "visible_components": [],
         "visible_labels": labels,
@@ -287,16 +356,32 @@ def analyze_frames(
         cached = (existing_ocr or {}).get(frame_id)
         if isinstance(cached, str):
             cached = None
-        if isinstance(cached, dict) and cached.get("ocr_status") in {"FAILED", "LOW_CONFIDENCE"}:
-            cached = None
-        if isinstance(cached, dict):
+        if isinstance(cached, dict) and cached.get("ocr_status") in {"SUCCESS", "NO_TEXT", "NOT_REQUIRED"}:
+            record = dict(cached)
+        elif isinstance(cached, dict) and cached.get("ocr_status") == "LOW_CONFIDENCE":
             record = analyze_frame(frame, frames_dir, existing_ocr=str(cached.get("ocr_text") or ""))
-            for field in ("ocr_status", "ocr_confidence", "retry_count", "engine"):
-                if field in cached:
-                    record[field] = cached[field]
+            if not record.get("preprocessed_image"):
+                for field in ("ocr_status", "ocr_confidence", "retry_count", "engine"):
+                    if field in cached:
+                        record[field] = cached[field]
             record["confidence"] = record.get("ocr_confidence") or 0.0
+        elif isinstance(cached, dict):
+            record = analyze_frame(frame, frames_dir)
         else:
             record = analyze_frame(frame, frames_dir, existing_ocr=cached)
+        if record.get("review_state") != "HUMAN_REVIEWED":
+            application = str(record.get("application") or "SESSION_GENERAL")
+            transcript_text = str(record.get("transcript_text") or "")
+            ocr_text = str(record.get("ocr_text") or "")
+            transcript_topic = _topic_for(str(record.get("visual_type", "OTHER")), application, transcript_text)
+            ocr_topic = _topic_for(str(record.get("visual_type", "OTHER")), application, ocr_text)
+            specific_transcript_topic = transcript_text and transcript_topic.split(":", 1)[0] != record.get("visual_type")
+            record["topic"] = _topic_for(str(record.get("visual_type", "OTHER")), application)
+            record["semantic_topic"] = transcript_topic if specific_transcript_topic else ocr_topic
+            record["title"] = _frame_title(ocr_text)
+            record["topic_title"] = record["title"]
+            record["semantic_topic_sources"] = ["TRANSCRIPT", "VISUAL_FRAME"] if specific_transcript_topic else (
+                ["VISUAL_OCR", "VISUAL_FRAME"] if record.get("ocr_status") == "SUCCESS" else ["LOW_CONFIDENCE_OCR"])
         records.append(record)
 
     selected: list[dict[str, Any]] = []
@@ -357,10 +442,8 @@ def analyze_frames(
     })
     uncovered_topics = sorted(set(topics) - set(covered_topics))
     semantic_topics = sorted({item["semantic_topic"] for item in meaningful if item.get("semantic_topic")})
-    semantic_covered = sorted({
-        item["semantic_topic"] for item in selected
-        if item.get("semantic_topic") and item["ocr_status"] == "SUCCESS"
-    })
+    semantic_covered = sorted({item["semantic_topic"] for item in selected
+                               if item.get("semantic_topic") and _semantic_topic_sources(item)})
     semantic_uncovered = sorted(set(semantic_topics) - set(semantic_covered))
     diagrams = []
     for record in selected:
@@ -475,7 +558,7 @@ def apply_semantic_review(
     semantic_topics = sorted({f["semantic_topic"] for f in meaningful if f.get("semantic_topic")})
     semantic_covered = sorted({
         f["semantic_topic"] for f in selected
-        if f.get("semantic_topic") and f.get("ocr_status") == "SUCCESS"
+        if f.get("semantic_topic") and _semantic_topic_sources(f)
     })
     report.update({
         "visual_topics_discovered": topics,
