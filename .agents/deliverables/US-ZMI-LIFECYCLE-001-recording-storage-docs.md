@@ -5,16 +5,16 @@
 
 ## CURRENT_RESULT
 
-### Documents V2/V3 Session 41 owner-fix checkpoint - 2026-10-26
+### Documents V2/V3 generalization checkpoint - 2026-10-26
 
 DOCUMENTS_V2=INCOMPLETE
-DOCS_V2_ARCHITECTURE_VERSION=2 + speech-coverage gate + reviewed semantic visuals + claim/diagram provenance
-REVISA_POINTER_MAIN=PASS; main pointer 0af2f9f resolves active branch and canonical SDD; status-only, implementation not merged/deployed
+DOCS_V2_ARCHITECTURE_VERSION=2 + speech-coverage gate + reviewed semantic visuals + claim/diagram provenance + cross-session consolidation primitives
+REVISA_POINTER_MAIN=NEEDS_UPDATE; main pointer still identifies active branch; status-only, implementation not merged/deployed
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=41ebfd6; owner-fix implementation pushed to active branch
+IMPLEMENTATION_HEAD=c7f1bb3 plus uncommitted generic consolidation/audit changes
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
-CORPUS_GENERATION=FROZEN
+CORPUS_GENERATION=FROZEN; only inventory, transcript/evidence preparation and approved golden samples allowed
 SESSION_41_SOURCE=Videos/general/AMS_KAP_-_App_Support_-_Session_41.mp4; duration 00:35:05.365
 SESSION_41_MEDIA_COVERAGE=68.20%; transcript timestamp reach 00:00:47.040 to 00:23:55.890
 SESSION_41_SPEECH_COVERAGE=97.39% effective; VAD speech 788.704s, covered 768.126s, 20.578s residual uncertain across 26 intervals; longest 1.644s
@@ -35,27 +35,39 @@ SESSION_41_GOLDEN_MD=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Sess
 SESSION_41_GOLDEN_PDF=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.pdf
 SESSION_41_GOLDEN_JSON=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.json
 SESSION_41_PDF_PAGES=11; application title wraps at a deliberate line break; repeated claims use short cross-references
-SESSION_41_GATE=PASS_TECHNICAL_OWNER_REVIEW_PENDING
-SESSION_41_OWNER_UAT=FAIL_FIX_REQUIRED
-SESSION_41_OWNER_FINDINGS=4 blocking defects from prior review; all four corrected in regenerated sample; Juan re-review pending
+SESSION_41_GATE=PASS
+SESSION_41_OWNER_UAT=PASS
+SESSION_41_GOLDEN=APPROVED
 S43_SOURCE_RECOVERY=OWNER_REQUIRED
 S43_GATE=BLOCKED_SOURCE; corrupt candidate preserved, no fabrication
-MISSION_PACK=READY_FOR_OWNER_REVIEW; exactly one Session 41 MD/PDF/JSON trio regenerated; no corpus output
+GOLDEN_2_SOURCE=Videos/py_pg/pg_Ams_kap_app_support_s46.mp4 (candidate)
+GOLDEN_2_SELECTION_REASON=60.3-minute readable technical support recording; transcript and 51 visual frames exist; includes UI, database, configuration and operational screens, materially different from Session 41
+GOLDEN_2_GATE=BLOCKED_TRANSCRIPT; measured VAD speech coverage 86.24%, below ready gate; no golden documents generated
+GOLDEN_OVERFIT_CHECK=FAIL; production session_pack.py still contains Session 41/application/frame literals; new scanner added, generic rewrite remains
+CROSS_SESSION_KNOWLEDGE=IMPLEMENTED_PRIMITIVE_NOT_RUN; consolidation now preserves exact application IDs, claim/frame provenance and conflicts; source packs not yet normalized/runnable together
+APPLICATION_MISSION_PACK=NOT_GENERATED; insufficient validated cross-session application knowledge
+PG_LOGICAL_VIDEO_COUNT=20 source files inventoried under Videos/py_pg and Videos/general; hash dedup not finalized
+PG_VALID_TRANSCRIPTIONS=1 approved Session 41
+PG_PARTIAL_TRANSCRIPTIONS=3 assessed candidates (Session 46, Compliance Session 1, Shadow Bridge)
+PG_MISSING_TRANSCRIPTIONS=NOT_CLASSIFIED; 14 of 20 local source files have matching segment sidecars
+PG_FAILED_TRANSCRIPTIONS=0 confirmed; 89 repository-wide segment sidecars remain unvalidated against media identity/coverage
+PG_TRANSCRIPTION_COMPLETE=NO; transcript quality audit incomplete
+MISSION_PACK=Session 41 approved and preserved; Golden2 not generated
 MINERU=DISABLED
-UNIT=138 focused documentation tests passed in 607.84s on final branch HEAD 492a4b2
+UNIT=18 targeted mission-pack/visual tests passed; full suite not rerun after current changes
 RUFF=PASS for changed documentation modules/tests
 SYNTAX=PASS; compileall on documentation package
-REPO_STATE=PASS for focused suite, Ruff, syntax, and Session 41 quality gates
+REPO_STATE=TESTING; generic golden overfit gate fails; Golden2 and cross-session integration remain incomplete
 AGENT_SERVED_CHECK=NOT_RUN; implementation is not merged/deployed
-OWNER_UAT=FAIL_FIX_REQUIRED; regenerated sample awaits Juan re-review; do not mark owner PASS
+OWNER_UAT=PARTIAL; Session 41 PASS/APPROVED; Golden2 and pilot pending
 KANBAN_COMPLETE=8
-KANBAN_TESTING=67
-KANBAN_BLOCKED=4
+KANBAN_TESTING=68
+KANBAN_BLOCKED=5
 KANBAN_OWNER_PENDING=6
-BLOCKER=Juan re-review of corrected Session 41 sample; S43 source remains unavailable/corrupt
-NEXT_ACTION=Juan reviews the regenerated Session 41 MD/PDF/JSON; keep P&G corpus frozen until approval
+BLOCKER=Production session pack still contains Session 41-specific synthesis literals; Golden2 transcript speech coverage is below threshold
+NEXT_ACTION=Generalize session pack generation, recover/validate candidate speech gaps, then run Golden2 and cross-session gates
 
-Full P&G corpus synthesis remains frozen. Documents V2 remains incomplete. No merge/deployment occurred. Owner approval is pending.
+Session 41 remains owner-approved and unchanged. No Golden2 output or corpus synthesis was generated. No merge/deployment occurred.
 
 Only key-value fields inside CURRENT_RESULT are authoritative. Dated results below HISTORICAL_RESULTS are non-authoritative.
 

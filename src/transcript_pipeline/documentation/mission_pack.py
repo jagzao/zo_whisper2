@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 CLAIM_STATES = {
@@ -331,7 +332,7 @@ def merge_application_facts(
             current for current in merged
             if application_id and current.get("application_id") == application_id
             and fact_key and re.sub(r"\s+", " ", str(current.get("fact_key") or "").strip().lower()) == fact_key
-            and _fact_key(current) != key
+            and _normalized_fact(current) != _normalized_fact(item)
         ), None)
         if prior is not None:
             item["status"] = "CONFLICTING"
@@ -352,6 +353,9 @@ def merge_application_facts(
         current["supporting_frames"] = list(dict.fromkeys(
             [*current.get("supporting_frames", []), *item.get("supporting_frames", [])]
         ))
+        current["supporting_claims"] = list(dict.fromkeys(
+            [*current.get("supporting_claims", []), *item.get("supporting_claims", [])]
+        ))
         if item.get("last_confirmed"):
             current["last_confirmed"] = item["last_confirmed"]
         for ref in item.get("evidence_refs", []):
@@ -363,11 +367,76 @@ def merge_application_facts(
         if item.get("verification_state") == "CONFLICTING":
             current["verification_state"] = "CONFLICTING"
             current["status"] = "CONFLICTING"
+        if current.get("status") not in {"CONFLICTING", "SUPERSEDED"}:
+            current["status"] = "CONFIRMED" if len(current["supporting_sessions"]) > 1 else current.get("status", "NEEDS_REVIEW")
         if current.get("confidence") != item.get("confidence"):
             current["confidence"] = "LOW"
     return merged
 
 
+def consolidate_application_claims(
+    claim_sets: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Consolidate grounded claims by exact app and explicit fact key; never fuzzy-merge apps."""
+    facts: list[dict[str, Any]] = []
+    for item in claim_sets:
+        claim = item.get("claim")
+        app_id = item.get("application_id")
+        source_id = item.get("source_id")
+        session_id = item.get("session_id") or item.get("first_seen", {}).get("session_id")
+        if not all(isinstance(value, str) and value.strip() for value in (claim, app_id, source_id, session_id)):
+            continue
+        if app_id == "SESSION_GENERAL":
+            continue
+        key = str(item.get("fact_key") or re.sub(r"\W+", " ", claim.lower())).strip().lower()
+        if not key:
+            continue
+        stamp = item.get("timestamp")
+        fact = {
+            "application_id": app_id,
+            "fact_key": key,
+            "canonical_fact": claim,
+            "fact": claim,
+            "supporting_sessions": [session_id],
+            "supporting_claims": [item.get("claim_id")] if item.get("claim_id") else [],
+            "supporting_frames": [item["frame_id"]] if item.get("frame_id") else [],
+            "evidence_refs": [{"session_id": session_id, "source_id": source_id,
+                               "timestamp": stamp, "frame_id": item.get("frame_id")}],
+            "first_seen": item.get("first_seen") or {"session_id": session_id, "timestamp": stamp},
+            "last_confirmed": item.get("last_confirmed") or {"session_id": session_id, "timestamp": stamp},
+            "confidence": item.get("confidence", 0),
+            "status": "NEEDS_REVIEW" if item.get("verification_state") in {"SOURCE_UNCERTAIN", "NEEDS_REVIEW", "CONFLICTING"} else "CONFIRMED",
+            "verification_state": item.get("verification_state", "NEEDS_REVIEW"),
+            "conflicts": list(item.get("conflicts", [])),
+        }
+        facts = merge_application_facts(facts, [fact])
+    for fact in facts:
+        fact["canonical_fact"] = fact["fact"]
+        if fact.get("status") not in {"CONFLICTING", "SUPERSEDED"} and len(fact.get("supporting_sessions", [])) > 1:
+            fact["status"] = "CONFIRMED"
+    return facts
+
+
+def golden_overfit_violations(source_root: Path) -> list[str]:
+    """Find golden-specific identifiers in runtime synthesis modules."""
+    patterns = (
+        r"PGRegDoc", r"CPRT", r"AMS_KAP_-_App_Support_-_Session_41",
+        r"frame_0005", r"frame_0006", r"frame_0021", r"C-00[0-9]",
+    )
+    violations = []
+    for path in sorted(source_root.glob("*.py")):
+        content = path.read_text(encoding="utf-8")
+        for pattern in patterns:
+            if re.search(pattern, content, re.I):
+                violations.append(f"{path.name}:{pattern}")
+    return violations
+
+
 def _fact_key(item: dict[str, Any]) -> str:
+    application = str(item.get("application_id") or "SESSION_GENERAL").strip().lower()
+    return f"{application}:{_normalized_fact(item)}"
+
+
+def _normalized_fact(item: dict[str, Any]) -> str:
     key = str(item.get("fact") or item.get("claim") or item.get("fact_key") or "")
     return re.sub(r"\s+", " ", key.strip().lower())

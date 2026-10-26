@@ -148,3 +148,30 @@ def test_cross_session_conflict_is_preserved_and_filler_ratio_blocks_ready():
     assert quality["status"] == "FAIL"
     assert quality["timestamp_filler_count"] == 2
     assert quality["low_confidence_content_ratio"] == 1.0
+
+
+def test_generic_cross_session_consolidation_keeps_exact_application_identity():
+    from transcript_pipeline.documentation.mission_pack import consolidate_application_claims
+
+    claims = [
+        {"application_id": "app-alpha", "claim_id": "a1", "claim": "Hosted in Azure",
+         "source_id": "video-a", "session_id": "session-a", "timestamp": 10,
+         "frame_id": "frame-a", "confidence": .9, "verification_state": "SOURCE_CONFIRMED"},
+        {"application_id": "app-beta", "claim_id": "b1", "claim": "Hosted in Azure",
+         "source_id": "video-b", "session_id": "session-b", "timestamp": 20,
+         "frame_id": "frame-b", "confidence": .9, "verification_state": "SOURCE_CONFIRMED"},
+    ]
+
+    facts = consolidate_application_claims(claims)
+
+    assert len(facts) == 2
+    assert {fact["application_id"] for fact in facts} == {"app-alpha", "app-beta"}
+    assert all(fact["supporting_claims"] and fact["supporting_frames"] for fact in facts)
+
+
+def test_golden_overfit_audit_detects_session_specific_production_literals(tmp_path):
+    from transcript_pipeline.documentation.mission_pack import golden_overfit_violations
+
+    (tmp_path / "generic.py").write_text('APP = "PGRegDoc"\n', encoding="utf-8")
+
+    assert golden_overfit_violations(tmp_path) == ["generic.py:PGRegDoc"]

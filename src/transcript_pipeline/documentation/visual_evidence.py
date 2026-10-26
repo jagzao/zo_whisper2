@@ -136,15 +136,14 @@ def _classify(text: str, confidence: float, black: bool, speaker_tile: bool = Fa
 
 
 def _application_for(text: str) -> str:
-    lowered = text.lower()
-    regdoc = bool(re.search(r"\b(pg\s*)?regdoc\b|pgregdoc\.com", lowered))
-    payments = bool(re.search(r"panelist payments|\bcprt\b|north america central product research", lowered))
-    if regdoc and payments:
-        return "BOTH"
-    if regdoc:
-        return "PG_REGDOC"
-    if payments:
-        return "NA_CPRT_PANELIST_PAYMENTS"
+    match = re.search(
+        r"\b(?:application|system|platform)\s+(?:is\s+)?(?:called|named)\s+([A-Z][\w.-]*(?:\s+[A-Z][\w.-]*){0,5})",
+        text,
+        re.I,
+    )
+    if match:
+        name = re.sub(r"\s+", " ", match.group(1)).strip(" .")
+        return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_") or "SESSION_GENERAL"
     return "SESSION_GENERAL"
 
 
