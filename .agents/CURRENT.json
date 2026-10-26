@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; SESSION_41_GATE=PASS. DOCUMENTS_V2=INCOMPLETE; DOCUMENTS_V2_OWNER_UAT=PARTIAL. Golden2 candidate pg_Ams_kap_app_support_s46.mp4 is readable and technical, but measured speech coverage 86.24% blocks READY. GOLDEN_OVERFIT_CHECK=FAIL because production session_pack.py still contains Session 41 specific synthesis. Cross-session consolidation primitive added and targeted tests pass; integration not yet run. S43=BLOCKED_SOURCE/OWNER_REQUIRED. Corpus synthesis remains frozen. Implementation 26eb51e is on delta/zmi-docs-transcript-gate and is not merged/deployed.",
-  "updated_at": "2026-10-26T16:30:00Z"
+  "last_result": "SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; SESSION_41_GATE=PASS. DOCUMENTS_V2=INCOMPLETE; DOCUMENTS_V2_OWNER_UAT=PARTIAL. Golden2 candidate pg_Ams_kap_app_support_s46.mp4 is readable and technical, but measured speech coverage 86.24% blocks READY. GOLDEN_OVERFIT_CHECK=FAIL because production session_pack.py still embeds Session 41-specific claims, applications, frames and diagrams. Cross-session consolidation primitives added; 18 targeted mission-pack/visual tests pass; full suite not rerun. S43=BLOCKED_SOURCE/OWNER_REQUIRED. Corpus synthesis remains frozen. Implementation da5a647 is on delta/zmi-docs-transcript-gate and is not merged/deployed.",
+  "updated_at": "2026-10-26T16:45:00Z"
 }
