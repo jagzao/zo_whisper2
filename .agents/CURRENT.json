@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "STATUS_ONLY: Documents V2 incomplete; implementation at f4bd094 on delta/zmi-docs-transcript-gate; not merged or deployed",
-  "updated_at": "2026-10-26T00:40:31Z"
+  "last_result": "STATUS_ONLY: Documents V2 incomplete; implementation checkpoint 72228b7 is on delta/zmi-docs-transcript-gate and is not merged/deployed; 123 docs tests PASS; golden samples blocked",
+  "updated_at": "2026-10-26T00:00:00Z"
 }
