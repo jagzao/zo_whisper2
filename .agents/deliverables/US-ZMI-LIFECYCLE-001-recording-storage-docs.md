@@ -9,7 +9,7 @@
 
 DOCUMENTS_V2=INCOMPLETE
 DOCS_V2_ARCHITECTURE_VERSION=2 + transcript gate v1 + local visual evidence v1
-REVISA_POINTER_MAIN=9221a33 status-only pointer; active implementation branch is recorded
+REVISA_POINTER_MAIN=f85920a status-only pointer; active implementation branch is recorded
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
 SESSION_41_SOURCE=Videos/general/AMS_KAP_-_App_Support_-_Session_41.mp4; ffprobe duration 00:35:05.365
 SESSION_41_TRANSCRIPT_STATE=PARTIAL
