@@ -425,6 +425,8 @@ def golden_overfit_violations(source_root: Path) -> list[str]:
     )
     violations = []
     for path in sorted(source_root.glob("*.py")):
+        if path.resolve() == Path(__file__).resolve():
+            continue
         content = path.read_text(encoding="utf-8")
         for pattern in patterns:
             if re.search(pattern, content, re.I):
