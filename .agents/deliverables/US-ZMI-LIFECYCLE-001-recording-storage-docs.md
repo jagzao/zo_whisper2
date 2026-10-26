@@ -9,9 +9,9 @@
 
 DOCUMENTS_V2=INCOMPLETE
 DOCS_V2_ARCHITECTURE_VERSION=2 + speech-coverage report gate + local visual evidence v1
-REVISA_POINTER_MAIN=ad9b8b8 status-only pointer; not yet republished for this checkpoint
+REVISA_POINTER_MAIN=fc55d1a on main; status-only pointer, implementation not merged/deployed
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=2631a9e before final gate changes; commit pending
+IMPLEMENTATION_HEAD=c37c9f3; pushed to active branch
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
 SESSION_41_SOURCE=Videos/general/AMS_KAP_-_App_Support_-_Session_41.mp4; duration 00:35:05.365
@@ -44,7 +44,7 @@ DERIVED_DIAGRAMS=PARTIAL; deterministic provenance-linked Mermaid from explicit 
 CROSS_SESSION_KNOWLEDGE=PARTIAL; conflict-safe merge primitive exists, no golden consolidation generated
 MISSION_PACK=BLOCKED_PENDING_EVIDENCE; no generated Session 41 pack
 MINERU=DISABLED
-UNIT=127 passed in 728.52s across all focused documentation test files
+UNIT=127 passed in 728.52s across all focused documentation test files; current commit c37c9f3
 RUFF=PASS for changed documentation modules/tests; broader source+all-doc-tests scan reports 8 pre-existing lint findings in untouched test files
 SYNTAX=PASS; compileall on documentation package
 REPO_STATE=PASS for current focused code checks; golden evidence gates remain incomplete
