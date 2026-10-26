@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import posixpath
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,16 @@ FRAME_SUPPORT = {
     "C-018": "frame_0021.png", "C-019": "frame_0021.png",
 }
 UNCERTAIN_STATES = {"SOURCE_UNCERTAIN", "NEEDS_REVIEW", "CONFLICTING"}
+APPLICATION_TITLES = {
+    "pg-regdoc": "PG RegDoc",
+    APPLICATIONS["north-america-central-product-research-testing-panelist-payments"]:
+        "North America Central Product Research Testing<br/>Panelist Payments",
+}
+DIAGRAM_RELATIONS = {
+    "DATA_FLOW", "CALLS", "HOSTS", "USES", "DEPENDS_ON", "AUTHENTICATES_WITH",
+    "MANAGES", "STORES_IN", "NETWORK_PATH_CONTROL",
+}
+DIRECTED_RELATIONS = {"DATA_FLOW", "CALLS", "HOSTS", "USES", "MANAGES", "STORES_IN", "NETWORK_PATH_CONTROL"}
 
 
 def _seconds(value: str | float | int) -> float:
@@ -32,6 +43,43 @@ def _seconds(value: str | float | int) -> float:
 def _clock(seconds: float) -> str:
     total = max(0, int(seconds))
     return f"{total // 3600:02}:{total % 3600 // 60:02}:{total % 60:02}"
+
+
+def deduplicate_source_artifacts(source_map: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep one canonical evidence ID per normalized path and content hash."""
+    result: list[dict[str, Any]] = []
+    by_artifact: dict[tuple[str, str], dict[str, Any]] = {}
+    for source in source_map:
+        path = source.get("source_path") or source.get("path")
+        digest = source.get("sha256")
+        if not path or not digest:
+            result.append(dict(source))
+            continue
+        normalized_path = posixpath.normpath(str(path).replace("\\", "/")).casefold()
+        key = (normalized_path, str(digest).casefold())
+        canonical = by_artifact.get(key)
+        if canonical is None:
+            canonical = dict(source)
+            canonical["aliases"] = list(canonical.get("aliases", []))
+            by_artifact[key] = canonical
+            result.append(canonical)
+            continue
+        aliases = canonical.setdefault("aliases", [])
+        for alias in [source.get("evidence_id"), *source.get("aliases", [])]:
+            if alias and alias != canonical.get("evidence_id") and alias not in aliases:
+                aliases.append(alias)
+    return result
+
+
+def sort_evidence_timeline(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(events, key=lambda event: (
+        _seconds(event["start"]), _seconds(event["end"]), str(event["id"]),
+    ))
+
+
+def validate_timeline_chronology(events: list[dict[str, Any]]) -> list[str]:
+    keys = [(_seconds(e["start"]), _seconds(e["end"]), str(e["id"])) for e in events]
+    return ["evidence timeline is not strictly chronological"] if keys != sorted(keys) else []
 
 
 def apply_reviewed_topics(report: dict[str, Any], review_path: Path) -> dict[str, Any]:
@@ -152,9 +200,11 @@ def _audit_original_refs(
         elif str(ref).startswith("E-") and resolved_ids:
             result.append({"reference": ref, "resolution": "RECONCILED_BY_APPLICATION_AND_FIRST_SEEN", "resolved_event_id": sorted(resolved_ids)})
         elif str(ref).startswith("V-"):
-            frame = next((item for item in source_map if item.get("evidence_id") == ref), None)
+            frame = next((item for item in source_map
+                          if item.get("evidence_id") == ref or ref in item.get("aliases", [])), None)
             result.append({
                 "reference": ref, "resolution": "SOURCE_FRAME_MAPPED" if frame else "UNRESOLVED",
+                "canonical_evidence_id": frame.get("evidence_id") if frame else None,
                 "frame_path": frame.get("source_path") if frame else None,
                 "timestamp": frame.get("timestamp_seconds") if frame else None,
                 "sha256": frame.get("sha256") if frame else None,
@@ -173,8 +223,8 @@ def _node(node_id: str, label: str, frame_ids: list[str], event_ids: list[str], 
 
 
 def _edge(source: str, target: str, label: str, frame_ids: list[str], event_ids: list[str],
-          claim_ids: list[str], confidence: float) -> dict[str, Any]:
-    return {"source": source, "target": target, "label": label, "claim_ids": claim_ids,
+          claim_ids: list[str], confidence: float, relation_type: str) -> dict[str, Any]:
+    return {"source": source, "target": target, "label": label, "relation_type": relation_type, "claim_ids": claim_ids,
             "provenance": {"frame_ids": frame_ids, "evidence_ids": event_ids, "confidence": confidence}}
 
 
@@ -189,13 +239,13 @@ def build_derived_diagrams() -> list[dict[str, Any]]:
         _node("pingid", "PingID", [flow_frame], ["E-008"], .95),
     ]
     flow_edges = [
-        _edge("admin", "browser", "maintain country SDS and export PDFs", [flow_frame], ["E-008"], ["C-009"], .94),
-        _edge("browser", "regdoc", "manual content maintenance", [flow_frame], ["E-008"], ["C-009"], .94),
-        _edge("regdoc", "browser", "make available PDF documents", [flow_frame], ["E-008"], ["C-009"], .94),
-        _edge("browser", "consumers", "retrieve available PDFs", [flow_frame], ["E-008"], ["C-009"], .94),
-        _edge("developers", "browser", "perform manual application configuration", [flow_frame], ["E-008"], ["C-010"], .94),
-        _edge("browser", "regdoc", "configuration activity", [flow_frame], ["E-008"], ["C-010"], .94),
-        _edge("regdoc", "pingid", "authentication", [flow_frame], ["E-008"], ["C-030"], .9),
+        _edge("admin", "browser", "maintain country SDS and export PDFs", [flow_frame], ["E-008"], ["C-009"], .94, "USES"),
+        _edge("browser", "regdoc", "manual content maintenance", [flow_frame], ["E-008"], ["C-009"], .94, "USES"),
+        _edge("regdoc", "browser", "make available PDF documents", [flow_frame], ["E-008"], ["C-009"], .94, "DATA_FLOW"),
+        _edge("browser", "consumers", "retrieve available PDFs", [flow_frame], ["E-008"], ["C-009"], .94, "DATA_FLOW"),
+        _edge("developers", "browser", "perform manual application configuration", [flow_frame], ["E-008"], ["C-010"], .94, "USES"),
+        _edge("browser", "regdoc", "configuration activity", [flow_frame], ["E-008"], ["C-010"], .94, "USES"),
+        _edge("regdoc", "pingid", "authentication dependency", [flow_frame], ["E-008"], ["C-030"], .9, "AUTHENTICATES_WITH"),
     ]
     arch_nodes = [
         _node("users", "Users", [arch_frame], ["E-009"], .86),
@@ -212,14 +262,14 @@ def build_derived_diagrams() -> list[dict[str, Any]]:
         _node("pingid", "PingID authentication dependency", [flow_frame], ["E-008"], .9),
     ]
     arch_edges = [
-        _edge("azure", "regdoc", "hosts", [arch_frame], ["E-009"], ["C-002", "C-011"], .86),
-        _edge("users", "browser", "secure access", [arch_frame], ["E-009"], ["C-011"], .86),
-        _edge("browser", "regdoc", "application access", [arch_frame], ["E-009"], ["C-011"], .86),
-        _edge("regdoc", "proddev", "has separate environments", [arch_frame], ["E-009"], ["C-011"], .86),
-        _edge("sql", "storage", "supports", [arch_frame], ["E-009"], ["C-011"], .86),
-        _edge("adf", "app_ops", "supports", [arch_frame], ["E-009"], ["C-011"], .86),
-        _edge("network", "key_services", "controls network paths", [arch_frame], ["E-009"], ["C-011"], .86),
-        _edge("regdoc", "pingid", "authentication", [flow_frame], ["E-008"], ["C-030"], .9),
+        _edge("azure", "regdoc", "hosts", [arch_frame], ["E-009"], ["C-002", "C-011"], .86, "HOSTS"),
+        _edge("users", "browser", "secure access", [arch_frame], ["E-009"], ["C-011"], .86, "USES"),
+        _edge("browser", "regdoc", "application access", [arch_frame], ["E-009"], ["C-011"], .86, "USES"),
+        _edge("regdoc", "proddev", "has separate environments", [arch_frame], ["E-009"], ["C-011"], .86, "USES"),
+        _edge("regdoc", "sql", "stores application data", [arch_frame], ["E-009"], ["C-011"], .86, "STORES_IN"),
+        _edge("adf", "app_ops", "processes application data", [arch_frame], ["E-009"], ["C-011"], .86, "DATA_FLOW"),
+        _edge("network", "key_services", "controls network paths", [arch_frame], ["E-009"], ["C-011"], .86, "NETWORK_PATH_CONTROL"),
+        _edge("regdoc", "pingid", "authentication dependency", [flow_frame], ["E-008"], ["C-030"], .9, "AUTHENTICATES_WITH"),
     ]
     cprt_nodes = [
         _node("salesforce", "Salesforce LEX", [cprt_frame], ["E-020"], .93),
@@ -228,9 +278,9 @@ def build_derived_diagrams() -> list[dict[str, Any]]:
         _node("pgdb", "P&G-hosted database", [cprt_frame], ["E-020"], .93),
     ]
     cprt_edges = [
-        _edge("salesforce", "cprt", "exports panelist and fulfilment data", [cprt_frame], ["E-020"], ["C-016", "C-017"], .93),
-        _edge("cprt", "vendors", "ETL transfer (record describes vendor destination)", [cprt_frame], ["E-020"], ["C-016", "C-017"], .9),
-        _edge("cprt", "pgdb", "ETL load (record lists P&G database as an alternative)", [cprt_frame], ["E-020"], ["C-017"], .9),
+        _edge("salesforce", "cprt", "exports panelist and fulfilment data", [cprt_frame], ["E-020"], ["C-016", "C-017"], .93, "DATA_FLOW"),
+        _edge("cprt", "vendors", "ETL transfer (record describes vendor destination)", [cprt_frame], ["E-020"], ["C-016", "C-017"], .9, "DATA_FLOW"),
+        _edge("cprt", "pgdb", "ETL load (record lists P&G database as an alternative)", [cprt_frame], ["E-020"], ["C-017"], .9, "DATA_FLOW"),
     ]
     specs = [
         ("pgregdoc-data-flow", "PGRegDoc operational data flow", flow_nodes, flow_edges),
@@ -241,7 +291,11 @@ def build_derived_diagrams() -> list[dict[str, Any]]:
     for diagram_id, title, nodes, edges in specs:
         node_map = {node["id"]: node["label"] for node in nodes}
         lines = ["flowchart LR", *[f'    {node["id"]}["{node["label"]}"]' for node in nodes]]
-        lines.extend(f'    {edge["source"]} -->|{edge["label"]}| {edge["target"]}' for edge in edges)
+        lines.extend(
+            f'    {edge["source"]} {"-->" if edge["relation_type"] in DIRECTED_RELATIONS else "---"}'
+            f'|{edge["relation_type"]}: {edge["label"]}| {edge["target"]}'
+            for edge in edges
+        )
         diagrams.append({
             "diagram_id": diagram_id, "title": title, "nodes": nodes, "edges": edges,
             "labels": list(node_map.values()), "source_frames": sorted({f for item in [*nodes, *edges] for f in item["provenance"]["frame_ids"]}),
@@ -293,21 +347,103 @@ def validate_diagram_provenance(
     return errors
 
 
+def validate_diagram_relations(diagrams: list[dict[str, Any]]) -> list[str]:
+    errors = []
+    for diagram in diagrams:
+        for edge in diagram.get("edges", []):
+            relation = edge.get("relation_type")
+            if relation not in DIAGRAM_RELATIONS:
+                errors.append(f"{diagram['diagram_id']}: invalid relation type")
+                continue
+            pair = f'{edge["source"]} {edge["target"]}'
+            operator = "-->" if relation in DIRECTED_RELATIONS else "---"
+            expected = f'{edge["source"]} {operator}|{relation}: {edge["label"]}| {edge["target"]}'
+            if expected not in diagram.get("mermaid", ""):
+                errors.append(f"{diagram['diagram_id']}: relation rendering does not match {relation}")
+            directional_auth = f'{edge["source"]} -->|AUTHENTICATES_WITH:'
+            if relation == "AUTHENTICATES_WITH" and directional_auth in diagram.get("mermaid", ""):
+                errors.append(f"{diagram['diagram_id']}: authentication dependency is rendered directionally")
+            if not pair:
+                errors.append(f"{diagram['diagram_id']}: missing relation endpoints")
+    return errors
+
+
+def validate_source_artifact_dedup(source_map: list[dict[str, Any]]) -> list[str]:
+    seen: set[tuple[str, str]] = set()
+    evidence_ids: set[str] = set()
+    errors = []
+    for source in source_map:
+        path = source.get("source_path") or source.get("path")
+        digest = source.get("sha256")
+        if path and digest:
+            key = (posixpath.normpath(str(path).replace("\\", "/")).casefold(), str(digest).casefold())
+            if key in seen:
+                errors.append("duplicate canonical path and SHA-256")
+            seen.add(key)
+        evidence_id = source.get("evidence_id")
+        if evidence_id:
+            if evidence_id in evidence_ids:
+                errors.append(f"duplicate evidence ID {evidence_id}")
+            evidence_ids.add(evidence_id)
+        if evidence_id in source.get("aliases", []):
+            errors.append(f"canonical evidence ID {evidence_id} duplicated as alias")
+    return errors
+
+
+def _general_claim_relevant(claim: dict[str, Any], app_id: str) -> bool:
+    text = " ".join(str(claim.get(key, "")) for key in ("claim", "semantic_scope")).casefold()
+    if "both applications" in text or "two applications" in text:
+        return True
+    if app_id == "pg-regdoc":
+        return "pgregdoc" in text or "pg regdoc" in text
+    return "north america central product research testing panelist payments" in text or "cprt" in text
+
+
+def validate_application_claim_isolation(
+    applications: list[dict[str, Any]], claims: list[dict[str, Any]]
+) -> list[str]:
+    claim_map = {claim.get("claim_id"): claim for claim in claims}
+    errors = []
+    for application in applications:
+        app_id = application.get("application_id")
+        for section in application.get("sections", []):
+            for claim_id in section.get("claim_ids", []):
+                claim = claim_map.get(claim_id)
+                if not claim:
+                    errors.append(f"{app_id}/{section.get('title')}: unknown claim {claim_id}")
+                elif claim.get("application_id") != app_id and not (
+                    claim.get("application_id") == "SESSION_GENERAL" and _general_claim_relevant(claim, app_id)
+                ):
+                    errors.append(f"{app_id}/{section.get('title')}: claim {claim_id} belongs to {claim.get('application_id')}")
+    return errors
+
+
 def evaluate_session_pack_gates(
     *, transcript_state: str, speech_gate: str, visual_gate: str,
     claim_errors: list[str], diagram_errors: list[str], application_ids: set[str],
     low_confidence_ratio: float, procedures: list[dict[str, Any]],
+    application_errors: list[str], source_map_errors: list[str], timeline_errors: list[str],
+    relation_errors: list[str],
 ) -> dict[str, str]:
-    return {
+    gates = {
         "SOURCE_IDENTITY": "PASS",
         "TRANSCRIPT_SPEECH_COVERAGE": "PASS" if transcript_state == "VALID" and speech_gate == "PASS" else "FAIL",
+        "SPEECH_COVERAGE": "PASS" if transcript_state == "VALID" and speech_gate == "PASS" else "FAIL",
         "VISUAL_TOPIC_COVERAGE": "PASS" if visual_gate == "PASS" else "FAIL",
+        "VISUAL_COVERAGE": "PASS" if visual_gate == "PASS" else "FAIL",
         "CLAIM_PROVENANCE": "PASS" if not claim_errors else "FAIL",
+        "CLAIM_LEDGER": "PASS" if not claim_errors else "FAIL",
         "DIAGRAM_PROVENANCE": "PASS" if not diagram_errors else "FAIL",
+        "DIAGRAM_RELATION_GROUNDING": "PASS" if not relation_errors else "FAIL",
+        "APPLICATION_CLAIM_ISOLATION": "PASS" if not application_errors else "FAIL",
+        "SOURCE_ARTIFACT_DEDUP": "PASS" if not source_map_errors else "FAIL",
+        "EVIDENCE_TIMELINE_CHRONOLOGICAL": "PASS" if not timeline_errors else "FAIL",
         "APPLICATION_SEGMENTATION": "PASS" if application_ids == set(APPLICATIONS.values()) else "FAIL",
         "LOW_CONFIDENCE_FILLER": "PASS" if low_confidence_ratio <= .1 else "FAIL",
         "PROCEDURE_GROUNDING": "PASS" if all(item.get("source_id") and item.get("steps") for item in procedures) else "PASS" if not procedures else "FAIL",
     }
+    gates["QUALITY_GATE"] = "PASS" if all(value == "PASS" for value in gates.values()) else "FAIL"
+    return gates
 
 
 def _claim_by_id(claims: list[dict[str, Any]], claim_id: str) -> dict[str, Any]:
@@ -316,6 +452,15 @@ def _claim_by_id(claims: list[dict[str, Any]], claim_id: str) -> dict[str, Any]:
 
 def _fmt_claim(claim: dict[str, Any]) -> str:
     return f"{claim['claim']} [{claim['claim_id']}]"
+
+
+def _section_claim(claim: dict[str, Any], section: str, first_seen: dict[str, str]) -> str:
+    claim_id = claim["claim_id"]
+    previous = first_seen.get(claim_id)
+    if previous:
+        return f"{section} is also supported by [{claim_id}]; see {previous} for the source-backed detail."
+    first_seen[claim_id] = section
+    return _fmt_claim(claim)
 
 
 def _make_application_sections(claims: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -344,6 +489,7 @@ def _make_application_sections(claims: list[dict[str, Any]]) -> list[dict[str, A
     for app_id, headings in mapping.items():
         app_claims = [c for c in claims if c["application_id"] == app_id]
         sections = []
+        first_seen: dict[str, str] = {}
         if app_id == "pg-regdoc":
             sections.append({"title": "Architecture Diagram", "text": "Derived diagrams: pgregdoc-architecture (technical context; frame_0006.png, 00:06:38) and pgregdoc-data-flow (user flow; frame_0005.png, 00:05:41). Source frames and transcript evidence are linked in each diagram.", "claim_ids": ["C-011", "C-009"]})
         if app_id.endswith("payments"):
@@ -352,14 +498,14 @@ def _make_application_sections(claims: list[dict[str, Any]]) -> list[dict[str, A
             supported = [_claim_by_id(claims, claim_id) for claim_id in ids]
             supported = [c for c in supported if c["verification_state"] not in UNCERTAIN_STATES]
             if supported:
-                sections.append({"title": heading, "claims": [_fmt_claim(c) for c in supported], "claim_ids": [c["claim_id"] for c in supported]})
+                sections.append({"title": heading, "claims": [_section_claim(c, heading, first_seen) for c in supported], "claim_ids": [c["claim_id"] for c in supported]})
         if app_id.endswith("payments"):
             flow_section = next(section for section in sections if section["title"] == "Operational Data Flow")
             flow_section["text"] = "Catalogue-described flow is shown in derived diagram na-cprt-data-flow, sourced from frame_0021.png at 00:20:52. It is a catalogue description, not a verified live integration trace."
         special = {
             "Troubleshooting / Known Failure Modes": ["C-023"] if app_id.endswith("payments") else [],
             "Ticket / Support Patterns": ["C-020"] if app_id.endswith("payments") else [],
-            "Risks / Limitations": ["C-008", "C-023", "C-024"] if app_id.endswith("payments") else ["C-008", "C-015"],
+            "Risks / Limitations": ["C-023", "C-024"] if app_id.endswith("payments") else ["C-008", "C-015"],
         }
         for heading, value in special.items():
             if isinstance(value, str):
@@ -368,7 +514,7 @@ def _make_application_sections(claims: list[dict[str, Any]]) -> list[dict[str, A
                 supported = [_claim_by_id(claims, claim_id) for claim_id in value]
                 supported = [c for c in supported if c["verification_state"] not in UNCERTAIN_STATES]
                 if supported:
-                    sections.append({"title": heading, "claims": [_fmt_claim(c) for c in supported], "claim_ids": [c["claim_id"] for c in supported]})
+                    sections.append({"title": heading, "claims": [_section_claim(c, heading, first_seen) for c in supported], "claim_ids": [c["claim_id"] for c in supported]})
         if app_id.endswith("payments"):
             sections.extend([
                 {"title": "Environments", "text": "NOT EVIDENCED.", "claim_ids": []},
@@ -396,7 +542,8 @@ def _markdown(pack: dict[str, Any]) -> str:
              "## Executive Brief", "", pack["executive_brief"], "",
              "## Applications Covered", ""]
     for app in pack["applications"]:
-        lines.extend([f"### {app['application_id']}", ""])
+        title = APPLICATION_TITLES[app["application_id"]].replace("<br/>", " ")
+        lines.extend([f"### {title}", ""])
         for section in app["sections"]:
             lines.extend([f"#### {section['title']}", ""])
             if section.get("text"):
@@ -428,7 +575,8 @@ def _markdown(pack: dict[str, Any]) -> str:
     for source in pack["source_map"]:
         name = source.get("source_id") or source.get("evidence_id")
         path = source.get("path") or source.get("source_path")
-        lines.append(f"- {name} ({source['source_type']}): `{path}`; SHA-256 `{source['sha256']}`.")
+        aliases = f" (aliases: {', '.join(source['aliases'])})" if source.get("aliases") else ""
+        lines.append(f"- {name}{aliases} ({source['source_type']}): `{path}`; SHA-256 `{source['sha256']}`.")
     lines.append("")
     lines.extend(["## Quality Scorecard", ""])
     lines.extend(f"- {key}: {value}" for key, value in pack["quality_scorecard"].items())
@@ -458,7 +606,8 @@ def _draw_diagram(diagram: dict[str, Any]):
         if x1 >= x2:
             sx, ex = x1 + width / 2, x2 + width / 2
             sy, ey = y1, y2 + height
-        drawing.add(Line(sx, sy, ex, ey, strokeColor=colors.HexColor("#45627A"), strokeWidth=0.8, endArrowSize=4))
+        end_arrow = 4 if edge["relation_type"] in DIRECTED_RELATIONS else 0
+        drawing.add(Line(sx, sy, ex, ey, strokeColor=colors.HexColor("#45627A"), strokeWidth=0.8, endArrowSize=end_arrow))
     for node in nodes:
         x, y = positions[node["id"]]
         drawing.add(Rect(x, y, width - 8, height, rx=4, ry=4, fillColor=colors.HexColor("#F4F7FA"), strokeColor=colors.HexColor("#45627A")))
@@ -488,7 +637,7 @@ def _write_pdf(pack: dict[str, Any], path: Path, frames_dir: Path) -> None:
     story = [Paragraph(SESSION_ID, styles["PackH1"]), Paragraph("Session Knowledge Pack  |  READY FOR OWNER REVIEW", styles["PackBody"]),
              Paragraph("Executive Brief", styles["PackH2"]), Paragraph(pack["executive_brief"], styles["PackBody"])]
     for app in pack["applications"]:
-        story.extend([Paragraph(app["application_id"], styles["PackH1"]), Spacer(1, 4)])
+        story.extend([Paragraph(APPLICATION_TITLES[app["application_id"]], styles["PackH1"]), Spacer(1, 4)])
         for section in app["sections"]:
             parts = [Paragraph(section["title"], styles["PackH2"])]
             if section.get("text"):
@@ -503,7 +652,7 @@ def _write_pdf(pack: dict[str, Any], path: Path, frames_dir: Path) -> None:
                       _draw_diagram(diagram)])
         node_labels = {node["id"]: node["label"] for node in diagram["nodes"]}
         story.extend(Paragraph(
-            f"{index}. {node_labels[edge['source']]} -> {node_labels[edge['target']]}: {edge['label']} "
+            f"{index}. {node_labels[edge['source']]} {edge['relation_type']} {node_labels[edge['target']]}: {edge['label']} "
             f"(claims {', '.join(edge['claim_ids'])}; frames {', '.join(edge['provenance']['frame_ids'])}; "
             f"evidence {', '.join(edge['provenance']['evidence_ids'])}).",
             styles["PackBody"],
@@ -523,7 +672,12 @@ def _write_pdf(pack: dict[str, Any], path: Path, frames_dir: Path) -> None:
     story.extend([Paragraph("Evidence Timeline", styles["PackH2"])])
     story.extend(Paragraph(f"{event['start']}-{event['end']}: {event['summary']} ({event['id']})", styles["PackBody"]) for event in pack["evidence_timeline"])
     story.extend([PageBreak(), Paragraph("Source Map", styles["PackH1"])])
-    story.extend(Paragraph(f"{s.get('source_id') or s.get('evidence_id')}  |  {s['source_type']}  |  {s.get('path') or s.get('source_path')}  |  SHA-256 {s['sha256']}", styles["PackBody"]) for s in pack["source_map"])
+    story.extend(Paragraph(
+        f"{s.get('source_id') or s.get('evidence_id')}"
+        f"{' (aliases: ' + ', '.join(s['aliases']) + ')' if s.get('aliases') else ''}"
+        f"  |  {s['source_type']}  |  {s.get('path') or s.get('source_path')}  |  SHA-256 {s['sha256']}",
+        styles["PackBody"],
+    ) for s in pack["source_map"])
     story.extend([Paragraph("Quality Scorecard", styles["PackH1"])])
     story.extend(Paragraph(f"- {key}: {value}", styles["PackBody"]) for key, value in pack["quality_scorecard"].items())
     story.append(Paragraph("Quality / Evidence Notes: 20.578 seconds of short residual VAD intervals remain classified UNCERTAIN under the accepted 0.5-second boundary tolerance. They are retained in the JSON ledger. Nine OCR-low-confidence frames are not used as sole support for a claim. Procedures=0; no support SOP was demonstrated.", styles["PackBody"]))
@@ -557,7 +711,11 @@ def generate_session_pack(
     timeline = json.loads(timeline_path.read_text(encoding="utf-8"))
     transcript = json.loads(transcript_path.read_text(encoding="utf-8"))
     segment_records = transcript.get("segments", [])
-    source_map = timeline["source_map"]
+    source_map = deduplicate_source_artifacts(timeline["source_map"])
+    timeline["events"] = sort_evidence_timeline(timeline["events"])
+    timeline["source_map"] = source_map
+    source_map_errors = validate_source_artifact_dedup(source_map)
+    timeline_errors = validate_timeline_chronology(timeline["events"])
     source_lookup = {item["source_id"]: item for item in source_map if item.get("source_id")}
     primary_id = "S-TRANSCRIPT-PRIMARY"
     video_id = "S-VIDEO"
@@ -629,7 +787,13 @@ def generate_session_pack(
     diagram_errors = validate_diagram_provenance(diagrams, claim_ids, frame_ids, event_ids)
     if diagram_errors:
         raise ValueError("derived diagram provenance gate failed: " + "; ".join(diagram_errors))
+    relation_errors = validate_diagram_relations(diagrams)
+    if relation_errors:
+        raise ValueError("derived diagram relation gate failed: " + "; ".join(relation_errors))
     apps = _make_application_sections(claims)
+    application_errors = validate_application_claim_isolation(apps, claims)
+    if application_errors:
+        raise ValueError("application claim isolation gate failed: " + "; ".join(application_errors))
     common = {
         "Open Questions": [
             "PG RegDoc frontend ownership boundary is not stated.",
@@ -661,6 +825,8 @@ def generate_session_pack(
         transcript_state=speech.get("transcript_state"), speech_gate=speech.get("speech_quality_gate"),
         visual_gate=visual["visual_coverage_gate"], claim_errors=claim_errors, diagram_errors=diagram_errors,
         application_ids={app["application_id"] for app in apps}, low_confidence_ratio=low_ratio, procedures=[],
+        application_errors=application_errors, source_map_errors=source_map_errors,
+        timeline_errors=timeline_errors, relation_errors=relation_errors,
     )
     if any(value != "PASS" for value in gates.values()):
         raise ValueError(f"Session Knowledge Pack generation blocked: {gates}")
@@ -680,6 +846,12 @@ def generate_session_pack(
         "GROUNDED_CLAIMS": len(claims), "CLAIM_STATES": claim_states,
         "UNPROVEN_CLAIMS": 0, "APPLICATIONS_IDENTIFIED": len(apps),
         "PROCEDURES": 0, "ARCHITECTURE_DIAGRAMS": len(diagrams),
+        "APPLICATION_CLAIM_ISOLATION": gates["APPLICATION_CLAIM_ISOLATION"],
+        "SOURCE_ARTIFACT_DEDUP": gates["SOURCE_ARTIFACT_DEDUP"],
+        "EVIDENCE_TIMELINE_CHRONOLOGICAL": gates["EVIDENCE_TIMELINE_CHRONOLOGICAL"],
+        "DIAGRAM_RELATION_GROUNDING": gates["DIAGRAM_RELATION_GROUNDING"],
+        "CLAIM_LEDGER": gates["CLAIM_LEDGER"],
+        "VISUAL_COVERAGE": gates["VISUAL_COVERAGE"],
         "OPEN_QUESTIONS": 3,
         "AMBIGUITIES": sum(claim["verification_state"] in UNCERTAIN_STATES for claim in claims),
         "QUALITY_GATE": "PASS",
