@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "IMPLEMENTATION_HEAD=b087d9e; SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; GOLDEN_OVERFIT_CHECK=PASS; S46_GATE=BLOCKED_SPEECH_AND_IDENTITY (visual 7/7; diagnostic only); cross-session/Mission Pack controlled integration PASS; 159 focused docs tests PASS; DOCUMENTS_V2=INCOMPLETE; corpus frozen; no merge/deploy.",
-  "updated_at": "2026-10-26T21:57:00Z"
+  "last_result": "S46 local targeted recovery: 52 high-energy gaps transcribed independently; one 4.920s gap at 3443.680s has semantically agreeing small/large-v3 ASR candidate retained as SOURCE_UNCERTAIN; 231 gaps remain unresolved. Visual topics 7/7. SESSION_41_OWNER_UAT=PASS; GOLDEN_OVERFIT_CHECK=PASS; cross-session/Mission Pack controlled integration PASS; UNIT=159_PASS; DOCUMENTS_V2=INCOMPLETE; corpus frozen; no merge/deploy.",
+  "updated_at": "2026-10-26T22:04:00Z"
 }

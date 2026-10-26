@@ -24,12 +24,12 @@ GOLDEN_2_SOURCE=Videos/py_pg/pg_Ams_kap_app_support_s46.mp4
 GOLDEN_2_SELECTION_REASON=Readable 60.3-minute technical support recording with 51 visual frames, multiple operational topics, SQL/database, configuration and UI evidence; materially different from Session 41.
 GOLDEN_OVERFIT_CHECK=PASS; automated production-module scanner passes for application names, golden claims, frame IDs, and timestamps
 S46_MEDIA=PASS; 3618.944s; media reachable and transcript timestamp reach 99.83%
-S46_SPEECH_COVERAGE_RAW=86.24%; VAD=2042.496s, transcript-covered estimate=1761.414s, raw uncovered=281.082s
+S46_SPEECH_COVERAGE_RAW=86.24% original; 86.48% with one 4.920s dual-model recovery candidate; VAD=2042.496s
 S46_VAD_SPEECH_SECONDS=2042.496
-S46_TRANSCRIBED_SPEECH_SECONDS=1761.414
-S46_UNCOVERED_SPEECH_SECONDS=281.082 (63.838s VAD boundary padding + 217.244s longer unresolved)
-S46_SPEECH_COVERAGE_EFFECTIVE=89.02% provisional after 63.838s/349 short VAD-boundary fragments; 217.244s/232 longer intervals unresolved; gate remains NEEDS_REVIEW
-S46_MEANINGFUL_UNCOVERED_SPEECH=NEEDS_REVIEW; prior concatenated-clip ASR interval labels invalidated; interval-level speech/noise classification not yet established
+S46_TRANSCRIBED_SPEECH_SECONDS=1766.334 including one 4.920s dual-model supplemental candidate
+S46_UNCOVERED_SPEECH_SECONDS=276.162 (63.838s VAD boundaries + 212.324s across 231 longer unresolved gaps)
+S46_SPEECH_COVERAGE_EFFECTIVE=89.27% provisional after 63.838s/349 VAD-boundary fragments; 212.324s/231 longer intervals unresolved; gate remains NEEDS_REVIEW
+S46_MEANINGFUL_UNCOVERED_SPEECH=NEEDS_REVIEW; one 4.920s actual-missing-speech interval has dual-model local ASR recovery candidate; 231 longer intervals still need classification
 S46_OCR_SUCCESS=21/51 (20 technical-frame successes; 1 gallery frame; 3 gallery frames suppressed)
 S46_OCR_LOW_CONFIDENCE=30/51; 3 meeting-gallery frames suppressed from operational coverage; retry report has 2 current low-confidence database retries and 1 prior local flow-frame promotion at 0.521 confidence; current retries promoted 0
 S46_OCR_RETRY=bounded local crop/contrast/sharpen retry implemented; 2 current low-confidence database frames retried, 0 promoted; prior frame 0005 crop OCR is SUCCESS at 0.521 with original and derived image paths retained
@@ -49,6 +49,9 @@ S46_AMBIGUITIES=12 source-uncertain claims plus unresolved app identity in diagn
 S46_OPEN_QUESTIONS=not generated as standalone records
 S46_QUALITY_GATE=FAIL; speech state NEEDS_REVIEW and application identity/segmentation unresolved; uncertain claims remain in review only
 S46_SOURCE_GATE=PASS; S46_SPEECH_GATE=FAIL; S46_VISUAL_GATE=PASS; S46_CLAIM_GATE=PASS; GOLDEN_2_GATE=BLOCKED_SPEECH_AND_IDENTITY; S46_GATE=BLOCKED_SPEECH_AND_IDENTITY; diagnostic-only output under tmp; no golden trio
+S46_SPEECH_RECOVERY=52 high-energy gaps transcribed individually with local small model; 5 longest checked with large-v3; 1 dual-model candidate retained separately as SOURCE_UNCERTAIN; canonical transcript not overwritten
+S46_SPEECH_REPORT=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_Frames/pg_Ams_kap_app_support_s46/evidence/speech-coverage-report.md and .json
+S46_RECOVERY_SEGMENTS=local supplemental candidate at 00:57:23.680-00:57:28.600; small/large-v3 text agrees semantically; verification remains SOURCE_UNCERTAIN
 
 CROSS_SESSION_KNOWLEDGE=integrated exact-alias resolver + conflict-safe claim consolidation + provenance graph + corroboration gate; controlled confirmation/extension/supersession/conflict tests pass; no real two-session consolidation because S46 is ineligible
 APPLICATION_RESOLUTION=exact explicit aliases only; ambiguous identities remain NEEDS_REVIEW; no fuzzy application merge
@@ -79,8 +82,8 @@ KANBAN_COMPLETE=Session 41 golden approved; generic extraction + cross-session/M
 KANBAN_TESTING=Golden 2 speech and application identity; cross-session merge and Mission Pack integration tests PASS
 KANBAN_BLOCKED=S46 speech reconciliation and unresolved application identity
 KANBAN_OWNER_PENDING=Golden 2 owner review; pilot and full corpus synthesis remain frozen
-BLOCKER=S46 has 232 longer uncovered VAD intervals (217.244s) without trustworthy interval-level classification; application identity is not explicit in extracted evidence
-NEXT_ACTION=Complete targeted S46 gap transcription/reconciliation and application identity review; rerun full focused suite; then generate S46 golden only if every technical gate passes
+BLOCKER=S46 has 231 longer uncovered VAD intervals (212.324s) without trustworthy classification; application identity is not explicit in extracted evidence
+NEXT_ACTION=Review dual-ASR recovery candidate, classify remaining 231 gaps, resolve application identity; generate S46 golden only after every technical gate passes
 
 ## HISTORICAL_RESULTS
 
