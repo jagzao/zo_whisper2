@@ -3,6 +3,7 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; SESSION_41_GATE=PASS. DOCUMENTS_V2=INCOMPLETE; DOCUMENTS_V2_OWNER_UAT=PARTIAL. Golden2 candidate pg_Ams_kap_app_support_s46.mp4 is readable and technical. Local 51-frame OCR: 19 SUCCESS, 29 LOW_CONFIDENCE, 3 galleries; 48 selected frames collapse to one generic APPLICATION_UI topic. VAD speech coverage is 86.24%. GOLDEN_2_GATE=BLOCKED_EVIDENCE; no Golden2 documents generated. GOLDEN_OVERFIT_CHECK=FAIL; production session_pack.py embeds Session 41 specifics. Cross-session primitives exist but integration not run. S43=BLOCKED_SOURCE/OWNER_REQUIRED. Corpus synthesis frozen. Implementation 0e48391 (Golden2 audit commit follows) is on active branch, not merged/deployed.",
+  "last_result": "SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; SESSION_41_GATE=PASS. DOCUMENTS_V2=INCOMPLETE; DOCUMENTS_V2_OWNER_UAT=PARTIAL. Golden2 candidate pg_Ams_kap_app_support_s46.mp4 is readable and technical. Local 51-frame OCR: 19 SUCCESS, 29 LOW_CONFIDENCE, 3 galleries; 48 selected frames collapse to one generic APPLICATION_UI topic. VAD speech coverage is 86.24%. GOLDEN_2_GATE=BLOCKED_EVIDENCE; no Golden2 documents generated. GOLDEN_OVERFIT_CHECK=FAIL; production session_pack.py embeds Session 41 specifics. Cross-session primitives exist but integration not run. S43=BLOCKED_SOURCE/OWNER_REQUIRED. Corpus synthesis frozen. Implementation branch head follows current SDD checkpoint is on active branch, not merged/deployed.",
   "updated_at": "2026-10-26T17:05:00Z"
 }
+
