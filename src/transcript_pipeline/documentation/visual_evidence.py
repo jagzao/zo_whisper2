@@ -30,9 +30,34 @@ def _is_black(path: Path) -> bool:
         with Image.open(path) as source:
             image = source.convert("L")
             width, height = image.size
-            center = image.crop((width * 0.1, height * 0.1, width * 0.9, height * 0.85)).resize((32, 24))
+            center = image.crop((width * 0.25, height * 0.2, width * 0.75, height * 0.75)).resize((32, 24))
             stats = ImageStat.Stat(center)
-            return stats.mean[0] < 12 and stats.stddev[0] < 9
+            return stats.mean[0] < 50 and stats.stddev[0] < 35
+    except Exception:
+        return False
+
+
+def _has_centered_speaker_tile(path: Path, text: str) -> bool:
+    if Image is None or len(text.strip()) > 80 or not text.strip():
+        return False
+    try:
+        with Image.open(path) as source:
+            gray = source.convert("L")
+            width, height = gray.size
+            x0, x1 = int(width * 0.3), int(width * 0.7)
+            y0, y1 = int(height * 0.22), int(height * 0.72)
+            center = gray.crop((x0, y0, x1, y1))
+            bright = center.point(lambda pixel: 255 if pixel >= 180 else 0)
+            bounds = bright.getbbox()
+            center_stats = ImageStat.Stat(center)
+            if not bounds or center_stats.mean[0] > 110 or center_stats.stddev[0] > 55:
+                return False
+            left, top, right, bottom = bounds
+            box_width, box_height = right - left, bottom - top
+            aspect = box_width / max(1, box_height)
+            occupied = bright.histogram()[255] / (center.width * center.height)
+            centered = abs((left + right) / 2 - center.width / 2) < center.width * 0.2
+            return centered and 0.65 <= aspect <= 1.4 and 0.004 <= occupied <= 0.12
     except Exception:
         return False
 
@@ -67,21 +92,27 @@ def _ocr_attempts(path: Path) -> tuple[list[tuple[str, str, float]], int, bool]:
     return results, max(0, min(2, len(_RETRY_CONFIGS) - 1)), errors == len(_RETRY_CONFIGS)
 
 
-def _classify(text: str, confidence: float, black: bool) -> tuple[str, list[str], list[str]]:
+def _classify(text: str, confidence: float, black: bool, speaker_tile: bool = False) -> tuple[str, list[str], list[str]]:
     if black:
         return "BLACK_OR_EMPTY", [], []
     lines = [re.sub(r"\s+", " ", line).strip() for line in text.splitlines() if line.strip()]
     lowered = " ".join(lines).lower()
     if re.search(r"\b(participants?|mute all|waiting room|raise hand)\b", lowered):
         return "MEETING_GALLERY", lines[:20], []
+    if speaker_tile:
+        return "MEETING_GALLERY", lines[:20], []
     if re.search(r"\b(error|exception|unauthorized|access denied|not found|failed)\b", lowered):
         return "ERROR_MESSAGE", lines[:20], [line for line in lines if re.search(r"error|exception|denied|failed", line, re.I)]
-    if re.search(r"\b(architecture|integration|network|service|database|application)\b", lowered):
+    if re.search(r"\b(architecture diagram|system architecture|integration diagram|network diagram)\b", lowered):
         return "ARCHITECTURE_DIAGRAM", lines[:20], []
+    if re.search(r"\b(data flow|workflow|process flow)\b|(?:->|→|⟶|⇢)", lowered):
+        return "FLOW_DIAGRAM", lines[:20], []
     if re.search(r"\b(configuration|settings|environment|connection string)\b", lowered):
         return "CONFIGURATION", lines[:20], []
     if re.search(r"\b(database|sql|table|schema|query)\b", lowered):
         return "DATABASE", lines[:20], []
+    if re.search(r"\b(select|insert into|create table|from\s+\w+)\b", lowered):
+        return "CODE_OR_SCRIPT", lines[:20], []
     if re.search(r"\b(azure|aws|cloud|portal|subscription)\b", lowered):
         return "CLOUD_PORTAL", lines[:20], []
     if text:
@@ -113,7 +144,8 @@ def analyze_frame(
             status, text, confidence = "FAILED", "", None
         else:
             status, text, confidence = "NO_TEXT", "", None
-    visual_type, labels, errors = _classify(text, confidence or 0.0, black)
+    speaker_tile = _has_centered_speaker_tile(image_path, text) if not black else False
+    visual_type, labels, errors = _classify(text, confidence or 0.0, black, speaker_tile)
     return {
         "frame_id": frame_id,
         "timestamp": timestamp,
@@ -136,7 +168,7 @@ def analyze_frame(
         "operational_actions": [],
         "confidence": confidence or 0.0,
         "provenance": {"frame_id": frame_id, "timestamp": timestamp, "image_path": str(image_path)},
-        "visual_analysis_status": "PARTIAL" if status == "SUCCESS" else "NEEDS_REVIEW",
+        "visual_analysis_status": "NEEDS_REVIEW",
         "selected": False,
         "selection_reason": None,
     }

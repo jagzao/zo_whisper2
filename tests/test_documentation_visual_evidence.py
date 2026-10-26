@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from transcript_pipeline.documentation import visual_evidence
 
@@ -65,3 +65,14 @@ def test_visual_type_and_keyframe_selection_keep_provenance_and_suppress_gallery
     assert records[2]["selected"] is False
     assert records[3]["visual_type"] == "BLACK_OR_EMPTY"
     assert records[3]["ocr_status"] == "NOT_REQUIRED"
+
+
+def test_visual_classifier_avoids_architecture_claim_from_generic_words_and_suppresses_speaker_tile(tmp_path):
+    assert visual_evidence._classify("Application Services Database", 0.9, False)[0] != "ARCHITECTURE_DIAGRAM"
+    path = Image.new("RGB", (400, 320), (15, 15, 15))
+    ImageDraw.Draw(path).ellipse((182, 122, 218, 158), fill=(245, 245, 245))
+    image_path = tmp_path / "speaker.png"
+    path.save(image_path)
+
+    assert visual_evidence._has_centered_speaker_tile(image_path, "Speaker") is True
+    assert visual_evidence._classify("Speaker", 0.9, False, speaker_tile=True)[0] == "MEETING_GALLERY"

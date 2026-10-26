@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "Documents V2 incomplete; local OCR/visual evidence triage, transcript-tail evidence classification, claim provenance validation, and conflict-safe merge added; 123 docs tests PASS; golden samples blocked",
+  "last_result": "Documents V2 incomplete; Session 41 local OCR/visual report: 22 SUCCESS, 9 LOW_CONFIDENCE, 5 NOT_REQUIRED; gallery/black suppression; 2 semantic frames selected; 123 docs tests baseline PASS; S43 source blocked",
   "updated_at": "2026-10-26T00:00:00Z"
 }
