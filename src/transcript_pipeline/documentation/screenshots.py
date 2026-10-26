@@ -16,6 +16,7 @@ Source frames are NEVER deleted or modified.
 """
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -131,6 +132,17 @@ def select_screenshots(
     selected_paths: set[Path] = set()
     picks: list[ScreenshotPick] = []
     dropped = 0
+    suppressed_frames: set[str] = set()
+    visual_path = frames_dir / "evidence" / "visual-evidence.json"
+    try:
+        visual_data = json.loads(visual_path.read_text(encoding="utf-8"))
+        suppressed_frames = {
+            str(frame.get("frame_id"))
+            for frame in visual_data.get("frames", [])
+            if frame.get("visual_type") in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}
+        }
+    except (OSError, ValueError, TypeError):
+        pass
 
     sections = document.sections or []
     # Procedures also get their evidence frames as candidates.
@@ -148,7 +160,7 @@ def select_screenshots(
         candidates = []
         for ref in refs:
             item = by_id.get(ref)
-            if item is None or not item.frame_ref:
+            if item is None or not item.frame_ref or Path(item.frame_ref).name in suppressed_frames:
                 continue
             path = frames_dir / Path(item.frame_ref).name
             if not path.is_file():

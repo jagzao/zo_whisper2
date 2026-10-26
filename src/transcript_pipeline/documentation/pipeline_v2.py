@@ -49,6 +49,7 @@ from transcript_pipeline.documentation.synthesis import (
     SynthesisService,
     default_synthesis_service,
 )
+from transcript_pipeline.documentation.visual_evidence import analyze_frames
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,12 @@ def generate_documentation_v2(
         if steps is None:
             # Regeneration-safe derivation: no OCR, no vision, no frames_dir.
             steps = engine.build_steps(mapping_data, None, None)
+
+    persisted_ocr = {step.frame_ref: step.ocr_text for step in steps if step.frame_ref and step.ocr_text}
+    visual_report = analyze_frames(mapping_data.get("frames", []), frames_dir, existing_ocr=persisted_ocr)
+    visual_path = frames_dir / "evidence" / "visual-evidence.json"
+    visual_path.parent.mkdir(parents=True, exist_ok=True)
+    visual_path.write_text(json.dumps(visual_report, indent=2, ensure_ascii=False), encoding="utf-8")
 
     source = DocumentationSource(
         video_name=video_name,
@@ -262,6 +269,9 @@ def generate_documentation_v2(
             "review_required_count": timeline.review_required_count,
             "fidelity": timeline.fidelity,
             "paths": {key: str(path) for key, path in evidence_paths.items()},
+            "visual_evidence": str(visual_path),
+            "visual_status": visual_report["status"],
+            "visual_selected_count": visual_report["selected_count"],
         },
         "mode": {"mode": mode, "source": mode_source, "reason": resolution.reason},
         "synthesis": {

@@ -7,49 +7,53 @@
 
 ### Documents V2/V3 golden-sample checkpoint — 2026-10-26
 
-DOCUMENTS_V2=INCOMPLETE - transcript coverage gate implemented; visual understanding and operational acceptance remain blocked
-DOCS_V2_ARCHITECTURE_VERSION=2 + transcript-quality gate v1
-SESSION_41_GATE=FAIL - transcript PARTIAL; 11:09.477 final gap
-S43_GATE=FAIL - source file `Video_compress/tutorial/pg_S43.mp4` is unreadable by ffprobe (`moov atom not found`)
-PG_LOGICAL_VIDEO_COUNT=16 (existing reconciled baseline)
-PG_VALID_TRANSCRIPTIONS=4 (baseline; corpus recount pending)
-PG_PARTIAL_TRANSCRIPTIONS=4 (baseline; corpus recount pending)
-PG_MISSING_TRANSCRIPTIONS=6 (baseline; corpus recount pending)
-PG_FAILED_TRANSCRIPTIONS=2 (baseline; corpus recount pending)
-OCR_PIPELINE=PARTIAL - local OCR exists; per-frame status, retry/fallback, and quality gate absent
-VISUAL_UNDERSTANDING=NOT_READY - structured diagram/UI analysis with provenance not implemented
-SEMANTIC_KEYFRAMES=PARTIAL - screenshot dedup exists; semantic scene/UI/OCR selection absent
-CLAIM_GROUNDING=PARTIAL - evidence ids validated; requested claim ledger/provenance fields incomplete
-APP_SEGMENTATION=PASS - Session 41 identifies PG RegDoc and North America CPRT Panelist Payments separately
-CROSS_SESSION_KNOWLEDGE=PARTIAL - merge helper exists; conflict-safe operational consolidation pending
-MISSION_PACK=PARTIAL - per-application baseline packs exist; gates fail and do not satisfy operational completeness
-DERIVED_DIAGRAMS=NOT_READY - no provenance-linked graph extraction
-MINERU=DISABLED - no adapter; external document processing remains unauthorized
-S43_DURATION=01:23:21 (owner-provided; local source unreadable)
-S43_TRANSCRIPT_STATE=FAILED
-S43_TRANSCRIPT_COVERAGE=0%
-S43_MEANINGFUL_FRAMES=0 available
-S43_OCR_SUCCESS=NOT_RUN
-S43_LOW_CONFIDENCE_STEPS=50 (previous invalid output; invalidated)
-S43_APPLICATIONS=UNRESOLVED
-S43_PROCEDURES=0
-S43_QUALITY_GATE=FAIL
+DOCUMENTS_V2=INCOMPLETE
+DOCS_V2_ARCHITECTURE_VERSION=2 + transcript gate v1 + local visual evidence v1
+REVISA_POINTER_MAIN=9221a33 status-only pointer; active implementation branch is recorded
+ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
+SESSION_41_SOURCE=Videos/general/AMS_KAP_-_App_Support_-_Session_41.mp4; ffprobe duration 00:35:05.365
 SESSION_41_TRANSCRIPT_STATE=PARTIAL
-SESSION_41_TRANSCRIPT_COVERAGE=68.20% by last timestamp; 65.97% transcript span
+SESSION_41_COVERAGE=68.20% by final timestamp; 65.97% span; starts 00:00:47.040 and ends 00:23:55.890
+SESSION_41_FINAL_GAP=00:11:09.476
+SESSION_41_GAP_CLASSIFICATION=NON_SPEECH_TRAILING_MEDIA supported by completed local VAD (zero tail speech) and sampled meeting-gallery/attendee/black frames; internal VAD/transcript mismatches still need review, so state remains PARTIAL
+SESSION_41_OCR=25/36 historical frame samples had OCR text; new bounded local OCR status/retry pipeline implemented, not yet rerun on the golden sample
+SESSION_41_VISUAL_ANALYSIS=PARTIAL; tail sampled as meeting gallery then black; structured technical-frame analysis remains incomplete
 SESSION_41_APPLICATIONS=2 - PG RegDoc; North America Central Product Research Testing Panelist Payments
-SESSION_41_QUALITY_GATE=FAIL
-REPO_STATE=PASS - 118 focused documentation tests; transcript-incomplete manual is blocked
-AGENT_SERVED_CHECK=NOT_RUN
-OWNER_UAT=PENDING
-EVIDENCE_CONFLICT=NO
+SESSION_41_GATE=FAIL pending full speech-coverage reconciliation, technical visual evidence, claims and Mission Pack output
+S43_SOURCE_RECOVERY=OWNER_REQUIRED - only known local candidate is corrupt; historical resumable upload acknowledged 1,015,021,568 bytes of 121 chunks, no complete readable replacement located
+S43_CANONICAL_SOURCE=NONE
+S43_FFPROBE=FAIL - Video_compress/tutorial/pg_S43.mp4: moov atom not found; preserved
+S43_TRANSCRIPT_STATE=FAILED
+S43_OCR=NOT_RUN
+S43_VISUAL_ANALYSIS=NOT_RUN
+S43_GATE=BLOCKED_SOURCE
+PG_LOGICAL_VIDEO_COUNT=16 (existing reconciled baseline; no recount)
+PG_VALID_TRANSCRIPTIONS=4 (baseline; no recount)
+PG_PARTIAL_TRANSCRIPTIONS=4 (baseline; no recount)
+PG_MISSING_TRANSCRIPTIONS=6 (baseline; no recount)
+PG_FAILED_TRANSCRIPTIONS=2 (baseline; no recount)
+OCR_PIPELINE=PARTIAL - local per-frame status distinction, bounded retries and persisted provenance implemented; real golden rerun pending
+VISUAL_UNDERSTANDING=PARTIAL - conservative OCR-derived classification and provenance; structured visual relations are not yet extracted
+SEMANTIC_KEYFRAMES=PARTIAL - OCR/type change, perceptual duplicate and gallery/black suppression; scene/topic semantic analysis remains incomplete
+CLAIM_LEDGER=PARTIAL - required provenance schema validation and evidence ratio gate added; extraction/integration remains pending
+DERIVED_DIAGRAMS=NOT_READY - graph extraction and provenance-linked diagram renderer not implemented
+CROSS_SESSION_KNOWLEDGE=PARTIAL - duplicate merge and conflict preservation implemented/tested; application-wide knowledge generation pending
+MISSION_PACK=PARTIAL - synthesis blocked unless transcript is VALID; operational golden output not generated
+MINERU=DISABLED - no P&G data sent externally
+UNIT=123 documentation tests PASS, including visual evidence, transcript gate, and Mission Pack; no golden corpus synthesis run
+RUFF=PASS - changed documentation modules and focused tests
+REPO_STATE=PASS - 123 documentation tests and Ruff pass; golden acceptance remains blocked
+AGENT_SERVED_CHECK=NOT_RUN - no Documents V2 served journey was published
+OWNER_UAT=PENDING - Juan has not approved representative outputs
+EVIDENCE_CONFLICT=YES - transcript timestamp reach is low but tail is classified non-speech; internal VAD uncovered intervals remain unresolved
 KANBAN_COMPLETE=8
-KANBAN_TESTING=66
+KANBAN_TESTING=67
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=5
-BLOCKER=Recover a readable S43 source and Session 41 transcript tail; finish OCR/visual evidence pipeline
-NEXT_ACTION=Repair/restore the golden source inputs, then run local transcript and visual gates before regenerating either sample
+BLOCKER=Session 41 internal transcript/VAD reconciliation and technical visual extraction; S43 valid source recovery required for its sample
+NEXT_ACTION=Finish focused test suite, inspect internal uncovered speech intervals, implement remaining provenance/diagram and Mission Pack gates, then regenerate only Session 41 when gates pass
 
-The transcript gate and synthetic regression fixtures were added locally. No golden sample was regenerated, no P&G corpus batch was run, and no owner approval is recorded.
+No golden output was regenerated, no P&G batch synthesis was run, no owner approval is recorded, and Documents V2 remains incomplete.
 
 FOLDER_LOCATION_LINK=PASS - served Folder cell links to /stream?id=<encoded media_id>; HEAD returns 200 video/mp4
 OLD_MANUALS_FOUND=249
@@ -386,8 +390,8 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Old P&G Documents V2 cleanup | COMPLETE | 249 exact generated manual/semantic files inventoried by size and SHA-256, logged, invalidated and deleted; 0 transcripts removed; raw evidence and provenance retained. | Keep invalidation ledger with release record. | Agent |
 | Manual filename normalization | TESTING | Writers and Session 41 builder now emit source-stem `.md`, `.pdf`, `.json`; compatibility aliases remain internal. Focused tests pass. | Verify Session 41 v4 golden output after transcript recovery. | Agent |
 | P&G media inventory reconciliation | TESTING | SFTPGo mount, Videos, Video_compress aliases, API assignments and transcript sidecars are being reconciled; Session 18 remains an explicit assignment conflict. | Finish logical deduplication and duration/status inventory. | Agent |
-| P&G transcript completeness | TESTING | Large-v3 focused recovery is running serially; two SFTPGo MP4 sources have no `moov` atom and cannot be decoded. | Finish recoverable sources; gate fails until damaged source is retransferred or explicitly reviewed. | Agent |
-| Session 41 Documents V2 golden sample | TESTING | v3 user-facing synthesis deleted and invalidated; quality report and source evidence retained. Source transcript recovery is running. | Reassess transcript/tail, then generate one named v4 sample only after coverage is understood. | Agent |
+| P&G transcript completeness | TESTING | Session 41 source is valid; final 11:09 is supported as meeting/black non-speech tail, but internal VAD gaps remain. S43 local candidate lacks `moov`; historical resumable upload is incomplete. | Reconcile internal Session 41 speech intervals and recover a complete readable S43 source. | Agent |
+| Session 41 Documents V2 golden sample | TESTING | Source is readable (00:35:05.365); transcript ends at 00:23:55.890 (68.20%), with 00:11:09.476 classified as non-speech trailing media from VAD and sampled gallery/black visuals. Internal speech mismatches remain. No golden output regenerated. | Reconcile internal speech intervals, finish technical visual evidence, then generate one named sample only after gates pass. | Agent |
 | Application Mission Pack generation | OWNER_PENDING | Full corpus synthesis remains frozen; Session 41 approval is required before corpus-wide regeneration. | Juan reviews the quality-gated Session 41 sample. | Owner |
 | Mobile reliability + large-file upload V2 | 🟨 TESTING | Deployed through ZMI image `8a67343a6daecb7e691fe3d0d6d73efbaf6f5bcc`; root cause was a stale served image missing `/api/uploads` and the package omitted its static helper. Caddy HTTP and LAN HTTPS return JSON 200 for GET `/api/uploads`; authenticated POST creates a synthetic session (200); chunk ACK, resume status and idempotent retry work; finalize returns JSON validation response for synthetic invalid media; synthetic session deleted. The served helper JS returns 200 and guards non-JSON responses. Storage preflight and oversize create return JSON 507 with free/required GiB. Served UI contains badge, bytes/total, percentage, speed, ETA and Pause/Resume/Cancel/Retry. No real owner files retried. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
 | Resumable upload recovery after transient app outage | 🟨 TESTING | ZMI deployed at `a99effb`; transient 5xx/network retry on preflight/create/status/finalize, with chunk ACK retry preserved. Python 10 and Node 9 pass. Candidate and served LAN HTTPS synthetic create/chunk/resume/finalize-error/cleanup passed. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
@@ -396,7 +400,7 @@ This is the one active feature inventory and execution table for this SDD. All d
 | Storage preflight | 🟨 TESTING | Upload target `Video_compress` is on C: via `/data`; host 106.55 GiB free, Whisper `/data` 106.53 GiB free, Docker backing volume C: 106.55 GiB free. 2 GiB safety reserve; batch sum and live preflight enforced before create/chunk/finalize. Production synthetic 200 GiB request rejected before session creation with `Insufficient storage: 106.7 GiB free, 202.0 GiB required.` | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
 | ENOSPC handling | 🟨 TESTING | Chunk/finalize `ENOSPC` maps to JSON 507 and actionable free-space guidance; low-space finalize/chunk tests preserve prior ACK map. Production low-space preflight returns JSON 507. Upload UT 10 passed. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |
 | Deploy | 🟩 COMPLETE | Current source implementation `74799c205c6f399aeecfa927a8baefba73aa69ba` is served over LAN HTTPS; health and `/api/uploads` returned JSON 200. ZMI is currently healthy, restart count 4; Caddy and persistent data volumes stayed up. | Investigate intermittent ZMI restarts before declaring operational stability. | Agent |
-| Persistent /revisa result contract | 🟨 TESTING | CURRENT.json resolves canonical SDD; contract exists. This execution result must be committed and pushed to validate persistence. | Commit and push SDD and pointer update, then verify origin/main. | Agent |
+| Persistent /revisa result contract | 🟨 TESTING | `main:.agents/CURRENT.json` points to the active branch and canonical SDD; status-only commit `9221a33` explicitly says implementation is not merged/deployed. | Refresh status-only main pointer after implementation checkpoint and verify remote. | Agent |
 | Real multi-GB UAT | OWNER_PENDING | Screenshot showed transient `Failed to fetch`; ZMI OOM event (exit 137) at 18:13:33 UTC; persistent session retains 8 ACKed chunks / 64 MiB. No owner media retried, canceled, or deleted. | Juan resumes one selected file after retry-hardening deploy. | Juan |
 
 | Documentation V2: corpus inventory and resumable regeneration | 🟨 TESTING | Initial scan was 9 total: 1 ready, 1 transcript missing, 1 keyframes missing, 6 missing both. Local-only preprocessing reused valid artifacts and completed missing transcripts/keyframes for all 9; final inventory reports 9 READY. Prep progress is resumable and persisted per media. | Validate complete user flow against stable served build; preserve current evidence and owner data. | Agent |

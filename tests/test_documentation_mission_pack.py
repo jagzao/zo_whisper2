@@ -1,6 +1,8 @@
 from transcript_pipeline.documentation.mission_pack import (
     QUALITY_GATES,
+    assess_content_quality,
     assess_transcript_quality,
+    classify_trailing_gap,
     evaluate_quality_gates,
     measure_source_coverage,
     merge_application_facts,
@@ -22,6 +24,31 @@ def test_transcript_state_calculates_gaps_and_requires_near_complete_coverage():
     assert late["speech_gaps"][0]["kind"] == "leading"
     assert assess_transcript_quality(1000, [])["transcript_state"] == "MISSING"
     assert assess_transcript_quality(1000, [{"start": "bad", "end": 10}])["transcript_state"] == "FAILED"
+
+
+def test_transcript_gate_distinguishes_speech_gaps_from_gallery_or_silence_tail():
+    samples = [
+        {"timestamp": 400, "visual_type": "MEETING_GALLERY"},
+        {"timestamp": 600, "visual_type": "MEETING_GALLERY"},
+        {"timestamp": 800, "visual_type": "BLACK_OR_EMPTY"},
+        {"timestamp": 990, "visual_type": "BLACK_OR_EMPTY"},
+    ]
+    nonspeech = classify_trailing_gap(400, 1000, [], samples, vad_completed=True)
+    assert nonspeech["classification"] == "NON_SPEECH_TRAILING_MEDIA"
+    quality = assess_transcript_quality(
+        1000,
+        [{"start": 0, "end": 400}],
+        trailing_gap_classification=nonspeech["classification"],
+        vad_speech_segments=[{"start": 0, "end": 100}, {"start": 300, "end": 400}],
+    )
+    assert quality["transcript_state"] == "VALID"
+    assert quality["transcript_coverage_percent"] == 40.0
+    assert quality["vad_speech_coverage_percent"] == 100.0
+
+    speech = classify_trailing_gap(400, 1000, [{"start": 700, "end": 710}], samples, vad_completed=True)
+    assert speech["classification"] == "UNTRANSCRIBED_SPEECH_GAP"
+    unknown = classify_trailing_gap(400, 1000, [], samples[:1], vad_completed=False)
+    assert unknown["classification"] == "NEEDS_REVIEW"
 
 
 def test_source_coverage_flags_large_trailing_gap():
@@ -55,16 +82,20 @@ def test_all_quality_gates_must_be_explicit_and_source_complete_to_pass():
 
 def test_claim_schema_keeps_uncertain_claims_distinct_from_external_facts():
     base = {
+        "claim_id": "C1", "application_id": "app-1",
         "claim": "Definition is uncertain",
-        "application": "pgregdoc.com",
-        "source_timestamp": "00:01:49",
-        "source_type": "TRANSCRIPT",
+        "source_id": "S41", "timestamp": "00:01:49", "frame_id": None,
+        "source_type": "TRANSCRIPT", "first_seen": "S41", "last_confirmed": None,
+        "supporting_sources": [{"source_id": "S41", "timestamp": "00:01:49"}], "conflicts": [],
         "confidence": "LOW",
         "verification_state": "SOURCE_UNCERTAIN",
     }
     assert validate_claim_records([base]) == []
-    external = {**base, "verification_state": "EXTERNAL_VERIFIED"}
+    external = {**base, "verification_state": "EXTERNAL_VERIFIED", "supporting_sources": []}
     assert "EXTERNAL_VERIFIED without external_sources" in validate_claim_records([external])[0]
+
+    unsupported = {**base, "source_id": None, "supporting_sources": []}
+    assert "missing provenance" in validate_claim_records([unsupported])[0]
 
 
 def test_cross_session_fact_merge_preserves_provenance_and_does_not_duplicate():
@@ -82,3 +113,22 @@ def test_cross_session_fact_merge_preserves_provenance_and_does_not_duplicate():
     assert result[0]["last_confirmed"] == "S41"
     assert result[0]["supporting_sessions"] == ["S18", "S41"]
     assert result[0]["evidence_refs"] == ["S18:E1", "S41:E2"]
+
+
+def test_cross_session_conflict_is_preserved_and_filler_ratio_blocks_ready():
+    old = [{"application_id": "app-1", "fact_key": "hosting", "fact": "Hosted on Azure",
+            "supporting_sessions": ["S18"], "supporting_frames": ["f1"], "status": "CONFIRMED"}]
+    new = [{"application_id": "app-1", "fact_key": "hosting", "fact": "Hosted on AWS",
+            "supporting_sessions": ["S41"], "supporting_frames": ["f2"]}]
+    merged = merge_application_facts(old, new)
+    assert len(merged) == 2
+    assert all(item["status"] == "CONFLICTING" for item in merged)
+    assert all(item["conflicts"] for item in merged)
+
+    quality = assess_content_quality([
+        {"instruction": "Step at 00:10:00", "confidence": "low", "evidence_source": "none"},
+        {"instruction": "Step at 00:11:00", "confidence": "low", "evidence_source": "none"},
+    ])
+    assert quality["status"] == "FAIL"
+    assert quality["timestamp_filler_count"] == 2
+    assert quality["low_confidence_content_ratio"] == 1.0

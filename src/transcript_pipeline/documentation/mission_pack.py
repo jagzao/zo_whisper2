@@ -6,6 +6,8 @@ import re
 from typing import Any
 
 CLAIM_STATES = {
+    "VISUAL_CONFIRMED",
+    "MULTI_SOURCE_CONFIRMED",
     "SOURCE_CONFIRMED",
     "SOURCE_UNCERTAIN",
     "EXTERNAL_VERIFIED",
@@ -32,12 +34,19 @@ QUALITY_GATES = (
 )
 TRANSCRIPT_STATES = {"VALID", "PARTIAL", "MISSING", "FAILED", "NEEDS_REVIEW"}
 CLAIM_FIELDS = {
+    "claim_id",
+    "application_id",
     "claim",
-    "application",
-    "source_timestamp",
     "source_type",
+    "source_id",
+    "timestamp",
+    "frame_id",
     "confidence",
     "verification_state",
+    "first_seen",
+    "last_confirmed",
+    "supporting_sources",
+    "conflicts",
 }
 
 
@@ -94,6 +103,8 @@ def assess_transcript_quality(
     *,
     major_gap_seconds: float = 300,
     valid_coverage_percent: float = 95,
+    trailing_gap_classification: str | None = None,
+    vad_speech_segments: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Measure timestamp reach and gaps; sparse or malformed transcripts fail closed."""
     duration = float(video_duration or 0)
@@ -128,11 +139,54 @@ def assess_transcript_quality(
         gaps.append({"start": last, "end": duration, "seconds": round(final_gap, 3), "kind": "final"})
     span = max(0.0, last - first)
     coverage = min(100.0, 100.0 * last / duration)
+    vad_total = 0.0
+    vad_covered = 0.0
+    vad_untranscribed: list[dict[str, float]] = []
+    if vad_speech_segments is not None:
+        transcript_intervals = sorted(normalized)
+        for speech in vad_speech_segments:
+            speech_start, speech_end = float(speech["start"]), float(speech["end"])
+            if speech_end <= speech_start:
+                continue
+            vad_total += speech_end - speech_start
+            intervals = sorted(
+                (max(speech_start, seg_start), min(speech_end, seg_end))
+                for seg_start, seg_end in transcript_intervals
+                if seg_end > speech_start and seg_start < speech_end
+            )
+            merged: list[list[float]] = []
+            for overlap_start, overlap_end in intervals:
+                if overlap_end <= overlap_start:
+                    continue
+                if merged and overlap_start <= merged[-1][1]:
+                    merged[-1][1] = max(merged[-1][1], overlap_end)
+                else:
+                    merged.append([overlap_start, overlap_end])
+            covered = sum(end - start for start, end in merged)
+            vad_covered += covered
+            cursor = speech_start
+            for overlap_start, overlap_end in merged:
+                if overlap_start - cursor > 3:
+                    vad_untranscribed.append({"start": round(cursor, 3), "end": round(overlap_start, 3), "seconds": round(overlap_start - cursor, 3)})
+                cursor = max(cursor, overlap_end)
+            if speech_end - cursor > 3:
+                vad_untranscribed.append({"start": round(cursor, 3), "end": round(speech_end, 3), "seconds": round(speech_end - cursor, 3)})
+    speech_coverage = 100.0 * vad_covered / vad_total if vad_total else None
+    speech_coverage_valid = (
+        vad_speech_segments is not None
+        and speech_coverage is not None
+        and speech_coverage >= valid_coverage_percent
+        and all(gap["seconds"] <= major_gap_seconds for gap in vad_untranscribed)
+    )
     leading_gap = first
     if leading_gap > 30:
         gaps.insert(0, {"start": 0.0, "end": first, "seconds": round(leading_gap, 3), "kind": "leading"})
-    state = "VALID" if coverage >= valid_coverage_percent and all(
-        gap["seconds"] <= major_gap_seconds for gap in gaps
+    internal_gaps = [gap for gap in gaps if gap.get("kind") not in {"leading", "final"}]
+    tail_explained = trailing_gap_classification == "NON_SPEECH_TRAILING_MEDIA" and speech_coverage_valid
+    state = "VALID" if (
+        (coverage >= valid_coverage_percent or tail_explained)
+        and leading_gap <= major_gap_seconds
+        and all(gap["seconds"] <= major_gap_seconds for gap in internal_gaps)
     ) else "PARTIAL"
     return {
         "video_duration": round(duration, 3), "transcript_start": round(first, 3),
@@ -140,6 +194,54 @@ def assess_transcript_quality(
         "transcript_last_timestamp": round(last, 3), "transcript_span": round(span, 3),
         "transcript_coverage_percent": round(coverage, 2), "speech_gaps": gaps,
         "final_gap": round(final_gap, 3), "transcript_state": state,
+        "trailing_gap_classification": trailing_gap_classification or "NEEDS_REVIEW",
+        "vad_speech_coverage_percent": round(speech_coverage, 2) if speech_coverage is not None else None,
+        "vad_untranscribed_speech_gaps": vad_untranscribed,
+    }
+
+
+def classify_trailing_gap(
+    tail_start: float,
+    video_duration: float,
+    speech_segments: list[dict[str, Any]],
+    visual_samples: list[dict[str, Any]],
+    *,
+    vad_completed: bool,
+    minimum_visual_samples: int = 3,
+    visual_coverage_threshold: float = 0.8,
+) -> dict[str, Any]:
+    """Classify an apparent transcript tail only when VAD and sampled visuals agree."""
+    duration = max(0.0, float(video_duration))
+    start = max(0.0, float(tail_start))
+    tail_speech = [
+        segment for segment in speech_segments
+        if float(segment.get("end", 0)) > start and float(segment.get("start", duration)) < duration
+    ]
+    samples = [sample for sample in visual_samples if start <= float(sample.get("timestamp", -1)) <= duration]
+    non_speech_visuals = sum(
+        sample.get("visual_type") in {"MEETING_GALLERY", "BLACK_OR_EMPTY"} for sample in samples
+    )
+    visual_fraction = non_speech_visuals / len(samples) if samples else 0.0
+    if tail_speech:
+        classification = "UNTRANSCRIBED_SPEECH_GAP"
+    elif (
+        vad_completed
+        and len(samples) >= minimum_visual_samples
+        and samples[0].get("timestamp", duration) <= start + 60
+        and samples[-1].get("timestamp", -1) >= duration - 60
+        and visual_fraction >= visual_coverage_threshold
+    ):
+        classification = "NON_SPEECH_TRAILING_MEDIA"
+    else:
+        classification = "NEEDS_REVIEW"
+    return {
+        "classification": classification,
+        "tail_start": round(start, 3),
+        "video_duration": round(duration, 3),
+        "vad_completed": bool(vad_completed),
+        "vad_speech_segment_count": len(tail_speech),
+        "visual_sample_count": len(samples),
+        "non_speech_visual_fraction": round(visual_fraction, 3),
     }
 
 
@@ -152,11 +254,35 @@ def validate_claim_records(claims: list[dict[str, Any]]) -> list[str]:
         state = claim.get("verification_state")
         if state not in CLAIM_STATES:
             errors.append(f"claim[{index}] invalid verification_state: {state}")
-        if state == "SOURCE_CONFIRMED" and not claim.get("evidence_refs"):
-            errors.append(f"claim[{index}] SOURCE_CONFIRMED without evidence_refs")
+        has_provenance = bool(claim.get("source_id") or claim.get("frame_id") or claim.get("supporting_sources"))
+        if not has_provenance:
+            errors.append(f"claim[{index}] missing provenance")
+        if state in {"SOURCE_CONFIRMED", "VISUAL_CONFIRMED", "MULTI_SOURCE_CONFIRMED"} and not has_provenance:
+            errors.append(f"claim[{index}] confirmed without provenance")
         if state == "EXTERNAL_VERIFIED" and not claim.get("external_sources"):
             errors.append(f"claim[{index}] EXTERNAL_VERIFIED without external_sources")
     return errors
+
+
+def assess_content_quality(items: list[dict[str, Any]], *, max_low_confidence_ratio: float = 0.1) -> dict[str, Any]:
+    """Reject timestamp filler and documents dominated by unsupported low-confidence content."""
+    total = len(items)
+    low_confidence = sum(
+        str(item.get("confidence", "")).lower() in {"low", "very_low"}
+        or item.get("evidence_source") in {None, "none"}
+        for item in items
+    )
+    filler = sum(bool(re.match(r"^\s*step\s+at\s+\d{1,2}:\d{2}(?::\d{2})?\s*$", str(item.get("title") or item.get("instruction") or ""), re.I)) for item in items)
+    ratio = low_confidence / total if total else 0.0
+    passed = ratio <= max_low_confidence_ratio and filler == 0
+    return {
+        "status": "PASS" if passed else "FAIL",
+        "item_count": total,
+        "low_confidence_count": low_confidence,
+        "low_confidence_content_ratio": round(ratio, 4),
+        "timestamp_filler_count": filler,
+        "max_low_confidence_ratio": max_low_confidence_ratio,
+    }
 
 
 def evaluate_quality_gates(
@@ -192,15 +318,32 @@ def merge_application_facts(
     for source in incoming:
         item = dict(source)
         key = _fact_key(item)
+        application_id = item.get("application_id")
+        fact_key = re.sub(r"\s+", " ", str(item.get("fact_key") or "").strip().lower())
+        prior = next((
+            current for current in merged
+            if application_id and current.get("application_id") == application_id
+            and fact_key and re.sub(r"\s+", " ", str(current.get("fact_key") or "").strip().lower()) == fact_key
+            and _fact_key(current) != key
+        ), None)
+        if prior is not None:
+            item["status"] = "CONFLICTING"
+            prior["status"] = "CONFLICTING"
+            prior.setdefault("conflicts", []).append(item.get("fact") or item.get("claim"))
+            item.setdefault("conflicts", []).append(prior.get("fact") or prior.get("claim"))
         current = by_key.get(key)
         if current is None:
             item["supporting_sessions"] = list(dict.fromkeys(item.get("supporting_sessions", [])))
+            item["supporting_frames"] = list(dict.fromkeys(item.get("supporting_frames", [])))
             item["conflicts"] = list(item.get("conflicts", []))
             merged.append(item)
             by_key[key] = item
             continue
         current["supporting_sessions"] = list(dict.fromkeys(
             [*current.get("supporting_sessions", []), *item.get("supporting_sessions", [])]
+        ))
+        current["supporting_frames"] = list(dict.fromkeys(
+            [*current.get("supporting_frames", []), *item.get("supporting_frames", [])]
         ))
         if item.get("last_confirmed"):
             current["last_confirmed"] = item["last_confirmed"]
@@ -212,6 +355,7 @@ def merge_application_facts(
                 current["conflicts"].append(other)
         if item.get("verification_state") == "CONFLICTING":
             current["verification_state"] = "CONFLICTING"
+            current["status"] = "CONFLICTING"
         if current.get("confidence") != item.get("confidence"):
             current["confidence"] = "LOW"
     return merged
