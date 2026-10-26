@@ -20,12 +20,12 @@ SESSION_41_OCR=22 SUCCESS, 9 LOW_CONFIDENCE, 5 NOT_REQUIRED across 36 real frame
 SESSION_41_VISUAL_ANALYSIS=PARTIAL; 5 MEETING_GALLERY and 5 BLACK_OR_EMPTY suppressed; 2 frames selected after duplicate/OCR-change selection; structured technical-frame relations incomplete
 SESSION_41_APPLICATIONS=2 - PG RegDoc; North America Central Product Research Testing Panelist Payments
 SESSION_41_GATE=FAIL pending full speech-coverage reconciliation, technical visual evidence, claims and Mission Pack output
-S43_SOURCE_RECOVERY=OWNER_REQUIRED - only known local candidate is corrupt; historical resumable upload acknowledged 1,015,021,568 bytes of 121 chunks, no complete readable replacement located
-S43_CANONICAL_SOURCE=NONE
+S43_SOURCE_RECOVERY=OWNER_REQUIRED - classified CANONICAL_VALID=0, DUPLICATE_VALID=0, CORRUPT=1, PARTIAL_UPLOAD=1, MISSING=1; delivery manifest names live_capture/sess-10e228c260e0/final/recording.webm but the file is absent
+S43_CANONICAL_SOURCE=NONE - expected Videos/live_capture/sess-10e228c260e0/final/recording.webm is MISSING; `Video_compress/tutorial/pg_S43.mp4` is CORRUPT; upload 827e52166b2541499949c4e27a73d761 is PARTIAL (121 chunks / 1,015,021,568 bytes)
 S43_FFPROBE=FAIL - Video_compress/tutorial/pg_S43.mp4: moov atom not found; preserved
 S43_TRANSCRIPT_STATE=FAILED
-S43_OCR=NOT_RUN
-S43_VISUAL_ANALYSIS=NOT_RUN
+S43_OCR=NOT_RUN - no valid source
+S43_VISUAL_ANALYSIS=NOT_RUN - no valid source
 S43_GATE=BLOCKED_SOURCE
 PG_LOGICAL_VIDEO_COUNT=16 (existing reconciled baseline; no recount)
 PG_VALID_TRANSCRIPTIONS=4 (baseline; no recount)
@@ -40,7 +40,7 @@ DERIVED_DIAGRAMS=NOT_READY - graph extraction and provenance-linked diagram rend
 CROSS_SESSION_KNOWLEDGE=PARTIAL - duplicate merge and conflict preservation implemented/tested; application-wide knowledge generation pending
 MISSION_PACK=PARTIAL - synthesis blocked unless transcript is VALID; operational golden output not generated
 MINERU=DISABLED - no P&G data sent externally
-UNIT=123 documentation tests PASS before final classifier refinement; current visual suite 4 PASS and Ruff PASS; no golden corpus synthesis run
+UNIT=123 documentation tests PASS before final classifier refinement; current visual suite 4 PASS and Ruff PASS; real Session 41 frame analysis is local only; no golden corpus synthesis run
 RUFF=PASS - changed documentation modules and focused tests
 REPO_STATE=PASS - 123 documentation tests plus current 4 visual regression tests and Ruff pass; golden acceptance remains blocked
 AGENT_SERVED_CHECK=NOT_RUN - no Documents V2 served journey was published
@@ -51,7 +51,7 @@ KANBAN_TESTING=67
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=5
 BLOCKER=Session 41 internal transcript/VAD reconciliation and technical visual extraction; S43 valid source recovery required for its sample
-NEXT_ACTION=Finish focused test suite, inspect internal uncovered speech intervals, implement remaining provenance/diagram and Mission Pack gates, then regenerate only Session 41 when gates pass
+NEXT_ACTION=Reconcile Session 41 internal VAD speech intervals, implement structured diagram/claim integration and operational Mission Pack gates, recover S43 source, then generate only a gated Session 41 sample
 
 No golden output was regenerated, no P&G batch synthesis was run, no owner approval is recorded, and Documents V2 remains incomplete.
 
