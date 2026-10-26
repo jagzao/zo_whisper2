@@ -9,7 +9,7 @@
 
 DOCUMENTS_V2=INCOMPLETE; technical Session 41 sample is ready for owner review
 DOCS_V2_ARCHITECTURE_VERSION=2 + speech-coverage gate + reviewed semantic visuals + claim/diagram provenance
-REVISA_POINTER_MAIN=77b2b13 on main; status-only pointer, implementation is not merged/deployed
+REVISA_POINTER_MAIN=PASS; main pointer 77b2b13 resolves active branch and canonical SDD; status-only, not merged/deployed
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
 IMPLEMENTATION_HEAD=3f87806; tested code checkpoint pushed to active branch; status metadata may be newer
 MERGED_TO_MAIN=NO
@@ -30,6 +30,9 @@ SESSION_41_DERIVED_DIAGRAMS=PASS; 3 deterministic diagrams with node/edge claim,
 SESSION_41_APPLICATIONS=2 separately represented: PG RegDoc; North America Central Product Research Testing Panelist Payments
 SESSION_41_PROCEDURES=0; no unsupported SOP steps generated
 SESSION_41_MISSION_PACK=READY_FOR_OWNER_REVIEW; exactly one source-basename MD/PDF/JSON trio generated locally; 12-page PDF, four representative frames, no gallery dump
+SESSION_41_GOLDEN_MD=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.md
+SESSION_41_GOLDEN_PDF=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.pdf
+SESSION_41_GOLDEN_JSON=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.json
 SESSION_41_QUALITY_SCORECARD=PASS; 30 grounded claims; 6 uncertain/needs-review claims; 0 unproven; 3 diagrams; 2 applications; 3 open questions; 6 ambiguities
 SESSION_41_GATE=PASS_TECHNICAL_OWNER_REVIEW_PENDING
 S43_SOURCE_RECOVERY=OWNER_REQUIRED
