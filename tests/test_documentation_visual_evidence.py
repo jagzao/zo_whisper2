@@ -134,6 +134,21 @@ def test_visual_topics_use_nearby_evidence_instead_of_one_generic_ui_bucket():
     ) == "DATABASE:SESSION_GENERAL"
 
 
+def test_semantic_topic_audit_does_not_change_existing_v2_visual_gate():
+    report = {
+        "frames": [
+            {"frame_id": "f1", "timestamp": 1, "source_image": "f1.png", "ocr_status": "LOW_CONFIDENCE",
+             "ocr_text": "", "visual_type": "APPLICATION_UI", "topic": "APPLICATION_UI:SESSION_GENERAL",
+             "semantic_topic": "WORKFLOW:SESSION_GENERAL", "selected": True},
+        ]
+    }
+    result = visual_evidence.apply_semantic_review(report, [])
+
+    assert result["visual_coverage_gate"] == "PASS"
+    assert result["semantic_topic_coverage_gate"] == "FAIL"
+    assert result["semantic_topics_uncovered"] == ["WORKFLOW:SESSION_GENERAL"]
+
+
 def test_reviewed_visual_topics_cover_distinct_content_with_frame_provenance():
     report = {"frames": [
         {"frame_id": "overview.png", "timestamp": 10, "source_image": "overview.png",

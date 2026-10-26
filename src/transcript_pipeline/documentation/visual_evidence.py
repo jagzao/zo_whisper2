@@ -232,7 +232,8 @@ def analyze_frame(
         "visual_type": visual_type,
         "title": labels[0] if labels else None,
         "application": application,
-        "topic": _topic_for(visual_type, application, f"{text} {transcript_text}"),
+        "topic": _topic_for(visual_type, application),
+        "semantic_topic": _topic_for(visual_type, application, f"{text} {transcript_text}"),
         "topic_basis": "OCR_AND_NEARBY_TRANSCRIPT" if transcript_text else "OCR",
         "topic_title": labels[0] if labels else None,
         "transcript_text": transcript_text,
@@ -355,6 +356,12 @@ def analyze_frames(
         if item["topic"] and item["ocr_status"] == "SUCCESS"
     })
     uncovered_topics = sorted(set(topics) - set(covered_topics))
+    semantic_topics = sorted({item["semantic_topic"] for item in meaningful if item.get("semantic_topic")})
+    semantic_covered = sorted({
+        item["semantic_topic"] for item in selected
+        if item.get("semantic_topic") and item["ocr_status"] == "SUCCESS"
+    })
+    semantic_uncovered = sorted(set(semantic_topics) - set(semantic_covered))
     diagrams = []
     for record in selected:
         if not record["edges"]:
@@ -384,6 +391,10 @@ def analyze_frames(
         "visual_topics_covered": covered_topics,
         "visual_topics_uncovered": uncovered_topics,
         "visual_coverage_gate": "PASS" if not uncovered_topics else "FAIL",
+        "semantic_topics_discovered": semantic_topics,
+        "semantic_topics_covered": semantic_covered,
+        "semantic_topics_uncovered": semantic_uncovered,
+        "semantic_topic_coverage_gate": "PASS" if semantic_topics and not semantic_uncovered else "FAIL",
         "derived_diagrams": diagrams,
         "frames": records,
     }
@@ -411,6 +422,7 @@ def apply_semantic_review(
             "visual_type": review["visual_type"],
             "application": review["application"],
             "topic": review.get("topic"),
+            "semantic_topic": review.get("topic") or frame.get("semantic_topic"),
             "topic_title": review.get("topic_title"),
             "title": review.get("title"),
             "visible_components": list(review.get("components", [])),
@@ -460,11 +472,20 @@ def apply_semantic_review(
     selected = [f for f in meaningful if f.get("selected")]
     topics = sorted({f["topic"] for f in meaningful})
     covered = sorted({f["topic"] for f in selected})
+    semantic_topics = sorted({f["semantic_topic"] for f in meaningful if f.get("semantic_topic")})
+    semantic_covered = sorted({
+        f["semantic_topic"] for f in selected
+        if f.get("semantic_topic") and f.get("ocr_status") == "SUCCESS"
+    })
     report.update({
         "visual_topics_discovered": topics,
         "visual_topics_covered": covered,
         "visual_topics_uncovered": sorted(set(topics) - set(covered)),
         "visual_coverage_gate": "PASS" if topics and set(topics) <= set(covered) else "FAIL",
+        "semantic_topics_discovered": semantic_topics,
+        "semantic_topics_covered": semantic_covered,
+        "semantic_topics_uncovered": sorted(set(semantic_topics) - set(semantic_covered)),
+        "semantic_topic_coverage_gate": "PASS" if semantic_topics and set(semantic_topics) <= set(semantic_covered) else "FAIL",
         "technical_frame_count": sum(
             f["visual_type"] not in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}
             for f in report.get("frames", [])
