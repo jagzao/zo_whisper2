@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "Documents V2 remains INCOMPLETE and owner review is pending. Active implementation 3f87806 on delta/zmi-docs-transcript-gate: Session 41 transcript, visual-topic, claim, diagram, and Mission Pack gates PASS; 133 focused documentation tests, Ruff, and syntax checks PASS; one local MD/PDF/JSON golden trio ready. Not merged/deployed. S43 source remains blocked; corpus generation remains frozen.",
-  "updated_at": "2026-10-26T13:52:51Z"
+  "last_result": "OWNER_UAT=FAIL_FIX_REQUIRED; all four Session 41 defects fixed and the golden sample regenerated. APPLICATION_CLAIM_ISOLATION, SOURCE_ARTIFACT_DEDUP, EVIDENCE_TIMELINE_CHRONOLOGICAL, DIAGRAM_RELATION_GROUNDING, claim, visual, speech, and quality gates PASS; 138 focused tests, Ruff, and syntax checks PASS. Juan re-review pending. DOCUMENTS_V2=INCOMPLETE; CORPUS_GENERATION=FROZEN; S43=BLOCKED_SOURCE. Implementation 41ebfd6 is not merged/deployed.",
+  "updated_at": "2026-10-26T14:59:15Z"
 }
