@@ -375,3 +375,92 @@ def analyze_frames(
         "derived_diagrams": diagrams,
         "frames": records,
     }
+
+
+def apply_semantic_review(
+    report: dict[str, Any], reviews: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """Apply frame-specific reviewed topics without losing OCR or image provenance."""
+    by_id = {item["frame_id"]: item for item in report.get("frames", [])}
+    seen: set[str] = set()
+    for review in reviews:
+        frame_id = str(review.get("frame_id", ""))
+        if frame_id not in by_id or frame_id in seen:
+            raise ValueError(f"unknown or duplicate reviewed frame: {frame_id}")
+        seen.add(frame_id)
+        frame = by_id[frame_id]
+        if abs(float(review.get("timestamp", -1)) - float(frame["timestamp"])) > 0.1:
+            raise ValueError(f"review timestamp does not match {frame_id}")
+        if review.get("visual_type") not in VISUAL_TYPES:
+            raise ValueError(f"invalid reviewed visual type for {frame_id}")
+        if review.get("selected") and frame.get("ocr_status") not in {"SUCCESS", "LOW_CONFIDENCE"}:
+            raise ValueError(f"cannot select frame without readable OCR state: {frame_id}")
+        frame.update({
+            "visual_type": review["visual_type"],
+            "application": review["application"],
+            "topic": review.get("topic"),
+            "topic_title": review.get("topic_title"),
+            "title": review.get("title"),
+            "visible_components": list(review.get("components", [])),
+            "visible_labels": list(review.get("labels", frame.get("visible_labels", []))),
+            "actors": list(review.get("actors", [])),
+            "relationships": list(review.get("relationships", [])),
+            "data_flows": list(review.get("data_flows", [])),
+            "configuration_fields": list(review.get("configuration_fields", [])),
+            "error_messages": list(review.get("error_messages", [])),
+            "operational_actions": list(review.get("operational_actions", [])),
+            "confidence": float(review.get("confidence", 0.0)),
+            "review_state": "HUMAN_REVIEWED",
+            "visual_analysis_status": "HUMAN_REVIEWED",
+            "unique_information": list(review.get("unique_information", [])),
+            "duplicate_of": review.get("duplicate_of"),
+            "selected": bool(review.get("selected")),
+            "selection_reason": review.get("selection_reason"),
+            "suppression_reason": review.get("suppression_reason"),
+            "provenance": {
+                "frame_id": frame_id,
+                "timestamp": float(frame["timestamp"]),
+                "image_path": frame["source_image"],
+                "ocr_status": frame["ocr_status"],
+                "ocr_text": frame["ocr_text"],
+                "confidence": float(review.get("confidence", 0.0)),
+                "supporting_evidence_ids": list(review.get("supporting_evidence_ids", [])),
+                "review_state": "HUMAN_REVIEWED",
+            },
+        })
+        frame["assertions"] = [
+            {
+                "assertion_type": key,
+                "value": value,
+                "provenance": dict(frame["provenance"]),
+            }
+            for key in (
+                "visible_components", "visible_labels", "actors", "relationships",
+                "data_flows", "configuration_fields", "error_messages", "operational_actions",
+            )
+            for value in frame.get(key, [])
+        ]
+    meaningful = [
+        f for f in report.get("frames", [])
+        if f["visual_type"] not in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}
+        and f.get("topic")
+    ]
+    selected = [f for f in meaningful if f.get("selected")]
+    topics = sorted({f["topic"] for f in meaningful})
+    covered = sorted({f["topic"] for f in selected})
+    report.update({
+        "visual_topics_discovered": topics,
+        "visual_topics_covered": covered,
+        "visual_topics_uncovered": sorted(set(topics) - set(covered)),
+        "visual_coverage_gate": "PASS" if topics and set(topics) <= set(covered) else "FAIL",
+        "technical_frame_count": sum(
+            f["visual_type"] not in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}
+            for f in report.get("frames", [])
+        ),
+        "meaningful_visual_count": len(meaningful),
+        "selected_count": len(selected),
+        "suppressed_duplicate_count": sum(bool(f.get("duplicate_of")) for f in report["frames"]),
+        "suppressed_gallery_count": sum(f["visual_type"] == "MEETING_GALLERY" for f in report["frames"]),
+        "suppressed_black_count": sum(f["visual_type"] == "BLACK_OR_EMPTY" for f in report["frames"]),
+    })
+    return report

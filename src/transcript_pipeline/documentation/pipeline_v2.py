@@ -49,7 +49,7 @@ from transcript_pipeline.documentation.synthesis import (
     SynthesisService,
     default_synthesis_service,
 )
-from transcript_pipeline.documentation.visual_evidence import analyze_frames
+from transcript_pipeline.documentation.visual_evidence import analyze_frames, apply_semantic_review
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +120,15 @@ def generate_documentation_v2(
     visual_report = analyze_frames(
         visual_frames, frames_dir, existing_ocr=visual_cache, source_video=video_name
     )
+    semantic_review_path = frames_dir / "evidence" / "visual-review.json"
+    if semantic_review_path.is_file():
+        try:
+            semantic_review = json.loads(semantic_review_path.read_text(encoding="utf-8"))
+            visual_report = apply_semantic_review(visual_report, semantic_review.get("frames", []))
+        except (OSError, ValueError, TypeError) as exc:
+            visual_report["visual_coverage_gate"] = "FAIL"
+            visual_report["visual_review_error"] = str(exc)
+            logger.warning("[DOCS-V2] semantic visual review rejected: %s", exc)
     visual_path = frames_dir / "evidence" / "visual-evidence.json"
     visual_path.parent.mkdir(parents=True, exist_ok=True)
     visual_path.write_text(json.dumps(visual_report, indent=2, ensure_ascii=False), encoding="utf-8")

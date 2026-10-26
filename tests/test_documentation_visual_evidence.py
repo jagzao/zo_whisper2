@@ -120,3 +120,40 @@ def test_participant_name_grid_is_suppressed_but_shared_application_screen_is_re
 
     assert visual_evidence._classify(gallery, 0.9, False)[0] == "MEETING_GALLERY"
     assert visual_evidence._classify(shared_screen, 0.9, False)[0] != "MEETING_GALLERY"
+
+
+def test_reviewed_visual_topics_cover_distinct_content_with_frame_provenance():
+    report = {"frames": [
+        {"frame_id": "overview.png", "timestamp": 10, "source_image": "overview.png",
+         "ocr_status": "SUCCESS", "ocr_text": "Overview", "visual_type": "OTHER"},
+        {"frame_id": "flow.png", "timestamp": 20, "source_image": "flow.png",
+         "ocr_status": "SUCCESS", "ocr_text": "Flow", "visual_type": "OTHER"},
+    ]}
+    reviews = [
+        {"frame_id": "overview.png", "timestamp": 10, "visual_type": "PRESENTATION_SLIDE",
+         "application": "PG_REGDOC", "topic": "OVERVIEW", "selected": True,
+         "selection_reason": "SCENE_CHANGE", "components": ["PGRegDoc.com"], "confidence": .9},
+        {"frame_id": "flow.png", "timestamp": 20, "visual_type": "FLOW_DIAGRAM",
+         "application": "PG_REGDOC", "topic": "DATA_FLOW", "selected": True,
+         "selection_reason": "ARCHITECTURE", "relationships": ["browser to application"], "confidence": .9,
+         "supporting_evidence_ids": ["E-008"]},
+    ]
+
+    result = visual_evidence.apply_semantic_review(report, reviews)
+
+    assert result["visual_coverage_gate"] == "PASS"
+    assert result["visual_topics_discovered"] == ["DATA_FLOW", "OVERVIEW"]
+    assert result["selected_count"] == 2
+    assert result["frames"][1]["assertions"][0]["provenance"]["frame_id"] == "flow.png"
+    assert result["frames"][1]["assertions"][0]["provenance"]["supporting_evidence_ids"] == ["E-008"]
+
+
+def test_reviewed_visual_topic_rejects_frame_timestamp_mismatch():
+    report = {"frames": [{"frame_id": "f.png", "timestamp": 10, "ocr_status": "SUCCESS"}]}
+    review = [{"frame_id": "f.png", "timestamp": 11, "visual_type": "OTHER", "application": "APP"}]
+    try:
+        visual_evidence.apply_semantic_review(report, review)
+    except ValueError as error:
+        assert "timestamp" in str(error)
+    else:
+        raise AssertionError("mismatched provenance timestamp was accepted")
