@@ -1,10 +1,27 @@
 from transcript_pipeline.documentation.mission_pack import (
     QUALITY_GATES,
+    assess_transcript_quality,
     evaluate_quality_gates,
     measure_source_coverage,
     merge_application_facts,
     validate_claim_records,
 )
+
+
+def test_transcript_state_calculates_gaps_and_requires_near_complete_coverage():
+    partial = assess_transcript_quality(1000, [{"start": 10, "end": 600}])
+    assert partial["transcript_state"] == "PARTIAL"
+    assert partial["transcript_coverage_percent"] == 60.0
+    assert partial["final_gap"] == 400.0
+    assert partial["speech_gaps"][-1]["kind"] == "final"
+
+    valid = assess_transcript_quality(1000, [{"start": 0, "end": 970}])
+    assert valid["transcript_state"] == "VALID"
+    late = assess_transcript_quality(1000, [{"start": 400, "end": 990}])
+    assert late["transcript_state"] == "PARTIAL"
+    assert late["speech_gaps"][0]["kind"] == "leading"
+    assert assess_transcript_quality(1000, [])["transcript_state"] == "MISSING"
+    assert assess_transcript_quality(1000, [{"start": "bad", "end": 10}])["transcript_state"] == "FAILED"
 
 
 def test_source_coverage_flags_large_trailing_gap():

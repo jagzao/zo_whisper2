@@ -5,6 +5,52 @@
 
 ## CURRENT_RESULT
 
+### Documents V2/V3 golden-sample checkpoint — 2026-10-26
+
+DOCUMENTS_V2=INCOMPLETE - transcript coverage gate implemented; visual understanding and operational acceptance remain blocked
+DOCS_V2_ARCHITECTURE_VERSION=2 + transcript-quality gate v1
+SESSION_41_GATE=FAIL - transcript PARTIAL; 11:09.477 final gap
+S43_GATE=FAIL - source file `Video_compress/tutorial/pg_S43.mp4` is unreadable by ffprobe (`moov atom not found`)
+PG_LOGICAL_VIDEO_COUNT=16 (existing reconciled baseline)
+PG_VALID_TRANSCRIPTIONS=4 (baseline; corpus recount pending)
+PG_PARTIAL_TRANSCRIPTIONS=4 (baseline; corpus recount pending)
+PG_MISSING_TRANSCRIPTIONS=6 (baseline; corpus recount pending)
+PG_FAILED_TRANSCRIPTIONS=2 (baseline; corpus recount pending)
+OCR_PIPELINE=PARTIAL - local OCR exists; per-frame status, retry/fallback, and quality gate absent
+VISUAL_UNDERSTANDING=NOT_READY - structured diagram/UI analysis with provenance not implemented
+SEMANTIC_KEYFRAMES=PARTIAL - screenshot dedup exists; semantic scene/UI/OCR selection absent
+CLAIM_GROUNDING=PARTIAL - evidence ids validated; requested claim ledger/provenance fields incomplete
+APP_SEGMENTATION=PASS - Session 41 identifies PG RegDoc and North America CPRT Panelist Payments separately
+CROSS_SESSION_KNOWLEDGE=PARTIAL - merge helper exists; conflict-safe operational consolidation pending
+MISSION_PACK=PARTIAL - per-application baseline packs exist; gates fail and do not satisfy operational completeness
+DERIVED_DIAGRAMS=NOT_READY - no provenance-linked graph extraction
+MINERU=DISABLED - no adapter; external document processing remains unauthorized
+S43_DURATION=01:23:21 (owner-provided; local source unreadable)
+S43_TRANSCRIPT_STATE=FAILED
+S43_TRANSCRIPT_COVERAGE=0%
+S43_MEANINGFUL_FRAMES=0 available
+S43_OCR_SUCCESS=NOT_RUN
+S43_LOW_CONFIDENCE_STEPS=50 (previous invalid output; invalidated)
+S43_APPLICATIONS=UNRESOLVED
+S43_PROCEDURES=0
+S43_QUALITY_GATE=FAIL
+SESSION_41_TRANSCRIPT_STATE=PARTIAL
+SESSION_41_TRANSCRIPT_COVERAGE=68.20% by last timestamp; 65.97% transcript span
+SESSION_41_APPLICATIONS=2 - PG RegDoc; North America Central Product Research Testing Panelist Payments
+SESSION_41_QUALITY_GATE=FAIL
+REPO_STATE=PASS - 118 focused documentation tests; transcript-incomplete manual is blocked
+AGENT_SERVED_CHECK=NOT_RUN
+OWNER_UAT=PENDING
+EVIDENCE_CONFLICT=NO
+KANBAN_COMPLETE=8
+KANBAN_TESTING=66
+KANBAN_BLOCKED=4
+KANBAN_OWNER_PENDING=5
+BLOCKER=Recover a readable S43 source and Session 41 transcript tail; finish OCR/visual evidence pipeline
+NEXT_ACTION=Repair/restore the golden source inputs, then run local transcript and visual gates before regenerating either sample
+
+The transcript gate and synthetic regression fixtures were added locally. No golden sample was regenerated, no P&G corpus batch was run, and no owner approval is recorded.
+
 FOLDER_LOCATION_LINK=PASS - served Folder cell links to /stream?id=<encoded media_id>; HEAD returns 200 video/mp4
 OLD_MANUALS_FOUND=249
 OLD_MANUALS_DELETED=249 - exact generated documentation targets, hash-logged before deletion

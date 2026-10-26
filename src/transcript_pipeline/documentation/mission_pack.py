@@ -30,6 +30,7 @@ QUALITY_GATES = (
     "EVIDENCE_TIMELINE",
     "SOURCE_MAPPING",
 )
+TRANSCRIPT_STATES = {"VALID", "PARTIAL", "MISSING", "FAILED", "NEEDS_REVIEW"}
 CLAIM_FIELDS = {
     "claim",
     "application",
@@ -84,6 +85,61 @@ def measure_source_coverage(
         "visual_sampling_is_continuous": False,
         "unexplained_gaps": gaps,
         "status": status,
+    }
+
+
+def assess_transcript_quality(
+    video_duration: float,
+    transcript_segments: list[dict[str, Any]],
+    *,
+    major_gap_seconds: float = 300,
+    valid_coverage_percent: float = 95,
+) -> dict[str, Any]:
+    """Measure timestamp reach and gaps; sparse or malformed transcripts fail closed."""
+    duration = float(video_duration or 0)
+    if duration <= 0:
+        return {"transcript_state": "NEEDS_REVIEW", "reason": "video_duration_unavailable"}
+    if not transcript_segments:
+        return {
+            "video_duration": duration, "transcript_start": None,
+            "transcript_last_timestamp": None, "transcript_span": 0.0,
+            "transcript_coverage_percent": 0.0, "speech_gaps": [],
+            "final_gap": duration, "transcript_state": "MISSING",
+        }
+
+    normalized: list[tuple[float, float]] = []
+    for segment in transcript_segments:
+        try:
+            start, end = float(segment["start"]), float(segment["end"])
+        except (KeyError, TypeError, ValueError):
+            return {"video_duration": duration, "transcript_state": "FAILED", "reason": "invalid_segment_timestamps"}
+        if start < 0 or end < start or end > duration + 30:
+            return {"video_duration": duration, "transcript_state": "FAILED", "reason": "out_of_range_segment"}
+        normalized.append((start, end))
+    normalized.sort()
+    first, last = normalized[0][0], max(end for _, end in normalized)
+    gaps = [
+        {"start": previous_end, "end": start, "seconds": round(start - previous_end, 3)}
+        for (_, previous_end), (start, _) in zip(normalized, normalized[1:])
+        if start - previous_end > 30
+    ]
+    final_gap = max(0.0, duration - last)
+    if final_gap > 30:
+        gaps.append({"start": last, "end": duration, "seconds": round(final_gap, 3), "kind": "final"})
+    span = max(0.0, last - first)
+    coverage = min(100.0, 100.0 * last / duration)
+    leading_gap = first
+    if leading_gap > 30:
+        gaps.insert(0, {"start": 0.0, "end": first, "seconds": round(leading_gap, 3), "kind": "leading"})
+    state = "VALID" if coverage >= valid_coverage_percent and all(
+        gap["seconds"] <= major_gap_seconds for gap in gaps
+    ) else "PARTIAL"
+    return {
+        "video_duration": round(duration, 3), "transcript_start": round(first, 3),
+        "leading_gap": round(leading_gap, 3),
+        "transcript_last_timestamp": round(last, 3), "transcript_span": round(span, 3),
+        "transcript_coverage_percent": round(coverage, 2), "speech_gaps": gaps,
+        "final_gap": round(final_gap, 3), "transcript_state": state,
     }
 
 

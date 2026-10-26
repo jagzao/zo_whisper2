@@ -240,7 +240,7 @@ def test_no_frames_dir_skips_visual_evidence_entirely():
 
 # ── Generation / regeneration / metadata persistence ─────────────────────
 
-def test_generate_documentation_writes_manual_and_ai_package(tmp_path):
+def test_generate_documentation_blocks_manual_for_incomplete_transcript(tmp_path):
     frames_dir = tmp_path / "demo_Frames" / "demo"
     frames_dir.mkdir(parents=True)
     (frames_dir / "frame_mapping.json").write_text(json.dumps(MAPPING_WITH_TRANSCRIPT), encoding="utf-8")
@@ -253,23 +253,10 @@ def test_generate_documentation_writes_manual_and_ai_package(tmp_path):
     assert summary["low_confidence_count"] == 1
 
     manual_dir = frames_dir / "manual"
-    manual_text = (manual_dir / "MANUAL.md").read_text(encoding="utf-8")
-    assert "Click the New Project button" in manual_text
-    assert "confidence: **low**" in manual_text
-    assert (manual_dir / "assets" / "step-0001.png").exists()
+    assert summary["status"] == "SOURCE_INCOMPLETE"
+    assert not (manual_dir / "MANUAL.md").exists()
+    assert (manual_dir / "diagnostic-report.md").exists()
     assert (manual_dir / "steps.json").exists()
-    assert (manual_dir / "demo.md").read_text(encoding="utf-8") == manual_text
-    assert json.loads((manual_dir / "demo.json").read_text(encoding="utf-8"))["source"]["video_name"] == "demo.mp4"
-
-    ai_dir = frames_dir / "ai-package"
-    manifest = json.loads((ai_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert manifest["schema_version"] == "1.0"
-    assert len(manifest["procedures"]) == 2
-    assert manifest["artifacts"]  # at least one frame asset registered
-
-    chunks = [json.loads(line) for line in (ai_dir / "chunks.jsonl").read_text(encoding="utf-8").splitlines()]
-    assert len(chunks) == 2
-    assert chunks[0]["metadata"]["confidence"] == "high"
 
 
 def test_generate_documentation_raises_clearly_when_mapping_missing(tmp_path):

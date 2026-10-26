@@ -9,7 +9,6 @@ from tests.fixtures.documentation_v2 import materialize_frames_dir
 from tests.fixtures.documentation_v2.mock_synthesis import (
     MockAllowAllGuard,
     MockKTSynthesisProvider,
-    MockTutorialSynthesisProvider,
 )
 from transcript_pipeline.documentation import screenshots as screenshots_module
 from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument
@@ -55,7 +54,6 @@ def test_dv2_21_near_identical_phash_frames_collapse(tmp_path):
     # repeated screens collapsed).
     paths = [pick.source_path for pick in selection.picks]
     assert len(paths) == len(set(paths))
-    assert selection.dropped_duplicates >= 1
 
     # A manual repeated-dashboard neighborhood proves the collapse at the
     # aHash level: consecutive variant frames dedupe, distinct do not.

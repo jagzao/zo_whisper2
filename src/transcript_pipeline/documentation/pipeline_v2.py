@@ -36,6 +36,7 @@ from transcript_pipeline.documentation.grounding import (
     write_validation_report,
 )
 from transcript_pipeline.documentation.knowledge_models import KnowledgeDocument
+from transcript_pipeline.documentation.mission_pack import assess_transcript_quality
 from transcript_pipeline.documentation.models import DocumentationSource
 from transcript_pipeline.documentation.modes import DOCUMENTATION_MODES, normalize_documentation_config
 from transcript_pipeline.documentation.screenshots import select_screenshots
@@ -101,6 +102,12 @@ def generate_documentation_v2(
     # 1-3. Evidence plane.
     timeline = build_evidence_timeline(mapping_data, steps=steps, source_media=video_name, frames_dir=frames_dir)
     evidence_paths = write_evidence_outputs(frames_dir, timeline)
+    transcript_segments = [
+        {"start": item.timestamp_start, "end": item.timestamp_end}
+        for item in timeline.items
+        if item.transcript_excerpt and not item.untimed and item.evidence_source in {"transcript", "transcript_ocr"}
+    ]
+    transcript_quality = assess_transcript_quality(source.duration, transcript_segments)
 
     # Compatibility evidence source (SPEC §10: manual/steps.json).
     engine._write_steps_json(manual_dir, source, steps)
@@ -113,7 +120,10 @@ def generate_documentation_v2(
     service = synthesis_service
     if service is None and not evidence_only:
         service = default_synthesis_service()
-    classifier = _classifier_for(service, project_config)
+    classifier = (
+        _classifier_for(service, project_config)
+        if transcript_quality["transcript_state"] == "VALID" else None
+    )
     resolution = resolve_documentation_mode(project_config, timeline, classifier=classifier)
     mode = resolution.mode
     mode_source = resolution.source
@@ -127,7 +137,9 @@ def generate_documentation_v2(
     document: KnowledgeDocument | None = None
     full_transcript = str(transcription_summary.get("full_transcription", "") or "")
 
-    if evidence_only or not doc_config["synthesis_enabled"]:
+    if transcript_quality["transcript_state"] != "VALID":
+        status = "SOURCE_INCOMPLETE"
+    elif evidence_only or not doc_config["synthesis_enabled"]:
         status = "EVIDENCE_READY" if not doc_config["synthesis_enabled"] else status
     elif service is None:
         status = "SYNTHESIS_NOT_AVAILABLE"
@@ -188,6 +200,27 @@ def generate_documentation_v2(
             "status": STATUS_INVALID,
             "errors": synthesis_result.errors if synthesis_result else ["invalid_synthesis"],
         }, indent=2, ensure_ascii=False), encoding="utf-8")
+    elif status == "SOURCE_INCOMPLETE":
+        manual_dir.mkdir(parents=True, exist_ok=True)
+        diagnostic_path = manual_dir / "diagnostic-report.json"
+        diagnostic_path.write_text(json.dumps({
+            "source": video_name,
+            "status": status,
+            "transcript_quality": transcript_quality,
+            "evidence_item_count": timeline.item_count,
+            "message": "Synthesis blocked because timestamped transcript coverage is not valid.",
+        }, indent=2, ensure_ascii=False), encoding="utf-8")
+        (manual_dir / "diagnostic-report.md").write_text(
+            f"# Source diagnostic: {video_name}\n\n"
+            "**Status:** SOURCE_INCOMPLETE\n\n"
+            "Synthesis is blocked because the timestamped transcript is not valid. "
+            "Review the transcript coverage report before generating documentation.\n\n"
+            f"- Transcript state: {transcript_quality['transcript_state']}\n"
+            f"- Coverage: {transcript_quality.get('transcript_coverage_percent', 0)}%\n"
+            f"- Leading gap: {transcript_quality.get('leading_gap', 'unknown')} seconds\n"
+            f"- Final gap: {transcript_quality.get('final_gap', 'unknown')} seconds\n",
+            encoding="utf-8",
+        )
     else:
         knowledge_result = {"published": False, "reason": f"synthesis_{status.lower()}"}
 
@@ -195,7 +228,12 @@ def generate_documentation_v2(
     # manual/steps metadata callers keep working). Last-good protection
     # (DV2-20): a previously valid semantic manual is never overwritten by
     # an invalid synthesis's compatibility rendering.
-    if document is None and compatibility_bundles and not _has_valid_semantic_manual(manual_dir):
+    if (
+        document is None
+        and transcript_quality["transcript_state"] == "VALID"
+        and compatibility_bundles
+        and not _has_valid_semantic_manual(manual_dir)
+    ):
         try:
             engine.write_manual(manual_dir, source, steps, frames_dir, write_steps_json=False)
             engine.write_ai_package(ai_package_dir, source, steps, frames_dir)
@@ -213,6 +251,8 @@ def generate_documentation_v2(
 
     return {
         "status": status,
+        "transcript_quality": transcript_quality,
+        "diagnostic_report": str(manual_dir / "diagnostic-report.json") if status == "SOURCE_INCOMPLETE" else None,
         "manual_dir": str(manual_dir),
         "ai_package_dir": str(ai_package_dir),
         "step_count": len(steps),

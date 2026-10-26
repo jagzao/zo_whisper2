@@ -1,8 +1,8 @@
 {
   "project": "whisper",
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
-  "branch": "main",
+  "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "folder_cell_opens_video_stream_url_in_new_tab",
-  "updated_at": "2026-10-24T23:45:44Z"
+  "last_result": "documents_v2_transcript_gate_added; golden samples blocked by source quality",
+  "updated_at": "2026-10-26T00:33:01Z"
 }

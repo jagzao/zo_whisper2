@@ -16,6 +16,7 @@ network (PLAN WP-18).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -72,6 +73,21 @@ def materialize_frames_dir(fixture: str, tmp_path: Path) -> Path:
     (frames_dir / "frame_mapping.json").write_text(
         json.dumps(mapping, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+    # These synthetic recordings contain timestamped speech across their full
+    # duration so semantic tests exercise synthesis, while source-gate tests
+    # separately cover incomplete transcripts.
+    transcript = str(mapping.get("transcription_summary", {}).get("full_transcription", ""))
+    utterances = [part.strip() for part in re.split(r"(?<=[.!?])\s+", transcript) if part.strip()]
+    duration = float(mapping.get("video_info", {}).get("duration", 0))
+    if utterances and duration > 0:
+        interval = duration / len(utterances)
+        segments = [
+            {"id": str(index), "start": index * interval, "end": min(duration, index * interval + interval * 0.8), "text": text}
+            for index, text in enumerate(utterances)
+        ]
+        (frames_dir.parent / f"{Path(mapping['video_info']['name']).stem}_segments.json").write_text(
+            json.dumps({"segments": segments}, ensure_ascii=False), encoding="utf-8"
+        )
 
     last_ocr = ""
     variant = 0
