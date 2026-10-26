@@ -1,8 +1,8 @@
 {
-    "project":  "whisper",
-    "active_sdd":  ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
-    "branch":  "delta/zmi-docs-transcript-gate",
-    "served_revision":  "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-    "last_result":  "ACTIVE_BRANCH_HEAD=a462161bb2a9ab6a607e853610ec16b6eaee3e74; S46 local targeted recovery transcribed 52 high-energy gaps independently; 1 dual-model 4.920s speech candidate remains SOURCE_UNCERTAIN; 231 longer gaps unresolved; visual coverage 7/7; GOLDEN_2_GATE=BLOCKED_SPEECH_AND_IDENTITY; SESSION_41_OWNER_UAT=PASS; GOLDEN_OVERFIT_CHECK=PASS; cross-session/Mission Pack controlled tests PASS; UNIT=159_PASS; DOCUMENTS_V2=INCOMPLETE; CORPUS_GENERATION=FROZEN; MERGED_TO_MAIN=NO; DEPLOYED=NO.",
-    "updated_at":  "2026-10-26T22:05:00Z"
+  "project": "whisper",
+  "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
+  "branch": "delta/zmi-docs-transcript-gate",
+  "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
+  "last_result": "Status-only pointer to active implementation eed802c on delta/zmi-docs-transcript-gate. Session 41 owner-approved; GOLDEN_OVERFIT_CHECK=PASS; generic S46 extraction discovers one transcript-grounded application and visual coverage 7/7; 8.360s dual-model recovery candidates remain supplemental, 222 intervals/202.774s unresolved, GOLDEN_2_GATE=BLOCKED_SPEECH. Cross-session/Mission Pack controlled integration passes; no real cross-session pack or S46 golden generated. DOCUMENTS_V2=INCOMPLETE; corpus frozen; implementation is not merged or deployed.",
+  "updated_at": "2026-10-26T22:49:00Z"
 }
