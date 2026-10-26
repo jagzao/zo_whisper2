@@ -1,8 +1,8 @@
-﻿{
-  "project": "whisper",
-  "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
-  "branch": "delta/zmi-docs-transcript-gate",
-  "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; SESSION_41_GATE=PASS. DOCUMENTS_V2=INCOMPLETE; DOCUMENTS_V2_OWNER_UAT=PARTIAL. 20 P&G source files inventoried and ffprobe-readable; 14 have segment sidecars, 6 do not; 1 transcript VALID (approved Session 41), 3 assessed PARTIAL, 10 sidecars unassessed. Golden2 S46 OCR: 19 SUCCESS, 29 LOW_CONFIDENCE, 3 galleries; semantic topics 5/6 covered, WORKFLOW uncovered; VAD speech coverage 86.24%. GOLDEN_2_GATE=BLOCKED_EVIDENCE; no Golden2 documents generated. GOLDEN_OVERFIT_CHECK=FAIL because production session_pack.py retains Session 41 specifics. Cross-session integration not run. Full focused documentation suite 142 passed; Ruff and syntax pass. S43=BLOCKED_SOURCE/OWNER_REQUIRED. Corpus synthesis remains frozen; active branch not merged/deployed.",
-  "updated_at": "2026-10-26T18:15:00Z"
+{
+    "project":  "whisper",
+    "active_sdd":  ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
+    "branch":  "delta/zmi-docs-transcript-gate",
+    "served_revision":  "987219438c9cc8bd920dfe1e928f292e70a7fd03",
+    "last_result":  "ACTIVE_BRANCH_HEAD=d5f24df787c645aa7db564cb1ac9f287de31f397; implementation b087d9e; SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; GOLDEN_OVERFIT_CHECK=PASS; S46_GATE=BLOCKED_SPEECH_AND_IDENTITY (visual 7/7; diagnostic only); CROSS_SESSION_KNOWLEDGE=CONTROLLED_TESTS_PASS; APPLICATION_MISSION_PACK=CONTROLLED_TESTS_PASS; UNIT=159_PASS; DOCUMENTS_V2=INCOMPLETE; CORPUS_GENERATION=FROZEN; MERGED_TO_MAIN=NO; DEPLOYED=NO.",
+    "updated_at":  "2026-10-26T21:58:00Z"
 }
