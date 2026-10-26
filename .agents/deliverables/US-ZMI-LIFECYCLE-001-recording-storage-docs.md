@@ -5,65 +5,57 @@
 
 ## CURRENT_RESULT
 
-### Documents V2/V3 Session 41 golden checkpoint - 2026-10-26
+### Documents V2/V3 Session 41 owner-fix checkpoint - 2026-10-26
 
-DOCUMENTS_V2=INCOMPLETE; technical Session 41 sample is ready for owner review
+DOCUMENTS_V2=INCOMPLETE
 DOCS_V2_ARCHITECTURE_VERSION=2 + speech-coverage gate + reviewed semantic visuals + claim/diagram provenance
-REVISA_POINTER_MAIN=PASS; main pointer 77b2b13 resolves active branch and canonical SDD; status-only, not merged/deployed
+REVISA_POINTER_MAIN=PASS; main pointer 0af2f9f resolves active branch and canonical SDD; status-only, implementation not merged/deployed
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=3f87806; tested code checkpoint pushed to active branch; status metadata may be newer
+IMPLEMENTATION_HEAD=41ebfd6; owner-fix implementation pushed to active branch
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
+CORPUS_GENERATION=FROZEN
 SESSION_41_SOURCE=Videos/general/AMS_KAP_-_App_Support_-_Session_41.mp4; duration 00:35:05.365
-SESSION_41_MEDIA_COVERAGE=68.20%; timestamp reach 00:00:47.040 to 00:23:55.890
-SESSION_41_SPEECH_COVERAGE=97.39% effective; VAD speech 788.704s, covered 768.126s, 20.578s residual uncertain across 26 intervals; longest 1.644s; sub-0.5s boundary tolerance documented
-SESSION_41_TRANSCRIPT_STATE=VALID; final 00:11:09.476 classified NON_SPEECH_TRAILING_MEDIA from VAD and sampled gallery/black frames
-SESSION_41_INTERNAL_GAPS=26 UNCERTAIN residual intervals; interval-level evidence is retained in speech-coverage-report.json
-SESSION_41_SPEECH_COVERAGE_GATE=PASS
+SESSION_41_MEDIA_COVERAGE=68.20%; transcript timestamp reach 00:00:47.040 to 00:23:55.890
+SESSION_41_SPEECH_COVERAGE=97.39% effective; VAD speech 788.704s, covered 768.126s, 20.578s residual uncertain across 26 intervals; longest 1.644s
+SESSION_41_TRANSCRIPT_STATE=VALID; trailing 00:11:09.476 classified NON_SPEECH_TRAILING_MEDIA
 SESSION_41_OCR=22 SUCCESS, 9 LOW_CONFIDENCE, 5 NOT_REQUIRED across 36 frames
-SESSION_41_TECHNICAL_FRAMES=9 meaningful technical frames across 4 unique operational topics
-SESSION_41_VISUAL_SELECTION=4 selected; 5 near-duplicates, 20 gallery frames, 7 black/empty frames suppressed
-SESSION_41_VISUAL_TOPICS=4 discovered; 4 covered: overview, data flow, technical architecture, CPRT service catalogue record
-SESSION_41_VISUAL_COVERAGE_GATE=PASS; selected architecture frame 00:06:38 aligns to technical walkthrough; later duplicate suppressed
-SESSION_41_CLAIM_LEDGER=PASS; 30/30 claims have resolvable source/frame provenance; 0 unproven claims; uncertainty/conflicts preserved
-SESSION_41_DERIVED_DIAGRAMS=PASS; 3 deterministic diagrams with node/edge claim, event, and source-frame provenance
-SESSION_41_APPLICATIONS=2 separately represented: PG RegDoc; North America Central Product Research Testing Panelist Payments
-SESSION_41_PROCEDURES=0; no unsupported SOP steps generated
-SESSION_41_MISSION_PACK=READY_FOR_OWNER_REVIEW; exactly one source-basename MD/PDF/JSON trio generated locally; 12-page PDF, four representative frames, no gallery dump
+SESSION_41_VISUAL_TOPICS=4 discovered and 4 covered
+SESSION_41_MEANINGFUL_FRAMES=9; selected=4; duplicates=5, galleries=20, black/empty=7 suppressed
+APPLICATION_CLAIM_ISOLATION=PASS; cross-application claim IDs rejected; C-008 remains PG RegDoc only
+SOURCE_ARTIFACT_DEDUP=PASS; frame_0021.png has canonical V-004; duplicate V-005 resolves as alias
+EVIDENCE_TIMELINE_CHRONOLOGICAL=PASS; sorted by start, end, stable event ID
+DIAGRAM_RELATION_GROUNDING=PASS; relation types validated; AUTHENTICATES_WITH is rendered without a directional arrow
+CLAIM_LEDGER=PASS; 30/30 claims have source/frame provenance; 0 unproven claims; uncertainty preserved
+VISUAL_COVERAGE=PASS; all four audited operational topics have selected representatives
+SPEECH_COVERAGE=PASS; 97.39% effective; short uncertain residual intervals retained
+QUALITY_GATE=PASS; all technical generation gates pass
+SESSION_41_PROCEDURES=0; no unsupported SOP steps
 SESSION_41_GOLDEN_MD=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.md
 SESSION_41_GOLDEN_PDF=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.pdf
 SESSION_41_GOLDEN_JSON=CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41.json
-SESSION_41_QUALITY_SCORECARD=PASS; 30 grounded claims; 6 uncertain/needs-review claims; 0 unproven; 3 diagrams; 2 applications; 3 open questions; 6 ambiguities
+SESSION_41_PDF_PAGES=11; application title wraps at a deliberate line break; repeated claims use short cross-references
 SESSION_41_GATE=PASS_TECHNICAL_OWNER_REVIEW_PENDING
+SESSION_41_OWNER_UAT=FAIL_FIX_REQUIRED
+SESSION_41_OWNER_FINDINGS=4 blocking defects from prior review; all four corrected in regenerated sample; Juan re-review pending
 S43_SOURCE_RECOVERY=OWNER_REQUIRED
-S43_CANONICAL_SOURCE=NONE; corrupt candidate preserved, partial upload/manifest evidence retained
-S43_FFPROBE=FAIL; corrupt candidate reports moov atom not found
-S43_TRANSCRIPT_STATE=FAILED
-S43_OCR=NOT_RUN
-S43_VISUAL_ANALYSIS=NOT_RUN
-S43_GATE=BLOCKED_SOURCE
-OCR_PIPELINE=PASS for reviewed Session 41 source frames; per-frame status retained
-VISUAL_UNDERSTANDING=PASS for reviewed Session 41 semantic audit; structured assertions carry frame and transcript event provenance
-SEMANTIC_KEYFRAMES=PASS for Session 41; unique topic coverage with duplicate/gallery/black suppression
-CLAIM_LEDGER=PASS for Session 41; required provenance validated before READY
-DERIVED_DIAGRAMS=PASS; 3 provenance-linked diagrams
-CROSS_SESSION_KNOWLEDGE=NOT_RUN; no cross-session consolidation or corpus synthesis
-MISSION_PACK=PASS technical gates; READY_FOR_OWNER_REVIEW
+S43_GATE=BLOCKED_SOURCE; corrupt candidate preserved, no fabrication
+MISSION_PACK=READY_FOR_OWNER_REVIEW; exactly one Session 41 MD/PDF/JSON trio regenerated; no corpus output
 MINERU=DISABLED
-UNIT=133 focused documentation tests passed in 568.26s on current implementation
+UNIT=138 focused documentation tests passed in 617.63s on current code
 RUFF=PASS for changed documentation modules/tests
 SYNTAX=PASS; compileall on documentation package
-REPO_STATE=PASS for focused suite, Ruff, syntax, and golden-pack gates
+REPO_STATE=PASS for focused suite, Ruff, syntax, and Session 41 quality gates
 AGENT_SERVED_CHECK=NOT_RUN; implementation is not merged/deployed
-OWNER_UAT=PENDING; Juan review required
+OWNER_UAT=FAIL_FIX_REQUIRED; regenerated sample awaits Juan re-review; do not mark owner PASS
 KANBAN_COMPLETE=8
 KANBAN_TESTING=67
 KANBAN_BLOCKED=4
 KANBAN_OWNER_PENDING=6
-BLOCKER=Owner review of the new Session 41 golden sample; S43 source remains unavailable/corrupt
-NEXT_ACTION=Juan reviews the local Session 41 MD/PDF/JSON; continue only on feedback; do not generate P&G corpus or mark Documents V2 complete
+BLOCKER=Juan re-review of corrected Session 41 sample; S43 source remains unavailable/corrupt
+NEXT_ACTION=Juan reviews the regenerated Session 41 MD/PDF/JSON; keep P&G corpus frozen until approval
 
-Full P&G corpus synthesis remains frozen. Documents V2 remains incomplete and owner approval is pending. S43 remains blocked by source recovery.
+Full P&G corpus synthesis remains frozen. Documents V2 remains incomplete. No merge/deployment occurred. Owner approval is pending.
 
 Only key-value fields inside CURRENT_RESULT are authoritative. Dated results below HISTORICAL_RESULTS are non-authoritative.
 
