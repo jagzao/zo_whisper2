@@ -63,14 +63,17 @@ MINERU=DISABLED
 
 PG_LOGICAL_VIDEO_COUNT=20
 PG_READABLE_VIDEO_COUNT=20 per prior media validation; S43 excluded as separate unresolved recovery candidate
-PG_TRANSCRIPT_SIDECARS=19 local exact-basename matches across 22 physical files (3 duplicate copies); prior source-qualified inventory says 14
-PG_TRANSCRIPTS_VALID=1
-PG_TRANSCRIPTS_PARTIAL=3
-PG_TRANSCRIPTS_MISSING=1 exact basename (Compliance Session 7); prior source-qualified inventory says 6
-PG_TRANSCRIPTS_FAILED=0 confirmed
-PG_TRANSCRIPTS_UNASSESSED=15 exact-match candidates (10 previously unassessed + 5 newly reconciled); corpus-wide speech coverage audit not completed
-PG_TRANSCRIPTION_COMPLETE=NO; EVIDENCE_CONFLICT=YES because local basename inventory (19/20) conflicts with prior source-qualified counts (14/20); resolve manifests/identity before corpus counts are final
-EVIDENCE_CONFLICT=YES; local Videos/CarpetaTranscripciones basename audit finds 19/20 matches, versus prior source-qualified 14/20; 3 duplicate sidecar copies
+PG_TRANSCRIPT_SIDECARS=14 physical exact-name sidecar files for 11 distinct source videos; 3 duplicate copies
+PG_TRANSCRIPTS_VALID=0
+PG_TRANSCRIPTS_PARTIAL=10; all 10 non-S46 matched sidecars fail speech coverage (79.34%-93.58%)
+PG_TRANSCRIPTS_MISSING=9 of 20 lack an exact-name sidecar in the full CarpetaTranscripciones tree
+PG_TRANSCRIPTS_FAILED=0; all 20 media files pass ffprobe and all 11 matched sidecars parse
+PG_TRANSCRIPTS_NEEDS_REVIEW=1; S46 remains below speech-coverage threshold with 202.774s unresolved
+PG_TRANSCRIPTS_UNASSESSED=0 matched sidecars; 9 sources remain MISSING and need transcript recovery
+PG_TRANSCRIPTION_COMPLETE=NO; all 11 matched sidecars have speech coverage results, but 10 are PARTIAL, S46 needs review, and 9 sources lack sidecars
+PG_TRANSCRIPT_SIDECAR_ASSESSMENT=.agents/deliverables/evidence/PG-transcript-sidecar-assessment.md and .json; 20/20 ffprobe-valid, 14 physical sidecars, 11 distinct matched sources, 3 duplicate copies, 10 VAD-assessed partial transcripts, 1 S46 needs review, 9 missing
+PG_TRANSCRIPT_SPEECH_COVERAGE=.agents/deliverables/evidence/PG-transcript-speech-coverage.md and .json; local Silero VAD run for all 10 non-S46 matched transcripts
+EVIDENCE_CONFLICT=YES; current exact-path inventory yields 10 PARTIAL / 1 NEEDS_REVIEW / 9 MISSING, conflicting with prior source-qualified tally 1 VALID / 3 PARTIAL / 6 MISSING / 10 UNASSESSED; resolve logical source identities/manifests
 
 UNIT=160 documentation-focused tests passed in 567.86s on current source
 RUFF=PASS on changed production source and test module; broader legacy docs-test lint retains 8 unrelated findings
@@ -81,11 +84,11 @@ OWNER_UAT=PARTIAL; Session 41 approved, Golden 2 owner review pending
 DOCUMENTS_V2_OWNER_UAT=PARTIAL
 
 KANBAN_COMPLETE=Session 41 golden approved; production golden-literal scanner PASS
-KANBAN_TESTING=Generic application identity extraction; cross-session merge and Mission Pack controlled integration PASS
-KANBAN_BLOCKED=S46 speech gate; 222 intervals/202.774s remain uncertain after full local-ASR audit
+KANBAN_TESTING=Generic application identity extraction; cross-session merge/Mission Pack tests PASS; speech coverage assessed for 10 matched P&G transcripts
+KANBAN_BLOCKED=S46 speech gate; 222 intervals/202.774s uncertain; 9 P&G sources lack a transcript sidecar
 KANBAN_OWNER_PENDING=Golden 2 owner review; pilot and full corpus synthesis remain frozen
-BLOCKER=S46 meaningful speech coverage remains below readiness threshold; P&G sidecar inventory identity conflict also unresolved
-NEXT_ACTION=Resolve remaining S46 speech intervals with evidence or explicitly retain NEEDS_REVIEW; then run generic S46 gates; no golden output until pass
+BLOCKER=S46 meaningful speech coverage remains below readiness threshold; 9 P&G sources lack exact transcript sidecars and prior inventory identities conflict
+NEXT_ACTION=Recover or reconcile missing transcript sources and resolve S46 gaps; rerun generic S46 gates only after evidence is sufficient; keep corpus generation frozen
 
 ## HISTORICAL_RESULTS
 

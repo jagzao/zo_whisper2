@@ -1,0 +1,392 @@
+{
+  "schema_version": 1,
+  "scope": "matched P&G sidecars excluding S46, already audited separately",
+  "processed": 10,
+  "total": 10,
+  "elapsed_seconds": 250.2,
+  "state_counts": {
+    "PARTIAL": 10
+  },
+  "records": [
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "duration_seconds": 3915.008,
+      "media_coverage_percent": 91.22,
+      "identity_match": "MATCH",
+      "segment_count": 714,
+      "transcript_start": 10.86,
+      "transcript_last_timestamp": 3571.34,
+      "vad_speech_seconds": 3280.8,
+      "transcribed_speech_seconds": 2971.16,
+      "uncovered_speech_seconds": 309.64,
+      "speech_coverage_percent": 90.56,
+      "major_speech_gaps": [
+        {
+          "start": 981.84,
+          "end": 986.73,
+          "seconds": 4.89
+        },
+        {
+          "start": 1628.87,
+          "end": 1632.29,
+          "seconds": 3.42
+        },
+        {
+          "start": 1910.94,
+          "end": 1914.01,
+          "seconds": 3.07
+        },
+        {
+          "start": 3163.98,
+          "end": 3167.25,
+          "seconds": 3.27
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 75,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
+      "duration_seconds": 7350.016,
+      "media_coverage_percent": 25.89,
+      "identity_match": "MATCH",
+      "segment_count": 755,
+      "transcript_start": 17.98,
+      "transcript_last_timestamp": 1903.21,
+      "vad_speech_seconds": 1677.536,
+      "transcribed_speech_seconds": 1428.808,
+      "uncovered_speech_seconds": 248.728,
+      "speech_coverage_percent": 85.17,
+      "major_speech_gaps": [
+        {
+          "start": 1646.26,
+          "end": 1649.58,
+          "seconds": 3.32
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 34,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "duration_seconds": 2136.896,
+      "media_coverage_percent": 99.68,
+      "identity_match": "MATCH",
+      "segment_count": 544,
+      "transcript_start": 86.86,
+      "transcript_last_timestamp": 2130.06,
+      "vad_speech_seconds": 1846.176,
+      "transcribed_speech_seconds": 1655.486,
+      "uncovered_speech_seconds": 190.69,
+      "speech_coverage_percent": 89.67,
+      "major_speech_gaps": [
+        {
+          "start": 808.32,
+          "end": 811.58,
+          "seconds": 3.26
+        },
+        {
+          "start": 1967.39,
+          "end": 1971.376,
+          "seconds": 3.986
+        },
+        {
+          "start": 1975.28,
+          "end": 1978.38,
+          "seconds": 3.1
+        },
+        {
+          "start": 1982.3,
+          "end": 1985.552,
+          "seconds": 3.252
+        },
+        {
+          "start": 1999.28,
+          "end": 2010.94,
+          "seconds": 11.66
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 56,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+      "duration_seconds": 2616.192,
+      "media_coverage_percent": 99.1,
+      "identity_match": "MATCH",
+      "segment_count": 1077,
+      "transcript_start": 38.0,
+      "transcript_last_timestamp": 2592.64,
+      "vad_speech_seconds": 2281.504,
+      "transcribed_speech_seconds": 1889.866,
+      "uncovered_speech_seconds": 391.638,
+      "speech_coverage_percent": 82.83,
+      "major_speech_gaps": [
+        {
+          "start": 607.72,
+          "end": 611.11,
+          "seconds": 3.39
+        },
+        {
+          "start": 662.04,
+          "end": 665.35,
+          "seconds": 3.31
+        },
+        {
+          "start": 831.64,
+          "end": 834.72,
+          "seconds": 3.08
+        },
+        {
+          "start": 2203.76,
+          "end": 2210.512,
+          "seconds": 6.752
+        },
+        {
+          "start": 2222.352,
+          "end": 2226.576,
+          "seconds": 4.224
+        },
+        {
+          "start": 2232.016,
+          "end": 2235.792,
+          "seconds": 3.776
+        },
+        {
+          "start": 2262.71,
+          "end": 2265.82,
+          "seconds": 3.11
+        },
+        {
+          "start": 2381.55,
+          "end": 2384.592,
+          "seconds": 3.042
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 66,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
+      "duration_seconds": 3453.376,
+      "media_coverage_percent": 42.94,
+      "identity_match": "MATCH",
+      "segment_count": 518,
+      "transcript_start": 112.88,
+      "transcript_last_timestamp": 1482.86,
+      "vad_speech_seconds": 1261.616,
+      "transcribed_speech_seconds": 1043.338,
+      "uncovered_speech_seconds": 218.278,
+      "speech_coverage_percent": 82.7,
+      "major_speech_gaps": [
+        {
+          "start": 911.08,
+          "end": 914.65,
+          "seconds": 3.57
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 42,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+      "duration_seconds": 1841.2165,
+      "media_coverage_percent": 49.58,
+      "identity_match": "MATCH",
+      "segment_count": 621,
+      "transcript_start": 89.12,
+      "transcript_last_timestamp": 912.83,
+      "vad_speech_seconds": 785.968,
+      "transcribed_speech_seconds": 720.79,
+      "uncovered_speech_seconds": 65.178,
+      "speech_coverage_percent": 91.71,
+      "major_speech_gaps": [
+        {
+          "start": 85.616,
+          "end": 89.12,
+          "seconds": 3.504
+        },
+        {
+          "start": 580.72,
+          "end": 583.89,
+          "seconds": 3.17
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 22,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "sidecar": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "duration_seconds": 3625.450667,
+      "media_coverage_percent": 98.71,
+      "identity_match": "MATCH",
+      "segment_count": 771,
+      "transcript_start": 126.48,
+      "transcript_last_timestamp": 3578.66,
+      "vad_speech_seconds": 3201.76,
+      "transcribed_speech_seconds": 2907.218,
+      "uncovered_speech_seconds": 294.542,
+      "speech_coverage_percent": 90.8,
+      "major_speech_gaps": [
+        {
+          "start": 1233.78,
+          "end": 1237.52,
+          "seconds": 3.74
+        },
+        {
+          "start": 2033.72,
+          "end": 2037.03,
+          "seconds": 3.31
+        },
+        {
+          "start": 2336.25,
+          "end": 2339.78,
+          "seconds": 3.53
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 61,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+      "sidecar": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "duration_seconds": 4489.6609,
+      "media_coverage_percent": 86.9,
+      "identity_match": "MATCH",
+      "segment_count": 1188,
+      "transcript_start": 1.19,
+      "transcript_last_timestamp": 3901.3,
+      "vad_speech_seconds": 2650.048,
+      "transcribed_speech_seconds": 2102.54,
+      "uncovered_speech_seconds": 547.508,
+      "speech_coverage_percent": 79.34,
+      "major_speech_gaps": [
+        {
+          "start": 2130.064,
+          "end": 2134.54,
+          "seconds": 4.476
+        },
+        {
+          "start": 2329.82,
+          "end": 2334.672,
+          "seconds": 4.852
+        },
+        {
+          "start": 3685.54,
+          "end": 3688.86,
+          "seconds": 3.32
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 255,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
+      "sidecar": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "duration_seconds": 4540.306511,
+      "media_coverage_percent": 78.85,
+      "identity_match": "MATCH",
+      "segment_count": 650,
+      "transcript_start": 129.74,
+      "transcript_last_timestamp": 3580.11,
+      "vad_speech_seconds": 3236.128,
+      "transcribed_speech_seconds": 3028.212,
+      "uncovered_speech_seconds": 207.916,
+      "speech_coverage_percent": 93.58,
+      "major_speech_gaps": [
+        {
+          "start": 1349.67,
+          "end": 1355.38,
+          "seconds": 5.71
+        },
+        {
+          "start": 2475.5,
+          "end": 2481.09,
+          "seconds": 5.59
+        },
+        {
+          "start": 2598.71,
+          "end": 2602.59,
+          "seconds": 3.88
+        },
+        {
+          "start": 2995.87,
+          "end": 2999.73,
+          "seconds": 3.86
+        },
+        {
+          "start": 3106.76,
+          "end": 3110.864,
+          "seconds": 4.104
+        },
+        {
+          "start": 3323.61,
+          "end": 3327.15,
+          "seconds": 3.54
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 63,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    },
+    {
+      "video": "Videos/py_pg/pg_Shadow_221026.mp4",
+      "sidecar": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "duration_seconds": 3335.783644,
+      "media_coverage_percent": 99.85,
+      "identity_match": "MATCH",
+      "segment_count": 871,
+      "transcript_start": 116.35,
+      "transcript_last_timestamp": 3330.63,
+      "vad_speech_seconds": 1904.032,
+      "transcribed_speech_seconds": 1539.436,
+      "uncovered_speech_seconds": 364.596,
+      "speech_coverage_percent": 80.85,
+      "major_speech_gaps": [
+        {
+          "start": 3130.9,
+          "end": 3137.01,
+          "seconds": 6.11
+        },
+        {
+          "start": 3198.34,
+          "end": 3209.264,
+          "seconds": 10.924
+        },
+        {
+          "start": 3211.696,
+          "end": 3219.04,
+          "seconds": 7.344
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 134,
+      "classification": "VAD_COVERAGE_ASSESSED",
+      "error": null
+    }
+  ]
+}
