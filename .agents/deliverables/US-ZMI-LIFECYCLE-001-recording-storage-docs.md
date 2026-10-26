@@ -7,9 +7,9 @@
 
 DOCUMENTS_V2=INCOMPLETE
 DOCS_V2_ARCHITECTURE_VERSION=3 generic MediaEvidenceBundle pipeline + local semantic OCR retry + cross-session fact merge + Mission Pack generator
-REVISA_POINTER_MAIN=UPDATE_PENDING; status-only pointer update follows implementation commit
+REVISA_POINTER_MAIN=PASS; main pointer is status-only and does not imply merge/deploy
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=will be set to commit after final test run
+IMPLEMENTATION_HEAD=b087d9e (generic implementation checkpoint; source commit pushed)
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
 CORPUS_GENERATION=FROZEN

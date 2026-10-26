@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; GOLDEN_OVERFIT_CHECK=PASS; S46_GATE=BLOCKED_SPEECH_AND_IDENTITY with visual coverage 7/7 and diagnostic-only output; cross-session/Mission Pack controlled integration PASS; 159 focused docs tests PASS; DOCUMENTS_V2=INCOMPLETE; CORPUS_GENERATION=FROZEN; implementation branch not merged/deployed.",
-  "updated_at": "2026-10-26T21:53:00Z"
+  "last_result": "IMPLEMENTATION_HEAD=b087d9e; SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; GOLDEN_OVERFIT_CHECK=PASS; S46_GATE=BLOCKED_SPEECH_AND_IDENTITY (visual 7/7; diagnostic only); cross-session/Mission Pack controlled integration PASS; 159 focused docs tests PASS; DOCUMENTS_V2=INCOMPLETE; corpus frozen; no merge/deploy.",
+  "updated_at": "2026-10-26T21:57:00Z"
 }
