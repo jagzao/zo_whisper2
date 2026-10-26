@@ -285,3 +285,11 @@ def test_production_documentation_modules_contain_no_golden_literals():
     violations = [f"{path}:{pattern}" for path in production.rglob("*.py")
                   for pattern in forbidden if re.search(pattern, path.read_text(encoding="utf-8"), re.I)]
     assert violations == []
+
+
+def test_application_discovery_accepts_generic_identity_statement():
+    evidence = _bundle()
+    evidence.transcript_segments = [{"start": 2, "end": 5, "text": "So what this is essentially is AtlasDesk."}]
+    candidates = discover_application_candidates(normalize_evidence_bundle(evidence))
+    assert [item["name"] for item in candidates] == ["AtlasDesk"]
+    assert candidates[0]["provenance"][0]["timestamp"] == 2

@@ -140,21 +140,28 @@ def normalize_evidence_bundle(bundle: MediaEvidenceBundle | dict[str, Any]) -> M
 
 def discover_application_candidates(bundle: MediaEvidenceBundle) -> list[dict[str, Any]]:
     candidates = [dict(item) for item in bundle.application_candidates]
-    pattern = re.compile(
-        r"\b(?:application|system|platform|tool|service|product)\s+(?:is\s+)?(?:called|named)\s+['\"“]?([\w][\w .&()/-]{1,70})",
-        re.I,
-    )
+    patterns = [
+        re.compile(
+            r"\b(?:application|system|platform|tool|service|product)\s+(?:is\s+)?(?:called|named)\s+['\"“]?([\w][\w .&()/-]{1,70})",
+            re.I,
+        ),
+        re.compile(
+            r"\bwhat\s+this\s+is\s+essentially\s+(?:is\s+)?([\w][\w.-]{2,50})",
+            re.I,
+        ),
+    ]
     for segment in bundle.transcript_segments:
         text = str(segment.get("text", ""))
-        for match in pattern.finditer(text):
-            name = re.split(r"[,.;!?\n]", match.group(1), maxsplit=1)[0].strip(" '’\"”")
-            if len(name.split()) > 8:
-                continue
-            candidates.append({
-                "name": name, "aliases": [name], "status": "NEW_APPLICATION",
-                "provenance": [{"source_id": bundle.media_id, "segment_id": segment["segment_id"],
-                                "timestamp": segment["start"], "source_type": "TRANSCRIPT"}],
-            })
+        for pattern in patterns:
+            for match in pattern.finditer(text):
+                name = re.split(r"[,.;!?\n]", match.group(1), maxsplit=1)[0].strip(" '’\"”")
+                if len(name.split()) > 8:
+                    continue
+                candidates.append({
+                    "name": name, "aliases": [name], "status": "NEW_APPLICATION",
+                    "provenance": [{"source_id": bundle.media_id, "segment_id": segment["segment_id"],
+                                    "timestamp": segment["start"], "source_type": "TRANSCRIPT"}],
+                })
     unique: dict[str, dict[str, Any]] = {}
     for candidate in candidates:
         name = str(candidate.get("name", "")).strip()

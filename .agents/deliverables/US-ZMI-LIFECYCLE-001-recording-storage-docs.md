@@ -9,7 +9,7 @@ DOCUMENTS_V2=INCOMPLETE
 DOCS_V2_ARCHITECTURE_VERSION=3 generic MediaEvidenceBundle pipeline + local semantic OCR retry + cross-session fact merge + Mission Pack generator
 REVISA_POINTER_MAIN=PASS; main pointer is status-only and does not imply merge/deploy
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=b087d9e (generic implementation checkpoint; source commit pushed)
+IMPLEMENTATION_HEAD=TESTING; next active-branch checkpoint pending current diff
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
 CORPUS_GENERATION=FROZEN
@@ -24,12 +24,14 @@ GOLDEN_2_SOURCE=Videos/py_pg/pg_Ams_kap_app_support_s46.mp4
 GOLDEN_2_SELECTION_REASON=Readable 60.3-minute technical support recording with 51 visual frames, multiple operational topics, SQL/database, configuration and UI evidence; materially different from Session 41.
 GOLDEN_OVERFIT_CHECK=PASS; automated production-module scanner passes for application names, golden claims, frame IDs, and timestamps
 S46_MEDIA=PASS; 3618.944s; media reachable and transcript timestamp reach 99.83%
-S46_SPEECH_COVERAGE_RAW=86.24% original; 86.48% with one 4.920s dual-model recovery candidate; VAD=2042.496s
+S46_TRANSCRIPT_STATE=NEEDS_REVIEW
+S46_SPEECH_COVERAGE_RAW=86.24% canonical; 86.89% including 4.920s prior and 8.360s newly corroborated supplemental ASR candidates; VAD=2042.496s
 S46_VAD_SPEECH_SECONDS=2042.496
-S46_TRANSCRIBED_SPEECH_SECONDS=1766.334 including one 4.920s dual-model supplemental candidate
-S46_UNCOVERED_SPEECH_SECONDS=276.162 (63.838s VAD boundaries + 212.324s across 231 longer unresolved gaps)
-S46_SPEECH_COVERAGE_EFFECTIVE=89.27% provisional after 63.838s/349 VAD-boundary fragments; 212.324s/231 longer intervals unresolved; gate remains NEEDS_REVIEW
-S46_MEANINGFUL_UNCOVERED_SPEECH=NEEDS_REVIEW; one 4.920s actual-missing-speech interval has dual-model local ASR recovery candidate; 231 longer intervals still need classification
+S46_TRANSCRIBED_SPEECH_SECONDS=1761.414 canonical; 1774.694 including 4.920s prior and 8.360s new dual-model supplemental candidates
+S46_UNCOVERED_SPEECH_SECONDS=267.802 after corroborated candidates; 63.838s/349 boundary fragments remain excluded from effective denominator
+S46_SPEECH_COVERAGE_EFFECTIVE=89.69% provisional; 222 intervals/202.774s uncertain, 8 intervals/8.360s corroborated missing speech, 1 interval/1.190s false-positive VAD candidate; gate remains NEEDS_REVIEW
+S46_MEANINGFUL_UNCOVERED_SPEECH=202.774s across 222 unresolved intervals; 8.360s corroborated recovery candidates remain supplemental and are not inserted into canonical transcript
+S46_SPEECH_GAP_AUDIT=.agents/deliverables/evidence/S46-speech-gap-audit.md and .json; all 231 intervals individually audited with small model, 10 candidates checked with second local model
 S46_OCR_SUCCESS=21/51 (20 technical-frame successes; 1 gallery frame; 3 gallery frames suppressed)
 S46_OCR_LOW_CONFIDENCE=30/51; 3 meeting-gallery frames suppressed from operational coverage; retry report has 2 current low-confidence database retries and 1 prior local flow-frame promotion at 0.521 confidence; current retries promoted 0
 S46_OCR_RETRY=bounded local crop/contrast/sharpen retry implemented; 2 current low-confidence database frames retried, 0 promoted; prior frame 0005 crop OCR is SUCCESS at 0.521 with original and derived image paths retained
@@ -39,19 +41,19 @@ S46_VISUAL_TOPICS=7: ACCESS, APPLICATION_UI, CONFIGURATION, DATABASE, FLOW_DIAGR
 S46_VISUAL_TOPICS_COVERED=7/7; WORKFLOW supported by transcript plus selected frame; FLOW_DIAGRAM is independently selected; low-confidence OCR is not sole support
 S46_WORKFLOW_EVIDENCE=TRANSCRIPT + selected frame at 283.837s (FLOW_DIAGRAM); OCR title and source frame retained
 S46_MEANINGFUL_FRAMES=48; S46_SELECTED_FRAMES=48; duplicates=0; galleries=3 suppressed; black=0
-S46_APPLICATION_SEGMENTATION=FAIL; no named application candidate, SESSION_GENERAL only
+S46_APPLICATION_SEGMENTATION=PASS; one source-grounded NEW_APPLICATION candidate discovered generically from transcript
 S46_CLAIM_PROVENANCE=PASS; S46_VISUAL_COVERAGE=PASS
-S46_APPLICATIONS_DISCOVERED=0 named candidates; evidence remains SESSION_GENERAL, application identity unresolved
+S46_APPLICATIONS_DISCOVERED=1 candidate: eOperations; transcript provenance at 00:04:28.370, identity is NEW_APPLICATION pending owner review
 S46_CLAIMS=223 extracted in generic diagnostic run; claim provenance gate PASS
 S46_DIAGRAMS=0; no source-grounded graph extracted
 S46_PROCEDURES=0
 S46_AMBIGUITIES=12 source-uncertain claims plus unresolved app identity in diagnostic output
 S46_OPEN_QUESTIONS=not generated as standalone records
-S46_QUALITY_GATE=FAIL; speech state NEEDS_REVIEW and application identity/segmentation unresolved; uncertain claims remain in review only
-S46_SOURCE_GATE=PASS; S46_SPEECH_GATE=FAIL; S46_VISUAL_GATE=PASS; S46_CLAIM_GATE=PASS; GOLDEN_2_GATE=BLOCKED_SPEECH_AND_IDENTITY; S46_GATE=BLOCKED_SPEECH_AND_IDENTITY; diagnostic-only output under tmp; no golden trio
-S46_SPEECH_RECOVERY=52 high-energy gaps transcribed individually with local small model; 5 longest checked with large-v3; 1 dual-model candidate retained separately as SOURCE_UNCERTAIN; canonical transcript not overwritten
-S46_SPEECH_REPORT=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_Frames/pg_Ams_kap_app_support_s46/evidence/speech-coverage-report.md and .json
-S46_RECOVERY_SEGMENTS=local supplemental candidate at 00:57:23.680-00:57:28.600; small/large-v3 text agrees semantically; verification remains SOURCE_UNCERTAIN
+S46_QUALITY_GATE=FAIL; 202.774s of speech coverage remains unresolved; application resolution, visual, and claim gates pass; uncertain claims remain review-only
+S46_SOURCE_GATE=PASS; S46_SPEECH_GATE=FAIL; S46_VISUAL_GATE=PASS; S46_CLAIM_GATE=PASS; S46_APPLICATION_RESOLUTION=PASS; GOLDEN_2_GATE=BLOCKED_SPEECH; S46_GATE=BLOCKED_SPEECH; diagnostic-only output under tmp; no golden trio
+S46_SPEECH_RECOVERY=all 231 longer gaps audited with small local ASR; 10 candidates checked by large-v3-turbo; 8/8.360s semantically corroborated, 2 remain wording-uncertain, canonical transcript not overwritten
+S46_SPEECH_REPORT=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_Frames/pg_Ams_kap_app_support_s46/evidence/speech-coverage-report.md and .json; detailed audit committed under deliverables/evidence
+S46_RECOVERY_SEGMENTS=8 supplemental dual-model spans retained as coverage evidence only; 4.920s prior candidate plus 8.360s new; not canonical transcript text
 
 CROSS_SESSION_KNOWLEDGE=integrated exact-alias resolver + conflict-safe claim consolidation + provenance graph + corroboration gate; controlled confirmation/extension/supersession/conflict tests pass; no real two-session consolidation because S46 is ineligible
 APPLICATION_RESOLUTION=exact explicit aliases only; ambiguous identities remain NEEDS_REVIEW; no fuzzy application merge
@@ -70,20 +72,20 @@ PG_TRANSCRIPTS_UNASSESSED=15 exact-match candidates (10 previously unassessed + 
 PG_TRANSCRIPTION_COMPLETE=NO; EVIDENCE_CONFLICT=YES because local basename inventory (19/20) conflicts with prior source-qualified counts (14/20); resolve manifests/identity before corpus counts are final
 EVIDENCE_CONFLICT=YES; local Videos/CarpetaTranscripciones basename audit finds 19/20 matches, versus prior source-qualified 14/20; 3 duplicate sidecar copies
 
-UNIT=159 documentation-focused tests passed in 496.49s on current source
-RUFF=PASS on production docs modules and changed tests; wider legacy docs-test lint reports 8 unrelated existing import/unused-import findings
+UNIT=160 documentation-focused tests passed in 567.86s on current source
+RUFF=PASS on changed production source and test module; broader legacy docs-test lint retains 8 unrelated findings
 SYNTAX=PASS; compileall on documentation package
-REPO_STATE=PASS_FOCUSED; 159 documentation tests, changed-source/test Ruff, and syntax pass; Golden 2 gates remain blocked
+REPO_STATE=PASS_FOCUSED; 160 documentation tests, Ruff, and syntax pass; Golden 2 speech gate remains blocked
 AGENT_SERVED_CHECK=NOT_RUN; no merge/deploy
 OWNER_UAT=PARTIAL; Session 41 approved, Golden 2 owner review pending
 DOCUMENTS_V2_OWNER_UAT=PARTIAL
 
-KANBAN_COMPLETE=Session 41 golden approved; generic extraction + cross-session/Mission Pack implementation in progress
-KANBAN_TESTING=Golden 2 speech and application identity; cross-session merge and Mission Pack integration tests PASS
-KANBAN_BLOCKED=S46 speech reconciliation and unresolved application identity
+KANBAN_COMPLETE=Session 41 golden approved; production golden-literal scanner PASS
+KANBAN_TESTING=Generic application identity extraction; cross-session merge and Mission Pack controlled integration PASS
+KANBAN_BLOCKED=S46 speech gate; 222 intervals/202.774s remain uncertain after full local-ASR audit
 KANBAN_OWNER_PENDING=Golden 2 owner review; pilot and full corpus synthesis remain frozen
-BLOCKER=S46 has 231 longer uncovered VAD intervals (212.324s) without trustworthy classification; application identity is not explicit in extracted evidence
-NEXT_ACTION=Review dual-ASR recovery candidate, classify remaining 231 gaps, resolve application identity; generate S46 golden only after every technical gate passes
+BLOCKER=S46 meaningful speech coverage remains below readiness threshold; P&G sidecar inventory identity conflict also unresolved
+NEXT_ACTION=Resolve remaining S46 speech intervals with evidence or explicitly retain NEEDS_REVIEW; then run generic S46 gates; no golden output until pass
 
 ## HISTORICAL_RESULTS
 
