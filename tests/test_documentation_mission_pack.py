@@ -51,6 +51,22 @@ def test_transcript_gate_distinguishes_speech_gaps_from_gallery_or_silence_tail(
     assert unknown["classification"] == "NEEDS_REVIEW"
 
 
+def test_supplemental_asr_can_validate_speech_coverage_without_full_media_coverage():
+    result = assess_transcript_quality(
+        100,
+        [{"start": 5, "end": 50}],
+        supplemental_segments=[{"start": 50, "end": 95}],
+        trailing_gap_classification="NON_SPEECH_TRAILING_MEDIA",
+        vad_speech_segments=[{"start": 5, "end": 95}],
+    )
+
+    assert result["media_coverage_percent"] == 95.0
+    assert result["speech_coverage_percent"] == 100.0
+    assert result["transcribed_speech_seconds"] == 90.0
+    assert result["uncovered_speech_seconds"] == 0.0
+    assert result["transcript_state"] == "VALID"
+
+
 def test_source_coverage_flags_large_trailing_gap():
     coverage = measure_source_coverage(
         2105.366,

@@ -140,6 +140,7 @@ def select_screenshots(
             str(frame.get("frame_id"))
             for frame in visual_data.get("frames", [])
             if frame.get("visual_type") in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}
+            or not frame.get("selected", False)
         }
     except (OSError, ValueError, TypeError):
         pass

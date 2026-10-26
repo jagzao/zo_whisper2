@@ -93,7 +93,33 @@ def generate_documentation_v2(
             steps = engine.build_steps(mapping_data, None, None)
 
     persisted_ocr = {step.frame_ref: step.ocr_text for step in steps if step.frame_ref and step.ocr_text}
-    visual_report = analyze_frames(mapping_data.get("frames", []), frames_dir, existing_ocr=persisted_ocr)
+    transcript_map = mapping_data.get("transcription_mapping", {})
+    visual_frames = [
+        {
+            **frame,
+            "transcript_text": str(
+                transcript_map.get(frame.get("frame_file"), {}).get("full_text", "")
+            ),
+        }
+        for frame in mapping_data.get("frames", [])
+    ]
+    visual_cache = {}
+    visual_cache_path = frames_dir / "evidence" / "visual-evidence.json"
+    try:
+        previous_visual = json.loads(visual_cache_path.read_text(encoding="utf-8"))
+        for item in previous_visual.get("frames", []):
+            image = frames_dir / str(item.get("frame_id", ""))
+            if not image.is_file():
+                continue
+            stat = image.stat()
+            if item.get("source_image_size") == stat.st_size and item.get("source_image_mtime_ns") == stat.st_mtime_ns:
+                visual_cache[item["frame_id"]] = item
+    except (OSError, ValueError, TypeError):
+        pass
+    visual_cache.update({key: value for key, value in persisted_ocr.items() if key not in visual_cache})
+    visual_report = analyze_frames(
+        visual_frames, frames_dir, existing_ocr=visual_cache, source_video=video_name
+    )
     visual_path = frames_dir / "evidence" / "visual-evidence.json"
     visual_path.parent.mkdir(parents=True, exist_ok=True)
     visual_path.write_text(json.dumps(visual_report, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -115,6 +141,29 @@ def generate_documentation_v2(
         if item.transcript_excerpt and not item.untimed and item.evidence_source in {"transcript", "transcript_ocr"}
     ]
     transcript_quality = assess_transcript_quality(source.duration, transcript_segments)
+    speech_report_path = frames_dir / "evidence" / "speech-coverage-report.json"
+    try:
+        speech_report = json.loads(speech_report_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        speech_report = None
+    if (
+        isinstance(speech_report, dict)
+        and Path(str(speech_report.get("video", ""))).name == Path(video_name).name
+        and abs(float(speech_report.get("video_duration_seconds", 0)) - float(source.duration or 0)) <= 1.0
+        and speech_report.get("speech_quality_gate") == "PASS"
+        and speech_report.get("transcript_state") == "VALID"
+    ):
+        transcript_quality.update({
+            "transcript_state": "VALID",
+            "media_coverage_percent": speech_report.get("media_coverage_percent"),
+            "speech_coverage_percent": speech_report.get("speech_coverage_percent"),
+            "vad_speech_seconds": speech_report.get("vad_speech_seconds"),
+            "transcribed_speech_seconds": speech_report.get("transcribed_speech_seconds"),
+            "uncovered_speech_seconds": speech_report.get("uncovered_speech_seconds"),
+            "uncovered_speech_intervals": speech_report.get("uncovered_speech_intervals", []),
+            "speech_quality_gate": "PASS",
+            "speech_coverage_report": str(speech_report_path),
+        })
 
     # Compatibility evidence source (SPEC §10: manual/steps.json).
     engine._write_steps_json(manual_dir, source, steps)
@@ -146,6 +195,8 @@ def generate_documentation_v2(
 
     if transcript_quality["transcript_state"] != "VALID":
         status = "SOURCE_INCOMPLETE"
+    elif visual_report["visual_coverage_gate"] != "PASS":
+        status = "EVIDENCE_INCOMPLETE"
     elif evidence_only or not doc_config["synthesis_enabled"]:
         status = "EVIDENCE_READY" if not doc_config["synthesis_enabled"] else status
     elif service is None:
@@ -207,7 +258,7 @@ def generate_documentation_v2(
             "status": STATUS_INVALID,
             "errors": synthesis_result.errors if synthesis_result else ["invalid_synthesis"],
         }, indent=2, ensure_ascii=False), encoding="utf-8")
-    elif status == "SOURCE_INCOMPLETE":
+    elif status in {"SOURCE_INCOMPLETE", "EVIDENCE_INCOMPLETE"}:
         manual_dir.mkdir(parents=True, exist_ok=True)
         diagnostic_path = manual_dir / "diagnostic-report.json"
         diagnostic_path.write_text(json.dumps({
@@ -215,13 +266,14 @@ def generate_documentation_v2(
             "status": status,
             "transcript_quality": transcript_quality,
             "evidence_item_count": timeline.item_count,
-            "message": "Synthesis blocked because timestamped transcript coverage is not valid.",
+            "visual_coverage_gate": visual_report["visual_coverage_gate"],
+            "visual_topics_uncovered": visual_report.get("visual_topics_uncovered", []),
+            "message": "Synthesis blocked because mandatory transcript or visual evidence gates are incomplete.",
         }, indent=2, ensure_ascii=False), encoding="utf-8")
         (manual_dir / "diagnostic-report.md").write_text(
             f"# Source diagnostic: {video_name}\n\n"
-            "**Status:** SOURCE_INCOMPLETE\n\n"
-            "Synthesis is blocked because the timestamped transcript is not valid. "
-            "Review the transcript coverage report before generating documentation.\n\n"
+            f"**Status:** {status}\n\n"
+            "Synthesis is blocked because mandatory transcript or visual evidence gates are incomplete.\n\n"
             f"- Transcript state: {transcript_quality['transcript_state']}\n"
             f"- Coverage: {transcript_quality.get('transcript_coverage_percent', 0)}%\n"
             f"- Leading gap: {transcript_quality.get('leading_gap', 'unknown')} seconds\n"
@@ -238,6 +290,7 @@ def generate_documentation_v2(
     if (
         document is None
         and transcript_quality["transcript_state"] == "VALID"
+        and visual_report["visual_coverage_gate"] == "PASS"
         and compatibility_bundles
         and not _has_valid_semantic_manual(manual_dir)
     ):
@@ -259,7 +312,7 @@ def generate_documentation_v2(
     return {
         "status": status,
         "transcript_quality": transcript_quality,
-        "diagnostic_report": str(manual_dir / "diagnostic-report.json") if status == "SOURCE_INCOMPLETE" else None,
+        "diagnostic_report": str(manual_dir / "diagnostic-report.json") if status in {"SOURCE_INCOMPLETE", "EVIDENCE_INCOMPLETE"} else None,
         "manual_dir": str(manual_dir),
         "ai_package_dir": str(ai_package_dir),
         "step_count": len(steps),
@@ -272,6 +325,9 @@ def generate_documentation_v2(
             "visual_evidence": str(visual_path),
             "visual_status": visual_report["status"],
             "visual_selected_count": visual_report["selected_count"],
+            "visual_coverage_gate": visual_report["visual_coverage_gate"],
+            "visual_topics_discovered": len(visual_report["visual_topics_discovered"]),
+            "visual_topics_covered": len(visual_report["visual_topics_covered"]),
         },
         "mode": {"mode": mode, "source": mode_source, "reason": resolution.reason},
         "synthesis": {

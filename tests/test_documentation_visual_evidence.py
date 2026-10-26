@@ -42,9 +42,14 @@ def test_ocr_retries_preprocessed_image_once_and_records_retry_count(tmp_path, m
 
 
 def test_visual_type_and_keyframe_selection_keep_provenance_and_suppress_gallery_black_duplicates(tmp_path, monkeypatch):
-    paths = [_image(tmp_path / f"{name}.png") for name in ("ui1", "ui2", "gallery", "black")]
-    Image.new("RGB", (80, 50), (0, 0, 0)).save(paths[3])
-    texts = {"ui1.png": "Queue Settings", "ui2.png": "Queue Settings", "gallery.png": "Participants"}
+    paths = [_image(tmp_path / f"{name}.png") for name in ("ui1", "ui2", "ui3", "gallery", "black")]
+    Image.new("RGB", (80, 50), (0, 0, 0)).save(paths[4])
+    texts = {
+        "ui1.png": "Queue Settings",
+        "ui2.png": "Queue Settings",
+        "ui3.png": "Queue Settings API URL",
+        "gallery.png": "Participants",
+    }
     monkeypatch.setattr(
         visual_evidence,
         "_ocr_attempts",
@@ -61,10 +66,17 @@ def test_visual_type_and_keyframe_selection_keep_provenance_and_suppress_gallery
     assert records[0]["visual_type"] == "CONFIGURATION"
     assert records[0]["provenance"]["frame_id"] == "ui1.png"
     assert records[1]["selected"] is False
-    assert records[2]["visual_type"] == "MEETING_GALLERY"
-    assert records[2]["selected"] is False
-    assert records[3]["visual_type"] == "BLACK_OR_EMPTY"
-    assert records[3]["ocr_status"] == "NOT_REQUIRED"
+    assert records[2]["selected"] is True
+    assert records[2]["selection_reason"] in {"OCR_CHANGE", "TOPIC_BOUNDARY"}
+    assert records[2]["unique_information"]
+    assert records[2]["ocr_text_signature"]
+    assert records[2]["perceptual_signature"]
+    assert records[2]["topic"].startswith("CONFIGURATION:")
+    assert records[3]["visual_type"] == "MEETING_GALLERY"
+    assert records[3]["selected"] is False
+    assert records[4]["visual_type"] == "BLACK_OR_EMPTY"
+    assert records[4]["ocr_status"] == "NOT_REQUIRED"
+    assert result["visual_coverage_gate"] == "PASS"
 
 
 def test_visual_classifier_avoids_architecture_claim_from_generic_words_and_suppresses_speaker_tile(tmp_path):
@@ -76,3 +88,35 @@ def test_visual_classifier_avoids_architecture_claim_from_generic_words_and_supp
 
     assert visual_evidence._has_centered_speaker_tile(image_path, "Speaker") is True
     assert visual_evidence._classify("Speaker", 0.9, False, speaker_tile=True)[0] == "MEETING_GALLERY"
+
+
+def test_explicit_diagram_edges_keep_frame_provenance_and_render_deterministically(tmp_path, monkeypatch):
+    path = _image(tmp_path / "diagram.png")
+    monkeypatch.setattr(
+        visual_evidence,
+        "_ocr_attempts",
+        lambda _: ([ ("Web App -> API Gateway", "--psm 6", 0.9) ], 0, False),
+    )
+
+    result = visual_evidence.analyze_frames(
+        [{"frame_file": path.name, "timestamp": 12.5}], tmp_path, source_video="S41.mp4"
+    )
+
+    record = result["frames"][0]
+    assert record["visual_type"] == "FLOW_DIAGRAM"
+    assert record["edges"][0]["source"] == "Web App"
+    assert record["edges"][0]["target"] == "API Gateway"
+    assert record["edges"][0]["provenance"]["frame_id"] == path.name
+    diagram = result["derived_diagrams"][0]
+    assert diagram["source_video"] == "S41.mp4"
+    assert diagram["timestamps"] == [12.5]
+    assert diagram["source_frames"][0]["frame_id"] == path.name
+    assert diagram["mermaid"].startswith("flowchart LR")
+
+
+def test_participant_name_grid_is_suppressed_but_shared_application_screen_is_retained():
+    gallery = "Alex Smith\nJordan Lee\nTaylor Brown\nMorgan Jones\nRiley Wilson\nCasey Davis"
+    shared_screen = f"{gallery}\nPGRegDoc.com\nApplication Overview\nAzure database and support group"
+
+    assert visual_evidence._classify(gallery, 0.9, False)[0] == "MEETING_GALLERY"
+    assert visual_evidence._classify(shared_screen, 0.9, False)[0] != "MEETING_GALLERY"

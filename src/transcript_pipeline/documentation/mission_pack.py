@@ -105,12 +105,13 @@ def assess_transcript_quality(
     valid_coverage_percent: float = 95,
     trailing_gap_classification: str | None = None,
     vad_speech_segments: list[dict[str, Any]] | None = None,
+    supplemental_segments: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Measure timestamp reach and gaps; sparse or malformed transcripts fail closed."""
     duration = float(video_duration or 0)
     if duration <= 0:
         return {"transcript_state": "NEEDS_REVIEW", "reason": "video_duration_unavailable"}
-    if not transcript_segments:
+    if not transcript_segments and not supplemental_segments:
         return {
             "video_duration": duration, "transcript_start": None,
             "transcript_last_timestamp": None, "transcript_span": 0.0,
@@ -119,7 +120,8 @@ def assess_transcript_quality(
         }
 
     normalized: list[tuple[float, float]] = []
-    for segment in transcript_segments:
+    all_transcript_segments = [*transcript_segments, *(supplemental_segments or [])]
+    for segment in all_transcript_segments:
         try:
             start, end = float(segment["start"]), float(segment["end"])
         except (KeyError, TypeError, ValueError):
@@ -193,6 +195,11 @@ def assess_transcript_quality(
         "leading_gap": round(leading_gap, 3),
         "transcript_last_timestamp": round(last, 3), "transcript_span": round(span, 3),
         "transcript_coverage_percent": round(coverage, 2), "speech_gaps": gaps,
+        "media_coverage_percent": round(coverage, 2),
+        "speech_coverage_percent": round(speech_coverage, 2) if speech_coverage is not None else None,
+        "vad_speech_seconds": round(vad_total, 3),
+        "transcribed_speech_seconds": round(vad_covered, 3),
+        "uncovered_speech_seconds": round(max(0.0, vad_total - vad_covered), 3),
         "final_gap": round(final_gap, 3), "transcript_state": state,
         "trailing_gap_classification": trailing_gap_classification or "NEEDS_REVIEW",
         "vad_speech_coverage_percent": round(speech_coverage, 2) if speech_coverage is not None else None,

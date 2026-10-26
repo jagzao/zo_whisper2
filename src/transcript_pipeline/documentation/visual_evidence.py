@@ -1,7 +1,9 @@
 """Local OCR and conservative frame triage with source-frame provenance."""
 from __future__ import annotations
 
+import hashlib
 import re
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
@@ -101,11 +103,24 @@ def _classify(text: str, confidence: float, black: bool, speaker_tile: bool = Fa
         return "MEETING_GALLERY", lines[:20], []
     if speaker_tile:
         return "MEETING_GALLERY", lines[:20], []
+    name_lines = []
+    for line in lines:
+        words = re.findall(r"[A-Za-z][A-Za-z'-]*", line)
+        if 2 <= len(words) <= 7 and line == line.strip() and all(word[:1].isupper() or word.isupper() for word in words):
+            name_lines.append(words)
+    operational_cues = re.search(
+        r"\b(regdoc|azure|database|application overview|technical overview|data flow|configuration|environment|support group|lifecycle|api|server|role|permissions|authentication|workflow|subscription|description|department|category|owner)\b",
+        lowered,
+    )
+    word_count = sum(len(re.findall(r"[A-Za-z][A-Za-z'-]*", line)) for line in lines)
+    name_word_count = sum(len(words) for words in name_lines)
+    if len(name_lines) >= 5 and word_count and name_word_count / word_count >= 0.6 and not operational_cues:
+        return "MEETING_GALLERY", lines[:20], []
     if re.search(r"\b(error|exception|unauthorized|access denied|not found|failed)\b", lowered):
         return "ERROR_MESSAGE", lines[:20], [line for line in lines if re.search(r"error|exception|denied|failed", line, re.I)]
     if re.search(r"\b(architecture diagram|system architecture|integration diagram|network diagram)\b", lowered):
         return "ARCHITECTURE_DIAGRAM", lines[:20], []
-    if re.search(r"\b(data flow|workflow|process flow)\b|(?:->|→|⟶|⇢)", lowered):
+    if re.search(r"\b(data flow|workflow|process flow)\b|(?:->|\u2192|\u27f6|\u21e2)", lowered):
         return "FLOW_DIAGRAM", lines[:20], []
     if re.search(r"\b(configuration|settings|environment|connection string)\b", lowered):
         return "CONFIGURATION", lines[:20], []
@@ -118,6 +133,49 @@ def _classify(text: str, confidence: float, black: bool, speaker_tile: bool = Fa
     if text:
         return "APPLICATION_UI", lines[:20], []
     return "OTHER", lines[:20], []
+
+
+def _application_for(text: str) -> str:
+    lowered = text.lower()
+    regdoc = bool(re.search(r"\b(pg\s*)?regdoc\b|pgregdoc\.com", lowered))
+    payments = bool(re.search(r"panelist payments|\bcprt\b|north america central product research", lowered))
+    if regdoc and payments:
+        return "BOTH"
+    if regdoc:
+        return "PG_REGDOC"
+    if payments:
+        return "NA_CPRT_PANELIST_PAYMENTS"
+    return "SESSION_GENERAL"
+
+
+def _normalize_text(text: str) -> str:
+    return re.sub(r"\W+", " ", text.lower()).strip()
+
+
+def _topic_for(visual_type: str, application: str) -> str:
+    return f"{visual_type}:{application}"
+
+
+def _extract_explicit_graph(text: str, provenance: dict[str, Any]) -> dict[str, Any]:
+    edge_pattern = re.compile(r"([A-Za-z0-9][A-Za-z0-9 ._/-]{1,50}?)\s*(?:->|\u2192|\u27f6|\u21e2)\s*([A-Za-z0-9][A-Za-z0-9 ._/-]{1,50})")
+    edges = []
+    nodes = {}
+    for line in text.splitlines():
+        match = edge_pattern.search(line.strip())
+        if not match:
+            continue
+        source, target = (re.sub(r"\s+", " ", value).strip(" .") for value in match.groups())
+        if not source or not target:
+            continue
+        nodes[source.lower()] = source
+        nodes[target.lower()] = target
+        edges.append({"source": source, "target": target, "label": None, "provenance": dict(provenance)})
+    return {
+        "nodes": [{"id": re.sub(r"\W+", "_", label.lower()).strip("_") or f"node_{i}", "label": label, "provenance": dict(provenance)} for i, label in enumerate(nodes.values())],
+        "edges": edges,
+        "labels": list(nodes.values()),
+        "source_frames": [dict(provenance)] if edges else [],
+    }
 
 
 def analyze_frame(
@@ -144,8 +202,13 @@ def analyze_frame(
             status, text, confidence = "FAILED", "", None
         else:
             status, text, confidence = "NO_TEXT", "", None
+    transcript_text = str(frame.get("transcript_text") or "")
     speaker_tile = _has_centered_speaker_tile(image_path, text) if not black else False
     visual_type, labels, errors = _classify(text, confidence or 0.0, black, speaker_tile)
+    normalized = _normalize_text(text)
+    provenance = {"frame_id": frame_id, "timestamp": timestamp, "image_path": str(image_path)}
+    graph = _extract_explicit_graph(text, provenance)
+    application = _application_for(f"{text} {transcript_text}")
     return {
         "frame_id": frame_id,
         "timestamp": timestamp,
@@ -157,7 +220,10 @@ def analyze_frame(
         "source_image": str(image_path),
         "visual_type": visual_type,
         "title": labels[0] if labels else None,
-        "application": None,
+        "application": application,
+        "topic": _topic_for(visual_type, application),
+        "topic_title": labels[0] if labels else None,
+        "transcript_text": transcript_text,
         "visible_components": [],
         "visible_labels": labels,
         "actors": [],
@@ -166,11 +232,21 @@ def analyze_frame(
         "configuration_fields": [],
         "error_messages": errors,
         "operational_actions": [],
+        "nodes": graph["nodes"],
+        "edges": graph["edges"],
+        "labels": graph["labels"],
+        "source_frames": graph["source_frames"],
         "confidence": confidence or 0.0,
-        "provenance": {"frame_id": frame_id, "timestamp": timestamp, "image_path": str(image_path)},
+        "provenance": provenance,
+        "source_image_size": image_path.stat().st_size if image_path.is_file() else None,
+        "source_image_mtime_ns": image_path.stat().st_mtime_ns if image_path.is_file() else None,
         "visual_analysis_status": "NEEDS_REVIEW",
         "selected": False,
         "selection_reason": None,
+        "ocr_text_signature": hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16],
+        "perceptual_signature": None,
+        "unique_information": [],
+        "duplicate_of": None,
     }
 
 
@@ -179,53 +255,123 @@ def analyze_frames(
     frames_dir: Path,
     *,
     phash_threshold: int = 6,
-    existing_ocr: dict[str, str] | None = None,
+    existing_ocr: dict[str, Any] | None = None,
+    source_video: str | None = None,
 ) -> dict[str, Any]:
-    """Select OCR/type changes and suppress black, gallery and near-duplicate frames."""
+    """Select knowledge-bearing screen changes and suppress only true duplicates."""
     from transcript_pipeline.documentation.screenshots import _hamming, _pillow_ahash
 
-    records = [
-        analyze_frame(frame, frames_dir, existing_ocr=(existing_ocr or {}).get(str(frame.get("frame_file"))))
-        for frame in sorted(frames, key=lambda item: float(item.get("timestamp", 0)))
-    ]
-    previous_text = ""
-    previous_type = ""
-    selected_hashes: list[int] = []
+    enriched_frames = []
+    for frame in frames:
+        frame_id = str(frame.get("frame_file") or frame.get("frame_id") or "")
+        transcript_entry = frame.get("transcript_text")
+        if not transcript_entry:
+            transcript_entry = str(frame.get("full_text") or "")
+        enriched_frames.append({**frame, "transcript_text": transcript_entry, "frame_file": frame_id})
+    records = []
+    for frame in sorted(enriched_frames, key=lambda item: float(item.get("timestamp", 0))):
+        frame_id = str(frame.get("frame_file"))
+        cached = (existing_ocr or {}).get(frame_id)
+        if isinstance(cached, str):
+            cached = None
+        if isinstance(cached, dict) and cached.get("ocr_status") in {"FAILED", "LOW_CONFIDENCE"}:
+            cached = None
+        if isinstance(cached, dict):
+            record = analyze_frame(frame, frames_dir, existing_ocr=str(cached.get("ocr_text") or ""))
+            for field in ("ocr_status", "ocr_confidence", "retry_count", "engine"):
+                if field in cached:
+                    record[field] = cached[field]
+            record["confidence"] = record.get("ocr_confidence") or 0.0
+        else:
+            record = analyze_frame(frame, frames_dir, existing_ocr=cached)
+        records.append(record)
+
+    selected: list[dict[str, Any]] = []
+    duplicate_count = 0
     for record in records:
-        normalized = re.sub(r"\W+", " ", record["ocr_text"].lower()).strip()
+        normalized = _normalize_text(record["ocr_text"])
+        words = set(normalized.split())
         if record["visual_type"] in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}:
-            record["selection_reason"] = None
             continue
         image_hash = _pillow_ahash(Path(record["source_image"]))
-        duplicate = bool(image_hash is not None and any(
-            _hamming(image_hash, existing) <= phash_threshold for existing in selected_hashes
-        ))
-        if duplicate or (normalized and normalized == previous_text):
+        record["perceptual_signature"] = f"{image_hash:016x}" if image_hash is not None else None
+        comparisons = []
+        for prior in selected:
+            prior_hash = int(prior["perceptual_signature"], 16) if prior["perceptual_signature"] else None
+            distance = _hamming(image_hash, prior_hash) if image_hash is not None and prior_hash is not None else 64
+            text_similarity = SequenceMatcher(None, normalized, _normalize_text(prior["ocr_text"])).ratio()
+            comparisons.append((distance, text_similarity, prior))
+        similar = [item for item in comparisons if item[0] <= phash_threshold]
+        duplicate = next((item for item in similar if item[1] >= 0.85), None)
+        if normalized:
+            exact = next((prior for prior in selected if normalized == _normalize_text(prior["ocr_text"])), None)
+            duplicate = duplicate or ((64, 1.0, exact) if exact else None)
+        if duplicate:
+            record["duplicate_of"] = duplicate[2]["frame_id"]
             record["selection_reason"] = None
+            duplicate_count += 1
             continue
+
+        nearest = min(comparisons, key=lambda item: item[0])[2] if comparisons else None
+        prior_words = set(_normalize_text(nearest["ocr_text"]).split()) if nearest else set()
+        record["unique_information"] = sorted(words - prior_words) if words else []
         if record["visual_type"] == "ERROR_MESSAGE":
             reason = "ERROR"
-        elif record["visual_type"] == "ARCHITECTURE_DIAGRAM":
+        elif record["visual_type"] in {"ARCHITECTURE_DIAGRAM", "FLOW_DIAGRAM"}:
             reason = "ARCHITECTURE"
-        elif record["visual_type"] != previous_type:
-            reason = "UNIQUE_UI"
-        elif normalized and normalized != previous_text:
+        elif re.search(r"\b(click|select|choose|enter|save|submit|open|configure)\b", record["transcript_text"], re.I):
+            reason = "PROCEDURE"
+        elif nearest and record["topic"] != nearest["topic"]:
+            reason = "TOPIC_BOUNDARY"
+        elif nearest and record["unique_information"]:
             reason = "OCR_CHANGE"
+        elif not nearest:
+            reason = "SCENE_CHANGE"
         else:
-            reason = "OTHER"
-        record["selected"] = bool(record["ocr_status"] == "SUCCESS" and record["ocr_text"])
+            reason = "UNIQUE_UI"
+        record["selected"] = bool(
+            record["ocr_text"] and record["ocr_status"] in {"SUCCESS", "LOW_CONFIDENCE"}
+        )
         record["selection_reason"] = reason if record["selected"] else None
         if record["selected"]:
-            previous_text = normalized
-            previous_type = record["visual_type"]
-            if image_hash is not None:
-                selected_hashes.append(image_hash)
+            selected.append(record)
+
+    meaningful = [item for item in records if item["visual_type"] not in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}]
+    topics = sorted({item["topic"] for item in meaningful if item["topic"]})
+    covered_topics = sorted({
+        item["topic"] for item in selected
+        if item["topic"] and item["ocr_status"] == "SUCCESS"
+    })
+    uncovered_topics = sorted(set(topics) - set(covered_topics))
+    diagrams = []
+    for record in selected:
+        if not record["edges"]:
+            continue
+        node_ids = {node["label"]: node["id"] for node in record["nodes"]}
+        lines = ["flowchart LR"]
+        lines.extend(f'    {node["id"]}["{node["label"].replace(chr(34), chr(39))}"]' for node in record["nodes"])
+        lines.extend(f'    {node_ids[edge["source"]]} --> {node_ids[edge["target"]]}' for edge in record["edges"])
+        diagrams.append({
+            "diagram_id": f"diagram-{record['frame_id']}",
+            "mermaid": "\n".join(lines),
+            "source_video": source_video,
+            "timestamps": [record["timestamp"]],
+            "source_frames": [record["provenance"]],
+        })
     return {
         "schema_version": 1,
-        "status": "NEEDS_REVIEW" if not records else (
-            "PARTIAL" if any(item["visual_analysis_status"] == "NEEDS_REVIEW" for item in records) else "READY"
-        ),
+        "status": "NEEDS_REVIEW" if not records else "PARTIAL",
         "frame_count": len(records),
-        "selected_count": sum(item["selected"] for item in records),
+        "technical_frame_count": sum(item["visual_type"] not in {"BLACK_OR_EMPTY", "MEETING_GALLERY"} for item in records),
+        "meaningful_visual_count": len(meaningful),
+        "selected_count": len(selected),
+        "suppressed_duplicate_count": duplicate_count,
+        "suppressed_gallery_count": sum(item["visual_type"] == "MEETING_GALLERY" for item in records),
+        "suppressed_black_count": sum(item["visual_type"] == "BLACK_OR_EMPTY" for item in records),
+        "visual_topics_discovered": topics,
+        "visual_topics_covered": covered_topics,
+        "visual_topics_uncovered": uncovered_topics,
+        "visual_coverage_gate": "PASS" if not uncovered_topics else "FAIL",
+        "derived_diagrams": diagrams,
         "frames": records,
     }
