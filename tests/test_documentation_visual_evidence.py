@@ -122,6 +122,18 @@ def test_participant_name_grid_is_suppressed_but_shared_application_screen_is_re
     assert visual_evidence._classify(shared_screen, 0.9, False)[0] != "MEETING_GALLERY"
 
 
+def test_visual_topics_use_nearby_evidence_instead_of_one_generic_ui_bucket():
+    assert visual_evidence._topic_for(
+        "APPLICATION_UI", "SESSION_GENERAL", "records the daily production matrix"
+    ) == "WORKFLOW:SESSION_GENERAL"
+    assert visual_evidence._topic_for(
+        "APPLICATION_UI", "SESSION_GENERAL", "AMS support is responsible for access tickets"
+    ) == "ACCESS:SESSION_GENERAL"
+    assert visual_evidence._topic_for(
+        "APPLICATION_UI", "SESSION_GENERAL", "SQL database query and table"
+    ) == "DATABASE:SESSION_GENERAL"
+
+
 def test_reviewed_visual_topics_cover_distinct_content_with_frame_provenance():
     report = {"frames": [
         {"frame_id": "overview.png", "timestamp": 10, "source_image": "overview.png",

@@ -151,8 +151,20 @@ def _normalize_text(text: str) -> str:
     return re.sub(r"\W+", " ", text.lower()).strip()
 
 
-def _topic_for(visual_type: str, application: str) -> str:
-    return f"{visual_type}:{application}"
+def _topic_for(visual_type: str, application: str, evidence_text: str = "") -> str:
+    text = evidence_text.lower()
+    categories = (
+        ("ERROR", r"\b(error|exception|failed|failure|denied|unavailable)\b"),
+        ("ARCHITECTURE", r"\b(architecture|integration|hosted|hosting|connects? to|network path)\b"),
+        ("DATABASE", r"\b(database|sql|query|table|schema|stored procedure)\b"),
+        ("CONFIGURATION", r"\b(configuration|config|settings|server|iis|php|deployment|environment)\b"),
+        ("ACCESS", r"\b(authentication|authorization|access|permissions?|role|account|credential)\b"),
+        ("WORKFLOW", r"\b(workflow|process|production matrix|kanban|recording and viewing|step)\b"),
+        ("SUPPORT_SCOPE", r"\b(ams|support|responsible|responsibility|boundary|ticket)\b"),
+        ("LIFECYCLE", r"\b(lifecycle|decommission|retire|sunset|production|development)\b"),
+    )
+    category = next((name for name, pattern in categories if re.search(pattern, text)), visual_type)
+    return f"{category}:{application}"
 
 
 def _extract_explicit_graph(text: str, provenance: dict[str, Any]) -> dict[str, Any]:
@@ -220,7 +232,8 @@ def analyze_frame(
         "visual_type": visual_type,
         "title": labels[0] if labels else None,
         "application": application,
-        "topic": _topic_for(visual_type, application),
+        "topic": _topic_for(visual_type, application, f"{text} {transcript_text}"),
+        "topic_basis": "OCR_AND_NEARBY_TRANSCRIPT" if transcript_text else "OCR",
         "topic_title": labels[0] if labels else None,
         "transcript_text": transcript_text,
         "visible_components": [],
