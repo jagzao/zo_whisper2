@@ -3,6 +3,6 @@
     "active_sdd":  ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
     "branch":  "delta/zmi-docs-transcript-gate",
     "served_revision":  "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-    "last_result":  "ACTIVE_BRANCH_HEAD=d5f24df787c645aa7db564cb1ac9f287de31f397; implementation b087d9e; SESSION_41_OWNER_UAT=PASS; SESSION_41_GOLDEN=APPROVED; GOLDEN_OVERFIT_CHECK=PASS; S46_GATE=BLOCKED_SPEECH_AND_IDENTITY (visual 7/7; diagnostic only); CROSS_SESSION_KNOWLEDGE=CONTROLLED_TESTS_PASS; APPLICATION_MISSION_PACK=CONTROLLED_TESTS_PASS; UNIT=159_PASS; DOCUMENTS_V2=INCOMPLETE; CORPUS_GENERATION=FROZEN; MERGED_TO_MAIN=NO; DEPLOYED=NO.",
-    "updated_at":  "2026-10-26T21:58:00Z"
+    "last_result":  "ACTIVE_BRANCH_HEAD=a462161bb2a9ab6a607e853610ec16b6eaee3e74; S46 local targeted recovery transcribed 52 high-energy gaps independently; 1 dual-model 4.920s speech candidate remains SOURCE_UNCERTAIN; 231 longer gaps unresolved; visual coverage 7/7; GOLDEN_2_GATE=BLOCKED_SPEECH_AND_IDENTITY; SESSION_41_OWNER_UAT=PASS; GOLDEN_OVERFIT_CHECK=PASS; cross-session/Mission Pack controlled tests PASS; UNIT=159_PASS; DOCUMENTS_V2=INCOMPLETE; CORPUS_GENERATION=FROZEN; MERGED_TO_MAIN=NO; DEPLOYED=NO.",
+    "updated_at":  "2026-10-26T22:05:00Z"
 }
