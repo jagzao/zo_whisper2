@@ -9,9 +9,9 @@
 
 DOCUMENTS_V2=INCOMPLETE; technical Session 41 sample is ready for owner review
 DOCS_V2_ARCHITECTURE_VERSION=2 + speech-coverage gate + reviewed semantic visuals + claim/diagram provenance
-REVISA_POINTER_MAIN=STALE until checkpoint publication; status-only pointer, implementation is not merged/deployed
+REVISA_POINTER_MAIN=77b2b13 on main; status-only pointer, implementation is not merged/deployed
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=0f2d77f plus uncommitted Session 41 visual/claim/diagram/pack completion; pending checkpoint commit
+IMPLEMENTATION_HEAD=3f87806; tested code checkpoint pushed to active branch; status metadata may be newer
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
 SESSION_41_SOURCE=Videos/general/AMS_KAP_-_App_Support_-_Session_41.mp4; duration 00:35:05.365
