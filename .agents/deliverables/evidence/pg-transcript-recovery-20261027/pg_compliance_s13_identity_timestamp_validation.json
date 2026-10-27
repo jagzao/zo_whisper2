@@ -1,0 +1,44 @@
+{
+  "media_id": "pg-e3d73ded7776de64",
+  "source": "Videos/py_pg/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+  "source_bytes": 202480701,
+  "source_duration_ffprobe_seconds": 7350.016,
+  "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
+  "sidecar_sha256": "c0445d5ba874389336d48ed1525e780d84d698d107e69ce81d5387ee684fed12",
+  "sidecar_duration_seconds": 7350.016,
+  "metadata_audio_file": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+  "metadata_duration_seconds": 7350.016,
+  "segment_count": 755,
+  "word_count": 4101,
+  "invalid_segments": [],
+  "invalid_words": [],
+  "segment_start_order_monotonic": true,
+  "word_start_order_monotonic": true,
+  "media_reach_percent": 25.89,
+  "segment_interval_union_percent": 21.26,
+  "last_segment_end_seconds": 1903.21,
+  "final_gap_seconds": 5446.806,
+  "prior_media_coverage_percent": 25.89,
+  "prior_speech_coverage_percent": 85.17,
+  "meaningful_uncovered_speech_seconds": 248.728,
+  "state": "PARTIAL",
+  "identity_match": "HIGH",
+  "canonical_sidecar_modified": false,
+  "asr_started": false,
+  "existing_speech_audit": {
+    "classification": "VAD_COVERAGE_ASSESSED",
+    "vad_interval_count": 34,
+    "vad_speech_seconds": 1677.536,
+    "transcribed_speech_seconds": 1428.808,
+    "uncovered_speech_seconds": 248.728,
+    "speech_coverage_percent": 85.17,
+    "major_speech_gaps": [
+      {
+        "start": 1646.26,
+        "end": 1649.58,
+        "seconds": 3.32
+      }
+    ]
+  },
+  "final_gap_classification": "NOT_ASSESSED; VAD evidence does not establish whether the 5,446.806s tail is silence or speech"
+}

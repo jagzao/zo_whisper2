@@ -1,0 +1,72 @@
+{
+  "media_id": "pg-cdcc12a6c7eea9bc",
+  "source": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+  "source_duration_ffprobe_seconds": 1841.2165,
+  "map_duration": 1841.216,
+  "sidecar_candidates": [
+    {
+      "path": "CarpetaTranscripciones\\pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+      "sha256": "bc75e22baae7e515a34c68e4eb042f8c9750ec028252e5c38bd18de15d579783",
+      "embedded_audio_file": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "sidecar_duration": 913.152,
+      "segments": 621,
+      "words": 1561,
+      "last_segment_end": 912.83,
+      "media_reach_percent": 49.58,
+      "invalid_segment_timestamps": [],
+      "segment_order_monotonic": true,
+      "word_order_monotonic": true,
+      "zero_duration_word_timestamps": 6
+    },
+    {
+      "path": "CarpetaTranscripciones\\py_pg\\pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+      "sha256": "4ae1773bd95cd603d6af472417788d24f2d4ebacc0f6ee7648cefe33de209dee",
+      "embedded_audio_file": "/data/Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "sidecar_duration": 913.152,
+      "segments": 627,
+      "words": 1571,
+      "last_segment_end": 912.77,
+      "media_reach_percent": 49.57,
+      "invalid_segment_timestamps": [],
+      "segment_order_monotonic": true,
+      "word_order_monotonic": true,
+      "zero_duration_word_timestamps": 2
+    }
+  ],
+  "identity_match": "HIGH",
+  "existing_vad_assessment": {
+    "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+    "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+    "duration_seconds": 1841.2165,
+    "media_coverage_percent": 49.58,
+    "identity_match": "MATCH",
+    "segment_count": 621,
+    "transcript_start": 89.12,
+    "transcript_last_timestamp": 912.83,
+    "vad_speech_seconds": 785.968,
+    "transcribed_speech_seconds": 720.79,
+    "uncovered_speech_seconds": 65.178,
+    "speech_coverage_percent": 91.71,
+    "major_speech_gaps": [
+      {
+        "start": 85.616,
+        "end": 89.12,
+        "seconds": 3.504
+      },
+      {
+        "start": 580.72,
+        "end": 583.89,
+        "seconds": 3.17
+      }
+    ],
+    "transcript_state": "PARTIAL",
+    "vad_interval_count": 22,
+    "classification": "VAD_COVERAGE_ASSESSED",
+    "error": null
+  },
+  "state": "NEEDS_REVIEW",
+  "canonical_candidate_selected": null,
+  "canonical_transcript_modified": false,
+  "asr_started": false,
+  "next_action": "retain both divergent partial copies; existing VAD assessment for candidate A reports 91.71% speech coverage and 65.178s uncovered, but both sidecars end at 49.58% media reach. Assess remaining source tail and candidate B coverage before canonical selection or targeted recovery."
+}

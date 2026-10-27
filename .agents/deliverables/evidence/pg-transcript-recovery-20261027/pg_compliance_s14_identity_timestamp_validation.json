@@ -1,0 +1,64 @@
+{
+  "media_id": "pg-e37b41cb13677886",
+  "source": "Videos/py_pg/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+  "source_bytes": 189048686,
+  "source_duration_ffprobe_seconds": 2136.896,
+  "sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+  "sidecar_sha256": "a209642496bf3dc5177e9c3d8095a3f5f79f8ef78003df762aed686f4ecdbba9",
+  "sidecar_duration_seconds": 2136.896,
+  "metadata_audio_file": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+  "metadata_duration_seconds": 2136.896,
+  "segment_count": 544,
+  "word_count": 4091,
+  "invalid_segments": [],
+  "invalid_words": [],
+  "segment_start_order_monotonic": true,
+  "word_start_order_monotonic": true,
+  "media_reach_percent": 99.68,
+  "segment_interval_union_percent": 81.88,
+  "last_segment_end_seconds": 2130.06,
+  "final_gap_seconds": 6.836,
+  "prior_media_coverage_percent": 99.68,
+  "prior_speech_coverage_percent": 89.67,
+  "meaningful_uncovered_speech_seconds": 190.69,
+  "state": "PARTIAL",
+  "identity_match": "HIGH",
+  "canonical_sidecar_modified": false,
+  "asr_started": false,
+  "existing_speech_audit": {
+    "classification": "VAD_COVERAGE_ASSESSED",
+    "vad_interval_count": 56,
+    "vad_speech_seconds": 1846.176,
+    "transcribed_speech_seconds": 1655.486,
+    "uncovered_speech_seconds": 190.69,
+    "speech_coverage_percent": 89.67,
+    "major_speech_gaps": [
+      {
+        "start": 808.32,
+        "end": 811.58,
+        "seconds": 3.26
+      },
+      {
+        "start": 1967.39,
+        "end": 1971.376,
+        "seconds": 3.986
+      },
+      {
+        "start": 1975.28,
+        "end": 1978.38,
+        "seconds": 3.1
+      },
+      {
+        "start": 1982.3,
+        "end": 1985.552,
+        "seconds": 3.252
+      },
+      {
+        "start": 1999.28,
+        "end": 2010.94,
+        "seconds": 11.66
+      }
+    ]
+  },
+  "final_gap_classification": "SMALL_MEDIA_TAIL"
+}

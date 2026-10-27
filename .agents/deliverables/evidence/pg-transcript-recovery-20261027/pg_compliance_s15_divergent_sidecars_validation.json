@@ -1,0 +1,207 @@
+{
+  "media_id": "pg-7ec100f076b0e0a0",
+  "source": "Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+  "source_duration_ffprobe_seconds": 2616.192,
+  "sidecar_candidates": [
+    {
+      "path": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+      "sha256": "52edeb9df730b492a3db3aa0448cc17797850c7b779b05d8b47b6ee022b8944d",
+      "embedded_audio_file": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "metadata_audio_file": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "sidecar_duration": 2616.192,
+      "metadata_duration": 2616.192,
+      "segments": 1077,
+      "words": 4859,
+      "last_segment_end": 2592.64,
+      "media_reach_percent": 99.1,
+      "invalid_timestamps": [],
+      "segment_order_monotonic": true,
+      "word_order_monotonic": true,
+      "file_hash_matches_map": true,
+      "content_hash_from_map": "6f6c0e1cf4445bbf973d16ee67f535e34a69e0b31352f065d6406faad540185d",
+      "unique_token_count": 832
+    },
+    {
+      "path": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+      "sha256": "745401e8ebc1c5084115661c2e29a1685bb503bfcae64b75948ad65c02ab5f1f",
+      "embedded_audio_file": "/data/Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "metadata_audio_file": "/data/Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "sidecar_duration": 2616.192,
+      "metadata_duration": 2616.192,
+      "segments": 647,
+      "words": 4939,
+      "last_segment_end": 2592.66,
+      "media_reach_percent": 99.1,
+      "invalid_timestamps": [],
+      "segment_order_monotonic": true,
+      "word_order_monotonic": true,
+      "file_hash_matches_map": true,
+      "content_hash_from_map": "b00ac4e8918003ace4225d70886b2029ed57715d3f45ef1a50365e3577c19ada",
+      "unique_token_count": 826
+    }
+  ],
+  "identity_match": "HIGH",
+  "token_set_comparison": {
+    "shared": 808,
+    "only_candidate_1": 24,
+    "only_candidate_2": 18,
+    "jaccard": 0.9506,
+    "unique_tokens_candidate_1": [
+      "alright",
+      "assure",
+      "back",
+      "capgemini's",
+      "gem",
+      "gwen",
+      "inspired",
+      "janine",
+      "jeka's",
+      "kap",
+      "lena",
+      "ngc",
+      "onto",
+      "ping",
+      "priority",
+      "program",
+      "recording",
+      "sarindar",
+      "snic",
+      "sonarcube",
+      "starts",
+      "tg",
+      "they've",
+      "x"
+    ],
+    "unique_tokens_candidate_2": [
+      "anyways",
+      "azure",
+      "him",
+      "leanix",
+      "might",
+      "pg",
+      "pngs",
+      "reasons",
+      "reporting",
+      "rindar",
+      "rose",
+      "snyk",
+      "someone",
+      "sonarqube",
+      "transpired",
+      "um",
+      "we've",
+      "yep"
+    ]
+  },
+  "existing_vad_assessment": {
+    "assessed_sidecar": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+    "segment_count": 1077,
+    "speech_coverage_percent": 82.83,
+    "uncovered_speech_seconds": 391.638,
+    "major_speech_gaps": [
+      {
+        "start": 607.72,
+        "end": 611.11,
+        "seconds": 3.39
+      },
+      {
+        "start": 662.04,
+        "end": 665.35,
+        "seconds": 3.31
+      },
+      {
+        "start": 831.64,
+        "end": 834.72,
+        "seconds": 3.08
+      },
+      {
+        "start": 2203.76,
+        "end": 2210.512,
+        "seconds": 6.752
+      },
+      {
+        "start": 2222.352,
+        "end": 2226.576,
+        "seconds": 4.224
+      },
+      {
+        "start": 2232.016,
+        "end": 2235.792,
+        "seconds": 3.776
+      },
+      {
+        "start": 2262.71,
+        "end": 2265.82,
+        "seconds": 3.11
+      },
+      {
+        "start": 2381.55,
+        "end": 2384.592,
+        "seconds": 3.042
+      }
+    ],
+    "classification": "VAD_COVERAGE_ASSESSED"
+  },
+  "state": "NEEDS_REVIEW",
+  "canonical_candidate_selected": null,
+  "canonical_transcript_modified": false,
+  "asr_started": false,
+  "next_action": "After pg-1 resource-safe VAD checkpoint, assess existing VAD/source coverage for both candidates; reconcile the extra and missing spans before promoting either. No ASR/retranscription now.",
+  "bounded_context_comparison": {
+    "method": "timestamp-window excerpts and linear segment lookup; no full-source audio inference",
+    "candidate_1_vad_gaps": [
+      {
+        "start": 607.72,
+        "end": 611.11,
+        "candidate_1": "no segments in interval",
+        "candidate_2": "one segment spans 603.46-607.70; no segment in gap"
+      },
+      {
+        "start": 662.04,
+        "end": 665.35,
+        "candidate_1": "no segment",
+        "candidate_2": "not inspected in bounded excerpt"
+      },
+      {
+        "start": 831.64,
+        "end": 834.72,
+        "candidate_1": "no segment",
+        "candidate_2": "not inspected in bounded excerpt"
+      },
+      {
+        "start": 2203.76,
+        "end": 2210.512,
+        "candidate_1": "no segment",
+        "candidate_2": "That?s it. / I had. at 2208.73-2209.59"
+      },
+      {
+        "start": 2222.352,
+        "end": 2226.576,
+        "candidate_1": "no segment",
+        "candidate_2": "Anyone else has any other question? If not, then I think we are good for today."
+      },
+      {
+        "start": 2232.016,
+        "end": 2235.792,
+        "candidate_1": "no segment",
+        "candidate_2": "No question. I think we are good."
+      },
+      {
+        "start": 2262.71,
+        "end": 2265.82,
+        "candidate_1": "Yes. / Okay.",
+        "candidate_2": "Yeah. / Yes. / Okay."
+      },
+      {
+        "start": 2381.55,
+        "end": 2384.592,
+        "candidate_1": "Send that mail. at 2380.47-2381.55",
+        "candidate_2": "same text and boundary"
+      }
+    ],
+    "assessment": "Candidate 2 contributes plausible speech absent from candidate 1 in several candidate-1 VAD gaps; this does not establish complete VAD coverage or canonical accuracy. Candidate A existing VAD metrics cannot be transferred to candidate B.",
+    "canonical_selection": "NONE",
+    "transcript_state": "NEEDS_REVIEW",
+    "next_action": "After pg-1 resource-safe VAD checkpoint, assess existing VAD/source coverage for both candidates; reconcile the extra and missing spans before promoting either. No ASR/retranscription now."
+  }
+}

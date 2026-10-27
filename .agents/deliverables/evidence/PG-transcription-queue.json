@@ -28,54 +28,184 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "next_action": "reconcile existing VAD gaps in 309.64s uncovered speech, then run contextual recovery only for confirmed meaningful gaps; preserve canonical sidecar",
       "transcript_state": "PARTIAL",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 714,
+        "words_validated": 7788,
+        "invalid_timestamps": 0,
+        "media_reach_percent": 91.22,
+        "speech_coverage_percent": 90.56,
+        "meaningful_uncovered_speech_seconds": 309.64,
+        "final_gap_seconds": 343.668,
+        "state": "PARTIAL"
+      }
     },
     {
       "media_id": "pg-e3d73ded7776de64",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "next_action": "audit VAD/speech in the 5,446.806s tail; then target recovery for confirmed meaningful gaps, preserving the original sidecar",
       "transcript_state": "PARTIAL",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 755,
+        "words_validated": 4101,
+        "invalid_timestamps": 0,
+        "media_reach_percent": 25.89,
+        "speech_coverage_percent": 85.17,
+        "meaningful_uncovered_speech_seconds": 248.728,
+        "internal_major_gap_seconds": 3.32,
+        "final_gap_seconds": 5446.806,
+        "final_gap_classification": "NOT_ASSESSED",
+        "state": "PARTIAL"
+      }
     },
     {
       "media_id": "pg-e37b41cb13677886",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "next_action": "reconcile 190.69s of uncovered speech and five major VAD gaps; run contextual recovery only for confirmed meaningful intervals; preserve original sidecar",
       "transcript_state": "PARTIAL",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 544,
+        "words_validated": 4091,
+        "invalid_timestamps": 0,
+        "media_reach_percent": 99.68,
+        "speech_coverage_percent": 89.67,
+        "meaningful_uncovered_speech_seconds": 190.69,
+        "major_speech_gaps": [
+          {
+            "start": 808.32,
+            "end": 811.58,
+            "seconds": 3.26
+          },
+          {
+            "start": 1967.39,
+            "end": 1971.376,
+            "seconds": 3.986
+          },
+          {
+            "start": 1975.28,
+            "end": 1978.38,
+            "seconds": 3.1
+          },
+          {
+            "start": 1982.3,
+            "end": 1985.552,
+            "seconds": 3.252
+          },
+          {
+            "start": 1999.28,
+            "end": 2010.94,
+            "seconds": 11.66
+          }
+        ],
+        "final_gap_seconds": 6.836,
+        "state": "PARTIAL"
+      }
     },
     {
       "media_id": "pg-7ec100f076b0e0a0",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "compare divergent sidecars against source speech coverage before choosing canonical",
+      "next_action": "After pg-1 resource-safe VAD checkpoint, assess existing VAD/source coverage for both candidates; reconcile the extra and missing spans before promoting either. No ASR/retranscription now.",
       "transcript_state": "NEEDS_REVIEW",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "candidate_count": 2,
+        "candidate_segments": [
+          1077,
+          647
+        ],
+        "candidate_media_reach_percent": [
+          99.1,
+          99.1
+        ],
+        "shared_unique_tokens": 808,
+        "candidate_a_only_unique_tokens": 24,
+        "candidate_b_only_unique_tokens": 18,
+        "candidate_token_jaccard": 0.9506,
+        "candidate_a_speech_coverage_percent": 82.83,
+        "candidate_a_uncovered_speech_seconds": 391.638,
+        "candidate_b_speech_coverage": "NOT_VALIDATED",
+        "state": "NEEDS_REVIEW",
+        "canonical_candidate_selected": null,
+        "canonical_transcript_modified": false
+      }
     },
     {
       "media_id": "pg-27753be62f40a4fa",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "compare divergent sidecars against source speech coverage before choosing canonical",
+      "next_action": "retain both divergent candidates; existing VAD audit establishes partial speech coverage for candidate A. Reconcile the 218.278s uncovered speech and compare candidate B before targeted recovery; no whole-source retranscription.",
       "transcript_state": "NEEDS_REVIEW",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "candidate_count": 2,
+        "candidate_segments": [
+          518,
+          329
+        ],
+        "candidate_words": [
+          2998,
+          2980
+        ],
+        "media_reach_percent": [
+          42.94,
+          42.94
+        ],
+        "speech_coverage_percent_candidate_a": 82.7,
+        "uncovered_speech_seconds_candidate_a": 218.278,
+        "major_vad_gaps": 1,
+        "zero_duration_word_timestamps": [
+          52,
+          45
+        ],
+        "canonical_candidate_selected": null,
+        "state": "NEEDS_TARGETED_RECOVERY"
+      }
     },
     {
       "media_id": "pg-cdcc12a6c7eea9bc",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "compare divergent sidecars against source speech coverage before choosing canonical",
+      "next_action": "retain both divergent partial copies; existing VAD assessment for candidate A reports 91.71% speech coverage and 65.178s uncovered, but both sidecars end at 49.58% media reach. Assess remaining source tail and candidate B coverage before canonical selection or targeted recovery.",
       "transcript_state": "NEEDS_REVIEW",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "candidate_count": 2,
+        "candidate_segments": [
+          621,
+          627
+        ],
+        "candidate_words": [
+          1561,
+          1571
+        ],
+        "media_reach_percent": [
+          49.58,
+          49.57
+        ],
+        "speech_coverage_percent_candidate_a": 91.71,
+        "uncovered_speech_seconds_candidate_a": 65.178,
+        "untranscribed_source_tail_seconds": 928.386,
+        "canonical_candidate_selected": null,
+        "state": "NEEDS_REVIEW"
+      }
     },
     {
       "media_id": "pg-58194dc5b0eb5cc6",
