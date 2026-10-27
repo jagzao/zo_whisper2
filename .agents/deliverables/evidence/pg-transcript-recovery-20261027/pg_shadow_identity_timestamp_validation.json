@@ -1,0 +1,60 @@
+{
+  "media_id": "pg-4957e30bcb15f2bf",
+  "source": "Videos\\py_pg\\pg_Shadow_221026.mp4",
+  "source_duration_ffprobe_seconds": 3335.783644,
+  "map_duration": 3335.784,
+  "sidecar": {
+    "path": "CarpetaTranscripciones\\py_pg\\pg_Shadow_221026_segments.json",
+    "sha256": "cc0f8773f27afb13ac2208a7101c493a23599a94bccf45db01feea26b4848a97",
+    "embedded_audio_file": "C:\\Dev\\Zo\\whisper\\Videos\\py_pg\\pg_Shadow_221026.mp4",
+    "sidecar_duration": 3335.7866875,
+    "segments": 871,
+    "words": 4006,
+    "last_segment_end": 3330.63,
+    "media_reach_percent": 99.85,
+    "invalid_segment_timestamps": [],
+    "segment_order_monotonic": true,
+    "word_order_monotonic": true,
+    "zero_duration_word_timestamps": 34
+  },
+  "identity_match": "HIGH",
+  "existing_vad_assessment": {
+    "video": "Videos/py_pg/pg_Shadow_221026.mp4",
+    "sidecar": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+    "duration_seconds": 3335.783644,
+    "media_coverage_percent": 99.85,
+    "identity_match": "MATCH",
+    "segment_count": 871,
+    "transcript_start": 116.35,
+    "transcript_last_timestamp": 3330.63,
+    "vad_speech_seconds": 1904.032,
+    "transcribed_speech_seconds": 1539.436,
+    "uncovered_speech_seconds": 364.596,
+    "speech_coverage_percent": 80.85,
+    "major_speech_gaps": [
+      {
+        "start": 3130.9,
+        "end": 3137.01,
+        "seconds": 6.11
+      },
+      {
+        "start": 3198.34,
+        "end": 3209.264,
+        "seconds": 10.924
+      },
+      {
+        "start": 3211.696,
+        "end": 3219.04,
+        "seconds": 7.344
+      }
+    ],
+    "transcript_state": "PARTIAL",
+    "vad_interval_count": 134,
+    "classification": "VAD_COVERAGE_ASSESSED",
+    "error": null
+  },
+  "state": "NEEDS_TARGETED_RECOVERY",
+  "canonical_transcript_modified": false,
+  "asr_started": false,
+  "next_action": "audit uncovered VAD intervals and tail; contextual recovery only for confirmed meaningful gaps; preserve original sidecar"
+}

@@ -1,0 +1,77 @@
+{
+  "media_id": "pg-611c4b9e32914de6",
+  "source": "Videos\\py_pg\\pg_Ams_kap_compliance_s4.mp4",
+  "source_duration_ffprobe_seconds": 4540.306511,
+  "map_duration": 4540.307,
+  "sidecar_candidates": [
+    {
+      "path": "CarpetaTranscripciones\\py_pg\\pg_Ams_kap_compliance_s4_segments.json",
+      "sha256": "d2ed9bd5ccd7f9cdab38d81af36b0fa4440dc0bab5c74effc8a25161c22f0ac9",
+      "embedded_audio_file": "C:\\Dev\\Zo\\whisper\\Videos\\py_pg\\pg_Ams_kap_compliance_s4.mp4",
+      "sidecar_duration": 4540.3306875,
+      "segments": 650,
+      "words": 8310,
+      "last_segment_end": 3580.11,
+      "media_reach_percent": 78.85,
+      "invalid_segment_timestamps": [],
+      "segment_order_monotonic": true,
+      "word_order_monotonic": true,
+      "zero_duration_word_timestamps": 153
+    }
+  ],
+  "identity_match": "HIGH",
+  "existing_vad_assessment": {
+    "video": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
+    "sidecar": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+    "duration_seconds": 4540.306511,
+    "media_coverage_percent": 78.85,
+    "identity_match": "MATCH",
+    "segment_count": 650,
+    "transcript_start": 129.74,
+    "transcript_last_timestamp": 3580.11,
+    "vad_speech_seconds": 3236.128,
+    "transcribed_speech_seconds": 3028.212,
+    "uncovered_speech_seconds": 207.916,
+    "speech_coverage_percent": 93.58,
+    "major_speech_gaps": [
+      {
+        "start": 1349.67,
+        "end": 1355.38,
+        "seconds": 5.71
+      },
+      {
+        "start": 2475.5,
+        "end": 2481.09,
+        "seconds": 5.59
+      },
+      {
+        "start": 2598.71,
+        "end": 2602.59,
+        "seconds": 3.88
+      },
+      {
+        "start": 2995.87,
+        "end": 2999.73,
+        "seconds": 3.86
+      },
+      {
+        "start": 3106.76,
+        "end": 3110.864,
+        "seconds": 4.104
+      },
+      {
+        "start": 3323.61,
+        "end": 3327.15,
+        "seconds": 3.54
+      }
+    ],
+    "transcript_state": "PARTIAL",
+    "vad_interval_count": 63,
+    "classification": "VAD_COVERAGE_ASSESSED",
+    "error": null
+  },
+  "canonical_transcript_modified": false,
+  "asr_started": false,
+  "state": "NEEDS_TARGETED_RECOVERY",
+  "next_action": "audit uncovered intervals from existing VAD; recover only confirmed meaningful gaps, preserve original sidecar"
+}
