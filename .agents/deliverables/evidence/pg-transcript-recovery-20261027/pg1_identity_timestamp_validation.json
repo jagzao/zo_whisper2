@@ -81,7 +81,7 @@
     }
   ],
   "speech_coverage": "NOT_YET_VALIDATED",
-  "meaningful_gaps": "UNASSESSED_WITHOUT_VAD",
+  "meaningful_gaps": "UNASSESSED_WITHOUT_VAD; candidate word-timestamp gaps are not proof of speech",
   "final_gap_seconds": 5.019,
   "classification": "NEEDS_REVIEW",
   "canonical_transcript_modified": false,
@@ -102,5 +102,191 @@
     "reason": "only 4.0 GB free and a local model runtime is active"
   },
   "next_action": "run one-source VAD/speech-coverage audit when safe resource headroom is available",
-  "audited_at_utc": "2026-10-27T17:08:39+00:00"
+  "audited_at_utc": "2026-10-27T17:08:39+00:00",
+  "word_interval_union_seconds": 1783.54,
+  "word_interval_union_percent": 64.61,
+  "candidate_word_gap_threshold_seconds": 1.5,
+  "candidate_word_gaps_count": 110,
+  "largest_candidate_word_gaps": [
+    {
+      "start": 159.52,
+      "end": 270.11,
+      "seconds": 110.59,
+      "left_word": "i",
+      "right_word": "think",
+      "segment_left": 1,
+      "segment_right": 1
+    },
+    {
+      "start": 16.58,
+      "end": 105.32,
+      "seconds": 88.74,
+      "left_word": "evening",
+      "right_word": "julie",
+      "segment_left": 0,
+      "segment_right": 0
+    },
+    {
+      "start": 107.72,
+      "end": 148.71,
+      "seconds": 40.99,
+      "left_word": "julie",
+      "right_word": "can",
+      "segment_left": 0,
+      "segment_right": 0
+    },
+    {
+      "start": 2589.02,
+      "end": 2610.46,
+      "seconds": 21.44,
+      "left_word": "Okay.",
+      "right_word": "Any",
+      "segment_left": 1036,
+      "segment_right": 1037
+    },
+    {
+      "start": 2697.64,
+      "end": 2715.27,
+      "seconds": 17.63,
+      "left_word": "part?",
+      "right_word": "Okay.",
+      "segment_left": 1088,
+      "segment_right": 1089
+    },
+    {
+      "start": 2676.19,
+      "end": 2692.76,
+      "seconds": 16.57,
+      "left_word": "it.",
+      "right_word": "Tim,",
+      "segment_left": 1080,
+      "segment_right": 1081
+    },
+    {
+      "start": 1080.21,
+      "end": 1093.26,
+      "seconds": 13.05,
+      "left_word": "prerequisites.",
+      "right_word": "No",
+      "segment_left": 225,
+      "segment_right": 226
+    },
+    {
+      "start": 2403.56,
+      "end": 2415.95,
+      "seconds": 12.39,
+      "left_word": "since.",
+      "right_word": "So",
+      "segment_left": 876,
+      "segment_right": 877
+    },
+    {
+      "start": 2613.1,
+      "end": 2625.44,
+      "seconds": 12.34,
+      "left_word": "Databricks?",
+      "right_word": "Julie",
+      "segment_left": 1041,
+      "segment_right": 1042
+    },
+    {
+      "start": 733.8,
+      "end": 744.8,
+      "seconds": 11.0,
+      "left_word": "questions.",
+      "right_word": "I",
+      "segment_left": 146,
+      "segment_right": 147
+    },
+    {
+      "start": 2626.42,
+      "end": 2635.97,
+      "seconds": 9.55,
+      "left_word": "is",
+      "right_word": "here.",
+      "segment_left": 1042,
+      "segment_right": 1043
+    },
+    {
+      "start": 889.67,
+      "end": 898.0,
+      "seconds": 8.33,
+      "left_word": "Okay.",
+      "right_word": "So,",
+      "segment_left": 183,
+      "segment_right": 184
+    },
+    {
+      "start": 2033.15,
+      "end": 2041.02,
+      "seconds": 7.87,
+      "left_word": "Sorry.",
+      "right_word": "This",
+      "segment_left": 610,
+      "segment_right": 611
+    },
+    {
+      "start": 2321.45,
+      "end": 2328.87,
+      "seconds": 7.42,
+      "left_word": "happening.",
+      "right_word": "Amkar,",
+      "segment_left": 798,
+      "segment_right": 799
+    },
+    {
+      "start": 2391.5,
+      "end": 2398.72,
+      "seconds": 7.22,
+      "left_word": "to",
+      "right_word": "do",
+      "segment_left": 866,
+      "segment_right": 867
+    },
+    {
+      "start": 2661.58,
+      "end": 2668.67,
+      "seconds": 7.09,
+      "left_word": "of",
+      "right_word": "customer",
+      "segment_left": 1072,
+      "segment_right": 1073
+    },
+    {
+      "start": 2478.35,
+      "end": 2485.31,
+      "seconds": 6.96,
+      "left_word": "going?",
+      "right_word": "will",
+      "segment_left": 925,
+      "segment_right": 926
+    },
+    {
+      "start": 2438.11,
+      "end": 2444.89,
+      "seconds": 6.78,
+      "left_word": "So",
+      "right_word": "I",
+      "segment_left": 903,
+      "segment_right": 903
+    },
+    {
+      "start": 2361.22,
+      "end": 2367.98,
+      "seconds": 6.76,
+      "left_word": "to",
+      "right_word": "schedule",
+      "segment_left": 836,
+      "segment_right": 837
+    },
+    {
+      "start": 2455.61,
+      "end": 2462.33,
+      "seconds": 6.72,
+      "left_word": "But",
+      "right_word": "for",
+      "segment_left": 913,
+      "segment_right": 913
+    }
+  ]
 }

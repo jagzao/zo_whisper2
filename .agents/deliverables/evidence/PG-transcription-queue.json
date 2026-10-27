@@ -19,7 +19,8 @@
         "media_reach_percent": 99.82,
         "segment_interval_union_percent": 76.44,
         "speech_coverage": "NOT_YET_VALIDATED",
-        "state": "WAITING_RESOURCES"
+        "state": "WAITING_RESOURCES",
+        "candidate_word_gaps_gt_1_5s": 110
       }
     },
     {
