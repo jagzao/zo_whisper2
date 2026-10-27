@@ -114,6 +114,12 @@ PG_WINDOWS_BOUNDARY=107 (cheap reconciliation complete; retained P2, no ASR esca
 PG_WINDOWS_ALREADY_COVERED=66
 PG_WINDOWS_PROCESSED=0
 PG_RECOVERY_TRIAGE_COUNTS=P0:25; P1:187; P2:107; P3:66; raw duplicate/context overlaps:0; context merges:63
+
+PG_P0_PREFLIGHT=8/8 source media/sidecars readable; 25/25 windows within media bounds; serial order: pg-ccb11a4619acaa92 > pg-e3d73ded7776de64 > pg-e37b41cb13677886 > pg-58194dc5b0eb5cc6 > pg-98250af646a5c138 > pg-896f3fb2e5862a02 > pg-611c4b9e32914de6 > pg-4957e30bcb15f2bf
+PG_P0_WINDOWS_BY_SOURCE=pg-ccb11a4619acaa92:4; pg-e3d73ded7776de64:1; pg-e37b41cb13677886:2; pg-58194dc5b0eb5cc6:4; pg-98250af646a5c138:3; pg-896f3fb2e5862a02:3; pg-611c4b9e32914de6:6; pg-4957e30bcb15f2bf:2
+PG_MISSING_PREFLIGHT=7/7 readable; audio streams present; inventory sizes and durations match; 0 checkpoints present; resumable manifest prepared
+PG_MISSING_SOURCE_OUTPUTS=pg-3:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json; pg-9:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json; pg-10:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json; pg-11:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording_segments.json; pg-12:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording_segments.json; pg-13:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording_segments.json; pg-15:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording_segments.json
+PG_PREFLIGHT_EVIDENCE=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_source_preflight_and_serial_manifest.json/.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_source_preflight_and_serial_manifest.md
 PG_BOUNDARY_RECONCILIATION=107 windows; 139 gaps 1.51-3.99s; neighbor context on both sides; canonical time overlap:0; audio evidence:NOT_RUN; ASR escalation:0
 
 ## HISTORICAL_RESULTS

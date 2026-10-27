@@ -1,0 +1,1081 @@
+{
+  "schema_version": 1,
+  "created_by": "local read-only preflight",
+  "resource_mode": "LOW_MEMORY_SEQUENTIAL",
+  "heavy_concurrency": 1,
+  "active_heavy_job": "NONE",
+  "next_heavy_job": "pg-1 VAD audit",
+  "waiting_resources": "pg-1",
+  "recovery_windows_raw": 448,
+  "recovery_windows_derived": 385,
+  "windows_processed": 0,
+  "p0_source_order": [
+    "pg-ccb11a4619acaa92",
+    "pg-e3d73ded7776de64",
+    "pg-e37b41cb13677886",
+    "pg-58194dc5b0eb5cc6",
+    "pg-98250af646a5c138",
+    "pg-896f3fb2e5862a02",
+    "pg-611c4b9e32914de6",
+    "pg-4957e30bcb15f2bf"
+  ],
+  "p0_windows_by_source": [
+    {
+      "media_id": "pg-ccb11a4619acaa92",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
+      "source_transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "window_count": 4,
+      "windows": [
+        "pgw-fcc96462ba068fb4bc7a",
+        "pgw-ec2f50d0e500eb8104e8",
+        "pgr-cf0a64bb32fc43e7a4ee",
+        "pgw-bfc9f2faff8d127bf5e1"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 3915.008,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video"
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgw-fcc96462ba068fb4bc7a",
+          "start": 981.84,
+          "end": 986.73,
+          "context_start": 976.84,
+          "context_end": 991.73
+        },
+        {
+          "window_id": "pgw-ec2f50d0e500eb8104e8",
+          "start": 1622.99,
+          "end": 1632.29,
+          "context_start": 1617.99,
+          "context_end": 1637.29
+        },
+        {
+          "window_id": "pgr-cf0a64bb32fc43e7a4ee",
+          "start": 1895.9,
+          "end": 1950.74,
+          "context_start": 1890.9,
+          "context_end": 1955.74
+        },
+        {
+          "window_id": "pgw-bfc9f2faff8d127bf5e1",
+          "start": 3157.53,
+          "end": 3167.25,
+          "context_start": 3152.53,
+          "context_end": 3172.25
+        }
+      ]
+    },
+    {
+      "media_id": "pg-e3d73ded7776de64",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+      "source_transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
+      "window_count": 1,
+      "windows": [
+        "pgw-d029a307d06e5a5c0691"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 7350.016,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video"
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgw-d029a307d06e5a5c0691",
+          "start": 1637.78,
+          "end": 1649.58,
+          "context_start": 1632.78,
+          "context_end": 1654.58
+        }
+      ]
+    },
+    {
+      "media_id": "pg-e37b41cb13677886",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+      "source_transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "window_count": 2,
+      "windows": [
+        "pgw-e57845dd617469b56e40",
+        "pgw-538b27a8f0fdaf4ff1f2"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 2136.896,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video"
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgw-e57845dd617469b56e40",
+          "start": 808.32,
+          "end": 811.58,
+          "context_start": 803.32,
+          "context_end": 816.58
+        },
+        {
+          "window_id": "pgw-538b27a8f0fdaf4ff1f2",
+          "start": 1967.39,
+          "end": 2010.94,
+          "context_start": 1962.39,
+          "context_end": 2015.94
+        }
+      ]
+    },
+    {
+      "media_id": "pg-58194dc5b0eb5cc6",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "source_transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "window_count": 4,
+      "windows": [
+        "pgw-76c354919d894d6acfe7",
+        "pgw-f37843de1c8e6d0d7590",
+        "pgr-f4bad58d9fe436599e3a",
+        "pgw-8d751248ca074ed02785"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 3191.375,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video"
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgw-76c354919d894d6acfe7",
+          "start": 1103.81,
+          "end": 1156.64,
+          "context_start": 1098.81,
+          "context_end": 1161.64
+        },
+        {
+          "window_id": "pgw-f37843de1c8e6d0d7590",
+          "start": 1587.98,
+          "end": 1591.63,
+          "context_start": 1582.98,
+          "context_end": 1596.63
+        },
+        {
+          "window_id": "pgr-f4bad58d9fe436599e3a",
+          "start": 2361.92,
+          "end": 2387.19,
+          "context_start": 2356.92,
+          "context_end": 2392.19
+        },
+        {
+          "window_id": "pgw-8d751248ca074ed02785",
+          "start": 2880.91,
+          "end": 2884.64,
+          "context_start": 2875.91,
+          "context_end": 2889.64
+        }
+      ]
+    },
+    {
+      "media_id": "pg-98250af646a5c138",
+      "source_path": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "source_transcript": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "window_count": 3,
+      "windows": [
+        "pgw-491ea1087ae0e37adc62",
+        "pgw-f7c2a37170355cc87875",
+        "pgw-b0f5b027ce650cf89507"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 3625.450667,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video"
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgw-491ea1087ae0e37adc62",
+          "start": 1227.2,
+          "end": 1237.52,
+          "context_start": 1222.2,
+          "context_end": 1242.52
+        },
+        {
+          "window_id": "pgw-f7c2a37170355cc87875",
+          "start": 2033.72,
+          "end": 2037.03,
+          "context_start": 2028.72,
+          "context_end": 2042.03
+        },
+        {
+          "window_id": "pgw-b0f5b027ce650cf89507",
+          "start": 2336.25,
+          "end": 2339.78,
+          "context_start": 2331.25,
+          "context_end": 2344.78
+        }
+      ]
+    },
+    {
+      "media_id": "pg-896f3fb2e5862a02",
+      "source_path": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+      "source_transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "window_count": 3,
+      "windows": [
+        "pgr-a43a77dbfdd9ca3c4739",
+        "pgr-e8d73da62bd869b3a2f8",
+        "pgr-31dadb87b8b9249dd5b0"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 4489.6609,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video",
+            "side_data_list": [
+              {}
+            ]
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgr-a43a77dbfdd9ca3c4739",
+          "start": 2113.38,
+          "end": 2175.47,
+          "context_start": 2108.38,
+          "context_end": 2180.47
+        },
+        {
+          "window_id": "pgr-e8d73da62bd869b3a2f8",
+          "start": 2273.66,
+          "end": 2481.7,
+          "context_start": 2268.66,
+          "context_end": 2486.7
+        },
+        {
+          "window_id": "pgr-31dadb87b8b9249dd5b0",
+          "start": 3672.0,
+          "end": 3730.6,
+          "context_start": 3667.0,
+          "context_end": 3735.6
+        }
+      ]
+    },
+    {
+      "media_id": "pg-611c4b9e32914de6",
+      "source_path": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
+      "source_transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "window_count": 6,
+      "windows": [
+        "pgw-1410e9b1022c838b60c3",
+        "pgw-d0d66b48bd10d8fddbca",
+        "pgw-4fb209c5fafc8f5a1f0e",
+        "pgw-78076da87a998a68c157",
+        "pgw-b7bcd453be1786667b57",
+        "pgw-7b234d40cb5d678cad2d"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 4540.306511,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video",
+            "side_data_list": [
+              {}
+            ]
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgw-1410e9b1022c838b60c3",
+          "start": 1340.91,
+          "end": 1355.38,
+          "context_start": 1335.91,
+          "context_end": 1360.38
+        },
+        {
+          "window_id": "pgw-d0d66b48bd10d8fddbca",
+          "start": 2475.5,
+          "end": 2481.09,
+          "context_start": 2470.5,
+          "context_end": 2486.09
+        },
+        {
+          "window_id": "pgw-4fb209c5fafc8f5a1f0e",
+          "start": 2598.71,
+          "end": 2602.59,
+          "context_start": 2593.71,
+          "context_end": 2607.59
+        },
+        {
+          "window_id": "pgw-78076da87a998a68c157",
+          "start": 2995.87,
+          "end": 2999.73,
+          "context_start": 2990.87,
+          "context_end": 3004.73
+        },
+        {
+          "window_id": "pgw-b7bcd453be1786667b57",
+          "start": 3106.76,
+          "end": 3117.18,
+          "context_start": 3101.76,
+          "context_end": 3122.18
+        },
+        {
+          "window_id": "pgw-7b234d40cb5d678cad2d",
+          "start": 3311.39,
+          "end": 3327.15,
+          "context_start": 3306.39,
+          "context_end": 3332.15
+        }
+      ]
+    },
+    {
+      "media_id": "pg-4957e30bcb15f2bf",
+      "source_path": "Videos/py_pg/pg_Shadow_221026.mp4",
+      "source_transcript": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "window_count": 2,
+      "windows": [
+        "pgr-68c115f633a8cdf63879",
+        "pgw-8bad404d3afd65c0f335"
+      ],
+      "source_readable": true,
+      "source_audio_streams": 1,
+      "media_context_paths_valid": true,
+      "probe": {
+        "ok": true,
+        "duration_seconds": 3335.783644,
+        "streams": [
+          {
+            "index": 0,
+            "codec_name": "h264",
+            "codec_type": "video",
+            "side_data_list": [
+              {}
+            ]
+          },
+          {
+            "index": 1,
+            "codec_name": "aac",
+            "codec_type": "audio",
+            "sample_rate": "48000",
+            "channels": 2
+          }
+        ],
+        "audio_stream_count": 1
+      },
+      "window_schedule": [
+        {
+          "window_id": "pgr-68c115f633a8cdf63879",
+          "start": 3130.9,
+          "end": 3167.94,
+          "context_start": 3125.9,
+          "context_end": 3172.94
+        },
+        {
+          "window_id": "pgw-8bad404d3afd65c0f335",
+          "start": 3198.34,
+          "end": 3290.4,
+          "context_start": 3193.34,
+          "context_end": 3295.4
+        }
+      ]
+    }
+  ],
+  "missing_source_preflight": [
+    {
+      "media_id": "pg-3",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4",
+      "source_size_bytes": 199296760,
+      "source_size_match": true,
+      "source_readable": true,
+      "audio_stream_present": true,
+      "audio_stream_count": 1,
+      "duration_seconds": 2607.8125,
+      "duration_matches_map": true,
+      "duration_delta_seconds": 0.001,
+      "state": "QUEUED",
+      "stage": "QUEUED",
+      "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json",
+      "output_destination_parent_exists": false,
+      "output_checkpoint_present": false,
+      "checkpoints": [],
+      "planned_chunk_seconds": 600,
+      "planned_overlap_seconds": 4,
+      "planned_chunk_count": 5,
+      "external_processing": "NOT_AUTHORIZED",
+      "checkpoint_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json",
+      "atomic_write_temp_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json.tmp",
+      "resume_behavior": "Reuse completed_chunks from checkpoint JSON; process only pending 600-second chunks; atomically replace .tmp checkpoint after each completed chunk.",
+      "chunk_plan": [
+        {
+          "index": 0,
+          "core_start": 0,
+          "core_end": 600,
+          "decode_start": 0,
+          "decode_end": 604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 1,
+          "core_start": 600,
+          "core_end": 1200,
+          "decode_start": 596,
+          "decode_end": 1204,
+          "state": "QUEUED"
+        },
+        {
+          "index": 2,
+          "core_start": 1200,
+          "core_end": 1800,
+          "decode_start": 1196,
+          "decode_end": 1804,
+          "state": "QUEUED"
+        },
+        {
+          "index": 3,
+          "core_start": 1800,
+          "core_end": 2400,
+          "decode_start": 1796,
+          "decode_end": 2404,
+          "state": "QUEUED"
+        },
+        {
+          "index": 4,
+          "core_start": 2400,
+          "core_end": 2607.812,
+          "decode_start": 2396,
+          "decode_end": 2607.812,
+          "state": "QUEUED"
+        }
+      ],
+      "preflight_state": "READY_TO_QUEUE",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+    },
+    {
+      "media_id": "pg-9",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
+      "source_size_bytes": 362446672,
+      "source_size_match": true,
+      "source_readable": true,
+      "audio_stream_present": true,
+      "audio_stream_count": 1,
+      "duration_seconds": 3572.032,
+      "duration_matches_map": true,
+      "duration_delta_seconds": 0.0,
+      "state": "QUEUED",
+      "stage": "QUEUED",
+      "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
+      "output_destination_parent_exists": false,
+      "output_checkpoint_present": false,
+      "checkpoints": [],
+      "planned_chunk_seconds": 600,
+      "planned_overlap_seconds": 4,
+      "planned_chunk_count": 6,
+      "external_processing": "NOT_AUTHORIZED",
+      "checkpoint_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
+      "atomic_write_temp_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json.tmp",
+      "resume_behavior": "Reuse completed_chunks from checkpoint JSON; process only pending 600-second chunks; atomically replace .tmp checkpoint after each completed chunk.",
+      "chunk_plan": [
+        {
+          "index": 0,
+          "core_start": 0,
+          "core_end": 600,
+          "decode_start": 0,
+          "decode_end": 604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 1,
+          "core_start": 600,
+          "core_end": 1200,
+          "decode_start": 596,
+          "decode_end": 1204,
+          "state": "QUEUED"
+        },
+        {
+          "index": 2,
+          "core_start": 1200,
+          "core_end": 1800,
+          "decode_start": 1196,
+          "decode_end": 1804,
+          "state": "QUEUED"
+        },
+        {
+          "index": 3,
+          "core_start": 1800,
+          "core_end": 2400,
+          "decode_start": 1796,
+          "decode_end": 2404,
+          "state": "QUEUED"
+        },
+        {
+          "index": 4,
+          "core_start": 2400,
+          "core_end": 3000,
+          "decode_start": 2396,
+          "decode_end": 3004,
+          "state": "QUEUED"
+        },
+        {
+          "index": 5,
+          "core_start": 3000,
+          "core_end": 3572.032,
+          "decode_start": 2996,
+          "decode_end": 3572.032,
+          "state": "QUEUED"
+        }
+      ],
+      "preflight_state": "READY_TO_QUEUE",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+    },
+    {
+      "media_id": "pg-10",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
+      "source_size_bytes": 207218534,
+      "source_size_match": true,
+      "source_readable": true,
+      "audio_stream_present": true,
+      "audio_stream_count": 1,
+      "duration_seconds": 3011.4565,
+      "duration_matches_map": true,
+      "duration_delta_seconds": 0.0,
+      "state": "QUEUED",
+      "stage": "QUEUED",
+      "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json",
+      "output_destination_parent_exists": false,
+      "output_checkpoint_present": false,
+      "checkpoints": [],
+      "planned_chunk_seconds": 600,
+      "planned_overlap_seconds": 4,
+      "planned_chunk_count": 6,
+      "external_processing": "NOT_AUTHORIZED",
+      "checkpoint_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json",
+      "atomic_write_temp_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json.tmp",
+      "resume_behavior": "Reuse completed_chunks from checkpoint JSON; process only pending 600-second chunks; atomically replace .tmp checkpoint after each completed chunk.",
+      "chunk_plan": [
+        {
+          "index": 0,
+          "core_start": 0,
+          "core_end": 600,
+          "decode_start": 0,
+          "decode_end": 604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 1,
+          "core_start": 600,
+          "core_end": 1200,
+          "decode_start": 596,
+          "decode_end": 1204,
+          "state": "QUEUED"
+        },
+        {
+          "index": 2,
+          "core_start": 1200,
+          "core_end": 1800,
+          "decode_start": 1196,
+          "decode_end": 1804,
+          "state": "QUEUED"
+        },
+        {
+          "index": 3,
+          "core_start": 1800,
+          "core_end": 2400,
+          "decode_start": 1796,
+          "decode_end": 2404,
+          "state": "QUEUED"
+        },
+        {
+          "index": 4,
+          "core_start": 2400,
+          "core_end": 3000,
+          "decode_start": 2396,
+          "decode_end": 3004,
+          "state": "QUEUED"
+        },
+        {
+          "index": 5,
+          "core_start": 3000,
+          "core_end": 3011.456,
+          "decode_start": 2996,
+          "decode_end": 3011.456,
+          "state": "QUEUED"
+        }
+      ],
+      "preflight_state": "READY_TO_QUEUE",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+    },
+    {
+      "media_id": "pg-11",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording.mp4",
+      "source_size_bytes": 404757982,
+      "source_size_match": true,
+      "source_readable": true,
+      "audio_stream_present": true,
+      "audio_stream_count": 1,
+      "duration_seconds": 3571.2645,
+      "duration_matches_map": true,
+      "duration_delta_seconds": 0.0,
+      "state": "QUEUED",
+      "stage": "QUEUED",
+      "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording_segments.json",
+      "output_destination_parent_exists": false,
+      "output_checkpoint_present": false,
+      "checkpoints": [],
+      "planned_chunk_seconds": 600,
+      "planned_overlap_seconds": 4,
+      "planned_chunk_count": 6,
+      "external_processing": "NOT_AUTHORIZED",
+      "checkpoint_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording_segments.json",
+      "atomic_write_temp_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording_segments.json.tmp",
+      "resume_behavior": "Reuse completed_chunks from checkpoint JSON; process only pending 600-second chunks; atomically replace .tmp checkpoint after each completed chunk.",
+      "chunk_plan": [
+        {
+          "index": 0,
+          "core_start": 0,
+          "core_end": 600,
+          "decode_start": 0,
+          "decode_end": 604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 1,
+          "core_start": 600,
+          "core_end": 1200,
+          "decode_start": 596,
+          "decode_end": 1204,
+          "state": "QUEUED"
+        },
+        {
+          "index": 2,
+          "core_start": 1200,
+          "core_end": 1800,
+          "decode_start": 1196,
+          "decode_end": 1804,
+          "state": "QUEUED"
+        },
+        {
+          "index": 3,
+          "core_start": 1800,
+          "core_end": 2400,
+          "decode_start": 1796,
+          "decode_end": 2404,
+          "state": "QUEUED"
+        },
+        {
+          "index": 4,
+          "core_start": 2400,
+          "core_end": 3000,
+          "decode_start": 2396,
+          "decode_end": 3004,
+          "state": "QUEUED"
+        },
+        {
+          "index": 5,
+          "core_start": 3000,
+          "core_end": 3571.265,
+          "decode_start": 2996,
+          "decode_end": 3571.265,
+          "state": "QUEUED"
+        }
+      ],
+      "preflight_state": "READY_TO_QUEUE",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+    },
+    {
+      "media_id": "pg-12",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording.mp4",
+      "source_size_bytes": 312449328,
+      "source_size_match": true,
+      "source_readable": true,
+      "audio_stream_present": true,
+      "audio_stream_count": 1,
+      "duration_seconds": 3383.296,
+      "duration_matches_map": true,
+      "duration_delta_seconds": 0.0,
+      "state": "QUEUED",
+      "stage": "QUEUED",
+      "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording_segments.json",
+      "output_destination_parent_exists": false,
+      "output_checkpoint_present": false,
+      "checkpoints": [],
+      "planned_chunk_seconds": 600,
+      "planned_overlap_seconds": 4,
+      "planned_chunk_count": 6,
+      "external_processing": "NOT_AUTHORIZED",
+      "checkpoint_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording_segments.json",
+      "atomic_write_temp_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording_segments.json.tmp",
+      "resume_behavior": "Reuse completed_chunks from checkpoint JSON; process only pending 600-second chunks; atomically replace .tmp checkpoint after each completed chunk.",
+      "chunk_plan": [
+        {
+          "index": 0,
+          "core_start": 0,
+          "core_end": 600,
+          "decode_start": 0,
+          "decode_end": 604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 1,
+          "core_start": 600,
+          "core_end": 1200,
+          "decode_start": 596,
+          "decode_end": 1204,
+          "state": "QUEUED"
+        },
+        {
+          "index": 2,
+          "core_start": 1200,
+          "core_end": 1800,
+          "decode_start": 1196,
+          "decode_end": 1804,
+          "state": "QUEUED"
+        },
+        {
+          "index": 3,
+          "core_start": 1800,
+          "core_end": 2400,
+          "decode_start": 1796,
+          "decode_end": 2404,
+          "state": "QUEUED"
+        },
+        {
+          "index": 4,
+          "core_start": 2400,
+          "core_end": 3000,
+          "decode_start": 2396,
+          "decode_end": 3004,
+          "state": "QUEUED"
+        },
+        {
+          "index": 5,
+          "core_start": 3000,
+          "core_end": 3383.296,
+          "decode_start": 2996,
+          "decode_end": 3383.296,
+          "state": "QUEUED"
+        }
+      ],
+      "preflight_state": "READY_TO_QUEUE",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+    },
+    {
+      "media_id": "pg-13",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording.mp4",
+      "source_size_bytes": 422119265,
+      "source_size_match": true,
+      "source_readable": true,
+      "audio_stream_present": true,
+      "audio_stream_count": 1,
+      "duration_seconds": 3880.768,
+      "duration_matches_map": true,
+      "duration_delta_seconds": 0.0,
+      "state": "QUEUED",
+      "stage": "QUEUED",
+      "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording_segments.json",
+      "output_destination_parent_exists": false,
+      "output_checkpoint_present": false,
+      "checkpoints": [],
+      "planned_chunk_seconds": 600,
+      "planned_overlap_seconds": 4,
+      "planned_chunk_count": 7,
+      "external_processing": "NOT_AUTHORIZED",
+      "checkpoint_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording_segments.json",
+      "atomic_write_temp_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording_segments.json.tmp",
+      "resume_behavior": "Reuse completed_chunks from checkpoint JSON; process only pending 600-second chunks; atomically replace .tmp checkpoint after each completed chunk.",
+      "chunk_plan": [
+        {
+          "index": 0,
+          "core_start": 0,
+          "core_end": 600,
+          "decode_start": 0,
+          "decode_end": 604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 1,
+          "core_start": 600,
+          "core_end": 1200,
+          "decode_start": 596,
+          "decode_end": 1204,
+          "state": "QUEUED"
+        },
+        {
+          "index": 2,
+          "core_start": 1200,
+          "core_end": 1800,
+          "decode_start": 1196,
+          "decode_end": 1804,
+          "state": "QUEUED"
+        },
+        {
+          "index": 3,
+          "core_start": 1800,
+          "core_end": 2400,
+          "decode_start": 1796,
+          "decode_end": 2404,
+          "state": "QUEUED"
+        },
+        {
+          "index": 4,
+          "core_start": 2400,
+          "core_end": 3000,
+          "decode_start": 2396,
+          "decode_end": 3004,
+          "state": "QUEUED"
+        },
+        {
+          "index": 5,
+          "core_start": 3000,
+          "core_end": 3600,
+          "decode_start": 2996,
+          "decode_end": 3604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 6,
+          "core_start": 3600,
+          "core_end": 3880.768,
+          "decode_start": 3596,
+          "decode_end": 3880.768,
+          "state": "QUEUED"
+        }
+      ],
+      "preflight_state": "READY_TO_QUEUE",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+    },
+    {
+      "media_id": "pg-15",
+      "source_path": "Videos/py_pg/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4",
+      "source_size_bytes": 369397555,
+      "source_size_match": true,
+      "source_readable": true,
+      "audio_stream_present": true,
+      "audio_stream_count": 1,
+      "duration_seconds": 3988.9925,
+      "duration_matches_map": true,
+      "duration_delta_seconds": 0.0,
+      "state": "QUEUED",
+      "stage": "QUEUED",
+      "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording_segments.json",
+      "output_destination_parent_exists": false,
+      "output_checkpoint_present": false,
+      "checkpoints": [],
+      "planned_chunk_seconds": 600,
+      "planned_overlap_seconds": 4,
+      "planned_chunk_count": 7,
+      "external_processing": "NOT_AUTHORIZED",
+      "checkpoint_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording_segments.json",
+      "atomic_write_temp_path": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording_segments.json.tmp",
+      "resume_behavior": "Reuse completed_chunks from checkpoint JSON; process only pending 600-second chunks; atomically replace .tmp checkpoint after each completed chunk.",
+      "chunk_plan": [
+        {
+          "index": 0,
+          "core_start": 0,
+          "core_end": 600,
+          "decode_start": 0,
+          "decode_end": 604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 1,
+          "core_start": 600,
+          "core_end": 1200,
+          "decode_start": 596,
+          "decode_end": 1204,
+          "state": "QUEUED"
+        },
+        {
+          "index": 2,
+          "core_start": 1200,
+          "core_end": 1800,
+          "decode_start": 1196,
+          "decode_end": 1804,
+          "state": "QUEUED"
+        },
+        {
+          "index": 3,
+          "core_start": 1800,
+          "core_end": 2400,
+          "decode_start": 1796,
+          "decode_end": 2404,
+          "state": "QUEUED"
+        },
+        {
+          "index": 4,
+          "core_start": 2400,
+          "core_end": 3000,
+          "decode_start": 2396,
+          "decode_end": 3004,
+          "state": "QUEUED"
+        },
+        {
+          "index": 5,
+          "core_start": 3000,
+          "core_end": 3600,
+          "decode_start": 2996,
+          "decode_end": 3604,
+          "state": "QUEUED"
+        },
+        {
+          "index": 6,
+          "core_start": 3600,
+          "core_end": 3988.992,
+          "decode_start": 3596,
+          "decode_end": 3988.992,
+          "state": "QUEUED"
+        }
+      ],
+      "preflight_state": "READY_TO_QUEUE",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+    }
+  ],
+  "storage": {
+    "available_bytes": 112179425280,
+    "available_gb": 104.48,
+    "missing_source_bytes_total": 2277686096,
+    "no_audio_extraction_before_transcription": true
+  },
+  "session16_17": "NEEDS_REVIEW; existing reports do not establish candidate-specific speech coverage; no canonical selected",
+  "corpus_generation": "FROZEN",
+  "project_global_blocker": "NO",
+  "preflight_summary": {
+    "p0_sources_readable": 8,
+    "p0_media_count": 8,
+    "p0_window_count": 25,
+    "missing_sources_ready": 7,
+    "missing_sources_total": 7,
+    "missing_checkpoints_present": 0,
+    "missing_outputs_will_be_candidates_until_validation": true
+  },
+  "updated_at": "2026-10-27T19:25:47Z",
+  "local_asr_authorization": "STANDING_APPROVED",
+  "external_pg_corpus_processing": "NOT_AUTHORIZED",
+  "session16_17_comparison": {
+    "session16": {
+      "state": "NEEDS_REVIEW",
+      "candidate_media_reach_percent": 42.94,
+      "candidate_ends_seconds_approx": 1483,
+      "duration_seconds": 3453.376,
+      "existing_vad_coverage_complete": false,
+      "canonical_selected": false,
+      "evidence": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_compliance_s16_identity_timestamp_validation.json/.md and pg_compliance_s16_divergent_content_comparison.json/.md"
+    },
+    "session17": {
+      "state": "NEEDS_REVIEW",
+      "candidate_media_reach_percent": 49.58,
+      "candidate_ends_seconds_approx": 913,
+      "duration_seconds": 1841.216,
+      "tail_unclassified_seconds_approx": 928.4,
+      "existing_vad_coverage_complete": false,
+      "canonical_selected": false,
+      "evidence": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_compliance_s17_identity_timestamp_validation.json/.md and pg_compliance_s17_divergent_content_comparison.json/.md"
+    },
+    "selection_rule": "Keep both candidate copies; candidate-specific coverage remains unavailable without VAD; do not select canonical by inference."
+  }
+}
