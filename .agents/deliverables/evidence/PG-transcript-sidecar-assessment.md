@@ -9,6 +9,7 @@
 - States: {'MISSING': 8, 'PARTIAL': 8, 'NEEDS_REVIEW': 4}
 - Unassessed logical transcripts: 0
 
+- Previous nine exact-name misses reclassified: 8 actually missing; 1 recovered by processing-DB provenance (Session 7).
 Divergent copies for Sessions 15–17 have the same source-media identity but different segment content; no canonical sidecar was chosen pending coverage comparison. All copies remain preserved.
 
 ## Logical sources
@@ -30,7 +31,7 @@ Divergent copies for Sessions 15–17 have the same source-media identity but di
 - `pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4` — MISSING; match=MANUAL_REVIEW/NONE; sidecars=0; media=None%; speech=None%; canonical=pending review
 - `pg_AMS_KAP_-_Compliance_-_Session_2.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=98.71%; speech=90.8%; canonical=CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json
 - `pg_Ams_kap_app_support_s10.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=86.9%; speech=79.34%; canonical=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json
-- `pg_Ams_kap_app_support_s46.mp4` — NEEDS_REVIEW; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=99.83%; speech=None%; canonical=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json
+- `pg_Ams_kap_app_support_s46.mp4` — NEEDS_REVIEW; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=99.83%; speech=98.85%; low-confidence audio review=5.730s; canonical=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json
 - `pg_Ams_kap_compliance_s4.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=78.85%; speech=93.58%; canonical=CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json
 - `pg_Shadow_221026.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=99.85%; speech=80.85%; canonical=CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json
 

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "source_video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+  "model": "large-v3-int8",
+  "canonical_transcript_updated": false,
+  "segments": [
+    {
+      "source_interval_id": "gap-073",
+      "start": 1526.832,
+      "end": 1527.78,
+      "text": "administrators.",
+      "supporting_large_v3_text": "administrators.",
+      "source_type": "AUDIO_ASR_RECOVERY",
+      "confidence": 0.86,
+      "verification_state": "MULTI_SOURCE_CONFIRMED",
+      "source_video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+      "canonical_transcript_updated": false,
+      "reconciliation_classification": "DUPLICATE_EXISTING_CONTENT",
+      "merge_disposition": "EXCLUDE_FROM_RECONCILED_TRANSCRIPT"
+    },
+    {
+      "source_interval_id": "gap-148",
+      "start": 2794.14,
+      "end": 2795.46,
+      "text": "terrible, right? This isn't bad.",
+      "supporting_large_v3_text": "Right now, you're not terrible, right? This isn't bad.",
+      "source_type": "AUDIO_ASR_RECOVERY",
+      "confidence": 0.86,
+      "verification_state": "MULTI_SOURCE_CONFIRMED",
+      "source_video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+      "canonical_transcript_updated": false,
+      "reconciliation_classification": "NEW_VALID_CONTENT",
+      "merge_disposition": "MERGED_TO_RECONCILED_VERSION_ONLY"
+    }
+  ]
+}

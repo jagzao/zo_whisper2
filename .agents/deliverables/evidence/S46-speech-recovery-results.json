@@ -1,0 +1,6392 @@
+{
+  "schema_version": 1,
+  "source": "C:/Dev/Zo/whisper/Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+  "model": "large-v3",
+  "compute_type": "int8",
+  "windows": {
+    "s46-recovery-001": {
+      "status": "COMPLETE",
+      "start": 154.63,
+      "end": 160.54,
+      "source_interval_ids": [
+        "gap-001"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 154.63,
+          "end": 160.33,
+          "text": "know maybe we are good from our side yeah we'll wait for joni you know",
+          "avg_logprob": -0.6222597122192383,
+          "no_speech_prob": 0.5033614635467529,
+          "words": [
+            {
+              "start": 154.63,
+              "end": 154.75,
+              "word": " know"
+            },
+            {
+              "start": 154.75,
+              "end": 155.07,
+              "word": " maybe"
+            },
+            {
+              "start": 155.07,
+              "end": 155.29,
+              "word": " we"
+            },
+            {
+              "start": 155.29,
+              "end": 155.71,
+              "word": " are"
+            },
+            {
+              "start": 155.71,
+              "end": 155.93,
+              "word": " good"
+            },
+            {
+              "start": 155.93,
+              "end": 156.17,
+              "word": " from"
+            },
+            {
+              "start": 156.17,
+              "end": 156.35,
+              "word": " our"
+            },
+            {
+              "start": 156.35,
+              "end": 156.73,
+              "word": " side"
+            },
+            {
+              "start": 156.73,
+              "end": 158.83,
+              "word": " yeah"
+            },
+            {
+              "start": 158.83,
+              "end": 159.23,
+              "word": " we'll"
+            },
+            {
+              "start": 159.23,
+              "end": 159.45,
+              "word": " wait"
+            },
+            {
+              "start": 159.45,
+              "end": 159.65,
+              "word": " for"
+            },
+            {
+              "start": 159.65,
+              "end": 160.03,
+              "word": " joni"
+            },
+            {
+              "start": 160.03,
+              "end": 160.19,
+              "word": " you"
+            },
+            {
+              "start": 160.19,
+              "end": 160.33,
+              "word": " know"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:25:45Z"
+    },
+    "s46-recovery-002": {
+      "status": "COMPLETE",
+      "start": 165.78,
+      "end": 168.336,
+      "source_interval_ids": [
+        "gap-003"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 165.78,
+          "end": 167.8,
+          "text": "minutes so we'll just stay on mute for now",
+          "avg_logprob": -0.2665562262901893,
+          "no_speech_prob": 0.1242220476269722,
+          "words": [
+            {
+              "start": 165.78,
+              "end": 166.02,
+              "word": " minutes"
+            },
+            {
+              "start": 166.02,
+              "end": 166.16,
+              "word": " so"
+            },
+            {
+              "start": 166.16,
+              "end": 166.36,
+              "word": " we'll"
+            },
+            {
+              "start": 166.36,
+              "end": 166.54,
+              "word": " just"
+            },
+            {
+              "start": 166.54,
+              "end": 167.24,
+              "word": " stay"
+            },
+            {
+              "start": 167.24,
+              "end": 167.36,
+              "word": " on"
+            },
+            {
+              "start": 167.36,
+              "end": 167.52,
+              "word": " mute"
+            },
+            {
+              "start": 167.52,
+              "end": 167.68,
+              "word": " for"
+            },
+            {
+              "start": 167.68,
+              "end": 167.8,
+              "word": " now"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:26:02Z"
+    },
+    "s46-recovery-003": {
+      "status": "COMPLETE",
+      "start": 329.94,
+      "end": 332.88,
+      "source_interval_ids": [
+        "gap-012"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 329.94,
+          "end": 331.8,
+          "text": "back through LDAP and to the",
+          "avg_logprob": -0.27162623405456543,
+          "no_speech_prob": 0.3163105249404907,
+          "words": [
+            {
+              "start": 329.94,
+              "end": 330.2,
+              "word": " back"
+            },
+            {
+              "start": 330.2,
+              "end": 330.54,
+              "word": " through"
+            },
+            {
+              "start": 330.54,
+              "end": 330.96,
+              "word": " LDAP"
+            },
+            {
+              "start": 330.96,
+              "end": 331.16,
+              "word": " and"
+            },
+            {
+              "start": 331.16,
+              "end": 331.66,
+              "word": " to"
+            },
+            {
+              "start": 331.66,
+              "end": 331.8,
+              "word": " the"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:26:17Z"
+    },
+    "s46-recovery-004": {
+      "status": "COMPLETE",
+      "start": 381.49,
+      "end": 385.168,
+      "source_interval_ids": [
+        "gap-014"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 381.49,
+          "end": 383.53,
+          "text": "it on the screen and it decided it wanted to close.",
+          "avg_logprob": -0.3941651311787692,
+          "no_speech_prob": 0.14851903915405273,
+          "words": [
+            {
+              "start": 381.49,
+              "end": 381.59,
+              "word": " it"
+            },
+            {
+              "start": 381.59,
+              "end": 381.73,
+              "word": " on"
+            },
+            {
+              "start": 381.73,
+              "end": 381.85,
+              "word": " the"
+            },
+            {
+              "start": 381.85,
+              "end": 382.09,
+              "word": " screen"
+            },
+            {
+              "start": 382.09,
+              "end": 382.35,
+              "word": " and"
+            },
+            {
+              "start": 382.35,
+              "end": 382.45,
+              "word": " it"
+            },
+            {
+              "start": 382.45,
+              "end": 382.83,
+              "word": " decided"
+            },
+            {
+              "start": 382.83,
+              "end": 383.05,
+              "word": " it"
+            },
+            {
+              "start": 383.05,
+              "end": 383.21,
+              "word": " wanted"
+            },
+            {
+              "start": 383.21,
+              "end": 383.33,
+              "word": " to"
+            },
+            {
+              "start": 383.33,
+              "end": 383.53,
+              "word": " close."
+            }
+          ]
+        },
+        {
+          "start": 383.87,
+          "end": 384.71,
+          "text": "I bought them apples.",
+          "avg_logprob": -0.3941651311787692,
+          "no_speech_prob": 0.14851903915405273,
+          "words": [
+            {
+              "start": 383.87,
+              "end": 384.19,
+              "word": " I"
+            },
+            {
+              "start": 384.19,
+              "end": 384.35,
+              "word": " bought"
+            },
+            {
+              "start": 384.35,
+              "end": 384.51,
+              "word": " them"
+            },
+            {
+              "start": 384.51,
+              "end": 384.71,
+              "word": " apples."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:26:35Z"
+    },
+    "s46-recovery-005": {
+      "status": "COMPLETE",
+      "start": 595.408,
+      "end": 599.73,
+      "source_interval_ids": [
+        "gap-023"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 595.408,
+          "end": 598.868,
+          "text": "Of course, it ties to SAP and a few other different things, but it basically shows them.",
+          "avg_logprob": -0.18061059583788333,
+          "no_speech_prob": 0.10600559413433075,
+          "words": [
+            {
+              "start": 595.408,
+              "end": 595.568,
+              "word": " Of"
+            },
+            {
+              "start": 595.568,
+              "end": 595.568,
+              "word": " course,"
+            },
+            {
+              "start": 595.568,
+              "end": 595.628,
+              "word": " it"
+            },
+            {
+              "start": 595.628,
+              "end": 595.808,
+              "word": " ties"
+            },
+            {
+              "start": 595.808,
+              "end": 596.048,
+              "word": " to"
+            },
+            {
+              "start": 596.048,
+              "end": 596.248,
+              "word": " SAP"
+            },
+            {
+              "start": 596.248,
+              "end": 596.528,
+              "word": " and"
+            },
+            {
+              "start": 596.528,
+              "end": 596.648,
+              "word": " a"
+            },
+            {
+              "start": 596.648,
+              "end": 596.768,
+              "word": " few"
+            },
+            {
+              "start": 596.768,
+              "end": 596.968,
+              "word": " other"
+            },
+            {
+              "start": 596.968,
+              "end": 597.168,
+              "word": " different"
+            },
+            {
+              "start": 597.168,
+              "end": 597.508,
+              "word": " things,"
+            },
+            {
+              "start": 597.588,
+              "end": 597.748,
+              "word": " but"
+            },
+            {
+              "start": 597.748,
+              "end": 597.828,
+              "word": " it"
+            },
+            {
+              "start": 597.828,
+              "end": 598.148,
+              "word": " basically"
+            },
+            {
+              "start": 598.148,
+              "end": 598.488,
+              "word": " shows"
+            },
+            {
+              "start": 598.488,
+              "end": 598.868,
+              "word": " them."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:26:53Z"
+    },
+    "s46-recovery-006": {
+      "status": "COMPLETE",
+      "start": 770.24,
+      "end": 775.53,
+      "source_interval_ids": [
+        "gap-032"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 770.24,
+          "end": 774.66,
+          "text": "that is still active yeah and it is",
+          "avg_logprob": -0.48829398371956567,
+          "no_speech_prob": 0.18475276231765747,
+          "words": [
+            {
+              "start": 770.24,
+              "end": 770.5,
+              "word": " that"
+            },
+            {
+              "start": 770.5,
+              "end": 771.66,
+              "word": " is"
+            },
+            {
+              "start": 771.66,
+              "end": 771.88,
+              "word": " still"
+            },
+            {
+              "start": 771.88,
+              "end": 772.26,
+              "word": " active"
+            },
+            {
+              "start": 772.26,
+              "end": 773.96,
+              "word": " yeah"
+            },
+            {
+              "start": 773.96,
+              "end": 774.28,
+              "word": " and"
+            },
+            {
+              "start": 774.28,
+              "end": 774.44,
+              "word": " it"
+            },
+            {
+              "start": 774.44,
+              "end": 774.66,
+              "word": " is"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:27:09Z"
+    },
+    "s46-recovery-007": {
+      "status": "COMPLETE",
+      "start": 777.79,
+      "end": 787.15,
+      "source_interval_ids": [
+        "gap-033",
+        "gap-034"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 781.07,
+          "end": 784.27,
+          "text": "I don't see it. It's not correct. This link goes nowhere.",
+          "avg_logprob": -0.36759155047567266,
+          "no_speech_prob": 0.3546515107154846,
+          "words": [
+            {
+              "start": 781.07,
+              "end": 781.51,
+              "word": " I"
+            },
+            {
+              "start": 781.51,
+              "end": 781.95,
+              "word": " don't"
+            },
+            {
+              "start": 781.95,
+              "end": 782.09,
+              "word": " see"
+            },
+            {
+              "start": 782.09,
+              "end": 782.29,
+              "word": " it."
+            },
+            {
+              "start": 782.29,
+              "end": 782.55,
+              "word": " It's"
+            },
+            {
+              "start": 782.55,
+              "end": 782.79,
+              "word": " not"
+            },
+            {
+              "start": 782.79,
+              "end": 783.25,
+              "word": " correct."
+            },
+            {
+              "start": 783.33,
+              "end": 783.51,
+              "word": " This"
+            },
+            {
+              "start": 783.51,
+              "end": 783.71,
+              "word": " link"
+            },
+            {
+              "start": 783.71,
+              "end": 783.93,
+              "word": " goes"
+            },
+            {
+              "start": 783.93,
+              "end": 784.27,
+              "word": " nowhere."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:27:27Z"
+    },
+    "s46-recovery-008": {
+      "status": "COMPLETE",
+      "start": 808.624,
+      "end": 812.39,
+      "source_interval_ids": [
+        "gap-037"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 808.624,
+          "end": 811.944,
+          "text": "quite a few of them in fact how many of these are still technically",
+          "avg_logprob": -0.23866950764375575,
+          "no_speech_prob": 0.08460256457328796,
+          "words": [
+            {
+              "start": 808.624,
+              "end": 808.804,
+              "word": " quite"
+            },
+            {
+              "start": 808.804,
+              "end": 808.884,
+              "word": " a"
+            },
+            {
+              "start": 808.884,
+              "end": 809.064,
+              "word": " few"
+            },
+            {
+              "start": 809.064,
+              "end": 809.124,
+              "word": " of"
+            },
+            {
+              "start": 809.124,
+              "end": 809.264,
+              "word": " them"
+            },
+            {
+              "start": 809.264,
+              "end": 809.304,
+              "word": " in"
+            },
+            {
+              "start": 809.304,
+              "end": 809.564,
+              "word": " fact"
+            },
+            {
+              "start": 809.564,
+              "end": 810.584,
+              "word": " how"
+            },
+            {
+              "start": 810.584,
+              "end": 810.824,
+              "word": " many"
+            },
+            {
+              "start": 810.824,
+              "end": 810.984,
+              "word": " of"
+            },
+            {
+              "start": 810.984,
+              "end": 811.144,
+              "word": " these"
+            },
+            {
+              "start": 811.144,
+              "end": 811.324,
+              "word": " are"
+            },
+            {
+              "start": 811.324,
+              "end": 811.544,
+              "word": " still"
+            },
+            {
+              "start": 811.544,
+              "end": 811.944,
+              "word": " technically"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:27:46Z"
+    },
+    "s46-recovery-009": {
+      "status": "COMPLETE",
+      "start": 814.37,
+      "end": 819.21,
+      "source_interval_ids": [
+        "gap-038"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 814.37,
+          "end": 816.63,
+          "text": "but this is the main site.",
+          "avg_logprob": -0.340090411901474,
+          "no_speech_prob": 0.28975236415863037,
+          "words": [
+            {
+              "start": 814.37,
+              "end": 814.45,
+              "word": " but"
+            },
+            {
+              "start": 814.45,
+              "end": 814.63,
+              "word": " this"
+            },
+            {
+              "start": 814.63,
+              "end": 814.75,
+              "word": " is"
+            },
+            {
+              "start": 814.75,
+              "end": 814.89,
+              "word": " the"
+            },
+            {
+              "start": 814.89,
+              "end": 815.19,
+              "word": " main"
+            },
+            {
+              "start": 815.19,
+              "end": 816.63,
+              "word": " site."
+            }
+          ]
+        },
+        {
+          "start": 817.63,
+          "end": 818.95,
+          "text": "Easiest way to find that configuration.",
+          "avg_logprob": -0.340090411901474,
+          "no_speech_prob": 0.28975236415863037,
+          "words": [
+            {
+              "start": 817.63,
+              "end": 817.99,
+              "word": " Easiest"
+            },
+            {
+              "start": 817.99,
+              "end": 818.21,
+              "word": " way"
+            },
+            {
+              "start": 818.21,
+              "end": 818.35,
+              "word": " to"
+            },
+            {
+              "start": 818.35,
+              "end": 818.57,
+              "word": " find"
+            },
+            {
+              "start": 818.57,
+              "end": 818.75,
+              "word": " that"
+            },
+            {
+              "start": 818.75,
+              "end": 818.95,
+              "word": " configuration."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:28:04Z"
+    },
+    "s46-recovery-010": {
+      "status": "COMPLETE",
+      "start": 873.52,
+      "end": 878.89,
+      "source_interval_ids": [
+        "gap-046"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 873.52,
+          "end": 878.36,
+          "text": "question like which version we are using here version of what php",
+          "avg_logprob": -0.552656427025795,
+          "no_speech_prob": 0.16722506284713745,
+          "words": [
+            {
+              "start": 873.52,
+              "end": 873.78,
+              "word": " question"
+            },
+            {
+              "start": 873.78,
+              "end": 873.94,
+              "word": " like"
+            },
+            {
+              "start": 873.94,
+              "end": 874.3,
+              "word": " which"
+            },
+            {
+              "start": 874.3,
+              "end": 874.54,
+              "word": " version"
+            },
+            {
+              "start": 874.54,
+              "end": 874.86,
+              "word": " we"
+            },
+            {
+              "start": 874.86,
+              "end": 874.94,
+              "word": " are"
+            },
+            {
+              "start": 874.94,
+              "end": 875.26,
+              "word": " using"
+            },
+            {
+              "start": 875.26,
+              "end": 875.54,
+              "word": " here"
+            },
+            {
+              "start": 875.54,
+              "end": 877.24,
+              "word": " version"
+            },
+            {
+              "start": 877.24,
+              "end": 877.5,
+              "word": " of"
+            },
+            {
+              "start": 877.5,
+              "end": 877.72,
+              "word": " what"
+            },
+            {
+              "start": 877.72,
+              "end": 878.36,
+              "word": " php"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:28:21Z"
+    },
+    "s46-recovery-011": {
+      "status": "COMPLETE",
+      "start": 883.344,
+      "end": 884.88,
+      "source_interval_ids": [
+        "gap-047"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 883.344,
+          "end": 883.804,
+          "text": "I believe.",
+          "avg_logprob": -0.49452289938926697,
+          "no_speech_prob": 0.2467222362756729,
+          "words": [
+            {
+              "start": 883.344,
+              "end": 883.464,
+              "word": " I"
+            },
+            {
+              "start": 883.464,
+              "end": 883.804,
+              "word": " believe."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:28:37Z"
+    },
+    "s46-recovery-012": {
+      "status": "COMPLETE",
+      "start": 957.32,
+      "end": 960.08,
+      "source_interval_ids": [
+        "gap-051"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 957.32,
+          "end": 959.44,
+          "text": "like native javascript is there or jquery",
+          "avg_logprob": -0.5014900820595878,
+          "no_speech_prob": 0.09498216211795807,
+          "words": [
+            {
+              "start": 957.32,
+              "end": 957.56,
+              "word": " like"
+            },
+            {
+              "start": 957.56,
+              "end": 957.86,
+              "word": " native"
+            },
+            {
+              "start": 957.86,
+              "end": 958.38,
+              "word": " javascript"
+            },
+            {
+              "start": 958.38,
+              "end": 958.56,
+              "word": " is"
+            },
+            {
+              "start": 958.56,
+              "end": 958.74,
+              "word": " there"
+            },
+            {
+              "start": 958.74,
+              "end": 958.94,
+              "word": " or"
+            },
+            {
+              "start": 958.94,
+              "end": 959.44,
+              "word": " jquery"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:28:54Z"
+    },
+    "s46-recovery-013": {
+      "status": "COMPLETE",
+      "start": 968.4,
+      "end": 973.54,
+      "source_interval_ids": [
+        "gap-053"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 968.4,
+          "end": 970.38,
+          "text": "using or like where we are using?",
+          "avg_logprob": -0.7083872059981028,
+          "no_speech_prob": 0.2156255841255188,
+          "words": [
+            {
+              "start": 968.4,
+              "end": 968.78,
+              "word": " using"
+            },
+            {
+              "start": 968.78,
+              "end": 968.9,
+              "word": " or"
+            },
+            {
+              "start": 968.9,
+              "end": 969.24,
+              "word": " like"
+            },
+            {
+              "start": 969.24,
+              "end": 969.52,
+              "word": " where"
+            },
+            {
+              "start": 969.52,
+              "end": 969.58,
+              "word": " we"
+            },
+            {
+              "start": 969.58,
+              "end": 970.12,
+              "word": " are"
+            },
+            {
+              "start": 970.12,
+              "end": 970.38,
+              "word": " using?"
+            }
+          ]
+        },
+        {
+          "start": 971.54,
+          "end": 973.2,
+          "text": "I believe native JavaScript.",
+          "avg_logprob": -0.7083872059981028,
+          "no_speech_prob": 0.2156255841255188,
+          "words": [
+            {
+              "start": 971.54,
+              "end": 972.1,
+              "word": " I"
+            },
+            {
+              "start": 972.1,
+              "end": 972.66,
+              "word": " believe"
+            },
+            {
+              "start": 972.66,
+              "end": 972.94,
+              "word": " native"
+            },
+            {
+              "start": 972.94,
+              "end": 973.2,
+              "word": " JavaScript."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:29:12Z"
+    },
+    "s46-recovery-014": {
+      "status": "COMPLETE",
+      "start": 976.38,
+      "end": 986.52,
+      "source_interval_ids": [
+        "gap-054",
+        "gap-055",
+        "gap-056"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 984.38,
+          "end": 986.26,
+          "text": "We'll use it under the covers with Ajax.",
+          "avg_logprob": -0.6936225805963788,
+          "no_speech_prob": 0.3354378044605255,
+          "words": [
+            {
+              "start": 984.38,
+              "end": 984.76,
+              "word": " We'll"
+            },
+            {
+              "start": 984.76,
+              "end": 984.88,
+              "word": " use"
+            },
+            {
+              "start": 984.88,
+              "end": 985.04,
+              "word": " it"
+            },
+            {
+              "start": 985.04,
+              "end": 985.18,
+              "word": " under"
+            },
+            {
+              "start": 985.18,
+              "end": 985.32,
+              "word": " the"
+            },
+            {
+              "start": 985.32,
+              "end": 985.6,
+              "word": " covers"
+            },
+            {
+              "start": 985.6,
+              "end": 985.82,
+              "word": " with"
+            },
+            {
+              "start": 985.82,
+              "end": 986.26,
+              "word": " Ajax."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:29:28Z"
+    },
+    "s46-recovery-015": {
+      "status": "COMPLETE",
+      "start": 1036.7,
+      "end": 1039.504,
+      "source_interval_ids": [
+        "gap-058"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1036.7,
+          "end": 1038.56,
+          "text": "to be an index let's go back here",
+          "avg_logprob": -0.6085614661375681,
+          "no_speech_prob": 0.28373265266418457,
+          "words": [
+            {
+              "start": 1036.7,
+              "end": 1036.78,
+              "word": " to"
+            },
+            {
+              "start": 1036.78,
+              "end": 1036.9,
+              "word": " be"
+            },
+            {
+              "start": 1036.9,
+              "end": 1036.96,
+              "word": " an"
+            },
+            {
+              "start": 1036.96,
+              "end": 1037.22,
+              "word": " index"
+            },
+            {
+              "start": 1037.22,
+              "end": 1037.84,
+              "word": " let's"
+            },
+            {
+              "start": 1037.84,
+              "end": 1038.02,
+              "word": " go"
+            },
+            {
+              "start": 1038.02,
+              "end": 1038.36,
+              "word": " back"
+            },
+            {
+              "start": 1038.36,
+              "end": 1038.56,
+              "word": " here"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:29:45Z"
+    },
+    "s46-recovery-016": {
+      "status": "COMPLETE",
+      "start": 1040.784,
+      "end": 1041.968,
+      "source_interval_ids": [
+        "gap-059"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1040.784,
+          "end": 1041.204,
+          "text": "Thanks.",
+          "avg_logprob": -0.954538631439209,
+          "no_speech_prob": 0.47893819212913513,
+          "words": [
+            {
+              "start": 1040.784,
+              "end": 1041.204,
+              "word": " Thanks."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:30:02Z"
+    },
+    "s46-recovery-017": {
+      "status": "COMPLETE",
+      "start": 1053.73,
+      "end": 1059.34,
+      "source_interval_ids": [
+        "gap-060"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1053.73,
+          "end": 1057.65,
+          "text": "in here but it's mostly Ajax okay",
+          "avg_logprob": -0.49141300717989606,
+          "no_speech_prob": 0.247025728225708,
+          "words": [
+            {
+              "start": 1053.73,
+              "end": 1053.89,
+              "word": " in"
+            },
+            {
+              "start": 1053.89,
+              "end": 1054.07,
+              "word": " here"
+            },
+            {
+              "start": 1054.07,
+              "end": 1054.25,
+              "word": " but"
+            },
+            {
+              "start": 1054.25,
+              "end": 1055.05,
+              "word": " it's"
+            },
+            {
+              "start": 1055.05,
+              "end": 1055.23,
+              "word": " mostly"
+            },
+            {
+              "start": 1055.23,
+              "end": 1055.75,
+              "word": " Ajax"
+            },
+            {
+              "start": 1055.75,
+              "end": 1057.65,
+              "word": " okay"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:30:20Z"
+    },
+    "s46-recovery-018": {
+      "status": "COMPLETE",
+      "start": 1075.87,
+      "end": 1079.568,
+      "source_interval_ids": [
+        "gap-062"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1075.87,
+          "end": 1078.15,
+          "text": "source code is github",
+          "avg_logprob": -0.8153652946154276,
+          "no_speech_prob": 0.40742748975753784,
+          "words": [
+            {
+              "start": 1075.87,
+              "end": 1076.37,
+              "word": " source"
+            },
+            {
+              "start": 1076.37,
+              "end": 1076.65,
+              "word": " code"
+            },
+            {
+              "start": 1076.65,
+              "end": 1076.85,
+              "word": " is"
+            },
+            {
+              "start": 1076.85,
+              "end": 1078.15,
+              "word": " github"
+            }
+          ]
+        },
+        {
+          "start": 1078.15,
+          "end": 1079.09,
+          "text": "ok",
+          "avg_logprob": -0.8153652946154276,
+          "no_speech_prob": 0.40742748975753784,
+          "words": [
+            {
+              "start": 1078.15,
+              "end": 1079.09,
+              "word": " ok"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:30:38Z"
+    },
+    "s46-recovery-019": {
+      "status": "COMPLETE",
+      "start": 1083.46,
+      "end": 1087.152,
+      "source_interval_ids": [
+        "gap-064"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1084.1,
+          "end": 1085.46,
+          "text": "I'll share the link here.",
+          "avg_logprob": -0.5015840062073299,
+          "no_speech_prob": 0.28090721368789673,
+          "words": [
+            {
+              "start": 1084.1,
+              "end": 1084.58,
+              "word": " I'll"
+            },
+            {
+              "start": 1084.58,
+              "end": 1084.8,
+              "word": " share"
+            },
+            {
+              "start": 1084.8,
+              "end": 1084.92,
+              "word": " the"
+            },
+            {
+              "start": 1084.92,
+              "end": 1085.2,
+              "word": " link"
+            },
+            {
+              "start": 1085.2,
+              "end": 1085.46,
+              "word": " here."
+            }
+          ]
+        },
+        {
+          "start": 1086.18,
+          "end": 1086.66,
+          "text": "Okay.",
+          "avg_logprob": -0.5015840062073299,
+          "no_speech_prob": 0.28090721368789673,
+          "words": [
+            {
+              "start": 1086.18,
+              "end": 1086.66,
+              "word": " Okay."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:30:56Z"
+    },
+    "s46-recovery-020": {
+      "status": "COMPLETE",
+      "start": 1095.41,
+      "end": 1100.05,
+      "source_interval_ids": [
+        "gap-065"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1098.15,
+          "end": 1099.67,
+          "text": "It's PHP in Ajax.",
+          "avg_logprob": -0.8528094291687012,
+          "no_speech_prob": 0.31306523084640503,
+          "words": [
+            {
+              "start": 1098.15,
+              "end": 1098.75,
+              "word": " It's"
+            },
+            {
+              "start": 1098.75,
+              "end": 1098.95,
+              "word": " PHP"
+            },
+            {
+              "start": 1098.95,
+              "end": 1099.37,
+              "word": " in"
+            },
+            {
+              "start": 1099.37,
+              "end": 1099.67,
+              "word": " Ajax."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:31:14Z"
+    },
+    "s46-recovery-021": {
+      "status": "COMPLETE",
+      "start": 1268.784,
+      "end": 1270.704,
+      "source_interval_ids": [
+        "gap-066"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1268.784,
+          "end": 1270.164,
+          "text": "And how many user roles are here?",
+          "avg_logprob": -0.3158186240629716,
+          "no_speech_prob": 0.10700709372758865,
+          "words": [
+            {
+              "start": 1268.784,
+              "end": 1268.964,
+              "word": " And"
+            },
+            {
+              "start": 1268.964,
+              "end": 1269.084,
+              "word": " how"
+            },
+            {
+              "start": 1269.084,
+              "end": 1269.284,
+              "word": " many"
+            },
+            {
+              "start": 1269.284,
+              "end": 1269.544,
+              "word": " user"
+            },
+            {
+              "start": 1269.544,
+              "end": 1269.784,
+              "word": " roles"
+            },
+            {
+              "start": 1269.784,
+              "end": 1269.964,
+              "word": " are"
+            },
+            {
+              "start": 1269.964,
+              "end": 1270.164,
+              "word": " here?"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:31:31Z"
+    },
+    "s46-recovery-022": {
+      "status": "COMPLETE",
+      "start": 1320.18,
+      "end": 1324.84,
+      "source_interval_ids": [
+        "gap-069"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1320.18,
+          "end": 1324.82,
+          "text": "this information or add the information, then any admins",
+          "avg_logprob": -0.7068508863449097,
+          "no_speech_prob": 0.11601020395755768,
+          "words": [
+            {
+              "start": 1320.18,
+              "end": 1320.32,
+              "word": " this"
+            },
+            {
+              "start": 1320.32,
+              "end": 1320.76,
+              "word": " information"
+            },
+            {
+              "start": 1320.76,
+              "end": 1321.3,
+              "word": " or"
+            },
+            {
+              "start": 1321.3,
+              "end": 1321.6,
+              "word": " add"
+            },
+            {
+              "start": 1321.6,
+              "end": 1321.76,
+              "word": " the"
+            },
+            {
+              "start": 1321.76,
+              "end": 1322.26,
+              "word": " information,"
+            },
+            {
+              "start": 1322.44,
+              "end": 1323.4,
+              "word": " then"
+            },
+            {
+              "start": 1323.4,
+              "end": 1324.44,
+              "word": " any"
+            },
+            {
+              "start": 1324.44,
+              "end": 1324.82,
+              "word": " admins"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:31:48Z"
+    },
+    "s46-recovery-023": {
+      "status": "COMPLETE",
+      "start": 1334.672,
+      "end": 1337.104,
+      "source_interval_ids": [
+        "gap-070"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1334.672,
+          "end": 1336.492,
+          "text": "would assume that this polls data from SAP.",
+          "avg_logprob": -0.3157447924216588,
+          "no_speech_prob": 0.015431316569447517,
+          "words": [
+            {
+              "start": 1334.672,
+              "end": 1334.772,
+              "word": " would"
+            },
+            {
+              "start": 1334.772,
+              "end": 1335.112,
+              "word": " assume"
+            },
+            {
+              "start": 1335.112,
+              "end": 1335.252,
+              "word": " that"
+            },
+            {
+              "start": 1335.252,
+              "end": 1335.392,
+              "word": " this"
+            },
+            {
+              "start": 1335.392,
+              "end": 1335.632,
+              "word": " polls"
+            },
+            {
+              "start": 1335.632,
+              "end": 1335.912,
+              "word": " data"
+            },
+            {
+              "start": 1335.912,
+              "end": 1336.112,
+              "word": " from"
+            },
+            {
+              "start": 1336.112,
+              "end": 1336.492,
+              "word": " SAP."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:32:06Z"
+    },
+    "s46-recovery-024": {
+      "status": "COMPLETE",
+      "start": 1432.79,
+      "end": 1437.85,
+      "source_interval_ids": [
+        "gap-071"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1432.79,
+          "end": 1436.61,
+          "text": "application where user can log in let me look",
+          "avg_logprob": -0.4773439367612203,
+          "no_speech_prob": 0.0423748679459095,
+          "words": [
+            {
+              "start": 1432.79,
+              "end": 1433.31,
+              "word": " application"
+            },
+            {
+              "start": 1433.31,
+              "end": 1433.73,
+              "word": " where"
+            },
+            {
+              "start": 1433.73,
+              "end": 1434.09,
+              "word": " user"
+            },
+            {
+              "start": 1434.09,
+              "end": 1434.37,
+              "word": " can"
+            },
+            {
+              "start": 1434.37,
+              "end": 1434.59,
+              "word": " log"
+            },
+            {
+              "start": 1434.59,
+              "end": 1434.83,
+              "word": " in"
+            },
+            {
+              "start": 1434.83,
+              "end": 1436.31,
+              "word": " let"
+            },
+            {
+              "start": 1436.31,
+              "end": 1436.47,
+              "word": " me"
+            },
+            {
+              "start": 1436.47,
+              "end": 1436.61,
+              "word": " look"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:40:09Z"
+    },
+    "s46-recovery-025": {
+      "status": "COMPLETE",
+      "start": 1526.832,
+      "end": 1528.144,
+      "source_interval_ids": [
+        "gap-073"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1526.832,
+          "end": 1527.412,
+          "text": "administrators.",
+          "avg_logprob": -0.5967861175537109,
+          "no_speech_prob": 0.1983594000339508,
+          "words": [
+            {
+              "start": 1526.832,
+              "end": 1527.412,
+              "word": " administrators."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T02:40:23Z"
+    },
+    "s46-recovery-026": {
+      "status": "COMPLETE",
+      "start": 1611.62,
+      "end": 1616.272,
+      "source_interval_ids": [
+        "gap-076"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1611.62,
+          "end": 1613.62,
+          "text": "runs. Right?",
+          "avg_logprob": -0.6844577959605626,
+          "no_speech_prob": 0.03785557672381401,
+          "words": [
+            {
+              "start": 1611.62,
+              "end": 1612.02,
+              "word": " runs."
+            },
+            {
+              "start": 1612.98,
+              "end": 1613.62,
+              "word": " Right?"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:01:39Z"
+    },
+    "s46-recovery-027": {
+      "status": "COMPLETE",
+      "start": 1629.54,
+      "end": 1634.99,
+      "source_interval_ids": [
+        "gap-079"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1629.54,
+          "end": 1631.7,
+          "text": "where we archive any data from the stables",
+          "avg_logprob": -0.45205886165301007,
+          "no_speech_prob": 0.08557228744029999,
+          "words": [
+            {
+              "start": 1629.54,
+              "end": 1629.72,
+              "word": " where"
+            },
+            {
+              "start": 1629.72,
+              "end": 1629.88,
+              "word": " we"
+            },
+            {
+              "start": 1629.88,
+              "end": 1630.34,
+              "word": " archive"
+            },
+            {
+              "start": 1630.34,
+              "end": 1630.74,
+              "word": " any"
+            },
+            {
+              "start": 1630.74,
+              "end": 1630.98,
+              "word": " data"
+            },
+            {
+              "start": 1630.98,
+              "end": 1631.18,
+              "word": " from"
+            },
+            {
+              "start": 1631.18,
+              "end": 1631.34,
+              "word": " the"
+            },
+            {
+              "start": 1631.34,
+              "end": 1631.7,
+              "word": " stables"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:01:58Z"
+    },
+    "s46-recovery-028": {
+      "status": "COMPLETE",
+      "start": 1675.7,
+      "end": 1680.24,
+      "source_interval_ids": [
+        "gap-083"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1675.7,
+          "end": 1677.92,
+          "text": "So let's go.",
+          "avg_logprob": -0.5569689497351646,
+          "no_speech_prob": 0.5972138047218323,
+          "words": [
+            {
+              "start": 1675.7,
+              "end": 1677.88,
+              "word": " So"
+            },
+            {
+              "start": 1677.88,
+              "end": 1677.92,
+              "word": " let's"
+            },
+            {
+              "start": 1677.92,
+              "end": 1677.92,
+              "word": " go."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:02:14Z"
+    },
+    "s46-recovery-029": {
+      "status": "COMPLETE",
+      "start": 1706.6,
+      "end": 1711.18,
+      "source_interval_ids": [
+        "gap-084"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1706.6,
+          "end": 1711.04,
+          "text": "i need to check with them if you can find that we need to fix",
+          "avg_logprob": -0.38293979234165615,
+          "no_speech_prob": 0.5070825219154358,
+          "words": [
+            {
+              "start": 1706.6,
+              "end": 1706.82,
+              "word": " i"
+            },
+            {
+              "start": 1706.82,
+              "end": 1706.98,
+              "word": " need"
+            },
+            {
+              "start": 1706.98,
+              "end": 1707.1,
+              "word": " to"
+            },
+            {
+              "start": 1707.1,
+              "end": 1707.34,
+              "word": " check"
+            },
+            {
+              "start": 1707.34,
+              "end": 1707.62,
+              "word": " with"
+            },
+            {
+              "start": 1707.62,
+              "end": 1707.78,
+              "word": " them"
+            },
+            {
+              "start": 1707.78,
+              "end": 1708.56,
+              "word": " if"
+            },
+            {
+              "start": 1708.56,
+              "end": 1709.82,
+              "word": " you"
+            },
+            {
+              "start": 1709.82,
+              "end": 1710.02,
+              "word": " can"
+            },
+            {
+              "start": 1710.02,
+              "end": 1710.28,
+              "word": " find"
+            },
+            {
+              "start": 1710.28,
+              "end": 1710.52,
+              "word": " that"
+            },
+            {
+              "start": 1710.52,
+              "end": 1710.74,
+              "word": " we"
+            },
+            {
+              "start": 1710.74,
+              "end": 1710.86,
+              "word": " need"
+            },
+            {
+              "start": 1710.86,
+              "end": 1710.94,
+              "word": " to"
+            },
+            {
+              "start": 1710.94,
+              "end": 1711.04,
+              "word": " fix"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:02:31Z"
+    },
+    "s46-recovery-030": {
+      "status": "COMPLETE",
+      "start": 1804.784,
+      "end": 1805.872,
+      "source_interval_ids": [
+        "gap-088"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1804.784,
+          "end": 1805.164,
+          "text": "and snow.",
+          "avg_logprob": -0.6844613452752432,
+          "no_speech_prob": 0.3402557969093323,
+          "words": [
+            {
+              "start": 1804.784,
+              "end": 1804.984,
+              "word": " and"
+            },
+            {
+              "start": 1804.984,
+              "end": 1805.164,
+              "word": " snow."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:02:47Z"
+    },
+    "s46-recovery-031": {
+      "status": "COMPLETE",
+      "start": 1905.92,
+      "end": 1911.83,
+      "source_interval_ids": [
+        "gap-093"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1905.92,
+          "end": 1906.04,
+          "text": "Yes.",
+          "avg_logprob": -0.6949494034051895,
+          "no_speech_prob": 0.8443838953971863,
+          "words": [
+            {
+              "start": 1905.92,
+              "end": 1906.04,
+              "word": " Yes."
+            }
+          ]
+        },
+        {
+          "start": 1906.98,
+          "end": 1907.88,
+          "text": "Yeah.",
+          "avg_logprob": -0.6949494034051895,
+          "no_speech_prob": 0.8443838953971863,
+          "words": [
+            {
+              "start": 1906.98,
+              "end": 1907.88,
+              "word": " Yeah."
+            }
+          ]
+        },
+        {
+          "start": 1908.94,
+          "end": 1911.64,
+          "text": "Actually, I wanted to",
+          "avg_logprob": -0.6949494034051895,
+          "no_speech_prob": 0.8443838953971863,
+          "words": [
+            {
+              "start": 1908.94,
+              "end": 1909.84,
+              "word": " Actually,"
+            },
+            {
+              "start": 1910.4,
+              "end": 1911.04,
+              "word": " I"
+            },
+            {
+              "start": 1911.04,
+              "end": 1911.38,
+              "word": " wanted"
+            },
+            {
+              "start": 1911.38,
+              "end": 1911.64,
+              "word": " to"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:03:04Z"
+    },
+    "s46-recovery-032": {
+      "status": "COMPLETE",
+      "start": 1921.5,
+      "end": 1926.7,
+      "source_interval_ids": [
+        "gap-095"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1921.5,
+          "end": 1923.5,
+          "text": "the data is passed, right?",
+          "avg_logprob": -0.599434123319738,
+          "no_speech_prob": 0.44353756308555603,
+          "words": [
+            {
+              "start": 1921.5,
+              "end": 1921.68,
+              "word": " the"
+            },
+            {
+              "start": 1921.68,
+              "end": 1921.96,
+              "word": " data"
+            },
+            {
+              "start": 1921.96,
+              "end": 1922.24,
+              "word": " is"
+            },
+            {
+              "start": 1922.24,
+              "end": 1923.12,
+              "word": " passed,"
+            },
+            {
+              "start": 1923.34,
+              "end": 1923.5,
+              "word": " right?"
+            }
+          ]
+        },
+        {
+          "start": 1924.64,
+          "end": 1925.82,
+          "text": "Yeah, it is.",
+          "avg_logprob": -0.599434123319738,
+          "no_speech_prob": 0.44353756308555603,
+          "words": [
+            {
+              "start": 1924.64,
+              "end": 1925.12,
+              "word": " Yeah,"
+            },
+            {
+              "start": 1925.24,
+              "end": 1925.5,
+              "word": " it"
+            },
+            {
+              "start": 1925.5,
+              "end": 1925.82,
+              "word": " is."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:03:21Z"
+    },
+    "s46-recovery-033": {
+      "status": "COMPLETE",
+      "start": 1949.75,
+      "end": 1955.35,
+      "source_interval_ids": [
+        "gap-097"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1949.75,
+          "end": 1954.99,
+          "text": "the operations at that plant. Yeah I can understand that.",
+          "avg_logprob": -0.37862640619277954,
+          "no_speech_prob": 0.4116303324699402,
+          "words": [
+            {
+              "start": 1949.75,
+              "end": 1950.71,
+              "word": " the"
+            },
+            {
+              "start": 1950.71,
+              "end": 1951.11,
+              "word": " operations"
+            },
+            {
+              "start": 1951.11,
+              "end": 1951.53,
+              "word": " at"
+            },
+            {
+              "start": 1951.53,
+              "end": 1951.73,
+              "word": " that"
+            },
+            {
+              "start": 1951.73,
+              "end": 1952.85,
+              "word": " plant."
+            },
+            {
+              "start": 1953.19,
+              "end": 1953.89,
+              "word": " Yeah"
+            },
+            {
+              "start": 1953.89,
+              "end": 1954.09,
+              "word": " I"
+            },
+            {
+              "start": 1954.09,
+              "end": 1954.29,
+              "word": " can"
+            },
+            {
+              "start": 1954.29,
+              "end": 1954.61,
+              "word": " understand"
+            },
+            {
+              "start": 1954.61,
+              "end": 1954.99,
+              "word": " that."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:03:39Z"
+    },
+    "s46-recovery-034": {
+      "status": "COMPLETE",
+      "start": 1963.216,
+      "end": 1965.72,
+      "source_interval_ids": [
+        "gap-098"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 1963.216,
+          "end": 1965.476,
+          "text": "One of those, just kind of let it.",
+          "avg_logprob": -0.2720868312395536,
+          "no_speech_prob": 0.45052987337112427,
+          "words": [
+            {
+              "start": 1963.216,
+              "end": 1963.336,
+              "word": " One"
+            },
+            {
+              "start": 1963.336,
+              "end": 1963.356,
+              "word": " of"
+            },
+            {
+              "start": 1963.356,
+              "end": 1963.496,
+              "word": " those,"
+            },
+            {
+              "start": 1963.696,
+              "end": 1964.296,
+              "word": " just"
+            },
+            {
+              "start": 1964.296,
+              "end": 1964.736,
+              "word": " kind"
+            },
+            {
+              "start": 1964.736,
+              "end": 1964.996,
+              "word": " of"
+            },
+            {
+              "start": 1964.996,
+              "end": 1965.336,
+              "word": " let"
+            },
+            {
+              "start": 1965.336,
+              "end": 1965.476,
+              "word": " it."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:03:56Z"
+    },
+    "s46-recovery-035": {
+      "status": "COMPLETE",
+      "start": 2039.024,
+      "end": 2043.13,
+      "source_interval_ids": [
+        "gap-100"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2039.024,
+          "end": 2040.324,
+          "text": "This is a basic authentication.",
+          "avg_logprob": -0.33018992928897634,
+          "no_speech_prob": 0.16329996287822723,
+          "words": [
+            {
+              "start": 2039.024,
+              "end": 2039.444,
+              "word": " This"
+            },
+            {
+              "start": 2039.444,
+              "end": 2039.584,
+              "word": " is"
+            },
+            {
+              "start": 2039.584,
+              "end": 2039.684,
+              "word": " a"
+            },
+            {
+              "start": 2039.684,
+              "end": 2039.944,
+              "word": " basic"
+            },
+            {
+              "start": 2039.944,
+              "end": 2040.324,
+              "word": " authentication."
+            }
+          ]
+        },
+        {
+          "start": 2041.424,
+          "end": 2042.764,
+          "text": "It's not going through.",
+          "avg_logprob": -0.33018992928897634,
+          "no_speech_prob": 0.16329996287822723,
+          "words": [
+            {
+              "start": 2041.184,
+              "end": 2041.564,
+              "word": " It's"
+            },
+            {
+              "start": 2041.564,
+              "end": 2041.764,
+              "word": " not"
+            },
+            {
+              "start": 2041.764,
+              "end": 2042.324,
+              "word": " going"
+            },
+            {
+              "start": 2042.324,
+              "end": 2042.764,
+              "word": " through."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:04:13Z"
+    },
+    "s46-recovery-036": {
+      "status": "COMPLETE",
+      "start": 2096.22,
+      "end": 2104.048,
+      "source_interval_ids": [
+        "gap-104",
+        "gap-105"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2096.22,
+          "end": 2103.26,
+          "text": "ID is what we call, so here, let me, fair point, I didn't probably go over that before, but let's.",
+          "avg_logprob": -0.2854296084373228,
+          "no_speech_prob": 0.4012329578399658,
+          "words": [
+            {
+              "start": 2096.22,
+              "end": 2096.38,
+              "word": " ID"
+            },
+            {
+              "start": 2096.38,
+              "end": 2096.5,
+              "word": " is"
+            },
+            {
+              "start": 2096.5,
+              "end": 2096.64,
+              "word": " what"
+            },
+            {
+              "start": 2096.64,
+              "end": 2096.78,
+              "word": " we"
+            },
+            {
+              "start": 2096.78,
+              "end": 2097.02,
+              "word": " call,"
+            },
+            {
+              "start": 2097.2,
+              "end": 2097.44,
+              "word": " so"
+            },
+            {
+              "start": 2097.44,
+              "end": 2097.9,
+              "word": " here,"
+            },
+            {
+              "start": 2097.96,
+              "end": 2098.04,
+              "word": " let"
+            },
+            {
+              "start": 2098.04,
+              "end": 2098.2,
+              "word": " me,"
+            },
+            {
+              "start": 2098.32,
+              "end": 2099.86,
+              "word": " fair"
+            },
+            {
+              "start": 2099.86,
+              "end": 2100.32,
+              "word": " point,"
+            },
+            {
+              "start": 2100.48,
+              "end": 2100.62,
+              "word": " I"
+            },
+            {
+              "start": 2100.62,
+              "end": 2100.84,
+              "word": " didn't"
+            },
+            {
+              "start": 2100.84,
+              "end": 2101.12,
+              "word": " probably"
+            },
+            {
+              "start": 2101.12,
+              "end": 2101.44,
+              "word": " go"
+            },
+            {
+              "start": 2101.44,
+              "end": 2101.64,
+              "word": " over"
+            },
+            {
+              "start": 2101.64,
+              "end": 2101.8,
+              "word": " that"
+            },
+            {
+              "start": 2101.8,
+              "end": 2102.08,
+              "word": " before,"
+            },
+            {
+              "start": 2102.24,
+              "end": 2102.38,
+              "word": " but"
+            },
+            {
+              "start": 2102.38,
+              "end": 2103.26,
+              "word": " let's."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:04:31Z"
+    },
+    "s46-recovery-037": {
+      "status": "COMPLETE",
+      "start": 2252.1,
+      "end": 2256.656,
+      "source_interval_ids": [
+        "gap-111"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2252.1,
+          "end": 2256.46,
+          "text": "as DNS names for subject alternatives so that that cert can be used for both.",
+          "avg_logprob": -0.22292969885625338,
+          "no_speech_prob": 0.14143988490104675,
+          "words": [
+            {
+              "start": 2252.1,
+              "end": 2252.52,
+              "word": " as"
+            },
+            {
+              "start": 2252.52,
+              "end": 2252.78,
+              "word": " DNS"
+            },
+            {
+              "start": 2252.78,
+              "end": 2253.18,
+              "word": " names"
+            },
+            {
+              "start": 2253.18,
+              "end": 2253.42,
+              "word": " for"
+            },
+            {
+              "start": 2253.42,
+              "end": 2253.68,
+              "word": " subject"
+            },
+            {
+              "start": 2253.68,
+              "end": 2254.08,
+              "word": " alternatives"
+            },
+            {
+              "start": 2254.08,
+              "end": 2254.52,
+              "word": " so"
+            },
+            {
+              "start": 2254.52,
+              "end": 2254.72,
+              "word": " that"
+            },
+            {
+              "start": 2254.72,
+              "end": 2255.42,
+              "word": " that"
+            },
+            {
+              "start": 2255.42,
+              "end": 2255.6,
+              "word": " cert"
+            },
+            {
+              "start": 2255.6,
+              "end": 2255.78,
+              "word": " can"
+            },
+            {
+              "start": 2255.78,
+              "end": 2255.92,
+              "word": " be"
+            },
+            {
+              "start": 2255.92,
+              "end": 2256.14,
+              "word": " used"
+            },
+            {
+              "start": 2256.14,
+              "end": 2256.3,
+              "word": " for"
+            },
+            {
+              "start": 2256.3,
+              "end": 2256.46,
+              "word": " both."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:04:48Z"
+    },
+    "s46-recovery-038": {
+      "status": "COMPLETE",
+      "start": 2304.94,
+      "end": 2309.57,
+      "source_interval_ids": [
+        "gap-114"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2304.94,
+          "end": 2309.36,
+          "text": "server that we don't manage most of these other sites are",
+          "avg_logprob": -0.17647582093874614,
+          "no_speech_prob": 0.42171186208724976,
+          "words": [
+            {
+              "start": 2304.94,
+              "end": 2305.3,
+              "word": " server"
+            },
+            {
+              "start": 2305.3,
+              "end": 2306.08,
+              "word": " that"
+            },
+            {
+              "start": 2306.08,
+              "end": 2306.32,
+              "word": " we"
+            },
+            {
+              "start": 2306.32,
+              "end": 2306.7,
+              "word": " don't"
+            },
+            {
+              "start": 2306.7,
+              "end": 2306.86,
+              "word": " manage"
+            },
+            {
+              "start": 2306.86,
+              "end": 2307.9,
+              "word": " most"
+            },
+            {
+              "start": 2307.9,
+              "end": 2308.3,
+              "word": " of"
+            },
+            {
+              "start": 2308.3,
+              "end": 2308.48,
+              "word": " these"
+            },
+            {
+              "start": 2308.48,
+              "end": 2308.74,
+              "word": " other"
+            },
+            {
+              "start": 2308.74,
+              "end": 2309.08,
+              "word": " sites"
+            },
+            {
+              "start": 2309.08,
+              "end": 2309.36,
+              "word": " are"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:05:03Z"
+    },
+    "s46-recovery-039": {
+      "status": "COMPLETE",
+      "start": 2322.0,
+      "end": 2324.816,
+      "source_interval_ids": [
+        "gap-116"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2322.0,
+          "end": 2324.3,
+          "text": "internal apps that they manage.",
+          "avg_logprob": -0.5139652887980143,
+          "no_speech_prob": 0.10674268752336502,
+          "words": [
+            {
+              "start": 2322.0,
+              "end": 2322.2,
+              "word": " internal"
+            },
+            {
+              "start": 2322.2,
+              "end": 2322.42,
+              "word": " apps"
+            },
+            {
+              "start": 2322.42,
+              "end": 2322.62,
+              "word": " that"
+            },
+            {
+              "start": 2322.62,
+              "end": 2322.86,
+              "word": " they"
+            },
+            {
+              "start": 2322.86,
+              "end": 2324.3,
+              "word": " manage."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:05:16Z"
+    },
+    "s46-recovery-040": {
+      "status": "COMPLETE",
+      "start": 2333.52,
+      "end": 2338.3,
+      "source_interval_ids": [
+        "gap-117"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2333.52,
+          "end": 2335.9,
+          "text": "I have a couple of applications till we manage everything.",
+          "avg_logprob": -0.9039199650287628,
+          "no_speech_prob": 0.38260194659233093,
+          "words": [
+            {
+              "start": 2333.52,
+              "end": 2333.52,
+              "word": " I"
+            },
+            {
+              "start": 2333.52,
+              "end": 2333.52,
+              "word": " have"
+            },
+            {
+              "start": 2333.52,
+              "end": 2333.6,
+              "word": " a"
+            },
+            {
+              "start": 2333.6,
+              "end": 2333.84,
+              "word": " couple"
+            },
+            {
+              "start": 2333.84,
+              "end": 2333.96,
+              "word": " of"
+            },
+            {
+              "start": 2333.96,
+              "end": 2334.38,
+              "word": " applications"
+            },
+            {
+              "start": 2334.38,
+              "end": 2334.96,
+              "word": " till"
+            },
+            {
+              "start": 2334.96,
+              "end": 2335.14,
+              "word": " we"
+            },
+            {
+              "start": 2335.14,
+              "end": 2335.44,
+              "word": " manage"
+            },
+            {
+              "start": 2335.44,
+              "end": 2335.9,
+              "word": " everything."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:05:32Z"
+    },
+    "s46-recovery-041": {
+      "status": "COMPLETE",
+      "start": 2341.55,
+      "end": 2344.176,
+      "source_interval_ids": [
+        "gap-119"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2341.55,
+          "end": 2343.51,
+          "text": "do we manage? Making long.",
+          "avg_logprob": -0.6808229684829712,
+          "no_speech_prob": 0.0984581783413887,
+          "words": [
+            {
+              "start": 2341.55,
+              "end": 2341.65,
+              "word": " do"
+            },
+            {
+              "start": 2341.65,
+              "end": 2341.69,
+              "word": " we"
+            },
+            {
+              "start": 2341.69,
+              "end": 2341.89,
+              "word": " manage?"
+            },
+            {
+              "start": 2342.81,
+              "end": 2343.21,
+              "word": " Making"
+            },
+            {
+              "start": 2343.21,
+              "end": 2343.51,
+              "word": " long."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:05:48Z"
+    },
+    "s46-recovery-042": {
+      "status": "COMPLETE",
+      "start": 2418.672,
+      "end": 2422.736,
+      "source_interval_ids": [
+        "gap-122"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2418.672,
+          "end": 2422.072,
+          "text": "as any other database would be right",
+          "avg_logprob": -0.3525390923023224,
+          "no_speech_prob": 0.07810411602258682,
+          "words": [
+            {
+              "start": 2418.672,
+              "end": 2418.892,
+              "word": " as"
+            },
+            {
+              "start": 2418.892,
+              "end": 2419.132,
+              "word": " any"
+            },
+            {
+              "start": 2419.132,
+              "end": 2419.352,
+              "word": " other"
+            },
+            {
+              "start": 2419.352,
+              "end": 2419.712,
+              "word": " database"
+            },
+            {
+              "start": 2419.712,
+              "end": 2419.972,
+              "word": " would"
+            },
+            {
+              "start": 2419.972,
+              "end": 2420.172,
+              "word": " be"
+            },
+            {
+              "start": 2420.172,
+              "end": 2422.072,
+              "word": " right"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:06:03Z"
+    },
+    "s46-recovery-043": {
+      "status": "COMPLETE",
+      "start": 2450.0,
+      "end": 2454.64,
+      "source_interval_ids": [
+        "gap-125"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2450.0,
+          "end": 2454.5,
+          "text": "running. Those are the main ones. The other thing when it comes to",
+          "avg_logprob": -0.1822083294391632,
+          "no_speech_prob": 0.35325315594673157,
+          "words": [
+            {
+              "start": 2450.0,
+              "end": 2450.18,
+              "word": " running."
+            },
+            {
+              "start": 2450.94,
+              "end": 2451.38,
+              "word": " Those"
+            },
+            {
+              "start": 2451.38,
+              "end": 2451.5,
+              "word": " are"
+            },
+            {
+              "start": 2451.5,
+              "end": 2451.58,
+              "word": " the"
+            },
+            {
+              "start": 2451.58,
+              "end": 2451.76,
+              "word": " main"
+            },
+            {
+              "start": 2451.76,
+              "end": 2452.0,
+              "word": " ones."
+            },
+            {
+              "start": 2452.64,
+              "end": 2453.08,
+              "word": " The"
+            },
+            {
+              "start": 2453.08,
+              "end": 2453.3,
+              "word": " other"
+            },
+            {
+              "start": 2453.3,
+              "end": 2453.54,
+              "word": " thing"
+            },
+            {
+              "start": 2453.54,
+              "end": 2453.88,
+              "word": " when"
+            },
+            {
+              "start": 2453.88,
+              "end": 2454.0,
+              "word": " it"
+            },
+            {
+              "start": 2454.0,
+              "end": 2454.28,
+              "word": " comes"
+            },
+            {
+              "start": 2454.28,
+              "end": 2454.5,
+              "word": " to"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:06:20Z"
+    },
+    "s46-recovery-044": {
+      "status": "COMPLETE",
+      "start": 2504.496,
+      "end": 2505.776,
+      "source_interval_ids": [
+        "gap-128"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2504.496,
+          "end": 2505.136,
+          "text": "Sequel",
+          "avg_logprob": -0.6065195560455322,
+          "no_speech_prob": 0.5523777008056641,
+          "words": [
+            {
+              "start": 2504.496,
+              "end": 2505.136,
+              "word": " Sequel"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:06:35Z"
+    },
+    "s46-recovery-045": {
+      "status": "COMPLETE",
+      "start": 2574.38,
+      "end": 2582.78,
+      "source_interval_ids": [
+        "gap-134",
+        "gap-135"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2574.38,
+          "end": 2581.1,
+          "text": "the standard to get beyond the 10 gigabyte max the other differences between sequel and",
+          "avg_logprob": -0.36658981599305807,
+          "no_speech_prob": 0.18447551131248474,
+          "words": [
+            {
+              "start": 2574.38,
+              "end": 2574.48,
+              "word": " the"
+            },
+            {
+              "start": 2574.48,
+              "end": 2574.74,
+              "word": " standard"
+            },
+            {
+              "start": 2574.74,
+              "end": 2575.0,
+              "word": " to"
+            },
+            {
+              "start": 2575.0,
+              "end": 2575.18,
+              "word": " get"
+            },
+            {
+              "start": 2575.18,
+              "end": 2575.54,
+              "word": " beyond"
+            },
+            {
+              "start": 2575.54,
+              "end": 2575.76,
+              "word": " the"
+            },
+            {
+              "start": 2575.76,
+              "end": 2575.92,
+              "word": " 10"
+            },
+            {
+              "start": 2575.92,
+              "end": 2576.48,
+              "word": " gigabyte"
+            },
+            {
+              "start": 2576.48,
+              "end": 2577.46,
+              "word": " max"
+            },
+            {
+              "start": 2577.46,
+              "end": 2578.1,
+              "word": " the"
+            },
+            {
+              "start": 2578.1,
+              "end": 2578.5,
+              "word": " other"
+            },
+            {
+              "start": 2578.5,
+              "end": 2578.98,
+              "word": " differences"
+            },
+            {
+              "start": 2578.98,
+              "end": 2579.32,
+              "word": " between"
+            },
+            {
+              "start": 2579.32,
+              "end": 2579.94,
+              "word": " sequel"
+            },
+            {
+              "start": 2579.94,
+              "end": 2581.1,
+              "word": " and"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:06:53Z"
+    },
+    "s46-recovery-046": {
+      "status": "COMPLETE",
+      "start": 2660.24,
+      "end": 2665.42,
+      "source_interval_ids": [
+        "gap-138"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2660.24,
+          "end": 2665.32,
+          "text": "you get whatever the operating system can hold right so it depends on where you're",
+          "avg_logprob": -0.21548251729262502,
+          "no_speech_prob": 0.4595770239830017,
+          "words": [
+            {
+              "start": 2660.24,
+              "end": 2660.48,
+              "word": " you"
+            },
+            {
+              "start": 2660.48,
+              "end": 2660.72,
+              "word": " get"
+            },
+            {
+              "start": 2660.72,
+              "end": 2661.42,
+              "word": " whatever"
+            },
+            {
+              "start": 2661.42,
+              "end": 2661.62,
+              "word": " the"
+            },
+            {
+              "start": 2661.62,
+              "end": 2661.9,
+              "word": " operating"
+            },
+            {
+              "start": 2661.9,
+              "end": 2662.2,
+              "word": " system"
+            },
+            {
+              "start": 2662.2,
+              "end": 2662.4,
+              "word": " can"
+            },
+            {
+              "start": 2662.4,
+              "end": 2662.62,
+              "word": " hold"
+            },
+            {
+              "start": 2662.62,
+              "end": 2663.62,
+              "word": " right"
+            },
+            {
+              "start": 2663.62,
+              "end": 2663.86,
+              "word": " so"
+            },
+            {
+              "start": 2663.86,
+              "end": 2664.04,
+              "word": " it"
+            },
+            {
+              "start": 2664.04,
+              "end": 2664.34,
+              "word": " depends"
+            },
+            {
+              "start": 2664.34,
+              "end": 2664.72,
+              "word": " on"
+            },
+            {
+              "start": 2664.72,
+              "end": 2665.04,
+              "word": " where"
+            },
+            {
+              "start": 2665.04,
+              "end": 2665.32,
+              "word": " you're"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:07:10Z"
+    },
+    "s46-recovery-047": {
+      "status": "COMPLETE",
+      "start": 2760.304,
+      "end": 2761.456,
+      "source_interval_ids": [
+        "gap-144"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2760.304,
+          "end": 2760.844,
+          "text": "That's what",
+          "avg_logprob": -0.5210175613562266,
+          "no_speech_prob": 0.11566916108131409,
+          "words": [
+            {
+              "start": 2760.304,
+              "end": 2760.764,
+              "word": " That's"
+            },
+            {
+              "start": 2760.764,
+              "end": 2760.844,
+              "word": " what"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:07:25Z"
+    },
+    "s46-recovery-048": {
+      "status": "COMPLETE",
+      "start": 2784.81,
+      "end": 2789.73,
+      "source_interval_ids": [
+        "gap-146"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2784.81,
+          "end": 2789.47,
+          "text": "them to increase the memory size and you'd have to put in a ticket through",
+          "avg_logprob": -0.3307409066902964,
+          "no_speech_prob": 0.47512808442115784,
+          "words": [
+            {
+              "start": 2784.81,
+              "end": 2784.97,
+              "word": " them"
+            },
+            {
+              "start": 2784.97,
+              "end": 2785.15,
+              "word": " to"
+            },
+            {
+              "start": 2785.15,
+              "end": 2786.09,
+              "word": " increase"
+            },
+            {
+              "start": 2786.09,
+              "end": 2786.37,
+              "word": " the"
+            },
+            {
+              "start": 2786.37,
+              "end": 2786.49,
+              "word": " memory"
+            },
+            {
+              "start": 2786.49,
+              "end": 2786.79,
+              "word": " size"
+            },
+            {
+              "start": 2786.79,
+              "end": 2788.07,
+              "word": " and"
+            },
+            {
+              "start": 2788.07,
+              "end": 2788.35,
+              "word": " you'd"
+            },
+            {
+              "start": 2788.35,
+              "end": 2788.43,
+              "word": " have"
+            },
+            {
+              "start": 2788.43,
+              "end": 2788.57,
+              "word": " to"
+            },
+            {
+              "start": 2788.57,
+              "end": 2788.73,
+              "word": " put"
+            },
+            {
+              "start": 2788.73,
+              "end": 2788.87,
+              "word": " in"
+            },
+            {
+              "start": 2788.87,
+              "end": 2788.95,
+              "word": " a"
+            },
+            {
+              "start": 2788.95,
+              "end": 2789.19,
+              "word": " ticket"
+            },
+            {
+              "start": 2789.19,
+              "end": 2789.47,
+              "word": " through"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:07:42Z"
+    },
+    "s46-recovery-049": {
+      "status": "COMPLETE",
+      "start": 2792.14,
+      "end": 2795.792,
+      "source_interval_ids": [
+        "gap-148"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2792.52,
+          "end": 2794.96,
+          "text": "Right now, you're not terrible, right?",
+          "avg_logprob": -0.33767025619745256,
+          "no_speech_prob": 0.3843965232372284,
+          "words": [
+            {
+              "start": 2792.52,
+              "end": 2792.88,
+              "word": " Right"
+            },
+            {
+              "start": 2792.88,
+              "end": 2793.12,
+              "word": " now,"
+            },
+            {
+              "start": 2793.16,
+              "end": 2793.34,
+              "word": " you're"
+            },
+            {
+              "start": 2793.34,
+              "end": 2793.54,
+              "word": " not"
+            },
+            {
+              "start": 2793.54,
+              "end": 2794.64,
+              "word": " terrible,"
+            },
+            {
+              "start": 2794.82,
+              "end": 2794.96,
+              "word": " right?"
+            }
+          ]
+        },
+        {
+          "start": 2795.04,
+          "end": 2795.58,
+          "text": "This isn't bad.",
+          "avg_logprob": -0.33767025619745256,
+          "no_speech_prob": 0.3843965232372284,
+          "words": [
+            {
+              "start": 2795.04,
+              "end": 2795.18,
+              "word": " This"
+            },
+            {
+              "start": 2795.18,
+              "end": 2795.42,
+              "word": " isn't"
+            },
+            {
+              "start": 2795.42,
+              "end": 2795.58,
+              "word": " bad."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:07:59Z"
+    },
+    "s46-recovery-050": {
+      "status": "COMPLETE",
+      "start": 2798.864,
+      "end": 2803.11,
+      "source_interval_ids": [
+        "gap-149"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2798.864,
+          "end": 2802.864,
+          "text": "below any. Yeah, yes. Fine. Yeah, that's true. Not a huge deal.",
+          "avg_logprob": -0.48115206283071765,
+          "no_speech_prob": 0.23386333882808685,
+          "words": [
+            {
+              "start": 2798.864,
+              "end": 2799.084,
+              "word": " below"
+            },
+            {
+              "start": 2799.084,
+              "end": 2799.384,
+              "word": " any."
+            },
+            {
+              "start": 2799.404,
+              "end": 2799.704,
+              "word": " Yeah,"
+            },
+            {
+              "start": 2799.784,
+              "end": 2799.844,
+              "word": " yes."
+            },
+            {
+              "start": 2800.304,
+              "end": 2800.664,
+              "word": " Fine."
+            },
+            {
+              "start": 2801.124,
+              "end": 2801.484,
+              "word": " Yeah,"
+            },
+            {
+              "start": 2801.524,
+              "end": 2801.924,
+              "word": " that's"
+            },
+            {
+              "start": 2801.924,
+              "end": 2802.024,
+              "word": " true."
+            },
+            {
+              "start": 2802.204,
+              "end": 2802.444,
+              "word": " Not"
+            },
+            {
+              "start": 2802.444,
+              "end": 2802.544,
+              "word": " a"
+            },
+            {
+              "start": 2802.544,
+              "end": 2802.664,
+              "word": " huge"
+            },
+            {
+              "start": 2802.664,
+              "end": 2802.864,
+              "word": " deal."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:08:16Z"
+    },
+    "s46-recovery-051": {
+      "status": "COMPLETE",
+      "start": 2857.41,
+      "end": 2862.5,
+      "source_interval_ids": [
+        "gap-151"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2857.41,
+          "end": 2862.05,
+          "text": "diacin and things running at idle and then you combine that information",
+          "avg_logprob": -0.36191800061394186,
+          "no_speech_prob": 0.3503219187259674,
+          "words": [
+            {
+              "start": 2857.41,
+              "end": 2857.85,
+              "word": " diacin"
+            },
+            {
+              "start": 2857.85,
+              "end": 2857.95,
+              "word": " and"
+            },
+            {
+              "start": 2857.95,
+              "end": 2858.19,
+              "word": " things"
+            },
+            {
+              "start": 2858.19,
+              "end": 2858.77,
+              "word": " running"
+            },
+            {
+              "start": 2858.77,
+              "end": 2859.07,
+              "word": " at"
+            },
+            {
+              "start": 2859.07,
+              "end": 2859.37,
+              "word": " idle"
+            },
+            {
+              "start": 2859.37,
+              "end": 2860.51,
+              "word": " and"
+            },
+            {
+              "start": 2860.51,
+              "end": 2861.11,
+              "word": " then"
+            },
+            {
+              "start": 2861.11,
+              "end": 2861.21,
+              "word": " you"
+            },
+            {
+              "start": 2861.21,
+              "end": 2861.45,
+              "word": " combine"
+            },
+            {
+              "start": 2861.45,
+              "end": 2861.87,
+              "word": " that"
+            },
+            {
+              "start": 2861.87,
+              "end": 2862.05,
+              "word": " information"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:08:32Z"
+    },
+    "s46-recovery-052": {
+      "status": "COMPLETE",
+      "start": 2948.17,
+      "end": 2953.18,
+      "source_interval_ids": [
+        "gap-153"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2948.17,
+          "end": 2952.97,
+          "text": "There are some queries that happen within the interface that do take.",
+          "avg_logprob": -0.27504170313477516,
+          "no_speech_prob": 0.2359529435634613,
+          "words": [
+            {
+              "start": 2948.17,
+              "end": 2948.51,
+              "word": " There"
+            },
+            {
+              "start": 2948.51,
+              "end": 2948.79,
+              "word": " are"
+            },
+            {
+              "start": 2948.79,
+              "end": 2949.75,
+              "word": " some"
+            },
+            {
+              "start": 2949.75,
+              "end": 2951.15,
+              "word": " queries"
+            },
+            {
+              "start": 2951.15,
+              "end": 2951.53,
+              "word": " that"
+            },
+            {
+              "start": 2951.53,
+              "end": 2951.75,
+              "word": " happen"
+            },
+            {
+              "start": 2951.75,
+              "end": 2951.97,
+              "word": " within"
+            },
+            {
+              "start": 2951.97,
+              "end": 2952.11,
+              "word": " the"
+            },
+            {
+              "start": 2952.11,
+              "end": 2952.41,
+              "word": " interface"
+            },
+            {
+              "start": 2952.41,
+              "end": 2952.73,
+              "word": " that"
+            },
+            {
+              "start": 2952.73,
+              "end": 2952.85,
+              "word": " do"
+            },
+            {
+              "start": 2952.85,
+              "end": 2952.97,
+              "word": " take."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:08:50Z"
+    },
+    "s46-recovery-053": {
+      "status": "COMPLETE",
+      "start": 2960.688,
+      "end": 2966.79,
+      "source_interval_ids": [
+        "gap-154",
+        "gap-155"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2960.688,
+          "end": 2966.328,
+          "text": "Okay, this machine's been pretty solid and the thing is that",
+          "avg_logprob": -0.3844559658318758,
+          "no_speech_prob": 0.34662753343582153,
+          "words": [
+            {
+              "start": 2960.688,
+              "end": 2961.048,
+              "word": " Okay,"
+            },
+            {
+              "start": 2961.108,
+              "end": 2962.208,
+              "word": " this"
+            },
+            {
+              "start": 2962.208,
+              "end": 2962.988,
+              "word": " machine's"
+            },
+            {
+              "start": 2962.988,
+              "end": 2963.088,
+              "word": " been"
+            },
+            {
+              "start": 2963.088,
+              "end": 2963.328,
+              "word": " pretty"
+            },
+            {
+              "start": 2963.328,
+              "end": 2963.848,
+              "word": " solid"
+            },
+            {
+              "start": 2963.848,
+              "end": 2964.968,
+              "word": " and"
+            },
+            {
+              "start": 2964.968,
+              "end": 2965.328,
+              "word": " the"
+            },
+            {
+              "start": 2965.328,
+              "end": 2965.548,
+              "word": " thing"
+            },
+            {
+              "start": 2965.548,
+              "end": 2965.808,
+              "word": " is"
+            },
+            {
+              "start": 2965.808,
+              "end": 2966.328,
+              "word": " that"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:09:08Z"
+    },
+    "s46-recovery-054": {
+      "status": "COMPLETE",
+      "start": 2991.1,
+      "end": 2995.73,
+      "source_interval_ids": [
+        "gap-158"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2991.1,
+          "end": 2995.48,
+          "text": "may not be operations causing the problem somebody does something dumb and",
+          "avg_logprob": -0.3514713287353516,
+          "no_speech_prob": 0.3666638433933258,
+          "words": [
+            {
+              "start": 2991.1,
+              "end": 2991.16,
+              "word": " may"
+            },
+            {
+              "start": 2991.16,
+              "end": 2991.38,
+              "word": " not"
+            },
+            {
+              "start": 2991.38,
+              "end": 2991.58,
+              "word": " be"
+            },
+            {
+              "start": 2991.58,
+              "end": 2991.84,
+              "word": " operations"
+            },
+            {
+              "start": 2991.84,
+              "end": 2992.62,
+              "word": " causing"
+            },
+            {
+              "start": 2992.62,
+              "end": 2992.84,
+              "word": " the"
+            },
+            {
+              "start": 2992.84,
+              "end": 2993.02,
+              "word": " problem"
+            },
+            {
+              "start": 2993.02,
+              "end": 2994.24,
+              "word": " somebody"
+            },
+            {
+              "start": 2994.24,
+              "end": 2994.54,
+              "word": " does"
+            },
+            {
+              "start": 2994.54,
+              "end": 2994.88,
+              "word": " something"
+            },
+            {
+              "start": 2994.88,
+              "end": 2995.2,
+              "word": " dumb"
+            },
+            {
+              "start": 2995.2,
+              "end": 2995.48,
+              "word": " and"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:09:26Z"
+    },
+    "s46-recovery-055": {
+      "status": "COMPLETE",
+      "start": 3020.51,
+      "end": 3023.312,
+      "source_interval_ids": [
+        "gap-160"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3020.51,
+          "end": 3021.07,
+          "text": "Where's the problem?",
+          "avg_logprob": -0.470271844130296,
+          "no_speech_prob": 0.05117771029472351,
+          "words": [
+            {
+              "start": 3020.51,
+              "end": 3020.79,
+              "word": " Where's"
+            },
+            {
+              "start": 3020.79,
+              "end": 3020.81,
+              "word": " the"
+            },
+            {
+              "start": 3020.81,
+              "end": 3021.07,
+              "word": " problem?"
+            }
+          ]
+        },
+        {
+          "start": 3022.17,
+          "end": 3022.69,
+          "text": "Right here.",
+          "avg_logprob": -0.470271844130296,
+          "no_speech_prob": 0.05117771029472351,
+          "words": [
+            {
+              "start": 3022.17,
+              "end": 3022.53,
+              "word": " Right"
+            },
+            {
+              "start": 3022.53,
+              "end": 3022.69,
+              "word": " here."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:09:43Z"
+    },
+    "s46-recovery-056": {
+      "status": "COMPLETE",
+      "start": 3026.928,
+      "end": 3030.05,
+      "source_interval_ids": [
+        "gap-161"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3026.928,
+          "end": 3029.788,
+          "text": "the ground, but it could be that.",
+          "avg_logprob": -0.6937783509492874,
+          "no_speech_prob": 0.7660497426986694,
+          "words": [
+            {
+              "start": 3026.928,
+              "end": 3027.028,
+              "word": " the"
+            },
+            {
+              "start": 3027.028,
+              "end": 3027.328,
+              "word": " ground,"
+            },
+            {
+              "start": 3027.468,
+              "end": 3027.708,
+              "word": " but"
+            },
+            {
+              "start": 3027.708,
+              "end": 3028.648,
+              "word": " it"
+            },
+            {
+              "start": 3028.648,
+              "end": 3029.308,
+              "word": " could"
+            },
+            {
+              "start": 3029.308,
+              "end": 3029.568,
+              "word": " be"
+            },
+            {
+              "start": 3029.568,
+              "end": 3029.788,
+              "word": " that."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:09:59Z"
+    },
+    "s46-recovery-057": {
+      "status": "COMPLETE",
+      "start": 3042.84,
+      "end": 3047.44,
+      "source_interval_ids": [
+        "gap-163"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3042.84,
+          "end": 3044.66,
+          "text": "Yeah, it could be some job that I need.",
+          "avg_logprob": -0.6737435340881348,
+          "no_speech_prob": 0.3744370937347412,
+          "words": [
+            {
+              "start": 3042.84,
+              "end": 3043.04,
+              "word": " Yeah,"
+            },
+            {
+              "start": 3043.04,
+              "end": 3043.48,
+              "word": " it"
+            },
+            {
+              "start": 3043.48,
+              "end": 3043.62,
+              "word": " could"
+            },
+            {
+              "start": 3043.62,
+              "end": 3043.76,
+              "word": " be"
+            },
+            {
+              "start": 3043.76,
+              "end": 3043.9,
+              "word": " some"
+            },
+            {
+              "start": 3043.9,
+              "end": 3044.2,
+              "word": " job"
+            },
+            {
+              "start": 3044.2,
+              "end": 3044.42,
+              "word": " that"
+            },
+            {
+              "start": 3044.42,
+              "end": 3044.54,
+              "word": " I"
+            },
+            {
+              "start": 3044.54,
+              "end": 3044.66,
+              "word": " need."
+            }
+          ]
+        },
+        {
+          "start": 3045.72,
+          "end": 3046.4,
+          "text": "Right, exactly.",
+          "avg_logprob": -0.6737435340881348,
+          "no_speech_prob": 0.3744370937347412,
+          "words": [
+            {
+              "start": 3045.72,
+              "end": 3046.06,
+              "word": " Right,"
+            },
+            {
+              "start": 3046.06,
+              "end": 3046.4,
+              "word": " exactly."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:10:17Z"
+    },
+    "s46-recovery-058": {
+      "status": "COMPLETE",
+      "start": 3065.5,
+      "end": 3070.96,
+      "source_interval_ids": [
+        "gap-165"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3065.5,
+          "end": 3070.72,
+          "text": "In most infrastructures, a web server is a web server.",
+          "avg_logprob": -0.23912323638796806,
+          "no_speech_prob": 0.1286526918411255,
+          "words": [
+            {
+              "start": 3065.5,
+              "end": 3065.9,
+              "word": " In"
+            },
+            {
+              "start": 3065.9,
+              "end": 3066.72,
+              "word": " most"
+            },
+            {
+              "start": 3066.72,
+              "end": 3067.52,
+              "word": " infrastructures,"
+            },
+            {
+              "start": 3067.64,
+              "end": 3069.2,
+              "word": " a"
+            },
+            {
+              "start": 3069.2,
+              "end": 3069.46,
+              "word": " web"
+            },
+            {
+              "start": 3069.46,
+              "end": 3069.78,
+              "word": " server"
+            },
+            {
+              "start": 3069.78,
+              "end": 3070.08,
+              "word": " is"
+            },
+            {
+              "start": 3070.08,
+              "end": 3070.24,
+              "word": " a"
+            },
+            {
+              "start": 3070.24,
+              "end": 3070.42,
+              "word": " web"
+            },
+            {
+              "start": 3070.42,
+              "end": 3070.72,
+              "word": " server."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:10:35Z"
+    },
+    "s46-recovery-059": {
+      "status": "COMPLETE",
+      "start": 3114.1,
+      "end": 3125.37,
+      "source_interval_ids": [
+        "gap-170",
+        "gap-171",
+        "gap-172"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3114.1,
+          "end": 3118.22,
+          "text": "forward or any kind of alert mechanism to tell us that",
+          "avg_logprob": -0.3912809658050537,
+          "no_speech_prob": 0.3661535978317261,
+          "words": [
+            {
+              "start": 3114.1,
+              "end": 3114.44,
+              "word": " forward"
+            },
+            {
+              "start": 3114.44,
+              "end": 3114.62,
+              "word": " or"
+            },
+            {
+              "start": 3114.62,
+              "end": 3114.8,
+              "word": " any"
+            },
+            {
+              "start": 3114.8,
+              "end": 3115.02,
+              "word": " kind"
+            },
+            {
+              "start": 3115.02,
+              "end": 3115.16,
+              "word": " of"
+            },
+            {
+              "start": 3115.16,
+              "end": 3115.52,
+              "word": " alert"
+            },
+            {
+              "start": 3115.52,
+              "end": 3116.08,
+              "word": " mechanism"
+            },
+            {
+              "start": 3116.08,
+              "end": 3117.24,
+              "word": " to"
+            },
+            {
+              "start": 3117.24,
+              "end": 3117.78,
+              "word": " tell"
+            },
+            {
+              "start": 3117.78,
+              "end": 3117.98,
+              "word": " us"
+            },
+            {
+              "start": 3117.98,
+              "end": 3118.22,
+              "word": " that"
+            }
+          ]
+        },
+        {
+          "start": 3121.32,
+          "end": 3125.12,
+          "text": "i'm not aware of anything for this particular",
+          "avg_logprob": -0.3912809658050537,
+          "no_speech_prob": 0.3661535978317261,
+          "words": [
+            {
+              "start": 3121.32,
+              "end": 3121.8,
+              "word": " i'm"
+            },
+            {
+              "start": 3121.8,
+              "end": 3122.28,
+              "word": " not"
+            },
+            {
+              "start": 3122.28,
+              "end": 3124.06,
+              "word": " aware"
+            },
+            {
+              "start": 3124.06,
+              "end": 3124.28,
+              "word": " of"
+            },
+            {
+              "start": 3124.28,
+              "end": 3124.36,
+              "word": " anything"
+            },
+            {
+              "start": 3124.36,
+              "end": 3124.8,
+              "word": " for"
+            },
+            {
+              "start": 3124.8,
+              "end": 3124.94,
+              "word": " this"
+            },
+            {
+              "start": 3124.94,
+              "end": 3125.12,
+              "word": " particular"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:10:54Z"
+    },
+    "s46-recovery-060": {
+      "status": "COMPLETE",
+      "start": 3129.2,
+      "end": 3131.664,
+      "source_interval_ids": [
+        "gap-174"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3129.2,
+          "end": 3131.14,
+          "text": "If they put in a ticket, we go look at it.",
+          "avg_logprob": -0.28260053135454655,
+          "no_speech_prob": 0.032410282641649246,
+          "words": [
+            {
+              "start": 3129.2,
+              "end": 3129.28,
+              "word": " If"
+            },
+            {
+              "start": 3129.28,
+              "end": 3129.42,
+              "word": " they"
+            },
+            {
+              "start": 3129.42,
+              "end": 3129.86,
+              "word": " put"
+            },
+            {
+              "start": 3129.86,
+              "end": 3130.04,
+              "word": " in"
+            },
+            {
+              "start": 3130.04,
+              "end": 3130.14,
+              "word": " a"
+            },
+            {
+              "start": 3130.14,
+              "end": 3130.34,
+              "word": " ticket,"
+            },
+            {
+              "start": 3130.46,
+              "end": 3130.58,
+              "word": " we"
+            },
+            {
+              "start": 3130.58,
+              "end": 3130.72,
+              "word": " go"
+            },
+            {
+              "start": 3130.72,
+              "end": 3130.9,
+              "word": " look"
+            },
+            {
+              "start": 3130.9,
+              "end": 3131.08,
+              "word": " at"
+            },
+            {
+              "start": 3131.08,
+              "end": 3131.14,
+              "word": " it."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:11:11Z"
+    },
+    "s46-recovery-061": {
+      "status": "COMPLETE",
+      "start": 3140.12,
+      "end": 3145.15,
+      "source_interval_ids": [
+        "gap-176"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3140.12,
+          "end": 3144.08,
+          "text": "P&G don't have any of that. There are a few.",
+          "avg_logprob": -0.32434316476186115,
+          "no_speech_prob": 0.31815436482429504,
+          "words": [
+            {
+              "start": 3140.12,
+              "end": 3140.3,
+              "word": " P"
+            },
+            {
+              "start": 3140.3,
+              "end": 3140.66,
+              "word": "&G"
+            },
+            {
+              "start": 3140.66,
+              "end": 3141.38,
+              "word": " don't"
+            },
+            {
+              "start": 3141.38,
+              "end": 3141.56,
+              "word": " have"
+            },
+            {
+              "start": 3141.56,
+              "end": 3141.8,
+              "word": " any"
+            },
+            {
+              "start": 3141.8,
+              "end": 3141.94,
+              "word": " of"
+            },
+            {
+              "start": 3141.94,
+              "end": 3142.12,
+              "word": " that."
+            },
+            {
+              "start": 3143.18,
+              "end": 3143.54,
+              "word": " There"
+            },
+            {
+              "start": 3143.54,
+              "end": 3143.76,
+              "word": " are"
+            },
+            {
+              "start": 3143.76,
+              "end": 3143.84,
+              "word": " a"
+            },
+            {
+              "start": 3143.84,
+              "end": 3144.08,
+              "word": " few."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:11:28Z"
+    },
+    "s46-recovery-062": {
+      "status": "COMPLETE",
+      "start": 3195.85,
+      "end": 3199.984,
+      "source_interval_ids": [
+        "gap-181"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3195.85,
+          "end": 3199.31,
+          "text": "coming into the chute and what's leaving the chute, right?",
+          "avg_logprob": -0.3336855967839559,
+          "no_speech_prob": 0.05378859490156174,
+          "words": [
+            {
+              "start": 3195.85,
+              "end": 3196.09,
+              "word": " coming"
+            },
+            {
+              "start": 3196.09,
+              "end": 3196.33,
+              "word": " into"
+            },
+            {
+              "start": 3196.33,
+              "end": 3196.47,
+              "word": " the"
+            },
+            {
+              "start": 3196.47,
+              "end": 3196.75,
+              "word": " chute"
+            },
+            {
+              "start": 3196.75,
+              "end": 3196.89,
+              "word": " and"
+            },
+            {
+              "start": 3196.89,
+              "end": 3197.17,
+              "word": " what's"
+            },
+            {
+              "start": 3197.17,
+              "end": 3197.39,
+              "word": " leaving"
+            },
+            {
+              "start": 3197.39,
+              "end": 3197.63,
+              "word": " the"
+            },
+            {
+              "start": 3197.63,
+              "end": 3197.93,
+              "word": " chute,"
+            },
+            {
+              "start": 3197.93,
+              "end": 3199.31,
+              "word": " right?"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:11:46Z"
+    },
+    "s46-recovery-063": {
+      "status": "COMPLETE",
+      "start": 3253.9,
+      "end": 3258.75,
+      "source_interval_ids": [
+        "gap-186"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3253.9,
+          "end": 3258.16,
+          "text": "Making and this is when it finished making and then this was the original",
+          "avg_logprob": -0.38761626972871666,
+          "no_speech_prob": 0.5047213435173035,
+          "words": [
+            {
+              "start": 3253.9,
+              "end": 3254.44,
+              "word": " Making"
+            },
+            {
+              "start": 3254.44,
+              "end": 3254.62,
+              "word": " and"
+            },
+            {
+              "start": 3254.62,
+              "end": 3254.8,
+              "word": " this"
+            },
+            {
+              "start": 3254.8,
+              "end": 3254.92,
+              "word": " is"
+            },
+            {
+              "start": 3254.92,
+              "end": 3255.12,
+              "word": " when"
+            },
+            {
+              "start": 3255.12,
+              "end": 3255.22,
+              "word": " it"
+            },
+            {
+              "start": 3255.22,
+              "end": 3255.54,
+              "word": " finished"
+            },
+            {
+              "start": 3255.54,
+              "end": 3255.86,
+              "word": " making"
+            },
+            {
+              "start": 3255.86,
+              "end": 3257.14,
+              "word": " and"
+            },
+            {
+              "start": 3257.14,
+              "end": 3257.32,
+              "word": " then"
+            },
+            {
+              "start": 3257.32,
+              "end": 3257.52,
+              "word": " this"
+            },
+            {
+              "start": 3257.52,
+              "end": 3257.68,
+              "word": " was"
+            },
+            {
+              "start": 3257.68,
+              "end": 3257.82,
+              "word": " the"
+            },
+            {
+              "start": 3257.82,
+              "end": 3258.16,
+              "word": " original"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:12:04Z"
+    },
+    "s46-recovery-064": {
+      "status": "COMPLETE",
+      "start": 3327.73,
+      "end": 3332.08,
+      "source_interval_ids": [
+        "gap-192"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3327.73,
+          "end": 3331.41,
+          "text": "inform us. They just use the application. Does that make sense?",
+          "avg_logprob": -0.31985044479370117,
+          "no_speech_prob": 0.26075202226638794,
+          "words": [
+            {
+              "start": 3327.73,
+              "end": 3327.97,
+              "word": " inform"
+            },
+            {
+              "start": 3327.97,
+              "end": 3328.31,
+              "word": " us."
+            },
+            {
+              "start": 3328.49,
+              "end": 3328.87,
+              "word": " They"
+            },
+            {
+              "start": 3328.87,
+              "end": 3329.05,
+              "word": " just"
+            },
+            {
+              "start": 3329.05,
+              "end": 3329.25,
+              "word": " use"
+            },
+            {
+              "start": 3329.25,
+              "end": 3329.43,
+              "word": " the"
+            },
+            {
+              "start": 3329.43,
+              "end": 3329.69,
+              "word": " application."
+            },
+            {
+              "start": 3330.69,
+              "end": 3331.07,
+              "word": " Does"
+            },
+            {
+              "start": 3331.07,
+              "end": 3331.21,
+              "word": " that"
+            },
+            {
+              "start": 3331.21,
+              "end": 3331.29,
+              "word": " make"
+            },
+            {
+              "start": 3331.29,
+              "end": 3331.41,
+              "word": " sense?"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:12:22Z"
+    },
+    "s46-recovery-065": {
+      "status": "COMPLETE",
+      "start": 3351.82,
+      "end": 3356.66,
+      "source_interval_ids": [
+        "gap-195"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3351.82,
+          "end": 3356.64,
+          "text": "And Julie, if you're still here, when was the last time we...",
+          "avg_logprob": -0.21366516539925023,
+          "no_speech_prob": 0.21718032658100128,
+          "words": [
+            {
+              "start": 3351.82,
+              "end": 3352.36,
+              "word": " And"
+            },
+            {
+              "start": 3352.36,
+              "end": 3352.46,
+              "word": " Julie,"
+            },
+            {
+              "start": 3352.68,
+              "end": 3353.28,
+              "word": " if"
+            },
+            {
+              "start": 3353.28,
+              "end": 3353.42,
+              "word": " you're"
+            },
+            {
+              "start": 3353.42,
+              "end": 3353.6,
+              "word": " still"
+            },
+            {
+              "start": 3353.6,
+              "end": 3353.76,
+              "word": " here,"
+            },
+            {
+              "start": 3353.92,
+              "end": 3355.28,
+              "word": " when"
+            },
+            {
+              "start": 3355.28,
+              "end": 3355.54,
+              "word": " was"
+            },
+            {
+              "start": 3355.54,
+              "end": 3355.68,
+              "word": " the"
+            },
+            {
+              "start": 3355.68,
+              "end": 3356.04,
+              "word": " last"
+            },
+            {
+              "start": 3356.04,
+              "end": 3356.34,
+              "word": " time"
+            },
+            {
+              "start": 3356.34,
+              "end": 3356.64,
+              "word": " we..."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:12:39Z"
+    },
+    "s46-recovery-066": {
+      "status": "COMPLETE",
+      "start": 3367.41,
+      "end": 3371.28,
+      "source_interval_ids": [
+        "gap-197"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3367.41,
+          "end": 3371.05,
+          "text": "So it's literally been two years since we've had a ticket, if that gives you an idea.",
+          "avg_logprob": -0.22072900893787542,
+          "no_speech_prob": 0.09445422142744064,
+          "words": [
+            {
+              "start": 3367.41,
+              "end": 3367.51,
+              "word": " So"
+            },
+            {
+              "start": 3367.51,
+              "end": 3367.69,
+              "word": " it's"
+            },
+            {
+              "start": 3367.69,
+              "end": 3367.97,
+              "word": " literally"
+            },
+            {
+              "start": 3367.97,
+              "end": 3368.27,
+              "word": " been"
+            },
+            {
+              "start": 3368.27,
+              "end": 3368.47,
+              "word": " two"
+            },
+            {
+              "start": 3368.47,
+              "end": 3368.73,
+              "word": " years"
+            },
+            {
+              "start": 3368.73,
+              "end": 3368.95,
+              "word": " since"
+            },
+            {
+              "start": 3368.95,
+              "end": 3369.11,
+              "word": " we've"
+            },
+            {
+              "start": 3369.11,
+              "end": 3369.19,
+              "word": " had"
+            },
+            {
+              "start": 3369.19,
+              "end": 3369.23,
+              "word": " a"
+            },
+            {
+              "start": 3369.23,
+              "end": 3369.41,
+              "word": " ticket,"
+            },
+            {
+              "start": 3369.59,
+              "end": 3370.31,
+              "word": " if"
+            },
+            {
+              "start": 3370.31,
+              "end": 3370.45,
+              "word": " that"
+            },
+            {
+              "start": 3370.45,
+              "end": 3370.63,
+              "word": " gives"
+            },
+            {
+              "start": 3370.63,
+              "end": 3370.77,
+              "word": " you"
+            },
+            {
+              "start": 3370.77,
+              "end": 3370.89,
+              "word": " an"
+            },
+            {
+              "start": 3370.89,
+              "end": 3371.05,
+              "word": " idea."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:12:58Z"
+    },
+    "s46-recovery-067": {
+      "status": "COMPLETE",
+      "start": 3378.25,
+      "end": 3382.8,
+      "source_interval_ids": [
+        "gap-199"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3378.25,
+          "end": 3382.27,
+          "text": "are here to do is maintain that the application is accessible.",
+          "avg_logprob": -0.26901366710662844,
+          "no_speech_prob": 0.29174140095710754,
+          "words": [
+            {
+              "start": 3378.25,
+              "end": 3378.51,
+              "word": " are"
+            },
+            {
+              "start": 3378.51,
+              "end": 3378.97,
+              "word": " here"
+            },
+            {
+              "start": 3378.97,
+              "end": 3379.11,
+              "word": " to"
+            },
+            {
+              "start": 3379.11,
+              "end": 3379.29,
+              "word": " do"
+            },
+            {
+              "start": 3379.29,
+              "end": 3379.41,
+              "word": " is"
+            },
+            {
+              "start": 3379.41,
+              "end": 3379.67,
+              "word": " maintain"
+            },
+            {
+              "start": 3379.67,
+              "end": 3380.19,
+              "word": " that"
+            },
+            {
+              "start": 3380.19,
+              "end": 3381.21,
+              "word": " the"
+            },
+            {
+              "start": 3381.21,
+              "end": 3381.61,
+              "word": " application"
+            },
+            {
+              "start": 3381.61,
+              "end": 3381.99,
+              "word": " is"
+            },
+            {
+              "start": 3381.99,
+              "end": 3382.27,
+              "word": " accessible."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:13:14Z"
+    },
+    "s46-recovery-068": {
+      "status": "COMPLETE",
+      "start": 3398.16,
+      "end": 3399.344,
+      "source_interval_ids": [
+        "gap-201"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3398.16,
+          "end": 3398.78,
+          "text": "Any other questions?",
+          "avg_logprob": -0.5647747686931065,
+          "no_speech_prob": 0.010746419429779053,
+          "words": [
+            {
+              "start": 3398.16,
+              "end": 3398.38,
+              "word": " Any"
+            },
+            {
+              "start": 3398.38,
+              "end": 3398.56,
+              "word": " other"
+            },
+            {
+              "start": 3398.56,
+              "end": 3398.78,
+              "word": " questions?"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:13:29Z"
+    },
+    "s46-recovery-069": {
+      "status": "COMPLETE",
+      "start": 3410.0,
+      "end": 3414.06,
+      "source_interval_ids": [
+        "gap-202"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3410.0,
+          "end": 3411.54,
+          "text": "I think you might be able to do it.",
+          "avg_logprob": -0.7679032412442294,
+          "no_speech_prob": 0.5659099221229553,
+          "words": [
+            {
+              "start": 3410.0,
+              "end": 3410.16,
+              "word": " I"
+            },
+            {
+              "start": 3410.16,
+              "end": 3410.46,
+              "word": " think"
+            },
+            {
+              "start": 3410.46,
+              "end": 3410.62,
+              "word": " you"
+            },
+            {
+              "start": 3410.62,
+              "end": 3410.82,
+              "word": " might"
+            },
+            {
+              "start": 3410.82,
+              "end": 3411.0,
+              "word": " be"
+            },
+            {
+              "start": 3411.0,
+              "end": 3411.16,
+              "word": " able"
+            },
+            {
+              "start": 3411.16,
+              "end": 3411.36,
+              "word": " to"
+            },
+            {
+              "start": 3411.36,
+              "end": 3411.42,
+              "word": " do"
+            },
+            {
+              "start": 3411.42,
+              "end": 3411.54,
+              "word": " it."
+            }
+          ]
+        },
+        {
+          "start": 3412.26,
+          "end": 3412.6,
+          "text": "Okay.",
+          "avg_logprob": -0.7679032412442294,
+          "no_speech_prob": 0.5659099221229553,
+          "words": [
+            {
+              "start": 3412.26,
+              "end": 3412.6,
+              "word": " Okay."
+            }
+          ]
+        },
+        {
+          "start": 3413.44,
+          "end": 3413.96,
+          "text": "I think...",
+          "avg_logprob": -0.7679032412442294,
+          "no_speech_prob": 0.5659099221229553,
+          "words": [
+            {
+              "start": 3413.44,
+              "end": 3413.78,
+              "word": " I"
+            },
+            {
+              "start": 3413.78,
+              "end": 3413.96,
+              "word": " think..."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:13:47Z"
+    },
+    "s46-recovery-070": {
+      "status": "COMPLETE",
+      "start": 3433.74,
+      "end": 3439.26,
+      "source_interval_ids": [
+        "gap-205"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3433.74,
+          "end": 3438.88,
+          "text": "It was RTCIS for a specific site.",
+          "avg_logprob": -0.37992478333986723,
+          "no_speech_prob": 0.14480294287204742,
+          "words": [
+            {
+              "start": 3433.74,
+              "end": 3434.24,
+              "word": " It"
+            },
+            {
+              "start": 3434.24,
+              "end": 3434.6,
+              "word": " was"
+            },
+            {
+              "start": 3434.6,
+              "end": 3435.72,
+              "word": " RTCIS"
+            },
+            {
+              "start": 3435.72,
+              "end": 3437.64,
+              "word": " for"
+            },
+            {
+              "start": 3437.64,
+              "end": 3437.84,
+              "word": " a"
+            },
+            {
+              "start": 3437.84,
+              "end": 3438.52,
+              "word": " specific"
+            },
+            {
+              "start": 3438.52,
+              "end": 3438.88,
+              "word": " site."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:14:02Z"
+    },
+    "s46-recovery-071": {
+      "status": "COMPLETE",
+      "start": 3440.816,
+      "end": 3444.58,
+      "source_interval_ids": [
+        "gap-206"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3440.816,
+          "end": 3442.256,
+          "text": "I think it was this one, to be honest.",
+          "avg_logprob": -0.40562391132116316,
+          "no_speech_prob": 0.2535093128681183,
+          "words": [
+            {
+              "start": 3440.816,
+              "end": 3440.996,
+              "word": " I"
+            },
+            {
+              "start": 3440.996,
+              "end": 3441.076,
+              "word": " think"
+            },
+            {
+              "start": 3441.076,
+              "end": 3441.156,
+              "word": " it"
+            },
+            {
+              "start": 3441.156,
+              "end": 3441.216,
+              "word": " was"
+            },
+            {
+              "start": 3441.216,
+              "end": 3441.336,
+              "word": " this"
+            },
+            {
+              "start": 3441.336,
+              "end": 3441.476,
+              "word": " one,"
+            },
+            {
+              "start": 3441.516,
+              "end": 3441.956,
+              "word": " to"
+            },
+            {
+              "start": 3441.956,
+              "end": 3442.096,
+              "word": " be"
+            },
+            {
+              "start": 3442.096,
+              "end": 3442.256,
+              "word": " honest."
+            }
+          ]
+        },
+        {
+          "start": 3442.916,
+          "end": 3443.476,
+          "text": "Um, Julie?",
+          "avg_logprob": -0.40562391132116316,
+          "no_speech_prob": 0.2535093128681183,
+          "words": [
+            {
+              "start": 3442.916,
+              "end": 3443.196,
+              "word": " Um,"
+            },
+            {
+              "start": 3443.196,
+              "end": 3443.476,
+              "word": " Julie?"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:14:21Z"
+    },
+    "s46-recovery-072": {
+      "status": "COMPLETE",
+      "start": 3456.84,
+      "end": 3461.04,
+      "source_interval_ids": [
+        "gap-207"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3456.84,
+          "end": 3458.74,
+          "text": "any longer so I'm assuming it's dead.",
+          "avg_logprob": -0.44087425562051624,
+          "no_speech_prob": 0.09421315789222717,
+          "words": [
+            {
+              "start": 3456.84,
+              "end": 3457.0,
+              "word": " any"
+            },
+            {
+              "start": 3457.0,
+              "end": 3457.24,
+              "word": " longer"
+            },
+            {
+              "start": 3457.24,
+              "end": 3457.52,
+              "word": " so"
+            },
+            {
+              "start": 3457.52,
+              "end": 3458.02,
+              "word": " I'm"
+            },
+            {
+              "start": 3458.02,
+              "end": 3458.3,
+              "word": " assuming"
+            },
+            {
+              "start": 3458.3,
+              "end": 3458.58,
+              "word": " it's"
+            },
+            {
+              "start": 3458.58,
+              "end": 3458.74,
+              "word": " dead."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:14:37Z"
+    },
+    "s46-recovery-073": {
+      "status": "COMPLETE",
+      "start": 3485.75,
+      "end": 3489.776,
+      "source_interval_ids": [
+        "gap-209"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3485.75,
+          "end": 3487.75,
+          "text": "than for a twirled side of the interface.",
+          "avg_logprob": -0.2588680407830647,
+          "no_speech_prob": 0.06945151835680008,
+          "words": [
+            {
+              "start": 3485.75,
+              "end": 3485.95,
+              "word": " than"
+            },
+            {
+              "start": 3485.95,
+              "end": 3486.23,
+              "word": " for"
+            },
+            {
+              "start": 3486.23,
+              "end": 3486.41,
+              "word": " a"
+            },
+            {
+              "start": 3486.41,
+              "end": 3486.91,
+              "word": " twirled"
+            },
+            {
+              "start": 3486.91,
+              "end": 3487.19,
+              "word": " side"
+            },
+            {
+              "start": 3487.19,
+              "end": 3487.35,
+              "word": " of"
+            },
+            {
+              "start": 3487.35,
+              "end": 3487.43,
+              "word": " the"
+            },
+            {
+              "start": 3487.43,
+              "end": 3487.75,
+              "word": " interface."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:14:53Z"
+    },
+    "s46-recovery-074": {
+      "status": "COMPLETE",
+      "start": 3491.85,
+      "end": 3498.384,
+      "source_interval_ids": [
+        "gap-210",
+        "gap-211"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3491.85,
+          "end": 3496.31,
+          "text": "Again, they haven't put a ticket into two years, so if that gives you an idea,",
+          "avg_logprob": -0.23336566578258167,
+          "no_speech_prob": 0.03236857429146767,
+          "words": [
+            {
+              "start": 3491.85,
+              "end": 3492.05,
+              "word": " Again,"
+            },
+            {
+              "start": 3492.05,
+              "end": 3492.31,
+              "word": " they"
+            },
+            {
+              "start": 3492.31,
+              "end": 3492.53,
+              "word": " haven't"
+            },
+            {
+              "start": 3492.53,
+              "end": 3492.61,
+              "word": " put"
+            },
+            {
+              "start": 3492.61,
+              "end": 3492.71,
+              "word": " a"
+            },
+            {
+              "start": 3492.71,
+              "end": 3492.89,
+              "word": " ticket"
+            },
+            {
+              "start": 3492.89,
+              "end": 3493.09,
+              "word": " into"
+            },
+            {
+              "start": 3493.09,
+              "end": 3493.31,
+              "word": " two"
+            },
+            {
+              "start": 3493.31,
+              "end": 3493.53,
+              "word": " years,"
+            },
+            {
+              "start": 3493.65,
+              "end": 3493.83,
+              "word": " so"
+            },
+            {
+              "start": 3493.83,
+              "end": 3495.37,
+              "word": " if"
+            },
+            {
+              "start": 3495.37,
+              "end": 3495.57,
+              "word": " that"
+            },
+            {
+              "start": 3495.57,
+              "end": 3495.79,
+              "word": " gives"
+            },
+            {
+              "start": 3495.79,
+              "end": 3495.95,
+              "word": " you"
+            },
+            {
+              "start": 3495.95,
+              "end": 3496.07,
+              "word": " an"
+            },
+            {
+              "start": 3496.07,
+              "end": 3496.31,
+              "word": " idea,"
+            }
+          ]
+        },
+        {
+          "start": 3496.41,
+          "end": 3497.61,
+          "text": "it's been a pretty solid application.",
+          "avg_logprob": -0.23336566578258167,
+          "no_speech_prob": 0.03236857429146767,
+          "words": [
+            {
+              "start": 3496.41,
+              "end": 3496.53,
+              "word": " it's"
+            },
+            {
+              "start": 3496.53,
+              "end": 3496.67,
+              "word": " been"
+            },
+            {
+              "start": 3496.67,
+              "end": 3496.77,
+              "word": " a"
+            },
+            {
+              "start": 3496.77,
+              "end": 3496.93,
+              "word": " pretty"
+            },
+            {
+              "start": 3496.93,
+              "end": 3497.31,
+              "word": " solid"
+            },
+            {
+              "start": 3497.31,
+              "end": 3497.61,
+              "word": " application."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:15:13Z"
+    },
+    "s46-recovery-075": {
+      "status": "COMPLETE",
+      "start": 3525.13,
+      "end": 3535.14,
+      "source_interval_ids": [
+        "gap-213",
+        "gap-214"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3525.13,
+          "end": 3532.05,
+          "text": "Right? For that, a.k.a. Azure information is not shared in that, Azure-related.",
+          "avg_logprob": -0.5207480650681716,
+          "no_speech_prob": 0.1733870953321457,
+          "words": [
+            {
+              "start": 3525.13,
+              "end": 3525.35,
+              "word": " Right?"
+            },
+            {
+              "start": 3525.75,
+              "end": 3526.25,
+              "word": " For"
+            },
+            {
+              "start": 3526.25,
+              "end": 3526.67,
+              "word": " that,"
+            },
+            {
+              "start": 3526.67,
+              "end": 3526.79,
+              "word": " a"
+            },
+            {
+              "start": 3526.79,
+              "end": 3526.97,
+              "word": ".k"
+            },
+            {
+              "start": 3526.97,
+              "end": 3527.07,
+              "word": ".a."
+            },
+            {
+              "start": 3527.73,
+              "end": 3528.23,
+              "word": " Azure"
+            },
+            {
+              "start": 3528.23,
+              "end": 3529.51,
+              "word": " information"
+            },
+            {
+              "start": 3529.51,
+              "end": 3529.87,
+              "word": " is"
+            },
+            {
+              "start": 3529.87,
+              "end": 3530.07,
+              "word": " not"
+            },
+            {
+              "start": 3530.07,
+              "end": 3530.45,
+              "word": " shared"
+            },
+            {
+              "start": 3530.45,
+              "end": 3530.71,
+              "word": " in"
+            },
+            {
+              "start": 3530.71,
+              "end": 3530.83,
+              "word": " that,"
+            },
+            {
+              "start": 3531.09,
+              "end": 3531.61,
+              "word": " Azure"
+            },
+            {
+              "start": 3531.61,
+              "end": 3532.05,
+              "word": "-related."
+            }
+          ]
+        },
+        {
+          "start": 3533.09,
+          "end": 3534.21,
+          "text": "So if you can...",
+          "avg_logprob": -0.5207480650681716,
+          "no_speech_prob": 0.1733870953321457,
+          "words": [
+            {
+              "start": 3533.09,
+              "end": 3533.59,
+              "word": " So"
+            },
+            {
+              "start": 3533.59,
+              "end": 3533.83,
+              "word": " if"
+            },
+            {
+              "start": 3533.83,
+              "end": 3533.95,
+              "word": " you"
+            },
+            {
+              "start": 3533.95,
+              "end": 3534.21,
+              "word": " can..."
+            }
+          ]
+        },
+        {
+          "start": 3534.21,
+          "end": 3534.79,
+          "text": "Let me check.",
+          "avg_logprob": -0.5207480650681716,
+          "no_speech_prob": 0.1733870953321457,
+          "words": [
+            {
+              "start": 3534.21,
+              "end": 3534.35,
+              "word": " Let"
+            },
+            {
+              "start": 3534.35,
+              "end": 3534.59,
+              "word": " me"
+            },
+            {
+              "start": 3534.59,
+              "end": 3534.79,
+              "word": " check."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:15:34Z"
+    },
+    "s46-recovery-076": {
+      "status": "COMPLETE",
+      "start": 3542.48,
+      "end": 3552.2,
+      "source_interval_ids": [
+        "gap-215",
+        "gap-216"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3542.48,
+          "end": 3548.3,
+          "text": "So can you please share this as early as possible because the team is waiting for that.",
+          "avg_logprob": -0.4317010821718158,
+          "no_speech_prob": 0.20583443343639374,
+          "words": [
+            {
+              "start": 3542.48,
+              "end": 3542.5,
+              "word": " So"
+            },
+            {
+              "start": 3542.5,
+              "end": 3542.6,
+              "word": " can"
+            },
+            {
+              "start": 3542.6,
+              "end": 3542.76,
+              "word": " you"
+            },
+            {
+              "start": 3542.76,
+              "end": 3543.02,
+              "word": " please"
+            },
+            {
+              "start": 3543.02,
+              "end": 3544.22,
+              "word": " share"
+            },
+            {
+              "start": 3544.22,
+              "end": 3544.46,
+              "word": " this"
+            },
+            {
+              "start": 3544.46,
+              "end": 3545.18,
+              "word": " as"
+            },
+            {
+              "start": 3545.18,
+              "end": 3546.44,
+              "word": " early"
+            },
+            {
+              "start": 3546.44,
+              "end": 3546.58,
+              "word": " as"
+            },
+            {
+              "start": 3546.58,
+              "end": 3546.8,
+              "word": " possible"
+            },
+            {
+              "start": 3546.8,
+              "end": 3547.18,
+              "word": " because"
+            },
+            {
+              "start": 3547.18,
+              "end": 3547.26,
+              "word": " the"
+            },
+            {
+              "start": 3547.26,
+              "end": 3547.48,
+              "word": " team"
+            },
+            {
+              "start": 3547.48,
+              "end": 3547.6,
+              "word": " is"
+            },
+            {
+              "start": 3547.6,
+              "end": 3547.8,
+              "word": " waiting"
+            },
+            {
+              "start": 3547.8,
+              "end": 3548.06,
+              "word": " for"
+            },
+            {
+              "start": 3548.06,
+              "end": 3548.3,
+              "word": " that."
+            }
+          ]
+        },
+        {
+          "start": 3550.16,
+          "end": 3552.18,
+          "text": "I don't have the contact names for this.",
+          "avg_logprob": -0.4317010821718158,
+          "no_speech_prob": 0.20583443343639374,
+          "words": [
+            {
+              "start": 3550.16,
+              "end": 3550.62,
+              "word": " I"
+            },
+            {
+              "start": 3550.62,
+              "end": 3550.92,
+              "word": " don't"
+            },
+            {
+              "start": 3550.92,
+              "end": 3551.04,
+              "word": " have"
+            },
+            {
+              "start": 3551.04,
+              "end": 3551.18,
+              "word": " the"
+            },
+            {
+              "start": 3551.18,
+              "end": 3551.48,
+              "word": " contact"
+            },
+            {
+              "start": 3551.48,
+              "end": 3551.8,
+              "word": " names"
+            },
+            {
+              "start": 3551.8,
+              "end": 3552.02,
+              "word": " for"
+            },
+            {
+              "start": 3552.02,
+              "end": 3552.18,
+              "word": " this."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:15:54Z"
+    },
+    "s46-recovery-077": {
+      "status": "COMPLETE",
+      "start": 3559.62,
+      "end": 3565.63,
+      "source_interval_ids": [
+        "gap-217"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3559.62,
+          "end": 3565.06,
+          "text": "So could they, I suppose, at CMDB, but I don't have.",
+          "avg_logprob": -0.3487066373229027,
+          "no_speech_prob": 0.14755137264728546,
+          "words": [
+            {
+              "start": 3559.62,
+              "end": 3560.0,
+              "word": " So"
+            },
+            {
+              "start": 3560.0,
+              "end": 3560.1,
+              "word": " could"
+            },
+            {
+              "start": 3560.1,
+              "end": 3560.28,
+              "word": " they,"
+            },
+            {
+              "start": 3560.32,
+              "end": 3560.46,
+              "word": " I"
+            },
+            {
+              "start": 3560.46,
+              "end": 3560.62,
+              "word": " suppose,"
+            },
+            {
+              "start": 3560.8,
+              "end": 3561.04,
+              "word": " at"
+            },
+            {
+              "start": 3561.04,
+              "end": 3561.58,
+              "word": " CMDB,"
+            },
+            {
+              "start": 3561.74,
+              "end": 3563.86,
+              "word": " but"
+            },
+            {
+              "start": 3563.86,
+              "end": 3564.48,
+              "word": " I"
+            },
+            {
+              "start": 3564.48,
+              "end": 3564.88,
+              "word": " don't"
+            },
+            {
+              "start": 3564.88,
+              "end": 3565.06,
+              "word": " have."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:16:12Z"
+    },
+    "s46-recovery-078": {
+      "status": "COMPLETE",
+      "start": 3590.224,
+      "end": 3593.808,
+      "source_interval_ids": [
+        "gap-223",
+        "gap-224"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3590.224,
+          "end": 3593.004,
+          "text": "Great. Anything else from the company?",
+          "avg_logprob": -0.6159797039898959,
+          "no_speech_prob": 0.12107452005147934,
+          "words": [
+            {
+              "start": 3590.224,
+              "end": 3590.604,
+              "word": " Great."
+            },
+            {
+              "start": 3591.544,
+              "end": 3591.984,
+              "word": " Anything"
+            },
+            {
+              "start": 3591.984,
+              "end": 3592.384,
+              "word": " else"
+            },
+            {
+              "start": 3592.384,
+              "end": 3592.584,
+              "word": " from"
+            },
+            {
+              "start": 3592.584,
+              "end": 3592.764,
+              "word": " the"
+            },
+            {
+              "start": 3592.764,
+              "end": 3593.004,
+              "word": " company?"
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:16:29Z"
+    },
+    "s46-recovery-079": {
+      "status": "COMPLETE",
+      "start": 3602.34,
+      "end": 3606.86,
+      "source_interval_ids": [
+        "gap-226"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3602.34,
+          "end": 3603.82,
+          "text": "Thank you, everyone. Thank you, Jimmy.",
+          "avg_logprob": -0.4859356498718262,
+          "no_speech_prob": 0.04827385023236275,
+          "words": [
+            {
+              "start": 3602.34,
+              "end": 3602.5,
+              "word": " Thank"
+            },
+            {
+              "start": 3602.5,
+              "end": 3602.64,
+              "word": " you,"
+            },
+            {
+              "start": 3602.64,
+              "end": 3602.82,
+              "word": " everyone."
+            },
+            {
+              "start": 3603.18,
+              "end": 3603.5,
+              "word": " Thank"
+            },
+            {
+              "start": 3603.5,
+              "end": 3603.64,
+              "word": " you,"
+            },
+            {
+              "start": 3603.74,
+              "end": 3603.82,
+              "word": " Jimmy."
+            }
+          ]
+        },
+        {
+          "start": 3604.68,
+          "end": 3605.48,
+          "text": "Have a good day.",
+          "avg_logprob": -0.4859356498718262,
+          "no_speech_prob": 0.04827385023236275,
+          "words": [
+            {
+              "start": 3604.68,
+              "end": 3605.0,
+              "word": " Have"
+            },
+            {
+              "start": 3605.0,
+              "end": 3605.22,
+              "word": " a"
+            },
+            {
+              "start": 3605.22,
+              "end": 3605.38,
+              "word": " good"
+            },
+            {
+              "start": 3605.38,
+              "end": 3605.48,
+              "word": " day."
+            }
+          ]
+        },
+        {
+          "start": 3605.52,
+          "end": 3605.96,
+          "text": "No problem.",
+          "avg_logprob": -0.4859356498718262,
+          "no_speech_prob": 0.04827385023236275,
+          "words": [
+            {
+              "start": 3605.52,
+              "end": 3605.58,
+              "word": " No"
+            },
+            {
+              "start": 3605.58,
+              "end": 3605.96,
+              "word": " problem."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:16:49Z"
+    },
+    "s46-recovery-extra-102": {
+      "status": "COMPLETE",
+      "start": 2083.088,
+      "end": 2088.528,
+      "source_interval_ids": [
+        "gap-102"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 2083.088,
+          "end": 2085.828,
+          "text": "Yeah, what does it mean by N-T-I-D-I-T-B-R-O-U-T-K-I-T?",
+          "avg_logprob": -0.3118569307467517,
+          "no_speech_prob": 0.13734716176986694,
+          "words": [
+            {
+              "start": 2083.088,
+              "end": 2083.568,
+              "word": " Yeah,"
+            },
+            {
+              "start": 2083.568,
+              "end": 2083.828,
+              "word": " what"
+            },
+            {
+              "start": 2083.828,
+              "end": 2084.108,
+              "word": " does"
+            },
+            {
+              "start": 2084.108,
+              "end": 2084.128,
+              "word": " it"
+            },
+            {
+              "start": 2084.128,
+              "end": 2084.288,
+              "word": " mean"
+            },
+            {
+              "start": 2084.288,
+              "end": 2084.428,
+              "word": " by"
+            },
+            {
+              "start": 2084.428,
+              "end": 2084.688,
+              "word": " N"
+            },
+            {
+              "start": 2084.688,
+              "end": 2084.848,
+              "word": "-T"
+            },
+            {
+              "start": 2084.848,
+              "end": 2084.968,
+              "word": "-I"
+            },
+            {
+              "start": 2084.968,
+              "end": 2085.088,
+              "word": "-D"
+            },
+            {
+              "start": 2085.088,
+              "end": 2085.208,
+              "word": "-I"
+            },
+            {
+              "start": 2085.208,
+              "end": 2085.308,
+              "word": "-T"
+            },
+            {
+              "start": 2085.308,
+              "end": 2085.368,
+              "word": "-B"
+            },
+            {
+              "start": 2085.368,
+              "end": 2085.528,
+              "word": "-R"
+            },
+            {
+              "start": 2085.528,
+              "end": 2085.548,
+              "word": "-O"
+            },
+            {
+              "start": 2085.548,
+              "end": 2085.588,
+              "word": "-U"
+            },
+            {
+              "start": 2085.588,
+              "end": 2085.608,
+              "word": "-T"
+            },
+            {
+              "start": 2085.608,
+              "end": 2085.688,
+              "word": "-K"
+            },
+            {
+              "start": 2085.688,
+              "end": 2085.788,
+              "word": "-I"
+            },
+            {
+              "start": 2085.788,
+              "end": 2085.828,
+              "word": "-T?"
+            }
+          ]
+        },
+        {
+          "start": 2087.028,
+          "end": 2088.408,
+          "text": "N-T-I-D-I-T-B-R-O-U-T-K-I-T.",
+          "avg_logprob": -0.3118569307467517,
+          "no_speech_prob": 0.13734716176986694,
+          "words": [
+            {
+              "start": 2087.028,
+              "end": 2087.268,
+              "word": " N"
+            },
+            {
+              "start": 2087.268,
+              "end": 2087.508,
+              "word": "-T"
+            },
+            {
+              "start": 2087.508,
+              "end": 2087.728,
+              "word": "-I"
+            },
+            {
+              "start": 2087.728,
+              "end": 2087.928,
+              "word": "-D"
+            },
+            {
+              "start": 2087.928,
+              "end": 2088.048,
+              "word": "-I"
+            },
+            {
+              "start": 2088.048,
+              "end": 2088.168,
+              "word": "-T"
+            },
+            {
+              "start": 2088.168,
+              "end": 2088.288,
+              "word": "-B"
+            },
+            {
+              "start": 2088.288,
+              "end": 2088.408,
+              "word": "-R"
+            },
+            {
+              "start": 2088.408,
+              "end": 2088.408,
+              "word": "-O"
+            },
+            {
+              "start": 2088.408,
+              "end": 2088.408,
+              "word": "-U"
+            },
+            {
+              "start": 2088.408,
+              "end": 2088.408,
+              "word": "-T"
+            },
+            {
+              "start": 2088.408,
+              "end": 2088.408,
+              "word": "-K"
+            },
+            {
+              "start": 2088.408,
+              "end": 2088.408,
+              "word": "-I"
+            },
+            {
+              "start": 2088.408,
+              "end": 2088.408,
+              "word": "-T."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:19:13Z"
+    },
+    "s46-recovery-extra-212": {
+      "status": "COMPLETE",
+      "start": 3517.31,
+      "end": 3521.93,
+      "source_interval_ids": [
+        "gap-212"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3517.31,
+          "end": 3519.23,
+          "text": "with bottoming your Sherpa inside?",
+          "avg_logprob": -0.7866987931100946,
+          "no_speech_prob": 0.5966755747795105,
+          "words": [
+            {
+              "start": 3517.31,
+              "end": 3517.81,
+              "word": " with"
+            },
+            {
+              "start": 3517.81,
+              "end": 3518.31,
+              "word": " bottoming"
+            },
+            {
+              "start": 3518.31,
+              "end": 3518.51,
+              "word": " your"
+            },
+            {
+              "start": 3518.51,
+              "end": 3519.05,
+              "word": " Sherpa"
+            },
+            {
+              "start": 3519.05,
+              "end": 3519.23,
+              "word": " inside?"
+            }
+          ]
+        },
+        {
+          "start": 3520.31,
+          "end": 3521.05,
+          "text": "Yes, yes, please.",
+          "avg_logprob": -0.7866987931100946,
+          "no_speech_prob": 0.5966755747795105,
+          "words": [
+            {
+              "start": 3520.11,
+              "end": 3520.43,
+              "word": " Yes,"
+            },
+            {
+              "start": 3520.45,
+              "end": 3520.77,
+              "word": " yes,"
+            },
+            {
+              "start": 3520.77,
+              "end": 3521.05,
+              "word": " please."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:19:30Z"
+    },
+    "s46-recovery-extra-220": {
+      "status": "COMPLETE",
+      "start": 3576.35,
+      "end": 3579.024,
+      "source_interval_ids": [
+        "gap-220"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3576.35,
+          "end": 3577.97,
+          "text": "Those are them for me and I'll try to find what I can.",
+          "avg_logprob": -0.4903212984402974,
+          "no_speech_prob": 0.12949146330356598,
+          "words": [
+            {
+              "start": 3576.35,
+              "end": 3576.49,
+              "word": " Those"
+            },
+            {
+              "start": 3576.49,
+              "end": 3576.49,
+              "word": " are"
+            },
+            {
+              "start": 3576.49,
+              "end": 3576.55,
+              "word": " them"
+            },
+            {
+              "start": 3576.55,
+              "end": 3576.71,
+              "word": " for"
+            },
+            {
+              "start": 3576.71,
+              "end": 3576.87,
+              "word": " me"
+            },
+            {
+              "start": 3576.87,
+              "end": 3577.01,
+              "word": " and"
+            },
+            {
+              "start": 3577.01,
+              "end": 3577.15,
+              "word": " I'll"
+            },
+            {
+              "start": 3577.15,
+              "end": 3577.25,
+              "word": " try"
+            },
+            {
+              "start": 3577.25,
+              "end": 3577.37,
+              "word": " to"
+            },
+            {
+              "start": 3577.37,
+              "end": 3577.57,
+              "word": " find"
+            },
+            {
+              "start": 3577.57,
+              "end": 3577.73,
+              "word": " what"
+            },
+            {
+              "start": 3577.73,
+              "end": 3577.83,
+              "word": " I"
+            },
+            {
+              "start": 3577.83,
+              "end": 3577.97,
+              "word": " can."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:19:47Z"
+    },
+    "s46-recovery-supplemental-3443": {
+      "status": "COMPLETE",
+      "start": 3441.68,
+      "end": 3450.6,
+      "source_interval_ids": [
+        "prior-recovery-3443"
+      ],
+      "language": "en",
+      "language_probability": 1,
+      "segments": [
+        {
+          "start": 3441.68,
+          "end": 3442.3,
+          "text": "To be honest.",
+          "avg_logprob": -0.4572499646080865,
+          "no_speech_prob": 0.19998429715633392,
+          "words": [
+            {
+              "start": 3441.68,
+              "end": 3441.94,
+              "word": " To"
+            },
+            {
+              "start": 3441.94,
+              "end": 3442.1,
+              "word": " be"
+            },
+            {
+              "start": 3442.1,
+              "end": 3442.3,
+              "word": " honest."
+            }
+          ]
+        },
+        {
+          "start": 3443.06,
+          "end": 3443.38,
+          "text": "Julie?",
+          "avg_logprob": -0.4572499646080865,
+          "no_speech_prob": 0.19998429715633392,
+          "words": [
+            {
+              "start": 3443.06,
+              "end": 3443.38,
+              "word": " Julie?"
+            }
+          ]
+        },
+        {
+          "start": 3444.54,
+          "end": 3446.74,
+          "text": "Yes, I've been for once, but I can't get it.",
+          "avg_logprob": -0.4572499646080865,
+          "no_speech_prob": 0.19998429715633392,
+          "words": [
+            {
+              "start": 3444.54,
+              "end": 3444.86,
+              "word": " Yes,"
+            },
+            {
+              "start": 3444.86,
+              "end": 3445.12,
+              "word": " I've"
+            },
+            {
+              "start": 3445.12,
+              "end": 3445.36,
+              "word": " been"
+            },
+            {
+              "start": 3445.36,
+              "end": 3445.58,
+              "word": " for"
+            },
+            {
+              "start": 3445.58,
+              "end": 3445.94,
+              "word": " once,"
+            },
+            {
+              "start": 3445.98,
+              "end": 3446.14,
+              "word": " but"
+            },
+            {
+              "start": 3446.14,
+              "end": 3446.26,
+              "word": " I"
+            },
+            {
+              "start": 3446.26,
+              "end": 3446.6,
+              "word": " can't"
+            },
+            {
+              "start": 3446.6,
+              "end": 3446.66,
+              "word": " get"
+            },
+            {
+              "start": 3446.66,
+              "end": 3446.74,
+              "word": " it."
+            }
+          ]
+        },
+        {
+          "start": 3448.84,
+          "end": 3450.42,
+          "text": "She wouldn't have to worry about that one, I don't think.",
+          "avg_logprob": -0.4572499646080865,
+          "no_speech_prob": 0.19998429715633392,
+          "words": [
+            {
+              "start": 3448.84,
+              "end": 3449.16,
+              "word": " She"
+            },
+            {
+              "start": 3449.16,
+              "end": 3449.36,
+              "word": " wouldn't"
+            },
+            {
+              "start": 3449.36,
+              "end": 3449.44,
+              "word": " have"
+            },
+            {
+              "start": 3449.44,
+              "end": 3449.54,
+              "word": " to"
+            },
+            {
+              "start": 3449.54,
+              "end": 3449.68,
+              "word": " worry"
+            },
+            {
+              "start": 3449.68,
+              "end": 3449.82,
+              "word": " about"
+            },
+            {
+              "start": 3449.82,
+              "end": 3449.98,
+              "word": " that"
+            },
+            {
+              "start": 3449.98,
+              "end": 3450.1,
+              "word": " one,"
+            },
+            {
+              "start": 3450.16,
+              "end": 3450.24,
+              "word": " I"
+            },
+            {
+              "start": 3450.24,
+              "end": 3450.34,
+              "word": " don't"
+            },
+            {
+              "start": 3450.34,
+              "end": 3450.42,
+              "word": " think."
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T03:22:33Z"
+    }
+  },
+  "completed_count": 83,
+  "last_window": "s46-recovery-supplemental-3443",
+  "memory_available_gb": 2.05
+}

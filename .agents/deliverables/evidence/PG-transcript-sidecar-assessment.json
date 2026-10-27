@@ -16,7 +16,8 @@
   "transcripts_unassessed": 0,
   "actual_missing": 8,
   "found_under_alias": 0,
-  "found_by_provenance": 12,
+  "found_by_provenance": 1,
+  "database_corroborated_transcript_matches": 12,
   "ambiguous_match": 0,
   "corrupt_or_unusable": 0,
   "records": [
@@ -275,7 +276,7 @@
         "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json"
       ],
       "MEDIA_STATE": "VALID",
-      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED_DIVERGENT_COPIES",
       "TRANSCRIPT_CANONICAL_PATH": null,
       "TRANSCRIPT_SOURCE_PATHS": [
         "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
@@ -295,8 +296,8 @@
           "segments": 647
         }
       ],
-      "TRANSCRIPT_FILE_SHA256": "52edeb9df730b492a3db3aa0448cc17797850c7b779b05d8b47b6ee022b8944d",
-      "TRANSCRIPT_CONTENT_HASH": "6f6c0e1cf4445bbf973d16ee67f535e34a69e0b31352f065d6406faad540185d",
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
       "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
         "AMBIGUOUS",
         "DUPLICATE_DIVERGENT"
@@ -368,7 +369,7 @@
         "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json"
       ],
       "MEDIA_STATE": "VALID",
-      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED_DIVERGENT_COPIES",
       "TRANSCRIPT_CANONICAL_PATH": null,
       "TRANSCRIPT_SOURCE_PATHS": [
         "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
@@ -388,8 +389,8 @@
           "segments": 329
         }
       ],
-      "TRANSCRIPT_FILE_SHA256": "e291a19ad5846e36036278502550dce7f34d96f0aafbae55b112e90f2dccf097",
-      "TRANSCRIPT_CONTENT_HASH": "5b9ec2ed73a4685e8b1c6e722c6d8cdde93b7a817226c9489b3ce626458af391",
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
       "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
         "AMBIGUOUS",
         "DUPLICATE_DIVERGENT"
@@ -426,7 +427,7 @@
         "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json"
       ],
       "MEDIA_STATE": "VALID",
-      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED_DIVERGENT_COPIES",
       "TRANSCRIPT_CANONICAL_PATH": null,
       "TRANSCRIPT_SOURCE_PATHS": [
         "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
@@ -446,8 +447,8 @@
           "segments": 627
         }
       ],
-      "TRANSCRIPT_FILE_SHA256": "bc75e22baae7e515a34c68e4eb042f8c9750ec028252e5c38bd18de15d579783",
-      "TRANSCRIPT_CONTENT_HASH": "b5a53bf1de686fefafd5b222317eeadf1750d5666ee742a9dc72ab6c5ed07d06",
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
       "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
         "AMBIGUOUS",
         "DUPLICATE_DIVERGENT"
@@ -874,14 +875,18 @@
       "TRANSCRIPT_START": 149.49,
       "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3612.76,
       "MEDIA_COVERAGE": 99.83,
-      "SPEECH_COVERAGE": null,
-      "MEANINGFUL_UNCOVERED_SPEECH": 93.74,
+      "SPEECH_COVERAGE": 98.85,
+      "MEANINGFUL_UNCOVERED_SPEECH": 0.768,
       "INTERNAL_GAPS": [],
       "FINAL_GAP": 6.167,
       "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
       "MATCH_CONFIDENCE": "HIGH",
       "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
-      "TRANSCRIPT_STATE": "NEEDS_REVIEW"
+      "TRANSCRIPT_STATE": "NEEDS_REVIEW",
+      "SPEECH_QUALITY_GATE": "NEEDS_REVIEW",
+      "SPEECH_COVERAGE_BASIS": "VAD speech after boundary exclusion, neighbor/context recovery and supplemental candidate; canonical transcript unchanged",
+      "LOW_CONFIDENCE_REVIEW_SECONDS": 5.73,
+      "RECONCILED_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_reconciled_v1_segments.json"
     },
     {
       "MEDIA_ID": "pg-611c4b9e32914de6",
@@ -1017,5 +1022,14 @@
       "TRANSCRIPT_STATE": "PARTIAL"
     }
   ],
-  "physical_sidecars_discovered_all_projects": 92
+  "physical_sidecars_discovered_all_projects": 92,
+  "reclassified_previous_exact_name_misses": {
+    "prior_count": 9,
+    "actually_missing": 8,
+    "found_under_alias": 0,
+    "found_by_provenance": 1,
+    "ambiguous": 0,
+    "corrupt_or_unusable": 0,
+    "provenance_example": "Session 7 source audio path in processing DB"
+  }
 }

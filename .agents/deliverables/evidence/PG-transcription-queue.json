@@ -152,7 +152,7 @@
       "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
       "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "next_action": "3 major VAD windows reviewed; candidates duplicate neighboring transcript or courtesy-only. Audit remaining VAD coverage before marking source complete.",
       "transcript_state": "PARTIAL",
       "lock": "IDLE"
     },
@@ -160,10 +160,16 @@
       "media_id": "pg-09eb7fdd89877b64",
       "video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
       "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json",
-      "state": "PROCESSING",
-      "next_action": "resume large-v3 contextual recovery; 23/79 windows already checkpointed",
+      "state": "NEEDS_REVIEW",
+      "next_action": "review source audio for gap-062 (0.810s) and prior-recovery-3443 (4.920s); 83/83 contextual windows complete",
       "transcript_state": "NEEDS_REVIEW",
-      "lock": "pid:33716"
+      "lock": "IDLE",
+      "speech_quality_gate": "PASS",
+      "effective_speech_coverage_percent": 98.85,
+      "unresolved_speech_seconds": 22.78,
+      "recovery_windows_completed": 83,
+      "recovery_windows_total": 83,
+      "canonical_transcript_updated": false
     },
     {
       "media_id": "pg-611c4b9e32914de6",
@@ -184,13 +190,5 @@
       "lock": "IDLE"
     }
   ],
-  "active_workers": [
-    {
-      "media_id": "pg-09eb7fdd89877b64",
-      "pid": 33716,
-      "job": "S46 contextual recovery",
-      "model": "large-v3",
-      "started_at": "2026-10-27T02:39Z"
-    }
-  ]
+  "active_workers": []
 }

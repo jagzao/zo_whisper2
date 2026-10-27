@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "source_video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+  "original_transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json",
+  "original_transcript_sha256": "79424304fe6aeecbc063c77864a19ff65f836a33d312b164e92f930f91db34b0",
+  "reconciled_transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_reconciled_v1_segments.json",
+  "reconciled_transcript_sha256": "0adb5b52f1a736a0098241dc5eeea041a2d88589bf0a0e72402708e1287d2fbc",
+  "canonical_transcript_overwritten": false,
+  "merged_fragment": {
+    "fragment_id": "gap-148",
+    "classification": "NEW_VALID_CONTENT",
+    "start": 2793.56,
+    "end": 2795.58,
+    "text": "terrible, right? This isn't bad.",
+    "canonical_transcript_updated": false,
+    "reason": "Two local ASR passes agree. It completes the canonical fragment ?Right now, you're not? and is bounded before the next canonical question."
+  },
+  "excluded_fragment": {
+    "fragment_id": "gap-073",
+    "classification": "DUPLICATE_EXISTING_CONTENT",
+    "start": 1526.832,
+    "end": 1527.412,
+    "text": "administrators.",
+    "canonical_transcript_updated": false,
+    "reason": "The canonical text immediately before the interval already says ?main administrators?; the repeated label adds no distinct content."
+  }
+}

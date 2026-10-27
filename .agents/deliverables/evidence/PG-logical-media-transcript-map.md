@@ -28,7 +28,7 @@ One row per logical video. Transcript identity uses embedded `audio_file` proven
 - `pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4` — MISSING; match=MANUAL_REVIEW/NONE; sidecars=0; media=None%; speech=None%; last=None; file=none
 - `pg_AMS_KAP_-_Compliance_-_Session_2.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=98.71%; speech=90.8%; last=3578.66; file=CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json
 - `pg_Ams_kap_app_support_s10.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=86.9%; speech=79.34%; last=3901.3; file=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json
-- `pg_Ams_kap_app_support_s46.mp4` — NEEDS_REVIEW; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=99.83%; speech=None%; last=3612.76; file=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json
+- `pg_Ams_kap_app_support_s46.mp4` — NEEDS_REVIEW; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=99.83%; speech=98.85%; low-confidence review=5.73s; last=3612.76; file=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json
 - `pg_Ams_kap_compliance_s4.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=78.85%; speech=93.58%; last=3580.11; file=CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json
 - `pg_Shadow_221026.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=99.85%; speech=80.85%; last=3330.63; file=CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json
 
