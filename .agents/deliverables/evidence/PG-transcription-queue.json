@@ -48,7 +48,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 4,
+        "priority_2_timestamp_only_windows": 57
       }
     },
     {
@@ -76,7 +78,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 1,
+        "priority_2_timestamp_only_windows": 35
       }
     },
     {
@@ -129,7 +133,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 2,
+        "priority_2_timestamp_only_windows": 43
       }
     },
     {
@@ -155,7 +161,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 4,
+        "priority_2_timestamp_only_windows": 53
       }
     },
     {
@@ -181,7 +189,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 3,
+        "priority_2_timestamp_only_windows": 56
       }
     },
     {
@@ -209,7 +219,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 3,
+        "priority_2_timestamp_only_windows": 73
       }
     },
     {
@@ -235,7 +247,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 6,
+        "priority_2_timestamp_only_windows": 54
       }
     },
     {
@@ -261,7 +275,9 @@
         "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
         "candidate_gaps_semantically_reviewed": false,
         "local_asr_authorization": "STANDING_APPROVED",
-        "recovery_processing_status": "PREPARED_NOT_STARTED"
+        "recovery_processing_status": "PREPARED_NOT_STARTED",
+        "priority_1_vad_gap_windows": 2,
+        "priority_2_timestamp_only_windows": 52
       }
     },
     {
