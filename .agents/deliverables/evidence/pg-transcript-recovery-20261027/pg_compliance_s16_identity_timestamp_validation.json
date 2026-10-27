@@ -18,7 +18,9 @@
       "word_order_monotonic": true,
       "zero_duration_word_timestamps": 52,
       "word_timestamp_order_monotonic": true,
-      "duration_delta_from_source_seconds": -1970.304
+      "duration_delta_from_source_seconds": -1970.304,
+      "content_hash_from_manifest": "5b9ec2ed73a4685e8b1c6e722c6d8cdde93b7a817226c9489b3ce626458af391",
+      "file_sha256_matches_manifest": true
     },
     {
       "path": "CarpetaTranscripciones\\py_pg\\pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
@@ -34,7 +36,9 @@
       "word_order_monotonic": true,
       "zero_duration_word_timestamps": 45,
       "word_timestamp_order_monotonic": true,
-      "duration_delta_from_source_seconds": -1970.304
+      "duration_delta_from_source_seconds": -1970.304,
+      "content_hash_from_manifest": "c56131a7d1c2362edf104174371dbf01281f0d49d269f1ab71d9fe883e880d47",
+      "file_sha256_matches_manifest": true
     }
   ],
   "identity_match": "HIGH",

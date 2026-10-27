@@ -141,5 +141,14 @@
     }
   ],
   "canonical_candidate_selected": null,
-  "state": "NEEDS_TARGETED_RECOVERY"
+  "state": "NEEDS_TARGETED_RECOVERY",
+  "candidate_file_sha256": [
+    "e291a19ad5846e36036278502550dce7f34d96f0aafbae55b112e90f2dccf097",
+    "1d0ea7a242daad82fef5321dd12ef4c915f81e9fc76b413fa0d4068544526058"
+  ],
+  "candidate_content_hashes": [
+    "5b9ec2ed73a4685e8b1c6e722c6d8cdde93b7a817226c9489b3ce626458af391",
+    "c56131a7d1c2362edf104174371dbf01281f0d49d269f1ab71d9fe883e880d47"
+  ],
+  "content_hashes_differ": true
 }

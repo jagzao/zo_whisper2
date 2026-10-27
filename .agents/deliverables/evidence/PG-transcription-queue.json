@@ -28,7 +28,7 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "reconcile existing VAD gaps in 309.64s uncovered speech, then run contextual recovery only for confirmed meaningful gaps; preserve canonical sidecar",
+      "next_action": "reconcile existing VAD gaps in 309.64s uncovered speech, then run contextual recovery only for confirmed meaningful gaps; preserve canonical sidecar candidate windows prepared=61 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
       "transcript_state": "PARTIAL",
       "lock": "IDLE",
       "progress": {
@@ -40,7 +40,12 @@
         "speech_coverage_percent": 90.56,
         "meaningful_uncovered_speech_seconds": 309.64,
         "final_gap_seconds": 343.668,
-        "state": "PARTIAL"
+        "state": "PARTIAL",
+        "candidate_word_gaps_gt_1_5s": 100,
+        "candidate_recovery_windows_prepared": 61,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
       }
     },
     {
@@ -48,7 +53,7 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit VAD/speech in the 5,446.806s tail; then target recovery for confirmed meaningful gaps, preserving the original sidecar",
+      "next_action": "audit VAD/speech in the 5,446.806s tail; then target recovery for confirmed meaningful gaps, preserving the original sidecar candidate windows prepared=36 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
       "transcript_state": "PARTIAL",
       "lock": "IDLE",
       "progress": {
@@ -62,7 +67,12 @@
         "internal_major_gap_seconds": 3.32,
         "final_gap_seconds": 5446.806,
         "final_gap_classification": "NOT_ASSESSED",
-        "state": "PARTIAL"
+        "state": "PARTIAL",
+        "candidate_word_gaps_gt_1_5s": 63,
+        "candidate_recovery_windows_prepared": 36,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
       }
     },
     {
@@ -70,7 +80,7 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "reconcile 190.69s of uncovered speech and five major VAD gaps; run contextual recovery only for confirmed meaningful intervals; preserve original sidecar",
+      "next_action": "reconcile 190.69s of uncovered speech and five major VAD gaps; run contextual recovery only for confirmed meaningful intervals; preserve original sidecar candidate windows prepared=45 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
       "transcript_state": "PARTIAL",
       "lock": "IDLE",
       "progress": {
@@ -109,7 +119,139 @@
           }
         ],
         "final_gap_seconds": 6.836,
-        "state": "PARTIAL"
+        "state": "PARTIAL",
+        "candidate_word_gaps_gt_1_5s": 76,
+        "candidate_recovery_windows_prepared": 45,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
+      }
+    },
+    {
+      "media_id": "pg-58194dc5b0eb5cc6",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "existing VAD assessment reports partial speech coverage; reconcile uncovered VAD intervals and only run contextual recovery for meaningful gaps, preserving original sidecar candidate windows prepared=57 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 945,
+        "words_validated": 6680,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 99.84,
+        "speech_coverage_percent": 86.4,
+        "meaningful_uncovered_speech_seconds": 387.212,
+        "major_vad_gaps": 4,
+        "state": "NEEDS_TARGETED_RECOVERY",
+        "candidate_word_gaps_gt_1_5s": 94,
+        "candidate_recovery_windows_prepared": 57,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
+      }
+    },
+    {
+      "media_id": "pg-98250af646a5c138",
+      "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "existing VAD audit reports partial coverage; classify uncovered intervals, merge micro-gaps, and target contextual recovery only for meaningful speech; preserve source sidecar candidate windows prepared=59 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 771,
+        "words_validated": 8347,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 98.71,
+        "speech_coverage_percent": 90.8,
+        "meaningful_uncovered_speech_seconds": 294.542,
+        "major_vad_gaps": 3,
+        "state": "NEEDS_TARGETED_RECOVERY",
+        "candidate_word_gaps_gt_1_5s": 102,
+        "candidate_recovery_windows_prepared": 59,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
+      }
+    },
+    {
+      "media_id": "pg-896f3fb2e5862a02",
+      "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "prior tail review found 0.992s VAD speech without supported ASR in the 588.361s tail; continue internal VAD-gap semantic classification across 547.508s aggregate uncovered speech, then target only meaningful gaps; preserve original sidecar candidate windows prepared=76 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 1188,
+        "words_validated": 5469,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 86.9,
+        "speech_coverage_percent": 79.34,
+        "meaningful_uncovered_speech_seconds": 547.508,
+        "major_vad_gaps": 3,
+        "tail_review_seconds": 588.361,
+        "tail_vad_speech_without_supported_asr_seconds": 0.992,
+        "state": "NEEDS_TARGETED_RECOVERY",
+        "candidate_word_gaps_gt_1_5s": 312,
+        "candidate_recovery_windows_prepared": 76,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
+      }
+    },
+    {
+      "media_id": "pg-611c4b9e32914de6",
+      "video": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered intervals from existing VAD; recover only confirmed meaningful gaps, preserve original sidecar candidate windows prepared=60 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 650,
+        "words_validated": 8310,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 78.85,
+        "speech_coverage_percent": 93.58,
+        "meaningful_uncovered_speech_seconds": 207.916,
+        "major_vad_gaps": 6,
+        "state": "NEEDS_TARGETED_RECOVERY",
+        "candidate_word_gaps_gt_1_5s": 87,
+        "candidate_recovery_windows_prepared": 60,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
+      }
+    },
+    {
+      "media_id": "pg-4957e30bcb15f2bf",
+      "video": "Videos/py_pg/pg_Shadow_221026.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals and tail; contextual recovery only for confirmed meaningful gaps; preserve original sidecar candidate windows prepared=54 (timestamp/VAD candidates only; semantic review required; ASR not authorized).",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 871,
+        "words_validated": 4006,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 99.85,
+        "speech_coverage_percent": 80.85,
+        "meaningful_uncovered_speech_seconds": 364.596,
+        "major_vad_gaps": 3,
+        "state": "NEEDS_TARGETED_RECOVERY",
+        "candidate_word_gaps_gt_1_5s": 153,
+        "candidate_recovery_windows_prepared": 54,
+        "candidate_recovery_windows_artifact": ".agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json",
+        "candidate_gaps_semantically_reviewed": false,
+        "targeted_asr_authorized": false
       }
     },
     {
@@ -211,108 +353,6 @@
         "candidate_token_jaccard": 0.9638,
         "candidate_shared_unique_tokens": 399,
         "both_candidates_miss_major_vad_gaps": 2
-      }
-    },
-    {
-      "media_id": "pg-58194dc5b0eb5cc6",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "existing VAD assessment reports partial speech coverage; reconcile uncovered VAD intervals and only run contextual recovery for meaningful gaps, preserving original sidecar",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE",
-      "progress": {
-        "identity_match": "HIGH",
-        "segments_validated": 945,
-        "words_validated": 6680,
-        "invalid_segment_timestamps": 0,
-        "media_reach_percent": 99.84,
-        "speech_coverage_percent": 86.4,
-        "meaningful_uncovered_speech_seconds": 387.212,
-        "major_vad_gaps": 4,
-        "state": "NEEDS_TARGETED_RECOVERY"
-      }
-    },
-    {
-      "media_id": "pg-98250af646a5c138",
-      "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "existing VAD audit reports partial coverage; classify uncovered intervals, merge micro-gaps, and target contextual recovery only for meaningful speech; preserve source sidecar",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE",
-      "progress": {
-        "identity_match": "HIGH",
-        "segments_validated": 771,
-        "words_validated": 8347,
-        "invalid_segment_timestamps": 0,
-        "media_reach_percent": 98.71,
-        "speech_coverage_percent": 90.8,
-        "meaningful_uncovered_speech_seconds": 294.542,
-        "major_vad_gaps": 3,
-        "state": "NEEDS_TARGETED_RECOVERY"
-      }
-    },
-    {
-      "media_id": "pg-896f3fb2e5862a02",
-      "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "prior tail review found 0.992s VAD speech without supported ASR in the 588.361s tail; continue internal VAD-gap semantic classification across 547.508s aggregate uncovered speech, then target only meaningful gaps; preserve original sidecar",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE",
-      "progress": {
-        "identity_match": "HIGH",
-        "segments_validated": 1188,
-        "words_validated": 5469,
-        "invalid_segment_timestamps": 0,
-        "media_reach_percent": 86.9,
-        "speech_coverage_percent": 79.34,
-        "meaningful_uncovered_speech_seconds": 547.508,
-        "major_vad_gaps": 3,
-        "tail_review_seconds": 588.361,
-        "tail_vad_speech_without_supported_asr_seconds": 0.992,
-        "state": "NEEDS_TARGETED_RECOVERY"
-      }
-    },
-    {
-      "media_id": "pg-611c4b9e32914de6",
-      "video": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered intervals from existing VAD; recover only confirmed meaningful gaps, preserve original sidecar",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE",
-      "progress": {
-        "identity_match": "HIGH",
-        "segments_validated": 650,
-        "words_validated": 8310,
-        "invalid_segment_timestamps": 0,
-        "media_reach_percent": 78.85,
-        "speech_coverage_percent": 93.58,
-        "meaningful_uncovered_speech_seconds": 207.916,
-        "major_vad_gaps": 6,
-        "state": "NEEDS_TARGETED_RECOVERY"
-      }
-    },
-    {
-      "media_id": "pg-4957e30bcb15f2bf",
-      "video": "Videos/py_pg/pg_Shadow_221026.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals and tail; contextual recovery only for confirmed meaningful gaps; preserve original sidecar",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE",
-      "progress": {
-        "identity_match": "HIGH",
-        "segments_validated": 871,
-        "words_validated": 4006,
-        "invalid_segment_timestamps": 0,
-        "media_reach_percent": 99.85,
-        "speech_coverage_percent": 80.85,
-        "meaningful_uncovered_speech_seconds": 364.596,
-        "major_vad_gaps": 3,
-        "state": "NEEDS_TARGETED_RECOVERY"
       }
     },
     {

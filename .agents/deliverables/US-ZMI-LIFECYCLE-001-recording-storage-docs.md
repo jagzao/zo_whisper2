@@ -10,10 +10,10 @@ RESOURCE_MODE=LOW_MEMORY_SEQUENTIAL
 HEAVY_CONCURRENCY=1
 ACTIVE_HEAVY_JOB=NONE
 HEAVY_QUEUE_COUNT=19 (pg-1 VAD audit + 11 targeted recovery jobs + 7 missing-source transcriptions), serial order
-HEAVY_QUEUE=pg-1 VAD audit, then existing-sidecar candidates, then 7 missing sources
-WAITING_RESOURCES=pg-1 VAD audit; 4.0/29.6 GB RAM free, local model-runtime processes present, CPU load unavailable
+HEAVY_QUEUE_ORDER=pg-1 VAD/speech coverage, gap and tail audit; Compliance Session10 targeted windows; Session13 VAD-tail classification; Session14 targeted windows; Session7; legacy Compliance Session2; App Support S10; App Support S4; Shadow; Session15 candidate coverage; Session16 candidate coverage; Session17 tail/candidate coverage; then missing Compliance Sessions12,2,3,4,5,6,9, one at a time.
+WAITING_RESOURCES=pg-1 VAD audit; prior check 4.0/29.6 GB RAM free with local model-runtime processes; CPU load unavailable; recheck before launch
 BLOCKED_COMPONENTS=S46_OWNER_AUDIO_REVIEW
-INDEPENDENT_WORK_AVAILABLE=bounded text comparison for Sessions16-17 recorded; continue lightweight sidecar work and documentation implementation
+INDEPENDENT_WORK_AVAILABLE=20-source identity/provenance audit complete; candidate windows prepared for all 8 PARTIAL sources; continue semantic text/metadata reconciliation and generic documentation work
 PROJECT_GLOBAL_BLOCKER=NO
 DOCS_V2_ARCHITECTURE_VERSION=3 generic source-evidence and cross-session pipeline; corpus synthesis remains frozen
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
@@ -60,17 +60,20 @@ PG_DISTINCT_TRANSCRIPT_SOURCES=13
 PG_DUPLICATE_SIDECARS=3; all divergent content copies preserved
 PG_TRANSCRIPTS_VALID=0
 PG_TRANSCRIPTS_PARTIAL=8
-PG_TRANSCRIPTS_NEEDS_REVIEW=5 (S46, 3 divergent Session 15?17 copies, and Session 1 sidecar coverage pending)
+PG_TRANSCRIPTS_NEEDS_REVIEW=5 (S46 owner audio review, pg-1 VAD pending, and divergent Sessions 15, 16, 17)
 PG_TRANSCRIPTS_MISSING=7
 PG_TRANSCRIPTS_FAILED=0
-PG_TRANSCRIPTION_COMPLETE=NO; queue holds 7 full jobs, 11 targeted recovery jobs, and 2 review items; no active worker lock.
+PG_VALID=0; PG_PARTIAL=8; PG_NEEDS_REVIEW=5; PG_MISSING=7; PG_FAILED=0
+PG_TRANSCRIPTION_COMPLETE=NO; serial heavy queue count=19 (pg-1 + 11 targeted/reconciliation + 7 full transcription); no active heavy worker.
 PG_CURRENT_SOURCE=pg-1
 PG_CURRENT_ACTION=VAD/speech coverage, internal-gap analysis, final-gap classification; do not retranscribe
-PG_CURRENT_PROGRESS=pg-1 sidecar 1/13; identity HIGH; 1,140 segments/4,431 word timestamps valid; reach 99.82%; 110 gaps >1.5s await VAD; WAITING_RESOURCES. Session15: two divergent candidates, A VAD 82.83%, B unvalidated. Session16: two divergent candidates, 42.94% reach, A VAD 82.70%/218.278s uncovered; B fills one sampled A VAD gap with acknowledgements but remains unvalidated. Session17: two divergent candidates, 49.58% reach, A VAD 91.71% over partial prefix; ~928.386s tail unclassified; token Jaccard 0.9638 and sampled major gaps remain absent from both. Session7: 99.84% reach, 86.40% speech coverage/387.212s uncovered. Legacy Session2: 98.71% reach, 90.80%/294.542s uncovered. App Support S4: 78.85% reach, 93.58%/207.916s uncovered. Shadow: 99.85% reach, 80.85%/364.596s uncovered. App Support S10: 86.90% reach, 79.34%/547.508s uncovered; 588.361s tail review found only 0.992s unsupported VAD speech. No canonical promotions.
+PG_CURRENT_PROGRESS=pg-1 identity HIGH; source/sidecar duration aligned; 1,140 segments/4,431 words; reach 99.82%; 110 word gaps >1.5s await VAD; WAITING_RESOURCES. Identity audit: all 20 source paths/sizes match; all 16 sidecars hash-match provenance map/source basename; segment timestamps valid and ordered; seven missing sources confirmed. PARTIAL prep: eight sources, 987 word gaps >1.5s, 448 merged 5s-context windows; all unreviewed and ASR unauthorized. Session15: two divergent candidates, A VAD 82.83%, B unvalidated. Session16: two divergent candidates, 42.94% reach, A VAD 82.70%/218.278s uncovered; B fills one sampled A VAD gap with acknowledgements but remains unvalidated. Session17: two divergent candidates, 49.58% reach, A VAD 91.71% over partial prefix; ~928.386s tail unclassified; token Jaccard 0.9638 and sampled major gaps remain absent from both. Session7: 99.84% reach, 86.40% speech coverage/387.212s uncovered. Legacy Session2: 98.71% reach, 90.80%/294.542s uncovered. App Support S4: 78.85% reach, 93.58%/207.916s uncovered. Shadow: 99.85% reach, 80.85%/364.596s uncovered. App Support S10: 86.90% reach, 79.34%/547.508s uncovered; 588.361s tail review found only 0.992s unsupported VAD speech. No canonical promotions.
 Session 1 media reach is 99.82%, but speech coverage remains unassessed; no retranscription or canonical promotion. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
 PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
+PG_SOURCE_IDENTITY_AUDIT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_logical_20_source_identity_provenance_audit.json/.md; source media SHA omitted to avoid large I/O
+PG_PARTIAL_WINDOWS=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_partial_candidate_recovery_windows.json/.md
 PG_TRANSCRIPT_QUEUE=.agents/deliverables/evidence/PG-transcription-queue.json/.md
-PG_CURRENT_CHECKPOINT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg1_identity_timestamp_validation.json/.md; sidecar checkpoints=pg_compliance_s15_divergent_sidecars_validation.json/.md, pg_compliance_s16_identity_timestamp_validation.json/.md, pg_compliance_s17_identity_timestamp_validation.json/.md, pg_compliance_s7_identity_timestamp_validation.json/.md, pg_compliance_legacy_s2_identity_timestamp_validation.json/.md, pg_app_support_s4_identity_timestamp_validation.json/.md, pg_shadow_identity_timestamp_validation.json/.md, pg_app_support_s10_identity_timestamp_validation.json/.md, pg_compliance_s16_divergent_content_comparison.json/.md, pg_compliance_s17_divergent_content_comparison.json/.md; divergent candidates remain unpromoted
+PG_CURRENT_CHECKPOINT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg1_identity_timestamp_validation.json/.md; sidecar checkpoints=pg_compliance_s15_divergent_sidecars_validation.json/.md, pg_compliance_s16_identity_timestamp_validation.json/.md, pg_compliance_s17_identity_timestamp_validation.json/.md, pg_compliance_s7_identity_timestamp_validation.json/.md, pg_compliance_legacy_s2_identity_timestamp_validation.json/.md, pg_app_support_s4_identity_timestamp_validation.json/.md, pg_shadow_identity_timestamp_validation.json/.md, pg_app_support_s10_identity_timestamp_validation.json/.md, pg_compliance_s16_divergent_content_comparison.json/.md, pg_compliance_s17_divergent_content_comparison.json/.md; S16/S17 content hashes and semantic/timestamp comparison recorded; canonical candidate remains unselected pending source coverage evidence
 
 CROSS_SESSION_PRIMITIVES=PASS
 CROSS_SESSION_APPLICATION=NONE eligible pair found
@@ -90,7 +93,7 @@ KANBAN_COMPLETE=Session 41 Golden approved; S46 source/visual/claim/overfit chec
 KANBAN_TESTING=S46 semantic transcript reconciliation; P&G 20-source identity map and transcript queue
 KANBAN_BLOCKED=S46 speech gate requires source-audio review for 5.730s low-confidence audio; 8 transcripts missing; 3 divergent duplicate groups unresolved
 KANBAN_OWNER_PENDING=S46 Golden 2 review after all gates pass; corpus generation frozen
-BLOCKER=BLOCKED_COMPONENT=S46_OWNER_AUDIO_REVIEW; Juan must review gap-062 and prior-recovery-3443 (5.730s total). P&G pg-1 VAD audit is WAITING_RESOURCES, not a project blocker.
+BLOCKER=BLOCKED_COMPONENT=S46_OWNER_AUDIO_REVIEW; Juan must review gap-062 and prior-recovery-3443 (5.730s). pg-1 VAD is WAITING_RESOURCES within its component only; PROJECT_GLOBAL_BLOCKER=NO.
 NEXT_ACTION=Continue pg-1 VAD audit alone when resource headroom is safe; Juan reviews S46 audio; generate Golden 2 only if all S46 gates pass; continue P&G queue serially
 
 ## HISTORICAL_RESULTS

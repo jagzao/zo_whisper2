@@ -157,5 +157,14 @@
     912.77
   ],
   "canonical_candidate_selected": null,
-  "state": "NEEDS_REVIEW"
+  "state": "NEEDS_REVIEW",
+  "candidate_file_sha256": [
+    "bc75e22baae7e515a34c68e4eb042f8c9750ec028252e5c38bd18de15d579783",
+    "4ae1773bd95cd603d6af472417788d24f2d4ebacc0f6ee7648cefe33de209dee"
+  ],
+  "candidate_content_hashes": [
+    "b5a53bf1de686fefafd5b222317eeadf1750d5666ee742a9dc72ab6c5ed07d06",
+    "a03f99dd714a162d735df0fc4b834599d02d18f922dc664e5c4ea7b2373e9152"
+  ],
+  "content_hashes_differ": true
 }
