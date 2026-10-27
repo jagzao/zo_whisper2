@@ -203,5 +203,6 @@
     "canonical_selection": "NONE",
     "transcript_state": "NEEDS_REVIEW",
     "next_action": "After pg-1 resource-safe VAD checkpoint, assess existing VAD/source coverage for both candidates; reconcile the extra and missing spans before promoting either. No ASR/retranscription now."
-  }
+  },
+  "canonical_selection_reason": "No canonical candidate selected: candidate A has an existing partial VAD audit and candidate B has no independent speech-coverage validation; the divergent text cannot be resolved by token overlap alone."
 }

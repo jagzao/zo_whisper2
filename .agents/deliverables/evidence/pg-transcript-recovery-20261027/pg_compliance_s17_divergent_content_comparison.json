@@ -166,5 +166,6 @@
     "b5a53bf1de686fefafd5b222317eeadf1750d5666ee742a9dc72ab6c5ed07d06",
     "a03f99dd714a162d735df0fc4b834599d02d18f922dc664e5c4ea7b2373e9152"
   ],
-  "content_hashes_differ": true
+  "content_hashes_differ": true,
+  "canonical_selection_reason": "No canonical candidate selected: both candidates stop at ~913s/49.58% of the 1,841.216s source; both miss sampled VAD gaps, and the remaining ~928s tail is unclassified."
 }

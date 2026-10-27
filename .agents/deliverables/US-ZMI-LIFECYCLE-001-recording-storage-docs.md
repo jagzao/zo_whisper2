@@ -64,6 +64,7 @@ PG_TRANSCRIPTS_NEEDS_REVIEW=5 (S46 owner audio review, pg-1 VAD pending, and div
 PG_TRANSCRIPTS_MISSING=7
 PG_TRANSCRIPTS_FAILED=0
 PG_VALID=0; PG_PARTIAL=8; PG_NEEDS_REVIEW=5; PG_MISSING=7; PG_FAILED=0
+PG_NEEDS_REVIEW_REASONS=pg-1 VAD pending; Sessions15-17 divergent copies lack complete candidate-specific coverage; S46 requires Juan review of 5.730s
 PG_TRANSCRIPTION_COMPLETE=NO; serial heavy queue count=19 (pg-1 + 11 targeted/reconciliation + 7 full transcription); no active heavy worker.
 PG_CURRENT_SOURCE=pg-1
 PG_CURRENT_ACTION=VAD/speech coverage, internal-gap analysis, final-gap classification; do not retranscribe

@@ -20,8 +20,10 @@
         "segment_interval_union_percent": 76.44,
         "speech_coverage": "NOT_YET_VALIDATED",
         "state": "WAITING_RESOURCES",
-        "candidate_word_gaps_gt_1_5s": 110
-      }
+        "candidate_word_gaps_gt_1_5s": 110,
+        "canonical_candidate_selected": null
+      },
+      "needs_review_reason": "VAD/speech coverage not yet validated; 110 timestamp gaps >1.5s are candidates only; next heavy slot is pg-1 VAD when resources permit."
     },
     {
       "media_id": "pg-ccb11a4619acaa92",
@@ -283,7 +285,8 @@
         "state": "NEEDS_REVIEW",
         "canonical_candidate_selected": null,
         "canonical_transcript_modified": false
-      }
+      },
+      "needs_review_reason": "Two divergent, source-matched sidecars; candidate A VAD coverage 82.83% with 391.638s uncovered; candidate B coverage not independently validated; do not select canonical yet."
     },
     {
       "media_id": "pg-27753be62f40a4fa",
@@ -320,7 +323,8 @@
         "candidate_token_jaccard": 0.9088,
         "candidate_shared_unique_tokens": 568,
         "candidate_b_fills_candidate_a_vad_gap": true
-      }
+      },
+      "needs_review_reason": "Two divergent, source-matched sidecars with distinct content hashes; both reach 42.94%; A has 218.278s uncovered; B fills one sampled A VAD gap but B speech coverage is unvalidated; do not select canonical."
     },
     {
       "media_id": "pg-cdcc12a6c7eea9bc",
@@ -353,7 +357,8 @@
         "candidate_token_jaccard": 0.9638,
         "candidate_shared_unique_tokens": 399,
         "both_candidates_miss_major_vad_gaps": 2
-      }
+      },
+      "needs_review_reason": "Two divergent, source-matched sidecars with distinct content hashes; both reach ~49.58%; A VAD covers only its prefix and both miss sampled gaps; ~928.386s source tail is unclassified; do not select canonical."
     },
     {
       "media_id": "pg-09eb7fdd89877b64",
@@ -368,7 +373,11 @@
       "unresolved_speech_seconds": 22.78,
       "recovery_windows_completed": 83,
       "recovery_windows_total": 83,
-      "canonical_transcript_updated": false
+      "canonical_transcript_updated": false,
+      "needs_review_reason": "S46 speech gate waits for Juan owner review of 5.730s low-confidence audio; scoped blocker only; no further S46 compute.",
+      "progress": {
+        "canonical_candidate_selected": null
+      }
     },
     {
       "media_id": "pg-3",

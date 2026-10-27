@@ -7,5 +7,6 @@
 - Bounded timestamp comparison: B contains plausible speech in several A VAD gaps (including 2,222.22?2,225.94s and 2,232.36?2,235.08s); A and B share closing text around 2,380.47?2,381.55s. This is evidence of candidate divergence, not proof either candidate is complete.
 - Decision: `NEEDS_REVIEW`; no canonical candidate selected; canonical transcript unchanged; no ASR started.
 - Next: validate source/VAD coverage independently for both candidates after the queued pg-1 VAD audit can safely run; reconcile before promotion.
+- Canonical selection: none. No canonical candidate selected: candidate A has an existing partial VAD audit and candidate B has no independent speech-coverage validation; the divergent text cannot be resolved by token overlap alone.
 
 Machine evidence: `pg_compliance_s15_divergent_sidecars_validation.json`.
