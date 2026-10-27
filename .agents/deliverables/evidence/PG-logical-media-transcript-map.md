@@ -4,14 +4,14 @@ One row per logical video. Transcript identity uses embedded `audio_file` proven
 
 - Logical videos: 20
 - Physical segment sidecars discovered: 92 (all projects)
-- Physical sidecars matched to these 20 sources: 15
+- Physical sidecars matched to these 20 sources: 16
 - Duplicate sidecar copies: 3 (0 identical; 3 divergent)
-- Transcript states: {'MISSING': 8, 'PARTIAL': 8, 'NEEDS_REVIEW': 4}
+- Transcript states: {'MISSING': 7, 'PARTIAL': 8, 'NEEDS_REVIEW': 5}
 - Unassessed logical videos: 0
 
 ## Logical sources
 
-- `pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4` — MISSING; match=MANUAL_REVIEW/NONE; sidecars=0; media=None%; speech=None%; last=None; file=none
+- `pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4` - NEEDS_REVIEW: match=EMBEDDED_AUDIO_FILE_AND_DURATION/HIGH; sidecars=1; media=99.82%; speech=unassessed; last=2755.43; file=CarpetaTranscripciones/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording_segments.json (1,140 segments; VAD coverage pending)
 - `pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=91.22%; speech=90.56%; last=3571.34; file=CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json
 - `pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4` — MISSING; match=MANUAL_REVIEW/NONE; sidecars=0; media=None%; speech=None%; last=None; file=none
 - `pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4` — PARTIAL; match=PROCESSING_DB_PROVENANCE/HIGH; sidecars=1; media=25.89%; speech=85.17%; last=1903.21; file=CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json

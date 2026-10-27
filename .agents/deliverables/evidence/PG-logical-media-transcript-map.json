@@ -88,9 +88,9 @@
     "CarpetaTranscripciones/live_capture/sess-00064f479041/chunks/chunk-000000_segments.json"
   ],
   "state_counts": {
-    "MISSING": 8,
+    "MISSING": 7,
     "PARTIAL": 8,
-    "NEEDS_REVIEW": 4
+    "NEEDS_REVIEW": 5
   },
   "transcripts_unassessed": 0,
   "records": [
@@ -104,25 +104,36 @@
       "PROJECT": "P&G",
       "KNOWN_ALIASES": [],
       "MEDIA_STATE": "VALID",
-      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_MATCH_STATUS": "IDENTITY_MATCH_NEEDS_COVERAGE",
       "TRANSCRIPT_CANONICAL_PATH": null,
-      "TRANSCRIPT_SOURCE_PATHS": [],
-      "TRANSCRIPT_SOURCE_HASHES": [],
-      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording_segments.json",
+          "file_sha256": "c9924e2af81a8c6488131c5f4674e7d4c7ce269d8524d5832caedc4a304e8215",
+          "content_hash": null,
+          "segments": 1140
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "c9924e2af81a8c6488131c5f4674e7d4c7ce269d8524d5832caedc4a304e8215",
       "TRANSCRIPT_CONTENT_HASH": null,
-      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
-      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
-      "TRANSCRIPT_START": null,
-      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
-      "MEDIA_COVERAGE": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "UNIQUE_CANDIDATE_SOURCE_MATCH"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 14.06,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 2755.43,
+      "MEDIA_COVERAGE": 99.82,
       "SPEECH_COVERAGE": null,
       "MEANINGFUL_UNCOVERED_SPEECH": null,
       "INTERNAL_GAPS": [],
-      "FINAL_GAP": null,
-      "MATCH_METHOD": "MANUAL_REVIEW",
-      "MATCH_CONFIDENCE": "NONE",
-      "IDENTITY_MATCH": "NOT_FOUND",
-      "TRANSCRIPT_STATE": "MISSING"
+      "FINAL_GAP": 5.018,
+      "MATCH_METHOD": "EMBEDDED_AUDIO_FILE_AND_DURATION",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "SOURCE_BASENAME_AND_DURATION",
+      "TRANSCRIPT_STATE": "NEEDS_REVIEW"
     },
     {
       "MEDIA_ID": "pg-ccb11a4619acaa92",

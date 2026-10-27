@@ -2,13 +2,13 @@
 
 Persistent one-source-at-a-time queue. Recovery outputs remain candidates until source comparison and coverage validation.
 
-- NEEDS_FULL_TRANSCRIPTION: 8
-- NEEDS_REVIEW: 1
+- NEEDS_FULL_TRANSCRIPTION: 7
+- NEEDS_REVIEW: 2
 - NEEDS_TARGETED_RECOVERY: 11
 
 ## Work items
 
-- `pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4` ? NEEDS_FULL_TRANSCRIPTION: full large-v3 transcription after source is revalidated
+- `pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4` - NEEDS_REVIEW: validate existing 1,140-segment sidecar against source speech coverage; no re-transcription before review
 - `pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4` ? NEEDS_TARGETED_RECOVERY: audit uncovered VAD intervals, then contextual large-v3 recovery
 - `pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4` ? NEEDS_FULL_TRANSCRIPTION: full large-v3 transcription after source is revalidated
 - `pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4` ? NEEDS_TARGETED_RECOVERY: audit uncovered VAD intervals, then contextual large-v3 recovery

@@ -6,10 +6,10 @@
     {
       "media_id": "pg-1",
       "video": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
-      "transcript": null,
-      "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
-      "transcript_state": "MISSING",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_REVIEW",
+      "next_action": "validate the existing 1,140-segment sidecar against source speech coverage; do not retranscribe before review",
+      "transcript_state": "NEEDS_REVIEW",
       "lock": "IDLE"
     },
     {
