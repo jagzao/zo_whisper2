@@ -1,0 +1,145 @@
+{
+  "method": "linear token set comparison plus bounded timestamp excerpt; candidate coverage is not inferred",
+  "candidate_segments": [
+    518,
+    329
+  ],
+  "candidate_words": [
+    2998,
+    2980
+  ],
+  "unique_tokens": [
+    591,
+    602
+  ],
+  "shared_unique_tokens": 568,
+  "candidate_a_only_unique_tokens": 23,
+  "candidate_b_only_unique_tokens": 34,
+  "token_jaccard": 0.9088,
+  "candidate_a_only_sample": [
+    "ai",
+    "asset-owned",
+    "auto-enrollment",
+    "bring",
+    "broad",
+    "browser",
+    "cetera",
+    "did",
+    "enrolled",
+    "et",
+    "fixable",
+    "gathered",
+    "great",
+    "maryelle",
+    "may",
+    "most",
+    "much",
+    "pga",
+    "policy",
+    "pvd",
+    "tiso",
+    "update",
+    "visibility"
+  ],
+  "candidate_b_only_sample": [
+    "ability",
+    "agree",
+    "auto",
+    "case-by-case",
+    "cool",
+    "enrollment",
+    "etc",
+    "fixes",
+    "flexible",
+    "focus",
+    "important",
+    "indar",
+    "leadership",
+    "mariel",
+    "officials",
+    "ok",
+    "organized",
+    "owned",
+    "pj",
+    "pjm",
+    "pjms",
+    "prod",
+    "pvt",
+    "rnd",
+    "role"
+  ],
+  "vad_gap_context": [
+    {
+      "candidate": 1,
+      "segments": [
+        {
+          "start": 904.56,
+          "end": 908.62,
+          "text": " I think we have a fixed price for the assessment of the vulnerability."
+        },
+        {
+          "start": 908.66,
+          "end": 911.08,
+          "text": " And then we provide the cost."
+        },
+        {
+          "start": 914.65,
+          "end": 915.09,
+          "text": " Yeah."
+        },
+        {
+          "start": 915.21,
+          "end": 915.37,
+          "text": " Yeah."
+        },
+        {
+          "start": 916.98,
+          "end": 917.42,
+          "text": " Yeah."
+        },
+        {
+          "start": 918.16,
+          "end": 918.6,
+          "text": " So,"
+        },
+        {
+          "start": 918.7,
+          "end": 919.7,
+          "text": " so if I'm understanding correctly,"
+        },
+        {
+          "start": 919.96,
+          "end": 920.94,
+          "text": " I think Maryelle,"
+        }
+      ]
+    },
+    {
+      "candidate": 2,
+      "segments": [
+        {
+          "start": 900.77,
+          "end": 907.02,
+          "text": " remember me something guys i think we have a fixed price for the"
+        },
+        {
+          "start": 907.02,
+          "end": 911.06,
+          "text": " assessment of the vulnerability and then we provide the cost"
+        },
+        {
+          "start": 911.06,
+          "end": 919.18,
+          "text": " yeah yeah okay yeah so if i'm on the"
+        },
+        {
+          "start": 919.2,
+          "end": 923.74,
+          "text": " standing correctly i think mariel i was asking about what our process is for today you guys"
+        }
+      ]
+    }
+  ],
+  "canonical_candidate_selected": null,
+  "state": "NEEDS_TARGETED_RECOVERY"
+}

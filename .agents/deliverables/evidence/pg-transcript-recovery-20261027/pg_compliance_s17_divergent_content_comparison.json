@@ -1,0 +1,161 @@
+{
+  "method": "linear token set comparison; no coverage inference",
+  "candidate_segments": [
+    621,
+    627
+  ],
+  "candidate_words": [
+    1561,
+    1571
+  ],
+  "unique_tokens": [
+    405,
+    408
+  ],
+  "shared_unique_tokens": 399,
+  "candidate_a_only_unique_tokens": 6,
+  "candidate_b_only_unique_tokens": 9,
+  "token_jaccard": 0.9638,
+  "candidate_a_only_sample": [
+    "attached",
+    "baseline",
+    "grc",
+    "order",
+    "pranad",
+    "psg"
+  ],
+  "candidate_b_only_sample": [
+    "answered",
+    "g",
+    "harder",
+    "irisk",
+    "itgrc",
+    "p",
+    "uh",
+    "um",
+    "using"
+  ],
+  "vad_gap_context": [
+    {
+      "candidate": 1,
+      "segments": [
+        {
+          "start": 89.12,
+          "end": 97.73,
+          "text": " Hello everyone, good afternoon, good evening"
+        },
+        {
+          "start": 97.73,
+          "end": 102.85,
+          "text": " So I think we all are here so we can start"
+        },
+        {
+          "start": 577.61,
+          "end": 578.87,
+          "text": " Okay"
+        },
+        {
+          "start": 583.89,
+          "end": 584.83,
+          "text": " I'm thinking"
+        },
+        {
+          "start": 584.83,
+          "end": 585.37,
+          "text": " This is a"
+        },
+        {
+          "start": 585.37,
+          "end": 586.45,
+          "text": " Locally on premises"
+        },
+        {
+          "start": 586.45,
+          "end": 587.13,
+          "text": " That application"
+        },
+        {
+          "start": 587.13,
+          "end": 587.69,
+          "text": " Is installed"
+        },
+        {
+          "start": 587.69,
+          "end": 588.09,
+          "text": " On that"
+        },
+        {
+          "start": 589.46,
+          "end": 590.1,
+          "text": " Desktop"
+        }
+      ]
+    },
+    {
+      "candidate": 2,
+      "segments": [
+        {
+          "start": 89.12,
+          "end": 97.73,
+          "text": " Hello everyone, good afternoon, good evening"
+        },
+        {
+          "start": 97.73,
+          "end": 102.85,
+          "text": " So I think we all are here so we can start"
+        },
+        {
+          "start": 577.61,
+          "end": 578.87,
+          "text": " Okay"
+        },
+        {
+          "start": 583.87,
+          "end": 584.83,
+          "text": " I'm thinking"
+        },
+        {
+          "start": 584.83,
+          "end": 585.35,
+          "text": " This is a"
+        },
+        {
+          "start": 585.35,
+          "end": 586.47,
+          "text": " Locally on premises"
+        },
+        {
+          "start": 586.47,
+          "end": 587.13,
+          "text": " That application"
+        },
+        {
+          "start": 587.13,
+          "end": 587.69,
+          "text": " Is installed"
+        },
+        {
+          "start": 587.69,
+          "end": 588.13,
+          "text": " On that"
+        },
+        {
+          "start": 588.13,
+          "end": 589.92,
+          "text": " On the"
+        },
+        {
+          "start": 589.92,
+          "end": 590.1,
+          "text": " Desktop"
+        }
+      ]
+    }
+  ],
+  "tail_transcribed_to_seconds": [
+    912.83,
+    912.77
+  ],
+  "canonical_candidate_selected": null,
+  "state": "NEEDS_REVIEW"
+}

@@ -148,7 +148,7 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "retain both divergent candidates; existing VAD audit establishes partial speech coverage for candidate A. Reconcile the 218.278s uncovered speech and compare candidate B before targeted recovery; no whole-source retranscription.",
+      "next_action": "Candidate B fills candidate-A VAD gap 911.08?914.65s with acknowledgements; validate B source coverage and reconcile divergent spans before canonical choice or recovery.",
       "transcript_state": "NEEDS_REVIEW",
       "lock": "IDLE",
       "progress": {
@@ -174,7 +174,10 @@
           45
         ],
         "canonical_candidate_selected": null,
-        "state": "NEEDS_TARGETED_RECOVERY"
+        "state": "NEEDS_TARGETED_RECOVERY",
+        "candidate_token_jaccard": 0.9088,
+        "candidate_shared_unique_tokens": 568,
+        "candidate_b_fills_candidate_a_vad_gap": true
       }
     },
     {
@@ -182,7 +185,7 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "retain both divergent partial copies; existing VAD assessment for candidate A reports 91.71% speech coverage and 65.178s uncovered, but both sidecars end at 49.58% media reach. Assess remaining source tail and candidate B coverage before canonical selection or targeted recovery.",
+      "next_action": "both candidates end at ~912.8s (49.58% reach); existing VAD shows 65.178s uncovered in the prefix, and ~928.386s source tail remains untranscribed/unclassified. Assess tail and candidate B coverage before selecting.",
       "transcript_state": "NEEDS_REVIEW",
       "lock": "IDLE",
       "progress": {
@@ -204,7 +207,10 @@
         "uncovered_speech_seconds_candidate_a": 65.178,
         "untranscribed_source_tail_seconds": 928.386,
         "canonical_candidate_selected": null,
-        "state": "NEEDS_REVIEW"
+        "state": "NEEDS_REVIEW",
+        "candidate_token_jaccard": 0.9638,
+        "candidate_shared_unique_tokens": 399,
+        "both_candidates_miss_major_vad_gaps": 2
       }
     },
     {
