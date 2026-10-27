@@ -50,7 +50,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 4,
-        "priority_2_timestamp_only_windows": 57
+        "priority_2_timestamp_only_windows": 57,
+        "vad_gap_context_excerpts_prepared": 4
       }
     },
     {
@@ -80,7 +81,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 1,
-        "priority_2_timestamp_only_windows": 35
+        "priority_2_timestamp_only_windows": 35,
+        "vad_gap_context_excerpts_prepared": 1
       }
     },
     {
@@ -135,7 +137,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 2,
-        "priority_2_timestamp_only_windows": 43
+        "priority_2_timestamp_only_windows": 43,
+        "vad_gap_context_excerpts_prepared": 5
       }
     },
     {
@@ -163,7 +166,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 4,
-        "priority_2_timestamp_only_windows": 53
+        "priority_2_timestamp_only_windows": 53,
+        "vad_gap_context_excerpts_prepared": 4
       }
     },
     {
@@ -191,7 +195,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 3,
-        "priority_2_timestamp_only_windows": 56
+        "priority_2_timestamp_only_windows": 56,
+        "vad_gap_context_excerpts_prepared": 3
       }
     },
     {
@@ -221,7 +226,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 3,
-        "priority_2_timestamp_only_windows": 73
+        "priority_2_timestamp_only_windows": 73,
+        "vad_gap_context_excerpts_prepared": 3
       }
     },
     {
@@ -249,7 +255,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 6,
-        "priority_2_timestamp_only_windows": 54
+        "priority_2_timestamp_only_windows": 54,
+        "vad_gap_context_excerpts_prepared": 6
       }
     },
     {
@@ -277,7 +284,8 @@
         "local_asr_authorization": "STANDING_APPROVED",
         "recovery_processing_status": "PREPARED_NOT_STARTED",
         "priority_1_vad_gap_windows": 2,
-        "priority_2_timestamp_only_windows": 52
+        "priority_2_timestamp_only_windows": 52,
+        "vad_gap_context_excerpts_prepared": 3
       }
     },
     {

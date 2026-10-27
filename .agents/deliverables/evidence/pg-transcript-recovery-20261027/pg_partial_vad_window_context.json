@@ -1,0 +1,1373 @@
+{
+  "schema_version": 1,
+  "source_count": 8,
+  "vad_priority_gap_count": 29,
+  "method": "bounded adjacent transcript excerpt lookup only; no audio inference",
+  "local_asr_authorization": "STANDING_APPROVED",
+  "external_processing": "NOT_AUTHORIZED",
+  "records": [
+    {
+      "WINDOW_ID": "pgw-fcc96462ba068fb4bc7a",
+      "SOURCE_MEDIA_ID": "pg-ccb11a4619acaa92",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "GAP_START": 981.84,
+      "GAP_END": 986.73,
+      "GAP_SECONDS": 4.89,
+      "CONTEXT_START": 976.84,
+      "CONTEXT_END": 991.73,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 948.17,
+          "end": 952.94,
+          "text": " So, usually, this is used for role mapping in the application."
+        },
+        {
+          "start": 953.56,
+          "end": 961.82,
+          "text": " But if you want, like, restriction as well, you can just indicate restriction."
+        },
+        {
+          "start": 966.36,
+          "end": 981.84,
+          "text": " So if the restriction is being done in the pings and so that they could apply some configuration or policies on their end that only this group name would have the access to the application once after they authenticate."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 986.73,
+          "end": 996.41,
+          "text": " I mean, that's just the addition here that sometimes it covers the access management part as well, wherein if it's configured via ping."
+        },
+        {
+          "start": 996.51,
+          "end": 1002.39,
+          "text": " So you just need to mention here that either I'd modify or delete something like that."
+        },
+        {
+          "start": 1004.5,
+          "end": 1012.3,
+          "text": " So what was the ablution for ACS, share ACS URL details, what ACS stands for?"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-ec2f50d0e500eb8104e8",
+      "SOURCE_MEDIA_ID": "pg-ccb11a4619acaa92",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "GAP_START": 1628.87,
+      "GAP_END": 1632.29,
+      "GAP_SECONDS": 3.42,
+      "CONTEXT_START": 1617.99,
+      "CONTEXT_END": 1637.29,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1625.37,
+          "end": 1628.29,
+          "text": " So usually they are either an entitlement."
+        },
+        {
+          "start": 1628.29,
+          "end": 1628.41,
+          "text": " Yes."
+        },
+        {
+          "start": 1628.43,
+          "end": 1628.87,
+          "text": " Or rolling."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1632.29,
+          "end": 1634.05,
+          "text": " And this is where it's really key."
+        },
+        {
+          "start": 1634.15,
+          "end": 1637.95,
+          "text": " Like when you're creating those entitlements, like those search terms are very important"
+        },
+        {
+          "start": 1637.95,
+          "end": 1642.27,
+          "text": " so that we know what those entitlements are for, because P&G has about a bajillion entitlements."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-74815d9ca3367db2986f",
+      "SOURCE_MEDIA_ID": "pg-ccb11a4619acaa92",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "GAP_START": 1910.94,
+      "GAP_END": 1914.01,
+      "GAP_SECONDS": 3.07,
+      "CONTEXT_START": 1905.94,
+      "CONTEXT_END": 1955.74,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1900.64,
+          "end": 1901.18,
+          "text": " Thanks, Charles."
+        },
+        {
+          "start": 1901.46,
+          "end": 1906.56,
+          "text": " Let me move on to our 10.2 topic, which is the annual records review and disposal."
+        },
+        {
+          "start": 1907.12,
+          "end": 1910.94,
+          "text": " So for this one, let me share my screen."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1914.01,
+          "end": 1914.97,
+          "text": " And for."
+        },
+        {
+          "start": 1915.25,
+          "end": 1916.63,
+          "text": " Hold on one moment."
+        },
+        {
+          "start": 1921.92,
+          "end": 1922.4,
+          "text": " Okay."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-bfc9f2faff8d127bf5e1",
+      "SOURCE_MEDIA_ID": "pg-ccb11a4619acaa92",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "GAP_START": 3163.98,
+      "GAP_END": 3167.25,
+      "GAP_SECONDS": 3.27,
+      "CONTEXT_START": 3152.53,
+      "CONTEXT_END": 3172.25,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3152.65,
+          "end": 3156.05,
+          "text": " We provide coordination work if and when we find those discrepancy in the data."
+        },
+        {
+          "start": 3157.05,
+          "end": 3161.18,
+          "text": " All right."
+        },
+        {
+          "start": 3163.22,
+          "end": 3163.98,
+          "text": " TPRM is what?"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3167.25,
+          "end": 3168.93,
+          "text": " TPRM, third-party risk management."
+        },
+        {
+          "start": 3170.43,
+          "end": 3170.91,
+          "text": " Okay."
+        },
+        {
+          "start": 3170.97,
+          "end": 3171.35,
+          "text": " Okay."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-d029a307d06e5a5c0691",
+      "SOURCE_MEDIA_ID": "pg-e3d73ded7776de64",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
+      "GAP_START": 1646.26,
+      "GAP_END": 1649.58,
+      "GAP_SECONDS": 3.32,
+      "CONTEXT_START": 1632.78,
+      "CONTEXT_END": 1654.58,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1636.8,
+          "end": 1637.78,
+          "text": " the evidence."
+        },
+        {
+          "start": 1640.33,
+          "end": 1640.85,
+          "text": " Correct."
+        },
+        {
+          "start": 1644.74,
+          "end": 1646.26,
+          "text": " Okay. All right."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1649.58,
+          "end": 1650.54,
+          "text": " So, basically,"
+        },
+        {
+          "start": 1650.6,
+          "end": 1652.94,
+          "text": " that's it for today's"
+        },
+        {
+          "start": 1652.94,
+          "end": 1654.8,
+          "text": " session. I don't have anything"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-e57845dd617469b56e40",
+      "SOURCE_MEDIA_ID": "pg-e37b41cb13677886",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "GAP_START": 808.32,
+      "GAP_END": 811.58,
+      "GAP_SECONDS": 3.26,
+      "CONTEXT_START": 803.32,
+      "CONTEXT_END": 816.58,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 794.35,
+          "end": 797.29,
+          "text": " So, this is the SharePoint."
+        },
+        {
+          "start": 797.41,
+          "end": 806.78,
+          "text": " For IT Asset Management on how to request to vet an application to be recategorized as EU OTS."
+        },
+        {
+          "start": 806.78,
+          "end": 808.32,
+          "text": " This is what we call EU OTS."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 811.58,
+          "end": 813.54,
+          "text": " So, these are the criteria."
+        },
+        {
+          "start": 813.72,
+          "end": 816.76,
+          "text": " These criteria varies also from time to time."
+        },
+        {
+          "start": 816.92,
+          "end": 823.24,
+          "text": " So, you always need to refer to the PNG materials, PNG references."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-538b27a8f0fdaf4ff1f2",
+      "SOURCE_MEDIA_ID": "pg-e37b41cb13677886",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "GAP_START": 1967.39,
+      "GAP_END": 1971.376,
+      "GAP_SECONDS": 3.986,
+      "CONTEXT_START": 1962.39,
+      "CONTEXT_END": 2015.94,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1965.09,
+          "end": 1965.57,
+          "text": " Management"
+        },
+        {
+          "start": 1965.57,
+          "end": 1966.55,
+          "text": " Let's have it"
+        },
+        {
+          "start": 1966.55,
+          "end": 1967.39,
+          "text": " For session"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1978.38,
+          "end": 1979.04,
+          "text": " So"
+        },
+        {
+          "start": 1981.84,
+          "end": 1982.3,
+          "text": " For"
+        },
+        {
+          "start": 1987.95,
+          "end": 1989.27,
+          "text": " Session"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-538b27a8f0fdaf4ff1f2",
+      "SOURCE_MEDIA_ID": "pg-e37b41cb13677886",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "GAP_START": 1975.28,
+      "GAP_END": 1978.38,
+      "GAP_SECONDS": 3.1,
+      "CONTEXT_START": 1962.39,
+      "CONTEXT_END": 2015.94,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1965.09,
+          "end": 1965.57,
+          "text": " Management"
+        },
+        {
+          "start": 1965.57,
+          "end": 1966.55,
+          "text": " Let's have it"
+        },
+        {
+          "start": 1966.55,
+          "end": 1967.39,
+          "text": " For session"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1978.38,
+          "end": 1979.04,
+          "text": " So"
+        },
+        {
+          "start": 1981.84,
+          "end": 1982.3,
+          "text": " For"
+        },
+        {
+          "start": 1987.95,
+          "end": 1989.27,
+          "text": " Session"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-538b27a8f0fdaf4ff1f2",
+      "SOURCE_MEDIA_ID": "pg-e37b41cb13677886",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "GAP_START": 1982.3,
+      "GAP_END": 1985.552,
+      "GAP_SECONDS": 3.252,
+      "CONTEXT_START": 1962.39,
+      "CONTEXT_END": 2015.94,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1966.55,
+          "end": 1967.39,
+          "text": " For session"
+        },
+        {
+          "start": 1978.38,
+          "end": 1979.04,
+          "text": " So"
+        },
+        {
+          "start": 1981.84,
+          "end": 1982.3,
+          "text": " For"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1987.95,
+          "end": 1989.27,
+          "text": " Session"
+        },
+        {
+          "start": 1992.05,
+          "end": 1993.37,
+          "text": " 14"
+        },
+        {
+          "start": 1993.66,
+          "end": 1993.96,
+          "text": " For"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-538b27a8f0fdaf4ff1f2",
+      "SOURCE_MEDIA_ID": "pg-e37b41cb13677886",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "GAP_START": 1999.28,
+      "GAP_END": 2010.94,
+      "GAP_SECONDS": 11.66,
+      "CONTEXT_START": 1962.39,
+      "CONTEXT_END": 2015.94,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1997.38,
+          "end": 1998.04,
+          "text": " We"
+        },
+        {
+          "start": 1998.04,
+          "end": 1998.44,
+          "text": " Are"
+        },
+        {
+          "start": 1998.44,
+          "end": 1999.28,
+          "text": " On"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2010.94,
+          "end": 2012.26,
+          "text": " Our"
+        },
+        {
+          "start": 2013.51,
+          "end": 2017.63,
+          "text": " important points is there in that identity access management so like that"
+        },
+        {
+          "start": 2017.63,
+          "end": 2026.98,
+          "text": " for the end-to-end process i thought charles reviewed those yes so um to answer that question"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-76c354919d894d6acfe7",
+      "SOURCE_MEDIA_ID": "pg-58194dc5b0eb5cc6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "GAP_START": 1150.11,
+      "GAP_END": 1153.15,
+      "GAP_SECONDS": 3.04,
+      "CONTEXT_START": 1098.81,
+      "CONTEXT_END": 1161.64,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1140.5,
+          "end": 1142.62,
+          "text": " Let me share screen again."
+        },
+        {
+          "start": 1146.57,
+          "end": 1146.87,
+          "text": " Okay."
+        },
+        {
+          "start": 1147.19,
+          "end": 1150.11,
+          "text": " So this is an example of the."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1153.15,
+          "end": 1154.35,
+          "text": " Access management."
+        },
+        {
+          "start": 1156.64,
+          "end": 1158.84,
+          "text": " User access management standards."
+        },
+        {
+          "start": 1159.06,
+          "end": 1160.6,
+          "text": " And if you would notice here."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-f37843de1c8e6d0d7590",
+      "SOURCE_MEDIA_ID": "pg-58194dc5b0eb5cc6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "GAP_START": 1587.98,
+      "GAP_END": 1591.63,
+      "GAP_SECONDS": 3.65,
+      "CONTEXT_START": 1582.98,
+      "CONTEXT_END": 1596.63,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1572.86,
+          "end": 1582.04,
+          "text": " yes, in CMDB, the compliance area for regulated applications will be generated in iRisk."
+        },
+        {
+          "start": 1582.4,
+          "end": 1583.16,
+          "text": " Okay."
+        },
+        {
+          "start": 1583.2,
+          "end": 1587.98,
+          "text": " So going back to one time assessment at iRisk completion in that compliance area section"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1591.63,
+          "end": 1596.95,
+          "text": " for demonstration purposes, example only,"
+        },
+        {
+          "start": 1597.21,
+          "end": 1603.19,
+          "text": " there will be a regulatory and compliance area generated in this section also."
+        },
+        {
+          "start": 1603.49,
+          "end": 1604.25,
+          "text": " Right?"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-5549c886955621da6072",
+      "SOURCE_MEDIA_ID": "pg-58194dc5b0eb5cc6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "GAP_START": 2376.11,
+      "GAP_END": 2380.432,
+      "GAP_SECONDS": 4.322,
+      "CONTEXT_START": 2371.11,
+      "CONTEXT_END": 2392.19,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2366.67,
+          "end": 2369.11,
+          "text": " I was thinking CSV is a bigger area."
+        },
+        {
+          "start": 2370.61,
+          "end": 2373.31,
+          "text": " It's just the regulated, non-regulated."
+        },
+        {
+          "start": 2373.67,
+          "end": 2376.11,
+          "text": " And then based on that, we create the RAMP document."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2382.12,
+          "end": 2383.74,
+          "text": " Anything else to it?"
+        },
+        {
+          "start": 2383.86,
+          "end": 2385.46,
+          "text": " Or is that all?"
+        },
+        {
+          "start": 2387.19,
+          "end": 2387.67,
+          "text": " Sorry."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-8d751248ca074ed02785",
+      "SOURCE_MEDIA_ID": "pg-58194dc5b0eb5cc6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "GAP_START": 2880.91,
+      "GAP_END": 2884.64,
+      "GAP_SECONDS": 3.73,
+      "CONTEXT_START": 2875.91,
+      "CONTEXT_END": 2889.64,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2879.37,
+          "end": 2879.65,
+          "text": " Wait a minute."
+        },
+        {
+          "start": 2879.69,
+          "end": 2880.57,
+          "text": " That's not the right one."
+        },
+        {
+          "start": 2880.61,
+          "end": 2880.91,
+          "text": " Hold on."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2884.64,
+          "end": 2885.08,
+          "text": " Yeah."
+        },
+        {
+          "start": 2885.22,
+          "end": 2886.86,
+          "text": " It's scheduled for 9 a.m. Eastern…"
+        },
+        {
+          "start": 2886.86,
+          "end": 2887.08,
+          "text": " I'm sorry."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-491ea1087ae0e37adc62",
+      "SOURCE_MEDIA_ID": "pg-98250af646a5c138",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "GAP_START": 1233.78,
+      "GAP_END": 1237.52,
+      "GAP_SECONDS": 3.74,
+      "CONTEXT_START": 1222.2,
+      "CONTEXT_END": 1242.52,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1225.34,
+          "end": 1225.42,
+          "text": " Okay."
+        },
+        {
+          "start": 1225.48,
+          "end": 1227.2,
+          "text": " Pausing for any questions before I proceed."
+        },
+        {
+          "start": 1233.22,
+          "end": 1233.78,
+          "text": " Okay."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1237.52,
+          "end": 1238.22,
+          "text": " Got it."
+        },
+        {
+          "start": 1239.64,
+          "end": 1244.08,
+          "text": " Next, as mentioned earlier, also the primary stakeholders for this one are site leaders"
+        },
+        {
+          "start": 1244.08,
+          "end": 1245.22,
+          "text": " and the like."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-f7c2a37170355cc87875",
+      "SOURCE_MEDIA_ID": "pg-98250af646a5c138",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "GAP_START": 2033.72,
+      "GAP_END": 2037.03,
+      "GAP_SECONDS": 3.31,
+      "CONTEXT_START": 2028.72,
+      "CONTEXT_END": 2042.03,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2001.78,
+          "end": 2019.9,
+          "text": " So, what this does is it actually helps our P&G customers, in particular, those who would want to check potential costs that they would need to prepare for for services that they want to avail from AMS."
+        },
+        {
+          "start": 2019.9,
+          "end": 2026.06,
+          "text": " So, for example, let's pretend I'm an application owner."
+        },
+        {
+          "start": 2026.26,
+          "end": 2033.72,
+          "text": " I will add a service, and it will help me…it will provide me this review wherein it's written down in layman's terms."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2037.03,
+          "end": 2042.71,
+          "text": " It highlights here that I need one-time effort for compliance, ongoing stewardship, and the like."
+        },
+        {
+          "start": 2042.81,
+          "end": 2044.29,
+          "text": " So, depending on the need that you have."
+        },
+        {
+          "start": 2045.01,
+          "end": 2049.09,
+          "text": " This is like a calculator."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-b0f5b027ce650cf89507",
+      "SOURCE_MEDIA_ID": "pg-98250af646a5c138",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "GAP_START": 2336.25,
+      "GAP_END": 2339.78,
+      "GAP_SECONDS": 3.53,
+      "CONTEXT_START": 2331.25,
+      "CONTEXT_END": 2344.78,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2323.76,
+          "end": 2325.86,
+          "text": " And that has a corresponding cost as well."
+        },
+        {
+          "start": 2326.47,
+          "end": 2331.47,
+          "text": " So, the total cost here would add up the number of applications that you'd want to enroll."
+        },
+        {
+          "start": 2331.75,
+          "end": 2336.25,
+          "text": " And considering also the type of services and the tier that you want to avail of."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2339.78,
+          "end": 2340.82,
+          "text": " Thank you."
+        },
+        {
+          "start": 2341.3,
+          "end": 2341.94,
+          "text": " All right."
+        },
+        {
+          "start": 2342.0,
+          "end": 2342.54,
+          "text": " No problem."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-7ef1d87624b58b8a6527",
+      "SOURCE_MEDIA_ID": "pg-896f3fb2e5862a02",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "GAP_START": 2130.064,
+      "GAP_END": 2134.54,
+      "GAP_SECONDS": 4.476,
+      "CONTEXT_START": 2121.72,
+      "CONTEXT_END": 2180.47,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2121.76,
+          "end": 2123.02,
+          "text": " Oracle data source."
+        },
+        {
+          "start": 2124.08,
+          "end": 2125.32,
+          "text": " This is different"
+        },
+        {
+          "start": 2125.32,
+          "end": 2126.72,
+          "text": " with the SQL Server."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2134.54,
+          "end": 2136.38,
+          "text": " I'm not sure but"
+        },
+        {
+          "start": 2136.38,
+          "end": 2138.1,
+          "text": " maybe application owners"
+        },
+        {
+          "start": 2138.48,
+          "end": 2138.76,
+          "text": " know this."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-32d16f6102f60ed35821",
+      "SOURCE_MEDIA_ID": "pg-896f3fb2e5862a02",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "GAP_START": 2329.82,
+      "GAP_END": 2334.672,
+      "GAP_SECONDS": 4.852,
+      "CONTEXT_START": 2282.45,
+      "CONTEXT_END": 2365.07,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2326.32,
+          "end": 2327.88,
+          "text": " User, operator"
+        },
+        {
+          "start": 2327.88,
+          "end": 2329.02,
+          "text": " or the main"
+        },
+        {
+          "start": 2329.43,
+          "end": 2329.82,
+          "text": " developer."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2336.86,
+          "end": 2338.64,
+          "text": " It's basically the same as"
+        },
+        {
+          "start": 2338.64,
+          "end": 2339.66,
+          "text": " the application overview."
+        },
+        {
+          "start": 2344.23,
+          "end": 2345.31,
+          "text": " Backup day 2."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-84b7da9a5c21aef486b9",
+      "SOURCE_MEDIA_ID": "pg-896f3fb2e5862a02",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "GAP_START": 3685.54,
+      "GAP_END": 3688.86,
+      "GAP_SECONDS": 3.32,
+      "CONTEXT_START": 3680.54,
+      "CONTEXT_END": 3735.6,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3680.52,
+          "end": 3682.64,
+          "text": " Can you show the database Jeng once?"
+        },
+        {
+          "start": 3682.92,
+          "end": 3685.14,
+          "text": " I see some RTCIS live"
+        },
+        {
+          "start": 3685.14,
+          "end": 3685.54,
+          "text": " tables."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3688.86,
+          "end": 3690.58,
+          "text": " That's not in"
+        },
+        {
+          "start": 3690.58,
+          "end": 3691.38,
+          "text": " this application."
+        },
+        {
+          "start": 3692.0,
+          "end": 3692.72,
+          "text": " No, there is."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-1410e9b1022c838b60c3",
+      "SOURCE_MEDIA_ID": "pg-611c4b9e32914de6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "GAP_START": 1349.67,
+      "GAP_END": 1355.38,
+      "GAP_SECONDS": 5.71,
+      "CONTEXT_START": 1335.91,
+      "CONTEXT_END": 1360.38,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1346.69,
+          "end": 1347.79,
+          "text": " want to use that kind of example of using that example of using a white background the"
+        },
+        {
+          "start": 1347.79,
+          "end": 1348.67,
+          "text": " political option would be black and you could also go ahead and create a new one using other"
+        },
+        {
+          "start": 1348.67,
+          "end": 1349.67,
+          "text": " options like I mentioned earlier the"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 1355.38,
+          "end": 1360.5,
+          "text": " people would like to know more about what's available within the application so we can"
+        },
+        {
+          "start": 1360.5,
+          "end": 1365.48,
+          "text": " team in with them so you can have multiple session you can set up working"
+        },
+        {
+          "start": 1365.48,
+          "end": 1370.48,
+          "text": " sessions with them or for example if the initial onboarding or initial"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-d0d66b48bd10d8fddbca",
+      "SOURCE_MEDIA_ID": "pg-611c4b9e32914de6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "GAP_START": 2475.5,
+      "GAP_END": 2481.09,
+      "GAP_SECONDS": 5.59,
+      "CONTEXT_START": 2470.5,
+      "CONTEXT_END": 2486.09,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2457.47,
+          "end": 2464.31,
+          "text": " found in service now um and if that happens what is going to be done is that this checklist will"
+        },
+        {
+          "start": 2464.31,
+          "end": 2470.3,
+          "text": " be generated for you you will be requested to answer this um obviously with the inputs of the"
+        },
+        {
+          "start": 2470.3,
+          "end": 2475.5,
+          "text": " application owner but you will be the one who's going to complete it and submit it in the system"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2481.09,
+          "end": 2487.13,
+          "text": " there is only one control but this is primarily driven on the type of data privacy information"
+        },
+        {
+          "start": 2487.13,
+          "end": 2491.75,
+          "text": " that you have so again more information can be found in the initial assessment so for example"
+        },
+        {
+          "start": 2491.75,
+          "end": 2502.08,
+          "text": " here uh let me check if I am allowed to do filters so I'm not so for example for privacy"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-4fb209c5fafc8f5a1f0e",
+      "SOURCE_MEDIA_ID": "pg-611c4b9e32914de6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "GAP_START": 2598.71,
+      "GAP_END": 2602.59,
+      "GAP_SECONDS": 3.88,
+      "CONTEXT_START": 2593.71,
+      "CONTEXT_END": 2607.59,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2576.85,
+          "end": 2581.89,
+          "text": " be provided as part of the screenshot so more to come when we discuss the third party risk"
+        },
+        {
+          "start": 2581.89,
+          "end": 2590.25,
+          "text": " management monitoring topic in I think session six if I'm not mistaken in our later sessions"
+        },
+        {
+          "start": 2590.25,
+          "end": 2598.71,
+          "text": " anyways uh we'll be walking through that that tool as well right all right for Germany just to valid"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2602.59,
+          "end": 2609.03,
+          "text": " screenshots or like how do we validate the data like let's say there are some fields that need"
+        },
+        {
+          "start": 2609.03,
+          "end": 2614.49,
+          "text": " to be encrypted right whether they are really encrypted or not right is it like do we submit"
+        },
+        {
+          "start": 2614.49,
+          "end": 2619.71,
+          "text": " screenshots or how do we get as much information as you can so it's either through screenshots"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-78076da87a998a68c157",
+      "SOURCE_MEDIA_ID": "pg-611c4b9e32914de6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "GAP_START": 2995.87,
+      "GAP_END": 2999.73,
+      "GAP_SECONDS": 3.86,
+      "CONTEXT_START": 2990.87,
+      "CONTEXT_END": 3004.73,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2976.54,
+          "end": 2982.46,
+          "text": " document exists there it will be up to the approver to provide you more details in terms of what these"
+        },
+        {
+          "start": 2982.46,
+          "end": 2988.28,
+          "text": " are but basically they're asking for at the station for the compliance document that payment"
+        },
+        {
+          "start": 2988.28,
+          "end": 2995.87,
+          "text": " card requirements have been implemented okay and then last but not least before I go to the walk"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 2999.73,
+          "end": 3006.14,
+          "text": " will have it or like do we have to create uh I don't think we we do not create documents for"
+        },
+        {
+          "start": 3006.14,
+          "end": 3010.78,
+          "text": " payment card in industry typically this is this is something that they should have as application"
+        },
+        {
+          "start": 3010.78,
+          "end": 3015.74,
+          "text": " owner but if in case there is doubt I would suggest that you connect with the control review"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-b7bcd453be1786667b57",
+      "SOURCE_MEDIA_ID": "pg-611c4b9e32914de6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "GAP_START": 3106.76,
+      "GAP_END": 3110.864,
+      "GAP_SECONDS": 4.104,
+      "CONTEXT_START": 3101.76,
+      "CONTEXT_END": 3122.18,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3072.8,
+          "end": 3096.36,
+          "text": " is the AI stewardship site so from there in one moment it is also in the ai.tg.com requirements of"
+        },
+        {
+          "start": 3096.36,
+          "end": 3103.1,
+          "text": " how how this is going to be completed but basically um applications with with approved AI would also"
+        },
+        {
+          "start": 3103.1,
+          "end": 3106.76,
+          "text": " need to be registered um and it is also in the material"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3117.18,
+          "end": 3127.87,
+          "text": " so here um when your application handles uh um artificial intelligence uh information you are"
+        },
+        {
+          "start": 3127.87,
+          "end": 3133.35,
+          "text": " going to be required to register them um in a certain way so for based on the idea policy"
+        },
+        {
+          "start": 3133.35,
+          "end": 3139.59,
+          "text": " standards of artificial intelligent models policy if you scroll down to the model registration"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-7b234d40cb5d678cad2d",
+      "SOURCE_MEDIA_ID": "pg-611c4b9e32914de6",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "GAP_START": 3323.61,
+      "GAP_END": 3327.15,
+      "GAP_SECONDS": 3.54,
+      "CONTEXT_START": 3306.39,
+      "CONTEXT_END": 3332.15,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3299.59,
+          "end": 3307.89,
+          "text": " that application is uh meeting the control requirements so there um uh we have four minutes"
+        },
+        {
+          "start": 3307.89,
+          "end": 3316.27,
+          "text": " of the time opening the floor for any questions you might have can you put a link to that iris in"
+        },
+        {
+          "start": 3316.27,
+          "end": 3323.61,
+          "text": " the chat if you didn't already or at least the iris guide you might already have the reference"
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3327.15,
+          "end": 3332.51,
+          "text": " before the meeting so let me share it's a good example that's why I say it's a good one and maybe"
+        },
+        {
+          "start": 3332.51,
+          "end": 3340.29,
+          "text": " just have a start okay um what is there it's already Archer requested me to read and then you'll"
+        },
+        {
+          "start": 3340.29,
+          "end": 3346.83,
+          "text": " also notice there are um times each month where Archer is unavailable due to their update schedule"
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-59e47dfb78ec9a4a926a",
+      "SOURCE_MEDIA_ID": "pg-4957e30bcb15f2bf",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "GAP_START": 3130.9,
+      "GAP_END": 3137.01,
+      "GAP_SECONDS": 6.11,
+      "CONTEXT_START": 3125.9,
+      "CONTEXT_END": 3156.89,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3128.88,
+          "end": 3129.32,
+          "text": " Sometimes."
+        },
+        {
+          "start": 3129.46,
+          "end": 3130.18,
+          "text": " If they are doing."
+        },
+        {
+          "start": 3130.3,
+          "end": 3130.9,
+          "text": " Some important."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3137.01,
+          "end": 3137.17,
+          "text": " So."
+        },
+        {
+          "start": 3137.57,
+          "end": 3138.69,
+          "text": " That is the reason."
+        },
+        {
+          "start": 3138.75,
+          "end": 3139.29,
+          "text": " We will seek."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-8bad404d3afd65c0f335",
+      "SOURCE_MEDIA_ID": "pg-4957e30bcb15f2bf",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "GAP_START": 3198.34,
+      "GAP_END": 3209.264,
+      "GAP_SECONDS": 10.924,
+      "CONTEXT_START": 3193.34,
+      "CONTEXT_END": 3295.4,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3197.66,
+          "end": 3197.76,
+          "text": " Are."
+        },
+        {
+          "start": 3197.82,
+          "end": 3198.12,
+          "text": " Facing."
+        },
+        {
+          "start": 3198.14,
+          "end": 3198.34,
+          "text": " The."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3219.04,
+          "end": 3219.1,
+          "text": " And."
+        },
+        {
+          "start": 3219.28,
+          "end": 3219.4,
+          "text": " That."
+        },
+        {
+          "start": 3219.62,
+          "end": 3219.94,
+          "text": " Fixed."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    },
+    {
+      "WINDOW_ID": "pgw-8bad404d3afd65c0f335",
+      "SOURCE_MEDIA_ID": "pg-4957e30bcb15f2bf",
+      "SOURCE_TRANSCRIPT": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "GAP_START": 3211.696,
+      "GAP_END": 3219.04,
+      "GAP_SECONDS": 7.344,
+      "CONTEXT_START": 3193.34,
+      "CONTEXT_END": 3295.4,
+      "BEFORE_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3197.66,
+          "end": 3197.76,
+          "text": " Are."
+        },
+        {
+          "start": 3197.82,
+          "end": 3198.12,
+          "text": " Facing."
+        },
+        {
+          "start": 3198.14,
+          "end": 3198.34,
+          "text": " The."
+        }
+      ],
+      "AFTER_TRANSCRIPT_CONTEXT": [
+        {
+          "start": 3219.04,
+          "end": 3219.1,
+          "text": " And."
+        },
+        {
+          "start": 3219.28,
+          "end": 3219.4,
+          "text": " That."
+        },
+        {
+          "start": 3219.62,
+          "end": 3219.94,
+          "text": " Fixed."
+        }
+      ],
+      "SEMANTIC_CLASSIFICATION": "UNRESOLVED_WITHOUT_AUDIO",
+      "LOCAL_ASR_AUTHORIZATION": "STANDING_APPROVED",
+      "PROCESSING_STATE": "WAITING_PG1_AND_RESOURCE_SLOT"
+    }
+  ]
+}
