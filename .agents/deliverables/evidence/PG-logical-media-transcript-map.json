@@ -1,0 +1,1094 @@
+{
+  "schema_version": 1,
+  "scope": "20 top-level readable P&G logical videos; no documents synthesized",
+  "logical_video_count": 20,
+  "video_sha256_note": "Omitted: source videos total roughly 38 GB; size, ffprobe duration and processing-database identity are retained.",
+  "physical_segment_sidecars_discovered": 92,
+  "distinct_transcript_content_hashes": 15,
+  "duplicate_sidecar_copies_by_source_provenance": 3,
+  "duplicate_identical_copies": 0,
+  "duplicate_divergent_copies": 3,
+  "unmatched_sidecar_paths": [
+    "CarpetaTranscripciones/cp_interview/alfredo_invterview_capgemini_segments.json",
+    "CarpetaTranscripciones/general/AMS_KAP_-_App_Support_-_Session_41_segments.json",
+    "CarpetaTranscripciones/general/AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532_segments.json",
+    "CarpetaTranscripciones/general/Ams_stewardship_transfer_segments.json",
+    "CarpetaTranscripciones/general/pg_AMS_KAP_-_Compliance_-_Session_1_segments.json",
+    "CarpetaTranscripciones/general/pg_Intro_segments.json",
+    "CarpetaTranscripciones/general/Pg_risk_training_series_s1_segments.json",
+    "CarpetaTranscripciones/general/pg_Shadow_bridge-ams_app_support_segments.json",
+    "CarpetaTranscripciones/general/pg_Tidal_segments.json",
+    "CarpetaTranscripciones/general/Shadow_bridge_ams_app_support_211026_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-f3b1241ed55a/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-f3b1241ed55a/chunks/chunk-000001_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-f3b1241ed55a/chunks/chunk-000002_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-f3b1241ed55a/chunks/chunk-000003_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-f3b1241ed55a/chunks/chunk-000004_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-f3b1241ed55a/chunks/chunk-000005_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-f3b1241ed55a/chunks/chunk-000006_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-ec96cdd186b8/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-d313658ad200/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-c5d5a3cb3f3d/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-b382c6e1f00d/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-b164ddf0373a/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-afd8a6570237/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-ad1c9b2143a4/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-9a0c733a264d/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-9843cd339967/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000001_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000002_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000003_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000004_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000005_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000006_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000007_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-962db4fe8332/chunks/chunk-000008_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-8424dbb61b96/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-70cccc33205e/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-6e5418b477b6/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-684152998a50/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000001_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000002_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000003_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000004_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000005_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000006_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-5c47d4d0cd07/chunks/chunk-000007_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-59cfcdacfccb/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-527fc17b6902/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-4ee4a8f39d86/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-3e41f4bf2275/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000001_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000002_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000003_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000004_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000005_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000006_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000007_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000008_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000009_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000010_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000011_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000012_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2f286a2b47d2/fragments/fragment-000013_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-2b087db40973/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-27cdbadc85e9/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/chunks/chunk-000000_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/final/recording_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000001_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000002_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000003_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000004_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000005_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000006_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000007_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-10e228c260e0/fragments/fragment-000008_segments.json",
+    "CarpetaTranscripciones/live_capture/sess-00064f479041/chunks/chunk-000000_segments.json"
+  ],
+  "state_counts": {
+    "MISSING": 8,
+    "PARTIAL": 8,
+    "NEEDS_REVIEW": 4
+  },
+  "transcripts_unassessed": 0,
+  "records": [
+    {
+      "MEDIA_ID": "pg-1",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 135525494,
+      "VIDEO_DURATION": 2760.448,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-ccb11a4619acaa92",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 314890782,
+      "VIDEO_DURATION": 3915.008,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+          "file_sha256": "07862728db159592a6c0dfa03a7e4afd69d333c7e540ee9059b88153d7ca2a77",
+          "content_hash": "24b27004e0ffa073444271439432a3fb3749f9b40d8cfa57a457c601b52d09b0",
+          "segments": 714
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "07862728db159592a6c0dfa03a7e4afd69d333c7e540ee9059b88153d7ca2a77",
+      "TRANSCRIPT_CONTENT_HASH": "24b27004e0ffa073444271439432a3fb3749f9b40d8cfa57a457c601b52d09b0",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 10.86,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3571.34,
+      "MEDIA_COVERAGE": 91.22,
+      "SPEECH_COVERAGE": 90.56,
+      "MEANINGFUL_UNCOVERED_SPEECH": 309.64,
+      "INTERNAL_GAPS": [
+        {
+          "start": 981.84,
+          "end": 986.73,
+          "seconds": 4.89
+        },
+        {
+          "start": 1628.87,
+          "end": 1632.29,
+          "seconds": 3.42
+        },
+        {
+          "start": 1910.94,
+          "end": 1914.01,
+          "seconds": 3.07
+        },
+        {
+          "start": 3163.98,
+          "end": 3167.25,
+          "seconds": 3.27
+        }
+      ],
+      "FINAL_GAP": 343.668,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    },
+    {
+      "MEDIA_ID": "pg-3",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 199296760,
+      "VIDEO_DURATION": 2607.812,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-e3d73ded7776de64",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 202480701,
+      "VIDEO_DURATION": 7350.016,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
+          "file_sha256": "c0445d5ba874389336d48ed1525e780d84d698d107e69ce81d5387ee684fed12",
+          "content_hash": "d06b1d0675cdf9c42f3969ec283c776cc8a13f2e8bf7c1c63450f48eb5b21a24",
+          "segments": 755
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "c0445d5ba874389336d48ed1525e780d84d698d107e69ce81d5387ee684fed12",
+      "TRANSCRIPT_CONTENT_HASH": "d06b1d0675cdf9c42f3969ec283c776cc8a13f2e8bf7c1c63450f48eb5b21a24",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 17.98,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 1903.21,
+      "MEDIA_COVERAGE": 25.89,
+      "SPEECH_COVERAGE": 85.17,
+      "MEANINGFUL_UNCOVERED_SPEECH": 248.728,
+      "INTERNAL_GAPS": [
+        {
+          "start": 1646.26,
+          "end": 1649.58,
+          "seconds": 3.32
+        }
+      ],
+      "FINAL_GAP": 5446.806,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    },
+    {
+      "MEDIA_ID": "pg-e37b41cb13677886",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 189048686,
+      "VIDEO_DURATION": 2136.896,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+          "file_sha256": "a209642496bf3dc5177e9c3d8095a3f5f79f8ef78003df762aed686f4ecdbba9",
+          "content_hash": "b4347fa97de7f676f41f87c194a444f861e8fefbede78cb0ae59ef03e6de044f",
+          "segments": 544
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "a209642496bf3dc5177e9c3d8095a3f5f79f8ef78003df762aed686f4ecdbba9",
+      "TRANSCRIPT_CONTENT_HASH": "b4347fa97de7f676f41f87c194a444f861e8fefbede78cb0ae59ef03e6de044f",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 86.86,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 2130.06,
+      "MEDIA_COVERAGE": 99.68,
+      "SPEECH_COVERAGE": 89.67,
+      "MEANINGFUL_UNCOVERED_SPEECH": 190.69,
+      "INTERNAL_GAPS": [
+        {
+          "start": 808.32,
+          "end": 811.58,
+          "seconds": 3.26
+        },
+        {
+          "start": 1967.39,
+          "end": 1971.376,
+          "seconds": 3.986
+        },
+        {
+          "start": 1975.28,
+          "end": 1978.38,
+          "seconds": 3.1
+        },
+        {
+          "start": 1982.3,
+          "end": 1985.552,
+          "seconds": 3.252
+        },
+        {
+          "start": 1999.28,
+          "end": 2010.94,
+          "seconds": 11.66
+        }
+      ],
+      "FINAL_GAP": 6.836,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    },
+    {
+      "MEDIA_ID": "pg-7ec100f076b0e0a0",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 180410239,
+      "VIDEO_DURATION": 2616.192,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+          "file_sha256": "52edeb9df730b492a3db3aa0448cc17797850c7b779b05d8b47b6ee022b8944d",
+          "content_hash": "6f6c0e1cf4445bbf973d16ee67f535e34a69e0b31352f065d6406faad540185d",
+          "segments": 1077
+        },
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+          "file_sha256": "745401e8ebc1c5084115661c2e29a1685bb503bfcae64b75948ad65c02ab5f1f",
+          "content_hash": "b00ac4e8918003ace4225d70886b2029ed57715d3f45ef1a50365e3577c19ada",
+          "segments": 647
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "52edeb9df730b492a3db3aa0448cc17797850c7b779b05d8b47b6ee022b8944d",
+      "TRANSCRIPT_CONTENT_HASH": "6f6c0e1cf4445bbf973d16ee67f535e34a69e0b31352f065d6406faad540185d",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "AMBIGUOUS",
+        "DUPLICATE_DIVERGENT"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 38.0,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 2592.64,
+      "MEDIA_COVERAGE": 99.1,
+      "SPEECH_COVERAGE": 82.83,
+      "MEANINGFUL_UNCOVERED_SPEECH": 391.638,
+      "INTERNAL_GAPS": [
+        {
+          "start": 607.72,
+          "end": 611.11,
+          "seconds": 3.39
+        },
+        {
+          "start": 662.04,
+          "end": 665.35,
+          "seconds": 3.31
+        },
+        {
+          "start": 831.64,
+          "end": 834.72,
+          "seconds": 3.08
+        },
+        {
+          "start": 2203.76,
+          "end": 2210.512,
+          "seconds": 6.752
+        },
+        {
+          "start": 2222.352,
+          "end": 2226.576,
+          "seconds": 4.224
+        },
+        {
+          "start": 2232.016,
+          "end": 2235.792,
+          "seconds": 3.776
+        },
+        {
+          "start": 2262.71,
+          "end": 2265.82,
+          "seconds": 3.11
+        },
+        {
+          "start": 2381.55,
+          "end": 2384.592,
+          "seconds": 3.042
+        }
+      ],
+      "FINAL_GAP": 23.552,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "NEEDS_REVIEW"
+    },
+    {
+      "MEDIA_ID": "pg-27753be62f40a4fa",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 140210176,
+      "VIDEO_DURATION": 3453.376,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
+          "file_sha256": "e291a19ad5846e36036278502550dce7f34d96f0aafbae55b112e90f2dccf097",
+          "content_hash": "5b9ec2ed73a4685e8b1c6e722c6d8cdde93b7a817226c9489b3ce626458af391",
+          "segments": 518
+        },
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
+          "file_sha256": "1d0ea7a242daad82fef5321dd12ef4c915f81e9fc76b413fa0d4068544526058",
+          "content_hash": "c56131a7d1c2362edf104174371dbf01281f0d49d269f1ab71d9fe883e880d47",
+          "segments": 329
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "e291a19ad5846e36036278502550dce7f34d96f0aafbae55b112e90f2dccf097",
+      "TRANSCRIPT_CONTENT_HASH": "5b9ec2ed73a4685e8b1c6e722c6d8cdde93b7a817226c9489b3ce626458af391",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "AMBIGUOUS",
+        "DUPLICATE_DIVERGENT"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 112.88,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 1482.86,
+      "MEDIA_COVERAGE": 42.94,
+      "SPEECH_COVERAGE": 82.7,
+      "MEANINGFUL_UNCOVERED_SPEECH": 218.278,
+      "INTERNAL_GAPS": [
+        {
+          "start": 911.08,
+          "end": 914.65,
+          "seconds": 3.57
+        }
+      ],
+      "FINAL_GAP": 1970.516,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "NEEDS_REVIEW"
+    },
+    {
+      "MEDIA_ID": "pg-cdcc12a6c7eea9bc",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 67913728,
+      "VIDEO_DURATION": 1841.216,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+          "file_sha256": "bc75e22baae7e515a34c68e4eb042f8c9750ec028252e5c38bd18de15d579783",
+          "content_hash": "b5a53bf1de686fefafd5b222317eeadf1750d5666ee742a9dc72ab6c5ed07d06",
+          "segments": 621
+        },
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+          "file_sha256": "4ae1773bd95cd603d6af472417788d24f2d4ebacc0f6ee7648cefe33de209dee",
+          "content_hash": "a03f99dd714a162d735df0fc4b834599d02d18f922dc664e5c4ea7b2373e9152",
+          "segments": 627
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "bc75e22baae7e515a34c68e4eb042f8c9750ec028252e5c38bd18de15d579783",
+      "TRANSCRIPT_CONTENT_HASH": "b5a53bf1de686fefafd5b222317eeadf1750d5666ee742a9dc72ab6c5ed07d06",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "AMBIGUOUS",
+        "DUPLICATE_DIVERGENT"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 89.12,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 912.83,
+      "MEDIA_COVERAGE": 49.58,
+      "SPEECH_COVERAGE": 91.71,
+      "MEANINGFUL_UNCOVERED_SPEECH": 65.178,
+      "INTERNAL_GAPS": [
+        {
+          "start": 85.616,
+          "end": 89.12,
+          "seconds": 3.504
+        },
+        {
+          "start": 580.72,
+          "end": 583.89,
+          "seconds": 3.17
+        }
+      ],
+      "FINAL_GAP": 928.386,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "NEEDS_REVIEW"
+    },
+    {
+      "MEDIA_ID": "pg-9",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 362446672,
+      "VIDEO_DURATION": 3572.032,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-10",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 207218534,
+      "VIDEO_DURATION": 3011.456,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-11",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 404757982,
+      "VIDEO_DURATION": 3571.265,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-12",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 312449328,
+      "VIDEO_DURATION": 3383.296,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-13",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 422119265,
+      "VIDEO_DURATION": 3880.768,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-58194dc5b0eb5cc6",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 231677584,
+      "VIDEO_DURATION": 3191.375,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+          "file_sha256": "16a07348dc9fed9391c31129063495e25bf88fac71a38d7c507ef3e1a92b2b7b",
+          "content_hash": "fb3b8d7767d7a27c61909b8cf2f9dcb9daabba0addf95c2f99b8b431d1f3aa55",
+          "segments": 945
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "16a07348dc9fed9391c31129063495e25bf88fac71a38d7c507ef3e1a92b2b7b",
+      "TRANSCRIPT_CONTENT_HASH": "fb3b8d7767d7a27c61909b8cf2f9dcb9daabba0addf95c2f99b8b431d1f3aa55",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "TRANSCRIPT_START": 41.46,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3186.35,
+      "MEDIA_COVERAGE": 99.84,
+      "SPEECH_COVERAGE": 86.4,
+      "MEANINGFUL_UNCOVERED_SPEECH": 387.212,
+      "INTERNAL_GAPS": [
+        {
+          "start": 1150.11,
+          "end": 1153.15,
+          "seconds": 3.04
+        },
+        {
+          "start": 1587.98,
+          "end": 1591.63,
+          "seconds": 3.65
+        },
+        {
+          "start": 2376.11,
+          "end": 2380.432,
+          "seconds": 4.322
+        },
+        {
+          "start": 2880.91,
+          "end": 2884.64,
+          "seconds": 3.73
+        }
+      ],
+      "FINAL_GAP": 5.025,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    },
+    {
+      "MEDIA_ID": "pg-15",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4",
+      "VIDEO_BASENAME": "pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 369397555,
+      "VIDEO_DURATION": 3988.992,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "NO_MATCH_FOUND",
+      "TRANSCRIPT_CANONICAL_PATH": null,
+      "TRANSCRIPT_SOURCE_PATHS": [],
+      "TRANSCRIPT_SOURCE_HASHES": [],
+      "TRANSCRIPT_FILE_SHA256": null,
+      "TRANSCRIPT_CONTENT_HASH": null,
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": null,
+      "TRANSCRIPT_START": null,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": null,
+      "MEDIA_COVERAGE": null,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": null,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": null,
+      "MATCH_METHOD": "MANUAL_REVIEW",
+      "MATCH_CONFIDENCE": "NONE",
+      "IDENTITY_MATCH": "NOT_FOUND",
+      "TRANSCRIPT_STATE": "MISSING"
+    },
+    {
+      "MEDIA_ID": "pg-98250af646a5c138",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "VIDEO_BASENAME": "pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 6397969946,
+      "VIDEO_DURATION": 3625.451,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+        "Video_compress/tutorial/pg_AMS KAP - Compliance - Session 2.mp4"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+          "file_sha256": "89cafcfea1b6f5bac4ac131ba66d60167d1bf0563d135bd9a7ea7e96b97a6c6f",
+          "content_hash": "6dcc1253e6bf67fd487c683c71ee92d80f1989b5e5cac90b15c43cb593029396",
+          "segments": 771
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "89cafcfea1b6f5bac4ac131ba66d60167d1bf0563d135bd9a7ea7e96b97a6c6f",
+      "TRANSCRIPT_CONTENT_HASH": "6dcc1253e6bf67fd487c683c71ee92d80f1989b5e5cac90b15c43cb593029396",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "TRANSCRIPT_START": 126.48,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3578.66,
+      "MEDIA_COVERAGE": 98.71,
+      "SPEECH_COVERAGE": 90.8,
+      "MEANINGFUL_UNCOVERED_SPEECH": 294.542,
+      "INTERNAL_GAPS": [
+        {
+          "start": 1233.78,
+          "end": 1237.52,
+          "seconds": 3.74
+        },
+        {
+          "start": 2033.72,
+          "end": 2037.03,
+          "seconds": 3.31
+        },
+        {
+          "start": 2336.25,
+          "end": 2339.78,
+          "seconds": 3.53
+        }
+      ],
+      "FINAL_GAP": 46.791,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    },
+    {
+      "MEDIA_ID": "pg-896f3fb2e5862a02",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+      "VIDEO_BASENAME": "pg_Ams_kap_app_support_s10.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 7925799330,
+      "VIDEO_DURATION": 4489.661,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+        "Video_compress/tutorial/pg_Ams kap app support s10.mp4"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+          "file_sha256": "e4888aafcb894902fa449ff298322872b7553585574fcec526877d79b8e62514",
+          "content_hash": "0f8ad60327c44e6eba0794b66e027b6e57eeef89535be17cbdfb22d1f8a00023",
+          "segments": 1188
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "e4888aafcb894902fa449ff298322872b7553585574fcec526877d79b8e62514",
+      "TRANSCRIPT_CONTENT_HASH": "0f8ad60327c44e6eba0794b66e027b6e57eeef89535be17cbdfb22d1f8a00023",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_Ams_kap_app_support_s10.mp4",
+      "TRANSCRIPT_START": 1.19,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3901.3,
+      "MEDIA_COVERAGE": 86.9,
+      "SPEECH_COVERAGE": 79.34,
+      "MEANINGFUL_UNCOVERED_SPEECH": 547.508,
+      "INTERNAL_GAPS": [
+        {
+          "start": 2130.064,
+          "end": 2134.54,
+          "seconds": 4.476
+        },
+        {
+          "start": 2329.82,
+          "end": 2334.672,
+          "seconds": 4.852
+        },
+        {
+          "start": 3685.54,
+          "end": 3688.86,
+          "seconds": 3.32
+        }
+      ],
+      "FINAL_GAP": 588.361,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    },
+    {
+      "MEDIA_ID": "pg-09eb7fdd89877b64",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+      "VIDEO_BASENAME": "pg_Ams_kap_app_support_s46.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 6389600169,
+      "VIDEO_DURATION": 3618.927,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json",
+          "file_sha256": "79424304fe6aeecbc063c77864a19ff65f836a33d312b164e92f930f91db34b0",
+          "content_hash": "a1bc1e990649c3e5521064c6a0c3b00ea6451be0a1478d9c0c2d9704a6a6b4f4",
+          "segments": 732
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "79424304fe6aeecbc063c77864a19ff65f836a33d312b164e92f930f91db34b0",
+      "TRANSCRIPT_CONTENT_HASH": "a1bc1e990649c3e5521064c6a0c3b00ea6451be0a1478d9c0c2d9704a6a6b4f4",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_Ams_kap_app_support_s46.mp4",
+      "TRANSCRIPT_START": 149.49,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3612.76,
+      "MEDIA_COVERAGE": 99.83,
+      "SPEECH_COVERAGE": null,
+      "MEANINGFUL_UNCOVERED_SPEECH": 93.74,
+      "INTERNAL_GAPS": [],
+      "FINAL_GAP": 6.167,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "NEEDS_REVIEW"
+    },
+    {
+      "MEDIA_ID": "pg-611c4b9e32914de6",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
+      "VIDEO_BASENAME": "pg_Ams_kap_compliance_s4.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 8014304595,
+      "VIDEO_DURATION": 4540.307,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+          "file_sha256": "d2ed9bd5ccd7f9cdab38d81af36b0fa4440dc0bab5c74effc8a25161c22f0ac9",
+          "content_hash": "ab8f8c1741e50bb02422d0da55ba629d910875977dd0e36436fc4f507b06086c",
+          "segments": 650
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "d2ed9bd5ccd7f9cdab38d81af36b0fa4440dc0bab5c74effc8a25161c22f0ac9",
+      "TRANSCRIPT_CONTENT_HASH": "ab8f8c1741e50bb02422d0da55ba629d910875977dd0e36436fc4f507b06086c",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_Ams_kap_compliance_s4.mp4",
+      "TRANSCRIPT_START": 129.74,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3580.11,
+      "MEDIA_COVERAGE": 78.85,
+      "SPEECH_COVERAGE": 93.58,
+      "MEANINGFUL_UNCOVERED_SPEECH": 207.916,
+      "INTERNAL_GAPS": [
+        {
+          "start": 1349.67,
+          "end": 1355.38,
+          "seconds": 5.71
+        },
+        {
+          "start": 2475.5,
+          "end": 2481.09,
+          "seconds": 5.59
+        },
+        {
+          "start": 2598.71,
+          "end": 2602.59,
+          "seconds": 3.88
+        },
+        {
+          "start": 2995.87,
+          "end": 2999.73,
+          "seconds": 3.86
+        },
+        {
+          "start": 3106.76,
+          "end": 3110.864,
+          "seconds": 4.104
+        },
+        {
+          "start": 3323.61,
+          "end": 3327.15,
+          "seconds": 3.54
+        }
+      ],
+      "FINAL_GAP": 960.197,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    },
+    {
+      "MEDIA_ID": "pg-4957e30bcb15f2bf",
+      "VIDEO_CANONICAL_PATH": "Videos/py_pg/pg_Shadow_221026.mp4",
+      "VIDEO_BASENAME": "pg_Shadow_221026.mp4",
+      "VIDEO_SHA256": null,
+      "VIDEO_SIZE": 5889566886,
+      "VIDEO_DURATION": 3335.784,
+      "PROJECT": "P&G",
+      "KNOWN_ALIASES": [
+        "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json"
+      ],
+      "MEDIA_STATE": "VALID",
+      "TRANSCRIPT_MATCH_STATUS": "MATCHED",
+      "TRANSCRIPT_CANONICAL_PATH": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "TRANSCRIPT_SOURCE_PATHS": [
+        "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json"
+      ],
+      "TRANSCRIPT_SOURCE_HASHES": [
+        {
+          "path": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+          "file_sha256": "cc0f8773f27afb13ac2208a7101c493a23599a94bccf45db01feea26b4848a97",
+          "content_hash": "55d290e8bc998ac8c53c0cc33fa2c26caaa9c01a103ee701e5dbdcaf91fa4ae9",
+          "segments": 871
+        }
+      ],
+      "TRANSCRIPT_FILE_SHA256": "cc0f8773f27afb13ac2208a7101c493a23599a94bccf45db01feea26b4848a97",
+      "TRANSCRIPT_CONTENT_HASH": "55d290e8bc998ac8c53c0cc33fa2c26caaa9c01a103ee701e5dbdcaf91fa4ae9",
+      "TRANSCRIPT_DUPLICATE_CLASSIFICATION": [
+        "CANONICAL"
+      ],
+      "TRANSCRIPT_SOURCE_MEDIA_ID": "pg_Shadow_221026.mp4",
+      "TRANSCRIPT_START": 116.35,
+      "TRANSCRIPT_DURATION_OR_LAST_TIMESTAMP": 3330.63,
+      "MEDIA_COVERAGE": 99.85,
+      "SPEECH_COVERAGE": 80.85,
+      "MEANINGFUL_UNCOVERED_SPEECH": 364.596,
+      "INTERNAL_GAPS": [
+        {
+          "start": 3130.9,
+          "end": 3137.01,
+          "seconds": 6.11
+        },
+        {
+          "start": 3198.34,
+          "end": 3209.264,
+          "seconds": 10.924
+        },
+        {
+          "start": 3211.696,
+          "end": 3219.04,
+          "seconds": 7.344
+        }
+      ],
+      "FINAL_GAP": 5.154,
+      "MATCH_METHOD": "PROCESSING_DB_PROVENANCE",
+      "MATCH_CONFIDENCE": "HIGH",
+      "IDENTITY_MATCH": "PROCESSING_DB_AND_AUDIO_FILE",
+      "TRANSCRIPT_STATE": "PARTIAL"
+    }
+  ]
+}

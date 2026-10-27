@@ -3,6 +3,6 @@
   "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
   "branch": "delta/zmi-docs-transcript-gate",
   "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "Session 41 owner-approved; GOLDEN_OVERFIT_CHECK=PASS. Generic S46 extraction: 1 transcript-grounded application candidate, visual topic coverage 7/7; S46 speech remains NEEDS_REVIEW with 202.774s/222 intervals unresolved, no golden trio. P&G inventory: 20/20 media ffprobe-valid; 14 physical sidecars represent 11 source matches (3 duplicates); 10 non-S46 matched transcripts are PARTIAL, S46 needs review, 9 sources lack sidecars. Cross-session/Mission Pack controlled tests pass, no real cross-session pack generated. DOCUMENTS_V2=INCOMPLETE; corpus synthesis frozen; MERGED_TO_MAIN=NO; DEPLOYED=NO.",
-  "updated_at": "2026-10-26T23:05:00Z"
+  "last_result": "Transcript reconciliation checkpoint: 20/20 readable P&G logical videos mapped; 15 physical sidecars map to 12 sources (3 divergent copies); 8 missing, 8 partial, 4 needs review, 0 unassessed. S46: 222 uncertain intervals/202.774s reconciled; 23/79 contextual large-v3 windows checkpointed, 56 pending; conservative speech coverage 91.63%, gate NEEDS_REVIEW. Focused docs suite 166 passed, Ruff/syntax PASS. Session 41 owner-approved; S43 remains BLOCKED_SOURCE. Corpus synthesis frozen; no merge/deploy.",
+  "updated_at": "2026-10-27T02:45:00Z"
 }

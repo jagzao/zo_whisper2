@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "scope": "matched P&G sidecars excluding S46, already audited separately",
-  "processed": 10,
-  "total": 10,
+  "scope": "all matched P&G sidecars except S46 (which has separate full speech audit)",
+  "processed": 11,
+  "total": 11,
   "elapsed_seconds": 250.2,
   "state_counts": {
-    "PARTIAL": 10
+    "PARTIAL": 11
   },
   "records": [
     {
@@ -234,6 +234,43 @@
       "error": null
     },
     {
+      "video": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones\\py_pg\\pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "duration_seconds": 3191.375,
+      "transcript_media_reach_percent": 99.84,
+      "identity_match": "MATCH_BY_SOURCE_AUDIO_FILE",
+      "segment_count": 945,
+      "vad_speech_seconds": 2846.816,
+      "transcribed_speech_seconds": 2459.604,
+      "uncovered_speech_seconds": 387.212,
+      "speech_coverage_percent": 86.4,
+      "major_speech_gaps": [
+        {
+          "start": 1150.11,
+          "end": 1153.15,
+          "seconds": 3.04
+        },
+        {
+          "start": 1587.98,
+          "end": 1591.63,
+          "seconds": 3.65
+        },
+        {
+          "start": 2376.11,
+          "end": 2380.432,
+          "seconds": 4.322
+        },
+        {
+          "start": 2880.91,
+          "end": 2884.64,
+          "seconds": 3.73
+        }
+      ],
+      "transcript_state": "PARTIAL",
+      "vad_interval_count": 58,
+      "classification": "VAD_COVERAGE_ASSESSED"
+    },
+    {
       "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
       "sidecar": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
       "duration_seconds": 3625.450667,
@@ -388,5 +425,41 @@
       "classification": "VAD_COVERAGE_ASSESSED",
       "error": null
     }
-  ]
+  ],
+  "duplicate_copy_assessments": [
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording_segments.json",
+      "segment_count": 647,
+      "content_hash": "b00ac4e8918003ace4225d70886b2029ed57715d3f45ef1a50365e3577c19ada",
+      "transcript_state": "NEEDS_REVIEW",
+      "classification": "DIVERGENT_COPY_IDENTITY_REVIEW",
+      "reason": "Same source-media provenance, distinct transcript content hash; compare transcript coverage before canonical selection.",
+      "speech_coverage_percent": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording_segments.json",
+      "segment_count": 329,
+      "content_hash": "c56131a7d1c2362edf104174371dbf01281f0d49d269f1ab71d9fe883e880d47",
+      "transcript_state": "NEEDS_REVIEW",
+      "classification": "DIVERGENT_COPY_IDENTITY_REVIEW",
+      "reason": "Same source-media provenance, distinct transcript content hash; compare transcript coverage before canonical selection.",
+      "speech_coverage_percent": null
+    },
+    {
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "sidecar": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording_segments.json",
+      "segment_count": 627,
+      "content_hash": "a03f99dd714a162d735df0fc4b834599d02d18f922dc664e5c4ea7b2373e9152",
+      "transcript_state": "NEEDS_REVIEW",
+      "classification": "DIVERGENT_COPY_IDENTITY_REVIEW",
+      "reason": "Same source-media provenance, distinct transcript content hash; compare transcript coverage before canonical selection.",
+      "speech_coverage_percent": null
+    }
+  ],
+  "logical_video_count": 20,
+  "transcripts_unassessed": 0,
+  "identity_note": "All logical media are resolved to a transcript identity state; divergent sidecar versions are explicitly NEEDS_REVIEW and preserved. Their final quality comparison is queued.",
+  "sidecar_versions_assessed_or_reviewed": 14
 }

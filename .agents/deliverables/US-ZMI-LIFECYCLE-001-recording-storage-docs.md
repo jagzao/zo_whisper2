@@ -6,89 +6,72 @@
 ## CURRENT_RESULT
 
 DOCUMENTS_V2=INCOMPLETE
-DOCS_V2_ARCHITECTURE_VERSION=3 generic MediaEvidenceBundle pipeline + local semantic OCR retry + cross-session fact merge + Mission Pack generator
-REVISA_POINTER_MAIN=PASS; main pointer is status-only and does not imply merge/deploy
+DOCS_V2_ARCHITECTURE_VERSION=3 generic source-evidence and cross-session pipeline; corpus synthesis remains frozen
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=0450e97 (active branch checkpoint; not merged or deployed)
+IMPLEMENTATION_HEAD=38fb01d plus current uncommitted transcript reconciliation changes
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
 CORPUS_GENERATION=FROZEN
 
 SESSION_41_OWNER_UAT=PASS
 SESSION_41_GOLDEN=APPROVED
-SESSION_41_GATE=PASS
+GOLDEN_OVERFIT_CHECK=PASS
+
 S43_SOURCE_RECOVERY=OWNER_REQUIRED
 S43_GATE=BLOCKED_SOURCE
 
 GOLDEN_2_SOURCE=Videos/py_pg/pg_Ams_kap_app_support_s46.mp4
-GOLDEN_2_SELECTION_REASON=Readable 60.3-minute technical support recording with 51 visual frames, multiple operational topics, SQL/database, configuration and UI evidence; materially different from Session 41.
-GOLDEN_OVERFIT_CHECK=PASS; automated production-module scanner passes for application names, golden claims, frame IDs, and timestamps
-S46_MEDIA=PASS; 3618.944s; media reachable and transcript timestamp reach 99.83%
-S46_TRANSCRIPT_STATE=NEEDS_REVIEW
-S46_SPEECH_COVERAGE_RAW=86.24% canonical; 86.89% including 4.920s prior and 8.360s newly corroborated supplemental ASR candidates; VAD=2042.496s
-S46_VAD_SPEECH_SECONDS=2042.496
-S46_TRANSCRIBED_SPEECH_SECONDS=1761.414 canonical; 1774.694 including 4.920s prior and 8.360s new dual-model supplemental candidates
-S46_UNCOVERED_SPEECH_SECONDS=267.802 after corroborated candidates; 63.838s/349 boundary fragments remain excluded from effective denominator
-S46_SPEECH_COVERAGE_EFFECTIVE=89.69% provisional; 222 intervals/202.774s uncertain, 8 intervals/8.360s corroborated missing speech, 1 interval/1.190s false-positive VAD candidate; gate remains NEEDS_REVIEW
-S46_MEANINGFUL_UNCOVERED_SPEECH=202.774s across 222 unresolved intervals; 8.360s corroborated recovery candidates remain supplemental and are not inserted into canonical transcript
-S46_SPEECH_GAP_AUDIT=.agents/deliverables/evidence/S46-speech-gap-audit.md and .json; all 231 intervals individually audited with small model, 10 candidates checked with second local model
-S46_OCR_SUCCESS=21/51 (20 technical-frame successes; 1 gallery frame; 3 gallery frames suppressed)
-S46_OCR_LOW_CONFIDENCE=30/51; 3 meeting-gallery frames suppressed from operational coverage; retry report has 2 current low-confidence database retries and 1 prior local flow-frame promotion at 0.521 confidence; current retries promoted 0
-S46_OCR_RETRY=bounded local crop/contrast/sharpen retry implemented; 2 current low-confidence database frames retried, 0 promoted; prior frame 0005 crop OCR is SUCCESS at 0.521 with original and derived image paths retained
-S46_OCR_RETRY_CANDIDATES=3 evidenced local crop attempts; S46_OCR_PROMOTED_TO_SUCCESS=0 on latest run; frame 0005 prior local retry SUCCESS
-S46_OCR_REMAINING_LOW_CONFIDENCE=30/51, including 2 gallery frames suppressed
-S46_VISUAL_TOPICS=7: ACCESS, APPLICATION_UI, CONFIGURATION, DATABASE, FLOW_DIAGRAM, SUPPORT_SCOPE, WORKFLOW
-S46_VISUAL_TOPICS_COVERED=7/7; WORKFLOW supported by transcript plus selected frame; FLOW_DIAGRAM is independently selected; low-confidence OCR is not sole support
-S46_WORKFLOW_EVIDENCE=TRANSCRIPT + selected frame at 283.837s (FLOW_DIAGRAM); OCR title and source frame retained
-S46_MEANINGFUL_FRAMES=48; S46_SELECTED_FRAMES=48; duplicates=0; galleries=3 suppressed; black=0
-S46_APPLICATION_SEGMENTATION=PASS; one source-grounded NEW_APPLICATION candidate discovered generically from transcript
-S46_CLAIM_PROVENANCE=PASS; S46_VISUAL_COVERAGE=PASS
-S46_APPLICATIONS_DISCOVERED=1 candidate: eOperations; transcript provenance at 00:04:28.370, identity is NEW_APPLICATION pending owner review
-S46_CLAIMS=223 extracted in generic diagnostic run; claim provenance gate PASS
-S46_DIAGRAMS=0; no source-grounded graph extracted
-S46_PROCEDURES=0
-S46_AMBIGUITIES=12 source-uncertain claims plus unresolved app identity in diagnostic output
-S46_OPEN_QUESTIONS=not generated as standalone records
-S46_QUALITY_GATE=FAIL; 202.774s of speech coverage remains unresolved; application resolution, visual, and claim gates pass; uncertain claims remain review-only
-S46_SOURCE_GATE=PASS; S46_SPEECH_GATE=FAIL; S46_VISUAL_GATE=PASS; S46_CLAIM_GATE=PASS; S46_APPLICATION_RESOLUTION=PASS; GOLDEN_2_GATE=BLOCKED_SPEECH; S46_GATE=BLOCKED_SPEECH; diagnostic-only output under tmp; no golden trio
-S46_SPEECH_RECOVERY=all 231 longer gaps audited with small local ASR; 10 candidates checked by large-v3-turbo; 8/8.360s semantically corroborated, 2 remain wording-uncertain, canonical transcript not overwritten
-S46_SPEECH_REPORT=CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_Frames/pg_Ams_kap_app_support_s46/evidence/speech-coverage-report.md and .json; detailed audit committed under deliverables/evidence
-S46_RECOVERY_SEGMENTS=8 supplemental dual-model spans retained as coverage evidence only; 4.920s prior candidate plus 8.360s new; not canonical transcript text
-
-CROSS_SESSION_KNOWLEDGE=integrated exact-alias resolver + conflict-safe claim consolidation + provenance graph + corroboration gate; controlled confirmation/extension/supersession/conflict tests pass; no real two-session consolidation because S46 is ineligible
-APPLICATION_RESOLUTION=exact explicit aliases only; ambiguous identities remain NEEDS_REVIEW; no fuzzy application merge
-APPLICATION_MISSION_PACK=generator creates MD/PDF/knowledge JSON from provenance-grounded corroborated facts; controlled integration passes; no real application pack generated without eligible cross-session evidence
-PILOT_BATCH=NOT_RUN; requires S46 gate and cross-session evidence first
-MINERU=DISABLED
+S46_SOURCE_GATE=PASS
+S46_SPEECH_GATE=NEEDS_REVIEW; low-priority large-v3 recovery resumed, 23/79 windows checkpointed and 56 pending
+S46_VISUAL_GATE=PASS (7/7; eOperations remains generic extraction result)
+S46_CLAIM_GATE=PASS
+S46_GOLDEN=BLOCKED_SPEECH; no pack generated
+S46_UNCERTAIN_RAW_SECONDS=202.774 / 222 intervals
+S46_UNCERTAIN_REPRESENTED=109.034 seconds (neighbor-matched or word-boundary fragments)
+S46_MEANINGFUL_MISSING_SECONDS=1.180 supplemental candidate; 7.180 seconds of prior supplemental candidates match nearby transcript
+S46_RECOVERED_SECONDS=23 contextual windows processed; remaining windows in progress; candidates retained separately and not merged into canonical transcript
+S46_REMAINING_UNRESOLVED_SECONDS=93.740 NEEDS_REVIEW
+S46_EFFECTIVE_SPEECH_COVERAGE=91.63% conservative; gate pending recovery and duplicate comparison
+S46_INTERVAL_LEDGER=.agents/deliverables/evidence/S46-speech-reconciliation.json and .md; all 222 originally uncertain intervals retained with source VAD region, energy, ASR, neighbor text and classification
 
 PG_LOGICAL_VIDEO_COUNT=20
-PG_READABLE_VIDEO_COUNT=20 per prior media validation; S43 excluded as separate unresolved recovery candidate
-PG_TRANSCRIPT_SIDECARS=14 physical exact-name sidecar files for 11 distinct source videos; 3 duplicate copies
+PG_READABLE_VIDEO_COUNT=20
+PG_PHYSICAL_SIDECARS=15 matched to these sources
+PG_DISTINCT_TRANSCRIPT_SOURCES=12
+PG_DUPLICATE_SIDECARS=3; all three are divergent content copies for Sessions 15?17; none deleted
 PG_TRANSCRIPTS_VALID=0
-PG_TRANSCRIPTS_PARTIAL=10; all 10 non-S46 matched sidecars fail speech coverage (79.34%-93.58%)
-PG_TRANSCRIPTS_MISSING=9 of 20 lack an exact-name sidecar in the full CarpetaTranscripciones tree
-PG_TRANSCRIPTS_FAILED=0; all 20 media files pass ffprobe and all 11 matched sidecars parse
-PG_TRANSCRIPTS_NEEDS_REVIEW=1; S46 remains below speech-coverage threshold with 202.774s unresolved
-PG_TRANSCRIPTS_UNASSESSED=0 matched sidecars; 9 sources remain MISSING and need transcript recovery
-PG_TRANSCRIPTION_COMPLETE=NO; all 11 matched sidecars have speech coverage results, but 10 are PARTIAL, S46 needs review, and 9 sources lack sidecars
-PG_TRANSCRIPT_SIDECAR_ASSESSMENT=.agents/deliverables/evidence/PG-transcript-sidecar-assessment.md and .json; 20/20 ffprobe-valid, 14 physical sidecars, 11 distinct matched sources, 3 duplicate copies, 10 VAD-assessed partial transcripts, 1 S46 needs review, 9 missing
-PG_TRANSCRIPT_SPEECH_COVERAGE=.agents/deliverables/evidence/PG-transcript-speech-coverage.md and .json; local Silero VAD run for all 10 non-S46 matched transcripts
-EVIDENCE_CONFLICT=YES; current exact-path inventory yields 10 PARTIAL / 1 NEEDS_REVIEW / 9 MISSING, conflicting with prior source-qualified tally 1 VALID / 3 PARTIAL / 6 MISSING / 10 UNASSESSED; resolve logical source identities/manifests
+PG_TRANSCRIPTS_PARTIAL=8
+PG_TRANSCRIPTS_NEEDS_REVIEW=4 (S46 plus 3 divergent Session 15?17 copies)
+PG_TRANSCRIPTS_MISSING=8 after embedded audio-file and processing DB reconciliation
+PG_TRANSCRIPTS_FAILED=0
+PG_TRANSCRIPTS_UNASSESSED=0 logical video states; divergent sidecar copies explicitly NEEDS_REVIEW and queued for coverage comparison
+PG_FOUND_UNDER_ALIAS=0
+PG_FOUND_BY_PROVENANCE=12
+PG_AMBIGUOUS_MATCH=0
+PG_TRANSCRIPTION_COMPLETE=NO; 8 missing full-transcription jobs and 11 targeted/reconciliation jobs queued; one S46 job processing
+PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
+PG_TRANSCRIPT_QUEUE=.agents/deliverables/evidence/PG-transcription-queue.json/.md
 
-UNIT=160 documentation-focused tests passed in 567.86s on current source
-RUFF=PASS on changed production source and test module; broader legacy docs-test lint retains 8 unrelated findings
-SYNTAX=PASS; compileall on documentation package
-REPO_STATE=PASS_FOCUSED; 160 documentation tests, Ruff, and syntax pass; Golden 2 speech gate remains blocked
-AGENT_SERVED_CHECK=NOT_RUN; no merge/deploy
-OWNER_UAT=PARTIAL; Session 41 approved, Golden 2 owner review pending
+CROSS_SESSION_PRIMITIVES=PASS
+CROSS_SESSION_APPLICATION=NONE eligible pair found
+CROSS_SESSION_CONTRIBUTING_SESSIONS=NONE
+CROSS_SESSION_REAL_PACK=BLOCKED_NO_ELIGIBLE_PAIR
+APPLICATION_MISSION_PACK=controlled tests pass; real pack not generated
+
+UNIT=166 PASS on current source, including 6 added transcript-reconciliation tests
+RUFF=PASS on new module and tests
+SYNTAX=PASS on new module and tests
+REPO_STATE=TESTING; transcript corpus and S46 speech gates remain open despite passing current focused suite
+AGENT_SERVED_CHECK=NOT_RUN
+OWNER_UAT=PARTIAL; Session 41 approved, S46 owner review pending
 DOCUMENTS_V2_OWNER_UAT=PARTIAL
 
-KANBAN_COMPLETE=Session 41 golden approved; production golden-literal scanner PASS
-KANBAN_TESTING=Generic application identity extraction; cross-session merge/Mission Pack tests PASS; speech coverage assessed for 10 matched P&G transcripts
-KANBAN_BLOCKED=S46 speech gate; 222 intervals/202.774s uncertain; 9 P&G sources lack a transcript sidecar
-KANBAN_OWNER_PENDING=Golden 2 owner review; pilot and full corpus synthesis remain frozen
-BLOCKER=S46 meaningful speech coverage remains below readiness threshold; 9 P&G sources lack exact transcript sidecars and prior inventory identities conflict
-NEXT_ACTION=Recover or reconcile missing transcript sources and resolve S46 gaps; rerun generic S46 gates only after evidence is sufficient; keep corpus generation frozen
+KANBAN_COMPLETE=Session 41 golden approved; golden overfit gate pass; S46 visual coverage 7/7
+KANBAN_TESTING=S46 speech reconciliation; 20-source identity map; 15 sidecars mapped; transcript queue active
+KANBAN_BLOCKED=S46 speech gate awaits contextual recovery; 8 source transcripts missing; 3 divergent sidecar copies need comparison
+KANBAN_OWNER_PENDING=S46 Golden 2 review; real cross-session pack; small pilot and full corpus remain frozen
+BLOCKER=S46 contextual recovery is running from 23/79 checkpoint; no P&G transcript currently meets VALID; 8 full jobs and 12 targeted/reconciliation jobs queued
+NEXT_ACTION=finish contextual S46 recovery, resolve divergent copies and partial gaps, then run queued large-v3 transcriptions one media at a time; preserve corpus freeze
 
 ## HISTORICAL_RESULTS
 

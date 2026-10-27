@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-27",
+  "policy": "one worker per media; source identity is immutable; recovery outputs remain separate until validated",
+  "records": [
+    {
+      "media_id": "pg-1",
+      "video": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-ccb11a4619acaa92",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording.mp4",
+      "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-3",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-e3d73ded7776de64",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording.mp4",
+      "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-e37b41cb13677886",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording.mp4",
+      "transcript": "CarpetaTranscripciones/pg_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-7ec100f076b0e0a0",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "compare divergent sidecars against source speech coverage before choosing canonical",
+      "transcript_state": "NEEDS_REVIEW",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-27753be62f40a4fa",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "compare divergent sidecars against source speech coverage before choosing canonical",
+      "transcript_state": "NEEDS_REVIEW",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-cdcc12a6c7eea9bc",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "compare divergent sidecars against source speech coverage before choosing canonical",
+      "transcript_state": "NEEDS_REVIEW",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-9",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-10",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-11",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-12",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-13",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-58194dc5b0eb5cc6",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-15",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-98250af646a5c138",
+      "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-896f3fb2e5862a02",
+      "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-09eb7fdd89877b64",
+      "video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json",
+      "state": "PROCESSING",
+      "next_action": "resume large-v3 contextual recovery; 23/79 windows already checkpointed",
+      "transcript_state": "NEEDS_REVIEW",
+      "lock": "pid:33716"
+    },
+    {
+      "media_id": "pg-611c4b9e32914de6",
+      "video": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-4957e30bcb15f2bf",
+      "video": "Videos/py_pg/pg_Shadow_221026.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    }
+  ],
+  "active_workers": [
+    {
+      "media_id": "pg-09eb7fdd89877b64",
+      "pid": 33716,
+      "job": "S46 contextual recovery",
+      "model": "large-v3",
+      "started_at": "2026-10-27T02:39Z"
+    }
+  ]
+}
