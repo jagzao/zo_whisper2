@@ -1,0 +1,66 @@
+{
+  "media_id": "pg-896f3fb2e5862a02",
+  "source": "Videos\\py_pg\\pg_Ams_kap_app_support_s10.mp4",
+  "source_duration_ffprobe_seconds": 4489.6609,
+  "map_duration": 4489.661,
+  "sidecar": {
+    "path": "CarpetaTranscripciones\\py_pg\\pg_Ams_kap_app_support_s10_segments.json",
+    "sha256": "e4888aafcb894902fa449ff298322872b7553585574fcec526877d79b8e62514",
+    "embedded_audio_file": "C:\\Dev\\Zo\\whisper\\Videos\\py_pg\\pg_Ams_kap_app_support_s10.mp4",
+    "sidecar_duration": 4489.664,
+    "segments": 1188,
+    "words": 5469,
+    "last_segment_end": 3901.3,
+    "media_reach_percent": 86.9,
+    "invalid_segment_timestamps": [],
+    "segment_order_monotonic": true,
+    "word_order_monotonic": true,
+    "zero_duration_word_timestamps": 35
+  },
+  "identity_match": "HIGH",
+  "existing_vad_assessment": {
+    "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+    "sidecar": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+    "duration_seconds": 4489.6609,
+    "media_coverage_percent": 86.9,
+    "identity_match": "MATCH",
+    "segment_count": 1188,
+    "transcript_start": 1.19,
+    "transcript_last_timestamp": 3901.3,
+    "vad_speech_seconds": 2650.048,
+    "transcribed_speech_seconds": 2102.54,
+    "uncovered_speech_seconds": 547.508,
+    "speech_coverage_percent": 79.34,
+    "major_speech_gaps": [
+      {
+        "start": 2130.064,
+        "end": 2134.54,
+        "seconds": 4.476
+      },
+      {
+        "start": 2329.82,
+        "end": 2334.672,
+        "seconds": 4.852
+      },
+      {
+        "start": 3685.54,
+        "end": 3688.86,
+        "seconds": 3.32
+      }
+    ],
+    "transcript_state": "PARTIAL",
+    "vad_interval_count": 255,
+    "classification": "VAD_COVERAGE_ASSESSED",
+    "error": null
+  },
+  "canonical_transcript_modified": false,
+  "asr_started": false,
+  "state": "NEEDS_TARGETED_RECOVERY",
+  "next_action": "prior tail review found 0.992s VAD speech without supported ASR in the 588.361s tail; continue internal VAD-gap semantic classification across 547.508s aggregate uncovered speech, then target only meaningful gaps; preserve original sidecar",
+  "tail_review_from_prior_evidence": {
+    "tail_seconds": 588.361,
+    "tail_vad_speech_seconds_without_supported_asr": 0.992,
+    "classification": "NEEDS_REVIEW",
+    "remaining_aggregate_uncovered_speech_seconds": 547.508
+  }
+}

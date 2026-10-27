@@ -252,9 +252,22 @@
       "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
       "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "3 VAD gaps and 588.361s tail reviewed; tail has 0.992s VAD speech without supported ASR. Continue internal VAD-gap audit; aggregate uncovered remains 547.508s.",
+      "next_action": "prior tail review found 0.992s VAD speech without supported ASR in the 588.361s tail; continue internal VAD-gap semantic classification across 547.508s aggregate uncovered speech, then target only meaningful gaps; preserve original sidecar",
       "transcript_state": "PARTIAL",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 1188,
+        "words_validated": 5469,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 86.9,
+        "speech_coverage_percent": 79.34,
+        "meaningful_uncovered_speech_seconds": 547.508,
+        "major_vad_gaps": 3,
+        "tail_review_seconds": 588.361,
+        "tail_vad_speech_without_supported_asr_seconds": 0.992,
+        "state": "NEEDS_TARGETED_RECOVERY"
+      }
     },
     {
       "media_id": "pg-611c4b9e32914de6",
