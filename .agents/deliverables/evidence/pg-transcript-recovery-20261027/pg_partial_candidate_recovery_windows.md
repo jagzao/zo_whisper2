@@ -1,7 +1,7 @@
 # P&G PARTIAL candidate recovery windows
 
 - Sources: 8; word timestamp gaps >1.5s: 987; merged 5s-context candidate windows: 448.
- - Every interval is an unreviewed timestamp/VAD candidate. A gap does not establish speech or missing content. `recovery_authorized=false` for every window; no ASR was run.
+ - Every interval is an unreviewed timestamp/VAD candidate. A gap does not establish speech or missing content. Local ASR is `STANDING_APPROVED`; all 448 windows are prepared with stable IDs and remain `PREPARED` pending semantic confirmation. No ASR has run.
 
 | Source | Media reach | Speech coverage | Uncovered speech | Word gaps >1.5s | Review windows | Tail status |
 |---|---:|---:|---:|---:|---:|---|
