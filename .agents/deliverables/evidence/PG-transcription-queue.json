@@ -212,18 +212,40 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "next_action": "existing VAD assessment reports partial speech coverage; reconcile uncovered VAD intervals and only run contextual recovery for meaningful gaps, preserving original sidecar",
       "transcript_state": "PARTIAL",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 945,
+        "words_validated": 6680,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 99.84,
+        "speech_coverage_percent": 86.4,
+        "meaningful_uncovered_speech_seconds": 387.212,
+        "major_vad_gaps": 4,
+        "state": "NEEDS_TARGETED_RECOVERY"
+      }
     },
     {
       "media_id": "pg-98250af646a5c138",
       "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
       "transcript": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "next_action": "existing VAD audit reports partial coverage; classify uncovered intervals, merge micro-gaps, and target contextual recovery only for meaningful speech; preserve source sidecar",
       "transcript_state": "PARTIAL",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 771,
+        "words_validated": 8347,
+        "invalid_segment_timestamps": 0,
+        "media_reach_percent": 98.71,
+        "speech_coverage_percent": 90.8,
+        "meaningful_uncovered_speech_seconds": 294.542,
+        "major_vad_gaps": 3,
+        "state": "NEEDS_TARGETED_RECOVERY"
+      }
     },
     {
       "media_id": "pg-896f3fb2e5862a02",

@@ -1,0 +1,62 @@
+{
+  "media_id": "pg-98250af646a5c138",
+  "source": "Videos\\py_pg\\pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+  "source_duration_ffprobe_seconds": 3625.450667,
+  "map_duration": 3625.451,
+  "sidecar_candidates": [
+    {
+      "path": "CarpetaTranscripciones\\py_pg\\pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "sha256": "89cafcfea1b6f5bac4ac131ba66d60167d1bf0563d135bd9a7ea7e96b97a6c6f",
+      "embedded_audio_file": "C:\\Dev\\Zo\\whisper\\Videos\\py_pg\\pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "sidecar_duration": 3625.4506875,
+      "segments": 771,
+      "words": 8347,
+      "last_segment_end": 3578.66,
+      "media_reach_percent": 98.71,
+      "invalid_segment_timestamps": [],
+      "segment_order_monotonic": true,
+      "word_order_monotonic": true,
+      "zero_duration_word_timestamps": 135
+    }
+  ],
+  "identity_match": "HIGH",
+  "existing_vad_assessment": {
+    "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+    "sidecar": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+    "duration_seconds": 3625.450667,
+    "media_coverage_percent": 98.71,
+    "identity_match": "MATCH",
+    "segment_count": 771,
+    "transcript_start": 126.48,
+    "transcript_last_timestamp": 3578.66,
+    "vad_speech_seconds": 3201.76,
+    "transcribed_speech_seconds": 2907.218,
+    "uncovered_speech_seconds": 294.542,
+    "speech_coverage_percent": 90.8,
+    "major_speech_gaps": [
+      {
+        "start": 1233.78,
+        "end": 1237.52,
+        "seconds": 3.74
+      },
+      {
+        "start": 2033.72,
+        "end": 2037.03,
+        "seconds": 3.31
+      },
+      {
+        "start": 2336.25,
+        "end": 2339.78,
+        "seconds": 3.53
+      }
+    ],
+    "transcript_state": "PARTIAL",
+    "vad_interval_count": 61,
+    "classification": "VAD_COVERAGE_ASSESSED",
+    "error": null
+  },
+  "canonical_transcript_modified": false,
+  "asr_started": false,
+  "state": "NEEDS_TARGETED_RECOVERY",
+  "next_action": "existing VAD audit reports partial coverage; classify uncovered intervals, merge micro-gaps, and target contextual recovery only for meaningful speech; preserve source sidecar"
+}

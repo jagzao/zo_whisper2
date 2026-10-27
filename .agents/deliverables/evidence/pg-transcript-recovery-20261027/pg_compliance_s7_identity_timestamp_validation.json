@@ -1,0 +1,64 @@
+{
+  "media_id": "pg-58194dc5b0eb5cc6",
+  "source": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+  "source_duration_ffprobe_seconds": 3191.375,
+  "map_duration": 3191.375,
+  "sidecar_candidates": [
+    {
+      "path": "CarpetaTranscripciones\\py_pg\\pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "sha256": "16a07348dc9fed9391c31129063495e25bf88fac71a38d7c507ef3e1a92b2b7b",
+      "embedded_audio_file": "/data/Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "sidecar_duration": 3191.296,
+      "segments": 945,
+      "words": 6680,
+      "last_segment_end": 3186.35,
+      "media_reach_percent": 99.84,
+      "invalid_segment_timestamps": [],
+      "segment_order_monotonic": true,
+      "word_order_monotonic": true,
+      "zero_duration_word_timestamps": 66
+    }
+  ],
+  "identity_match": "HIGH",
+  "existing_vad_assessment": {
+    "video": "Videos\\py_pg\\pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+    "sidecar": "CarpetaTranscripciones\\py_pg\\pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+    "duration_seconds": 3191.375,
+    "transcript_media_reach_percent": 99.84,
+    "identity_match": "MATCH_BY_SOURCE_AUDIO_FILE",
+    "segment_count": 945,
+    "vad_speech_seconds": 2846.816,
+    "transcribed_speech_seconds": 2459.604,
+    "uncovered_speech_seconds": 387.212,
+    "speech_coverage_percent": 86.4,
+    "major_speech_gaps": [
+      {
+        "start": 1150.11,
+        "end": 1153.15,
+        "seconds": 3.04
+      },
+      {
+        "start": 1587.98,
+        "end": 1591.63,
+        "seconds": 3.65
+      },
+      {
+        "start": 2376.11,
+        "end": 2380.432,
+        "seconds": 4.322
+      },
+      {
+        "start": 2880.91,
+        "end": 2884.64,
+        "seconds": 3.73
+      }
+    ],
+    "transcript_state": "PARTIAL",
+    "vad_interval_count": 58,
+    "classification": "VAD_COVERAGE_ASSESSED"
+  },
+  "canonical_transcript_modified": false,
+  "asr_started": false,
+  "state": "NEEDS_TARGETED_RECOVERY",
+  "next_action": "existing VAD assessment reports partial speech coverage; reconcile uncovered VAD intervals and only run contextual recovery for meaningful gaps, preserving original sidecar"
+}

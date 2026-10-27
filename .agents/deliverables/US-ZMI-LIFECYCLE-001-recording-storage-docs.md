@@ -13,7 +13,7 @@ HEAVY_QUEUE_COUNT=19 (pg-1 VAD audit + 11 targeted recovery jobs + 7 missing-sou
 HEAVY_QUEUE=pg-1 VAD audit, then existing-sidecar candidates, then 7 missing sources
 WAITING_RESOURCES=pg-1 VAD audit; 4.0/29.6 GB RAM free, local model-runtime processes present, CPU load unavailable
 BLOCKED_COMPONENTS=S46_OWNER_AUDIO_REVIEW
-INDEPENDENT_WORK_AVAILABLE=Sessions15-17 bounded/identity sidecar checks recorded; continue low-memory sidecar checks and documentation implementation
+INDEPENDENT_WORK_AVAILABLE=Sessions15-17 and existing single-sidecar sources checked; continue low-memory sidecar checks and documentation implementation
 PROJECT_GLOBAL_BLOCKER=NO
 DOCS_V2_ARCHITECTURE_VERSION=3 generic source-evidence and cross-session pipeline; corpus synthesis remains frozen
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
@@ -66,11 +66,11 @@ PG_TRANSCRIPTS_FAILED=0
 PG_TRANSCRIPTION_COMPLETE=NO; queue holds 7 full jobs, 11 targeted recovery jobs, and 2 review items; no active worker lock.
 PG_CURRENT_SOURCE=pg-1
 PG_CURRENT_ACTION=VAD/speech coverage, internal-gap analysis, final-gap classification; do not retranscribe
-PG_CURRENT_PROGRESS=pg-1 sidecar 1/13; identity HIGH; 1,140 segments/4,431 word timestamps valid; reach 99.82%; 110 gaps >1.5s await VAD; WAITING_RESOURCES. Session15: two divergent candidates, A VAD 82.83%, B unvalidated. Session16: two divergent candidates, 42.94% reach, A VAD 82.70%/218.278s uncovered. Session17: two divergent candidates, 49.58% reach, A VAD 91.71% over partial prefix; ~928.386s tail unclassified. No canonical promotions.
+PG_CURRENT_PROGRESS=pg-1 sidecar 1/13; identity HIGH; 1,140 segments/4,431 word timestamps valid; reach 99.82%; 110 gaps >1.5s await VAD; WAITING_RESOURCES. Session15: two divergent candidates, A VAD 82.83%, B unvalidated. Session16: two divergent candidates, 42.94% reach, A VAD 82.70%/218.278s uncovered. Session17: two divergent candidates, 49.58% reach, A VAD 91.71% over partial prefix; ~928.386s tail unclassified. Session7: 99.84% reach, 86.40% speech coverage/387.212s uncovered. Legacy Session2: 98.71% reach, 90.80%/294.542s uncovered. No canonical promotions.
 Session 1 media reach is 99.82%, but speech coverage remains unassessed; no retranscription or canonical promotion. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
 PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
 PG_TRANSCRIPT_QUEUE=.agents/deliverables/evidence/PG-transcription-queue.json/.md
-PG_CURRENT_CHECKPOINT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg1_identity_timestamp_validation.json/.md; sidecar checkpoints=pg_compliance_s15_divergent_sidecars_validation.json/.md, pg_compliance_s16_identity_timestamp_validation.json/.md, pg_compliance_s17_identity_timestamp_validation.json/.md; no divergent candidate promoted
+PG_CURRENT_CHECKPOINT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg1_identity_timestamp_validation.json/.md; sidecar checkpoints=pg_compliance_s15_divergent_sidecars_validation.json/.md, pg_compliance_s16_identity_timestamp_validation.json/.md, pg_compliance_s17_identity_timestamp_validation.json/.md, pg_compliance_s7_identity_timestamp_validation.json/.md, pg_compliance_legacy_s2_identity_timestamp_validation.json/.md; divergent candidates remain unpromoted
 
 CROSS_SESSION_PRIMITIVES=PASS
 CROSS_SESSION_APPLICATION=NONE eligible pair found
