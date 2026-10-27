@@ -98,7 +98,8 @@ def test_write_manual_pdf_creates_nonempty_pdf(frames_dir, tmp_path):
     manual_dir = tmp_path / "manual"
     pdf_path = write_manual_pdf(manual_dir, _source(), _steps(), frames_dir)
 
-    assert pdf_path == manual_dir / "MANUAL.pdf"
+    assert pdf_path == manual_dir / "demo.pdf"
+    assert (manual_dir / "MANUAL.pdf").is_file()
     assert pdf_path.exists()
     assert pdf_path.stat().st_size > 0
     assert len(PdfReader(str(pdf_path)).pages) >= 1
@@ -164,12 +165,45 @@ def test_deterministic_structure(frames_dir, tmp_path):
 # ── Engine integration ───────────────────────────────────────────────────
 
 @pytest.fixture
-def generated(tmp_path):
+def generated(tmp_path, monkeypatch):
+    from transcript_pipeline.documentation import pipeline_v2
+
     frames = tmp_path / "demo_Frames" / "demo"
     frames.mkdir(parents=True)
     (frames / "frame_mapping.json").write_text(json.dumps(MAPPING), encoding="utf-8")
     _make_png(frames / "frame_0000.png", color="lightblue")
     _make_png(frames / "frame_0001.png", color="lightyellow")
+    evidence = frames / "evidence"
+    evidence.mkdir()
+    (evidence / "speech-coverage-report.json").write_text(json.dumps({
+        "video": "demo.mp4",
+        "video_duration_seconds": 10.0,
+        "speech_quality_gate": "PASS",
+        "transcript_state": "VALID",
+        "media_coverage_percent": 99.0,
+        "speech_coverage_percent": 100.0,
+        "vad_speech_seconds": 3.0,
+        "transcribed_speech_seconds": 3.0,
+        "uncovered_speech_seconds": 0.0,
+        "uncovered_speech_intervals": [],
+    }), encoding="utf-8")
+    monkeypatch.setattr(pipeline_v2, "analyze_frames", lambda *args, **kwargs: {
+        "status": "PASS",
+        "frame_count": 2,
+        "technical_frame_count": 2,
+        "meaningful_visual_count": 2,
+        "selected_count": 2,
+        "visual_topics_discovered": ["APPLICATION_UI:SESSION_GENERAL"],
+        "visual_topics_covered": ["APPLICATION_UI:SESSION_GENERAL"],
+        "visual_topics_uncovered": [],
+        "visual_coverage_gate": "PASS",
+        "semantic_topics_discovered": ["APPLICATION_UI:SESSION_GENERAL"],
+        "semantic_topics_covered": ["APPLICATION_UI:SESSION_GENERAL"],
+        "semantic_topics_uncovered": [],
+        "semantic_topic_coverage_gate": "PASS",
+        "derived_diagrams": [],
+        "frames": [],
+    })
     generate_documentation(frames, "demo.mp4")
     return frames, frames / "manual", frames / "ai-package"
 

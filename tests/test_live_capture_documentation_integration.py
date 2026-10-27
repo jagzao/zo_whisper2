@@ -374,7 +374,10 @@ def test_process_file_wires_capture_chunk_into_existing_docs_flow(tmp_path, monk
     assert (evidence_dir / "EVIDENCE_TIMELINE.md").is_file()
     assert (evidence_dir / "review-queue.json").is_file()
     assert (frames_dir / "manual" / "steps.json").is_file()
-    assert (frames_dir / "ai-package").is_dir()
+    diagnostic = json.loads((frames_dir / "manual" / "diagnostic-report.json").read_text(encoding="utf-8"))
+    assert diagnostic["status"] == "SOURCE_INCOMPLETE"
+    assert not (frames_dir / "manual" / "MANUAL.md").exists()
+    assert not (frames_dir / "ai-package").exists()
 
     items = _read_evidence_items(frames_dir)
     transcript_items = [item for item in items if item["transcriptExcerpt"]]
@@ -394,6 +397,9 @@ def test_regenerate_capture_documentation_uses_late_transcript_once_and_is_idemp
     service.associate_transcript(session.session_id, late_text, language="es")
 
     frames_dir = materialize_frames_dir("reference_meeting", tmp_path / "frames-root")
+    # This case exercises the late, loose capture transcript. The fixture
+    # also writes a sibling timestamped transcript, which would take priority.
+    (frames_dir.parent / "acme_reference_overview_segments.json").unlink()
     mapping = json.loads((frames_dir / "frame_mapping.json").read_text(encoding="utf-8"))
     mapping.pop("transcription_mapping", None)
     mapping["transcription_summary"] = {"language": "en"}
@@ -405,7 +411,7 @@ def test_regenerate_capture_documentation_uses_late_transcript_once_and_is_idemp
         frames_dir, session.session_id, videos_root=tmp_path / "Videos", evidence_only=True
     )
 
-    assert result["status"] == "EVIDENCE_READY"
+    assert result["status"] == "SOURCE_INCOMPLETE"
     assert result["capture"]["transcriptApplied"] is True
     assert result["capture"]["sessionId"] == session.session_id
     assert result["evidence"]["fidelity"] == FIDELITY_UNTIMED_FULL_TRANSCRIPT

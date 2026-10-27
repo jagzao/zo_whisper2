@@ -1,7 +1,4 @@
-"""End-to-end coverage for the video-to-documentation engine using a real
-synthetic video (US-001 §4.6, §14 DoD: "Human manual generation works from
-synthetic video fixture" / "AI-ready package generation works from the same
-source").
+"""End-to-end coverage for source-gate behavior using a real synthetic video.
 
 Chains together the two pieces already unit-tested in isolation: real FFmpeg
 keyframe extraction with real PTS (`test_keyframe_timestamp_provenance.py`),
@@ -46,7 +43,7 @@ def _integrate_transcription(frames_dir, segments) -> None:
 
 
 @requires_ffmpeg
-def test_full_video_to_documentation_pipeline(tmp_path, monkeypatch, synthetic_cuts_video):
+def test_video_to_documentation_pipeline_blocks_incomplete_evidence(tmp_path, monkeypatch, synthetic_cuts_video):
     monkeypatch.setenv("SMART_SCENE_COOLDOWN", "1.0")
     monkeypatch.setenv("SMART_SCENE_BLUR", "1")
 
@@ -61,21 +58,13 @@ def test_full_video_to_documentation_pipeline(tmp_path, monkeypatch, synthetic_c
 
     summary = generate_documentation(frames_dir, "cuts.mp4")
 
+    assert summary["status"] == "SOURCE_INCOMPLETE"
     assert summary["step_count"] == result["frame_count"]
-    assert summary["low_confidence_count"] == 0, "every real cut has an aligned transcript segment"
+    assert summary["low_confidence_count"] == 0
 
-    manual_text = (frames_dir / "manual" / "MANUAL.md").read_text(encoding="utf-8")
-    assert "click File then New Project" in manual_text
-    assert "Type the project name" in manual_text
-
-    ai_dir = frames_dir / "ai-package"
-    manifest = json.loads((ai_dir / "manifest.json").read_text(encoding="utf-8"))
-    assert len(manifest["procedures"]) == result["frame_count"]
-    assert all(p["confidence"] == "high" for p in manifest["procedures"])
-
-    chunks = [json.loads(line) for line in (ai_dir / "chunks.jsonl").read_text(encoding="utf-8").splitlines()]
-    # Grounding check: every chunk's text must contain evidence pulled straight
-    # from the synthetic transcript, never something outside it.
-    known_phrases = ["click File then New Project", "Type the project name"]
-    for chunk in chunks:
-        assert any(phrase in chunk["text"] for phrase in known_phrases)
+    diagnostic = json.loads(Path(summary["diagnostic_report"]).read_text(encoding="utf-8"))
+    assert diagnostic["transcript_quality"]["transcript_state"] == "PARTIAL"
+    assert diagnostic["visual_coverage_gate"] == "FAIL"
+    assert diagnostic["visual_topics_uncovered"]
+    assert not (frames_dir / "manual" / "MANUAL.md").exists()
+    assert not (frames_dir / "ai-package").exists()

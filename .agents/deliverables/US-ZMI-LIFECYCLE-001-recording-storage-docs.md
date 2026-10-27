@@ -6,6 +6,14 @@
 ## CURRENT_RESULT
 
 DOCUMENTS_V2=INCOMPLETE
+RESOURCE_MODE=LOW_MEMORY_SEQUENTIAL
+HEAVY_CONCURRENCY=1
+ACTIVE_HEAVY_JOB=NONE
+HEAVY_QUEUE=S10 targeted recovery, then remaining P&G source queue serially
+WAITING_RESOURCES=NONE
+BLOCKED_COMPONENTS=S46_SPEECH_GATE (source-audio review); P&G transcript queue (serial jobs)
+INDEPENDENT_WORK_AVAILABLE=continue P&G transcript queue one source at a time; documentation implementation and metadata/provenance work
+PROJECT_GLOBAL_BLOCKER=NO
 DOCS_V2_ARCHITECTURE_VERSION=3 generic source-evidence and cross-session pipeline; corpus synthesis remains frozen
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
 IMPLEMENTATION_HEAD=active branch; evidence checkpoint committed with this delivery
@@ -63,19 +71,19 @@ CROSS_SESSION_CONTRIBUTING_SESSIONS=NONE
 CROSS_SESSION_REAL_PACK=BLOCKED_NO_ELIGIBLE_PAIR
 APPLICATION_MISSION_PACK=controlled tests pass; real pack not generated
 
-UNIT=220 passed, 3 failed in existing live-capture/docs compatibility and FFmpeg pipeline checks; see S46-final-validation-20261027.md
-RUFF=PASS src/transcript_pipeline/documentation; focused docs/test lint reports 8 existing findings
+UNIT=225 passed in the focused documentation suite; see S46-final-validation-20261027.md
+RUFF=PASS production documentation modules and changed test files
 SYNTAX=PASS compileall src/transcript_pipeline/documentation tests
-REPO_STATE=TESTING; S46 source-audio review remains open; requested focused suite completed with 3 failures
+REPO_STATE=TESTING; S46 source-audio review remains open; documentation test gate passes
 AGENT_SERVED_CHECK=NOT_RUN
 OWNER_UAT=PENDING; S46 Golden 2 is not generated
 DOCUMENTS_V2_OWNER_UAT=PARTIAL
 
-KANBAN_COMPLETE=Session 41 Golden approved; S46 source/visual/claim/overfit checks pass
+KANBAN_COMPLETE=Session 41 Golden approved; S46 source/visual/claim/overfit checks pass; focused documentation tests pass
 KANBAN_TESTING=S46 semantic transcript reconciliation; P&G 20-source identity map and transcript queue
 KANBAN_BLOCKED=S46 speech gate requires source-audio review for 5.730s low-confidence audio; 8 transcripts missing; 3 divergent duplicate groups unresolved
 KANBAN_OWNER_PENDING=S46 Golden 2 review after all gates pass; corpus generation frozen
-BLOCKER=No available source-audio inspection resolved the possible GitHub statement and disputed 4.920s reply; text-only ASR cannot establish they are non-material. Three focused docs tests fail on existing compatibility/source-gate behavior.
+BLOCKER=S46 speech gate only: source-audio review is still needed for the possible GitHub statement and disputed 4.920s reply; text-only ASR cannot establish they are non-material.
 NEXT_ACTION=Review gap-062 and prior-recovery-3443 against source audio; if speech gate passes, generate exactly the S46 basename MD/PDF/JSON trio with generic production logic; continue P&G queue one source at a time
 
 ## HISTORICAL_RESULTS
