@@ -9,10 +9,11 @@ DOCUMENTS_V2=INCOMPLETE
 RESOURCE_MODE=LOW_MEMORY_SEQUENTIAL
 HEAVY_CONCURRENCY=1
 ACTIVE_HEAVY_JOB=NONE
-HEAVY_QUEUE=S10 targeted recovery, then remaining P&G source queue serially
-WAITING_RESOURCES=pg-1 VAD speech-coverage audit for the next safe serial heavy window
-BLOCKED_COMPONENTS=S46_SPEECH_GATE (source-audio review); P&G transcript queue (serial jobs)
-INDEPENDENT_WORK_AVAILABLE=continue P&G transcript queue one source at a time; documentation implementation and metadata/provenance work
+HEAVY_QUEUE_COUNT=19 (pg-1 VAD audit + 11 targeted recovery jobs + 7 missing-source transcriptions), serial order
+HEAVY_QUEUE=pg-1 VAD audit, then existing-sidecar candidates, then 7 missing sources
+WAITING_RESOURCES=pg-1 VAD audit; 4.0/29.6 GB RAM free, local model-runtime processes present, CPU load unavailable
+BLOCKED_COMPONENTS=S46_OWNER_AUDIO_REVIEW
+INDEPENDENT_WORK_AVAILABLE=pg-1 identity/timestamp validation complete; continue low-memory sidecar checks and documentation implementation
 PROJECT_GLOBAL_BLOCKER=NO
 DOCS_V2_ARCHITECTURE_VERSION=3 generic source-evidence and cross-session pipeline; corpus synthesis remains frozen
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
@@ -31,6 +32,7 @@ S43_GATE=BLOCKED_SOURCE
 GOLDEN_2_SOURCE=Videos/py_pg/pg_Ams_kap_app_support_s46.mp4
 S46_SOURCE_GATE=PASS
 S46_SPEECH_GATE=NEEDS_REVIEW; 83/83 contextual windows complete; 19 residual intervals/22.780s classified; 5.730s remains low-confidence pending source-audio review
+S46_OWNER_AUDIO_SECONDS=5.730
 S46_VISUAL_GATE=PASS; 7/7 topics, 51 frames, 48 selected technical/meaningful; eOperations remains a generic transcript extraction result
 S46_CLAIM_GATE=PASS; generic diagnostic ledger contains 223 provenance-bearing claims
 S46_QUALITY_GATE=NEEDS_REVIEW; speech gate is the sole failing/blocked diagnostic gate
@@ -61,9 +63,14 @@ PG_TRANSCRIPTS_PARTIAL=8
 PG_TRANSCRIPTS_NEEDS_REVIEW=5 (S46, 3 divergent Session 15?17 copies, and Session 1 sidecar coverage pending)
 PG_TRANSCRIPTS_MISSING=7
 PG_TRANSCRIPTS_FAILED=0
-PG_TRANSCRIPTION_COMPLETE=NO; queue holds 7 full jobs, 11 targeted recovery jobs, and 2 review items; no active worker lock. Session 1 has a basename- and duration-matched 1,140-segment sidecar (99.82% media reach); VAD speech coverage is unassessed, so no re-transcription or canonical promotion. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
+PG_TRANSCRIPTION_COMPLETE=NO; queue holds 7 full jobs, 11 targeted recovery jobs, and 2 review items; no active worker lock.
+PG_CURRENT_SOURCE=pg-1
+PG_CURRENT_ACTION=VAD/speech coverage, internal-gap analysis, final-gap classification; do not retranscribe
+PG_CURRENT_PROGRESS=sidecar candidate 1/13; identity HIGH; 1,140 segments and 4,431 word timestamps valid; media reach 99.82%; VAD waiting for safe resources
+Session 1 media reach is 99.82%, but speech coverage remains unassessed; no retranscription or canonical promotion. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
 PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
 PG_TRANSCRIPT_QUEUE=.agents/deliverables/evidence/PG-transcription-queue.json/.md
+PG_CURRENT_CHECKPOINT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg1_identity_timestamp_validation.json/.md
 
 CROSS_SESSION_PRIMITIVES=PASS
 CROSS_SESSION_APPLICATION=NONE eligible pair found
@@ -83,8 +90,8 @@ KANBAN_COMPLETE=Session 41 Golden approved; S46 source/visual/claim/overfit chec
 KANBAN_TESTING=S46 semantic transcript reconciliation; P&G 20-source identity map and transcript queue
 KANBAN_BLOCKED=S46 speech gate requires source-audio review for 5.730s low-confidence audio; 8 transcripts missing; 3 divergent duplicate groups unresolved
 KANBAN_OWNER_PENDING=S46 Golden 2 review after all gates pass; corpus generation frozen
-BLOCKER=S46 speech gate only: source-audio review is still needed for the possible GitHub statement and disputed 4.920s reply; text-only ASR cannot establish they are non-material.
-NEXT_ACTION=Review gap-062 and prior-recovery-3443 against source audio; if speech gate passes, generate exactly the S46 basename MD/PDF/JSON trio with generic production logic; continue P&G queue one source at a time
+BLOCKER=BLOCKED_COMPONENT=S46_OWNER_AUDIO_REVIEW; Juan must review gap-062 and prior-recovery-3443 (5.730s total). P&G pg-1 VAD audit is WAITING_RESOURCES, not a project blocker.
+NEXT_ACTION=Continue pg-1 VAD audit alone when resource headroom is safe; Juan reviews S46 audio; generate Golden 2 only if all S46 gates pass; continue P&G queue serially
 
 ## HISTORICAL_RESULTS
 

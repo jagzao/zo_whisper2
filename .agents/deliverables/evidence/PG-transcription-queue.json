@@ -8,9 +8,19 @@
       "video": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
       "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording_segments.json",
       "state": "NEEDS_REVIEW",
-      "next_action": "validate the existing 1,140-segment sidecar against source speech coverage; do not retranscribe before review",
+      "next_action": "run one-source VAD/speech-coverage, internal-gap, and final-gap audit when resource headroom is safe; do not retranscribe",
       "transcript_state": "NEEDS_REVIEW",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "segments_validated": 1140,
+        "words_validated": 4431,
+        "invalid_timestamps": 0,
+        "media_reach_percent": 99.82,
+        "segment_interval_union_percent": 76.44,
+        "speech_coverage": "NOT_YET_VALIDATED",
+        "state": "WAITING_RESOURCES"
+      }
     },
     {
       "media_id": "pg-ccb11a4619acaa92",
@@ -19,15 +29,6 @@
       "state": "NEEDS_TARGETED_RECOVERY",
       "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
       "transcript_state": "PARTIAL",
-      "lock": "IDLE"
-    },
-    {
-      "media_id": "pg-3",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4",
-      "transcript": null,
-      "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
-      "transcript_state": "MISSING",
       "lock": "IDLE"
     },
     {
@@ -76,6 +77,75 @@
       "lock": "IDLE"
     },
     {
+      "media_id": "pg-58194dc5b0eb5cc6",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-98250af646a5c138",
+      "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-896f3fb2e5862a02",
+      "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "3 VAD gaps and 588.361s tail reviewed; tail has 0.992s VAD speech without supported ASR. Continue internal VAD-gap audit; aggregate uncovered remains 547.508s.",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-611c4b9e32914de6",
+      "video": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-4957e30bcb15f2bf",
+      "video": "Videos/py_pg/pg_Shadow_221026.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
+      "transcript_state": "PARTIAL",
+      "lock": "IDLE"
+    },
+    {
+      "media_id": "pg-09eb7fdd89877b64",
+      "video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json",
+      "state": "NEEDS_REVIEW",
+      "next_action": "review source audio for gap-062 (0.810s) and prior-recovery-3443 (4.920s); 83/83 contextual windows complete",
+      "transcript_state": "NEEDS_REVIEW",
+      "lock": "IDLE",
+      "speech_quality_gate": "PASS",
+      "effective_speech_coverage_percent": 98.85,
+      "unresolved_speech_seconds": 22.78,
+      "recovery_windows_completed": 83,
+      "recovery_windows_total": 83,
+      "canonical_transcript_updated": false
+    },
+    {
+      "media_id": "pg-3",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "full large-v3 transcription after source is revalidated",
+      "transcript_state": "MISSING",
+      "lock": "IDLE"
+    },
+    {
       "media_id": "pg-9",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
       "transcript": null,
@@ -121,72 +191,12 @@
       "lock": "IDLE"
     },
     {
-      "media_id": "pg-58194dc5b0eb5cc6",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE"
-    },
-    {
       "media_id": "pg-15",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
       "next_action": "full large-v3 transcription after source is revalidated",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
-    },
-    {
-      "media_id": "pg-98250af646a5c138",
-      "video": "Videos/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS_KAP_-_Compliance_-_Session_2_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE"
-    },
-    {
-      "media_id": "pg-896f3fb2e5862a02",
-      "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "3 VAD gaps and 588.361s tail reviewed; tail has 0.992s VAD speech without supported ASR. Continue internal VAD-gap audit; aggregate uncovered remains 547.508s.",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE"
-    },
-    {
-      "media_id": "pg-09eb7fdd89877b64",
-      "video": "Videos/py_pg/pg_Ams_kap_app_support_s46.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s46_segments.json",
-      "state": "NEEDS_REVIEW",
-      "next_action": "review source audio for gap-062 (0.810s) and prior-recovery-3443 (4.920s); 83/83 contextual windows complete",
-      "transcript_state": "NEEDS_REVIEW",
-      "lock": "IDLE",
-      "speech_quality_gate": "PASS",
-      "effective_speech_coverage_percent": 98.85,
-      "unresolved_speech_seconds": 22.78,
-      "recovery_windows_completed": 83,
-      "recovery_windows_total": 83,
-      "canonical_transcript_updated": false
-    },
-    {
-      "media_id": "pg-611c4b9e32914de6",
-      "video": "Videos/py_pg/pg_Ams_kap_compliance_s4.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_compliance_s4_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
-      "transcript_state": "PARTIAL",
-      "lock": "IDLE"
-    },
-    {
-      "media_id": "pg-4957e30bcb15f2bf",
-      "video": "Videos/py_pg/pg_Shadow_221026.mp4",
-      "transcript": "CarpetaTranscripciones/py_pg/pg_Shadow_221026_segments.json",
-      "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "audit uncovered VAD intervals, then contextual large-v3 recovery",
-      "transcript_state": "PARTIAL",
       "lock": "IDLE"
     }
   ],

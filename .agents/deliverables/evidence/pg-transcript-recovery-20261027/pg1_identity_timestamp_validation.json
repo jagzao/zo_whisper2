@@ -1,0 +1,106 @@
+{
+  "source": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
+  "source_bytes": 135525494,
+  "source_duration_ffprobe_seconds": 2760.4485,
+  "sidecar": "CarpetaTranscripciones/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording_segments.json",
+  "sidecar_sha256": "c9924e2af81a8c6488131c5f4674e7d4c7ce269d8524d5832caedc4a304e8215",
+  "metadata": "CarpetaTranscripciones/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording_metadata.json",
+  "metadata_audio_file": "/data/Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
+  "metadata_duration_seconds": 2760.448,
+  "sidecar_audio_file": "/data/Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording.mp4",
+  "sidecar_duration_seconds": 2760.448,
+  "metadata_sidecar_duration_delta_seconds": 0.0,
+  "identity_match": "HIGH",
+  "identity_basis": [
+    "embedded audio_file basename matches source basename",
+    "metadata audio_file basename matches source basename",
+    "ffprobe and sidecar durations differ by less than 0.001s"
+  ],
+  "segment_count": 1140,
+  "word_count": 4431,
+  "invalid_segments": [],
+  "invalid_words": [],
+  "segment_start_order_monotonic": true,
+  "word_start_order_monotonic": true,
+  "first_segment_start_seconds": 14.06,
+  "last_segment_end_seconds": 2755.43,
+  "last_word_end_seconds": 2755.43,
+  "media_reach_percent": 99.82,
+  "segment_interval_union_percent": 76.44,
+  "segment_envelope_gap_count": 565,
+  "largest_segment_envelope_gaps": [
+    {
+      "start": 2589.02,
+      "end": 2610.46,
+      "seconds": 21.44
+    },
+    {
+      "start": 2697.64,
+      "end": 2715.27,
+      "seconds": 17.63
+    },
+    {
+      "start": 2676.19,
+      "end": 2692.76,
+      "seconds": 16.57
+    },
+    {
+      "start": 0.0,
+      "end": 14.06,
+      "seconds": 14.06
+    },
+    {
+      "start": 1080.21,
+      "end": 1093.26,
+      "seconds": 13.05
+    },
+    {
+      "start": 2403.56,
+      "end": 2415.95,
+      "seconds": 12.39
+    },
+    {
+      "start": 2613.1,
+      "end": 2625.44,
+      "seconds": 12.34
+    },
+    {
+      "start": 733.8,
+      "end": 744.8,
+      "seconds": 11.0
+    },
+    {
+      "start": 2626.42,
+      "end": 2635.97,
+      "seconds": 9.55
+    },
+    {
+      "start": 889.67,
+      "end": 898.0,
+      "seconds": 8.33
+    }
+  ],
+  "speech_coverage": "NOT_YET_VALIDATED",
+  "meaningful_gaps": "UNASSESSED_WITHOUT_VAD",
+  "final_gap_seconds": 5.019,
+  "classification": "NEEDS_REVIEW",
+  "canonical_transcript_modified": false,
+  "retranscription_started": false,
+  "resource_snapshot": {
+    "free_ram_gb": 4.0,
+    "total_ram_gb": 29.6,
+    "observed_asr_processes": 0,
+    "observed_ffmpeg_processes": 0,
+    "observed_python_processes": 2,
+    "observed_model_runtime_processes": [
+      "model_host",
+      "ollama",
+      "ollama app"
+    ],
+    "cpu_load_percent": "UNAVAILABLE",
+    "state": "WAITING_RESOURCES_FOR_VAD",
+    "reason": "only 4.0 GB free and a local model runtime is active"
+  },
+  "next_action": "run one-source VAD/speech-coverage audit when safe resource headroom is available",
+  "audited_at_utc": "2026-10-27T17:08:39+00:00"
+}
