@@ -2,7 +2,8 @@
 
 Persistent one-source-at-a-time queue. Existing sidecar candidates are ahead of missing transcripts; recovery outputs remain candidates until source comparison and coverage validation.
 
-- NEEDS_FULL_TRANSCRIPTION: 7
+- NEEDS_FULL_TRANSCRIPTION: 6
+- PROCESSING: 1
 - NEEDS_REVIEW: 2
 - NEEDS_TARGETED_RECOVERY: 11
 
@@ -21,7 +22,7 @@ Persistent one-source-at-a-time queue. Existing sidecar candidates are ahead of 
 - `pg_AMS KAP ? Compliance ? Session 17-20260921_122939UTC-Meeting Recording.mp4` - NEEDS_REVIEW: two similar divergent candidates (token Jaccard 0.9638) both reach 49.58%; neither fills two sampled A VAD gaps; ~928.386s source tail untranscribed/unclassified; retain both. Review reason: Two divergent, source-matched sidecars with distinct content hashes; both reach ~49.58%; A VAD covers only its prefix and both miss sampled gaps; ~928.386s source tail is unclassified; do not select canonical.
 - `pg_Ams_kap_app_support_s46.mp4` - NEEDS_REVIEW: review source audio for gap-062 (0.810s) and prior-recovery-3443 (4.920s); 83/83 contextual windows complete. Review reason: S46 speech gate waits for Juan owner review of 5.730s low-confidence audio; scoped blocker only; no further S46 compute.
 - `pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4` - NEEDS_FULL_TRANSCRIPTION: MISSING confirmed: source path/size matched; no candidate sidecar or unmatched sidecar with same session number. QUEUED for local large-v3 after sidecar work; one heavy job at a time..
-- `pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4` - NEEDS_FULL_TRANSCRIPTION: MISSING confirmed: source path/size matched; no candidate sidecar or unmatched sidecar with same session number. QUEUED for local large-v3 after sidecar work; one heavy job at a time..
+- `pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4` - PROCESSING (`pg-9`): adopted active `whisper-zmi-1` large-v3 full transcription; do not schedule duplicate. Validate output identity and transcript after completion; reconcile counts, then next serial heavy job is pg-1 VAD.
 - `pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4` - NEEDS_FULL_TRANSCRIPTION: MISSING confirmed: source path/size matched; no candidate sidecar or unmatched sidecar with same session number. QUEUED for local large-v3 after sidecar work; one heavy job at a time..
 - `pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording.mp4` - NEEDS_FULL_TRANSCRIPTION: MISSING confirmed: source path/size matched; no candidate sidecar or unmatched sidecar with same session number. QUEUED for local large-v3 after sidecar work; one heavy job at a time..
 - `pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording.mp4` - NEEDS_FULL_TRANSCRIPTION: MISSING confirmed: source path/size matched; no candidate sidecar or unmatched sidecar with same session number. QUEUED for local large-v3 after sidecar work; one heavy job at a time..
