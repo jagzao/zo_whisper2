@@ -6,18 +6,24 @@
 ## CURRENT_RESULT
 
 DOCUMENTS_V2=INCOMPLETE
-RESOURCE_MODE=LOW_MEMORY_SEQUENTIAL
+RESOURCE_MODE=ALWAYS_PROGRESS_LOW_MEMORY
 HEAVY_CONCURRENCY=1
-ACTIVE_HEAVY_JOB=NONE
-ACTIVE_HEAVY_PROGRESS=NONE
-NEXT_HEAVY_JOB=pg-1 VAD/speech audit
+RESOURCE_STATE=CRITICAL_PRESSURE
+ACTIVE_UNIT=NONE
+ACTIVE_PROGRESS=pg-1 VAD not started; checkpoint 0/10 300s units
+NEXT_UNIT=pg-1 VAD chunk 1/10 (300s core + 5s context)
+PAUSED_FOR_CRITICAL_PRESSURE=YES; pg-1 VAD only; active Docker heavy slot observed
+PROJECT_GLOBAL_BLOCKER=NO
+ACTIVE_HEAVY_JOB=whisper-zmi-1 / transcript_pipeline.pipeline.master (concurrent Docker workload)
+ACTIVE_HEAVY_PROGRESS=container CPU 227.82%; RSS 4.942 GiB at sample; no Whisper/VAD unit from this queue is active
+NEXT_HEAVY_JOB=pg-1 VAD AUDIT (constrained; single 300s unit + 5s context; checkpoint each unit)
 LOCAL_ASR_AUTHORIZATION=STANDING_APPROVED
 EXTERNAL_PG_CORPUS_PROCESSING=NOT_AUTHORIZED
 HEAVY_QUEUE_COUNT=19 (pg-1 VAD audit + 11 targeted recovery jobs + 7 missing-source transcriptions), serial order
 HEAVY_QUEUE_ORDER=pg-1 VAD/speech coverage, gap and tail audit > Compliance Session10 targeted windows > Session13 VAD-tail classification > Session14 targeted windows > Session7 > legacy Compliance Session2 > App Support S10 > App Support S4 > Shadow > Session15 candidate coverage > Session16 candidate coverage > Session17 tail/candidate coverage > missing Compliance Sessions12,2,3,4,5,6,9 sequentially.
-WAITING_RESOURCES=pg-1 VAD audit; three host samples 2.96, 2.94, 2.81 GB available over 11s, downward trend; Docker/WSL active; recheck before launch
+WAITING_RESOURCES=pg-1 VAD; temporary CRITICAL_PRESSURE because the single heavy slot is occupied; resume when slot clears
 BLOCKED_COMPONENTS=S46_OWNER_AUDIO_REVIEW
-INDEPENDENT_WORK_AVAILABLE=20-source identity/provenance audit complete; candidate windows prepared for all 8 PARTIAL sources; continue semantic text/metadata reconciliation and generic documentation work
+INDEPENDENT_WORK_AVAILABLE=none identified; P0/source preflight and scheduling manifest complete
 PROJECT_GLOBAL_BLOCKER=NO
 DOCS_V2_ARCHITECTURE_VERSION=3 generic source-evidence and cross-session pipeline; corpus synthesis remains frozen
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
@@ -71,9 +77,9 @@ PG_VALID=0; PG_PARTIAL=8; PG_NEEDS_REVIEW=5; PG_MISSING=7; PG_FAILED=0
 PG_NEEDS_REVIEW_REASONS=pg-1 VAD pending; Sessions15-17 divergent copies lack complete candidate-specific coverage; S46 requires Juan review of 5.730s
 PG_TRANSCRIPTION_COMPLETE=NO; serial heavy queue count=19 (pg-1 + 11 targeted/reconciliation + 7 full transcription); no active heavy worker.
 PG_CURRENT_SOURCE=pg-1
-PG_CURRENT_STAGE=WAITING_RESOURCES
-PG_CURRENT_ACTION=pg-1 VAD/speech audit only when headroom safe; do not run recovery ASR before its VAD slot
-PG_CURRENT_PROGRESS=pg-1 identity HIGH; 1,140 segments/4,431 words; reach 99.82%; 110 timestamp gaps await VAD; WAITING_RESOURCES. PARTIAL candidates metadata-triaged: 448 raw -> 385 derived; P0=25 VAD-confirmed ASR candidates, P1=187 need VAD, P2=107 boundary candidates (all neighbor text present, 139 gaps 1.51-3.99s, no segment overlap; no ASR escalation yet), P3=66 already covered; no silence discarded; no ASR processed. Sessions15-17 candidate-specific coverage remains incomplete; no canonical promotions.
+PG_CURRENT_STAGE=PAUSED_CRITICAL_PRESSURE
+PG_CURRENT_ACTION=Resume pg-1 VAD in constrained 300s units, one worker/thread, checkpoint each unit, when the active heavy slot clears
+PG_CURRENT_PROGRESS=pg-1 identity HIGH; 1,140 segments; reach 99.82%; VAD not started. Docker whisper-zmi-1 transcript_pipeline.pipeline.master active at 227.82% CPU/4.942 GiB RSS; system available RAM 4.03 GiB, 86.4% used; swap I/O counters 0 during sample. Constrained VAD paused because HEAVY_CONCURRENCY=1 slot is occupied, not because RAM is merely below an arbitrary threshold.
 Session 1 media reach is 99.82%, but speech coverage remains unassessed; no retranscription or canonical promotion. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
 PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
 PG_SOURCE_IDENTITY_AUDIT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_logical_20_source_identity_provenance_audit.json/.md; all 20 path/size verified; all 16 sidecar hashes/names/timestamps valid; seven MISSING sources checked against all 77 unmatched sidecars (zero session-number matches); source media SHA omitted to avoid large I/O
@@ -99,8 +105,8 @@ KANBAN_COMPLETE=Session 41 Golden approved; S46 source/visual/claim/overfit chec
 KANBAN_TESTING=S46 semantic transcript reconciliation; P&G 20-source identity map and transcript queue
 KANBAN_BLOCKED=S46 speech gate requires source-audio review for 5.730s low-confidence audio; 8 transcripts missing; 3 divergent duplicate groups unresolved
 KANBAN_OWNER_PENDING=S46 Golden 2 review after all gates pass; corpus generation frozen
-BLOCKER=BLOCKED_COMPONENT=S46_OWNER_AUDIO_REVIEW; Juan must review gap-062 and prior-recovery-3443 (5.730s). pg-1 VAD is WAITING_RESOURCES within its component only; PROJECT_GLOBAL_BLOCKER=NO.
-NEXT_ACTION=Continue pg-1 VAD audit alone when resource headroom is safe; Juan reviews S46 audio; generate Golden 2 only if all S46 gates pass; continue P&G queue serially
+BLOCKER=BLOCKED_COMPONENT=S46_OWNER_AUDIO_REVIEW; separate pg-1 constrained VAD pause because active Docker heavy workload occupies the single heavy slot; PROJECT_GLOBAL_BLOCKER=NO.
+NEXT_ACTION=When the active heavy slot clears, resume pg-1 VAD from its checkpoint one 300s unit at a time; Juan reviews S46 audio; no Golden 2 until S46 speech gate passes; keep P&G queue serial.
 
 PG_RECOVERY_TRIAGE=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_recovery_window_triage.json/.md; metadata-only, no ASR/VAD/energy inference
 PG_RECOVERY_WINDOWS_RAW=448
@@ -121,6 +127,7 @@ PG_MISSING_PREFLIGHT=7/7 readable; audio streams present; inventory sizes and du
 PG_MISSING_SOURCE_OUTPUTS=pg-3:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json; pg-9:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json; pg-10:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json; pg-11:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording_segments.json; pg-12:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording_segments.json; pg-13:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording_segments.json; pg-15:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording_segments.json
 PG_PREFLIGHT_EVIDENCE=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_source_preflight_and_serial_manifest.json/.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_source_preflight_and_serial_manifest.md
 PG_BOUNDARY_RECONCILIATION=107 windows; 139 gaps 1.51-3.99s; neighbor context on both sides; canonical time overlap:0; audio evidence:NOT_RUN; ASR escalation:0
+
 
 ## HISTORICAL_RESULTS
 
