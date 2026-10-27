@@ -15,7 +15,7 @@ LOCAL_ASR_AUTHORIZATION=STANDING_APPROVED
 EXTERNAL_PG_CORPUS_PROCESSING=NOT_AUTHORIZED
 HEAVY_QUEUE_COUNT=19 (pg-1 VAD audit + 11 targeted recovery jobs + 7 missing-source transcriptions), serial order
 HEAVY_QUEUE_ORDER=pg-1 VAD/speech coverage, gap and tail audit > Compliance Session10 targeted windows > Session13 VAD-tail classification > Session14 targeted windows > Session7 > legacy Compliance Session2 > App Support S10 > App Support S4 > Shadow > Session15 candidate coverage > Session16 candidate coverage > Session17 tail/candidate coverage > missing Compliance Sessions12,2,3,4,5,6,9 sequentially.
-WAITING_RESOURCES=pg-1 VAD audit; latest host sample 3.67 GB available, vmmemWSL 233% CPU, total sampled CPU 43%; recheck before launch
+WAITING_RESOURCES=pg-1 VAD audit; three host samples 2.96, 2.94, 2.81 GB available over 11s, downward trend; Docker/WSL active; recheck before launch
 BLOCKED_COMPONENTS=S46_OWNER_AUDIO_REVIEW
 INDEPENDENT_WORK_AVAILABLE=20-source identity/provenance audit complete; candidate windows prepared for all 8 PARTIAL sources; continue semantic text/metadata reconciliation and generic documentation work
 PROJECT_GLOBAL_BLOCKER=NO
@@ -73,7 +73,7 @@ PG_TRANSCRIPTION_COMPLETE=NO; serial heavy queue count=19 (pg-1 + 11 targeted/re
 PG_CURRENT_SOURCE=pg-1
 PG_CURRENT_STAGE=WAITING_RESOURCES
 PG_CURRENT_ACTION=pg-1 VAD/speech audit only when headroom safe; do not run recovery ASR before its VAD slot
-PG_CURRENT_PROGRESS=pg-1 identity HIGH; 1,140 segments/4,431 words; reach 99.82%; 110 timestamp gaps await VAD; WAITING_RESOURCES. PARTIAL candidates metadata-triaged: 448 raw -> 385 derived; 25 existing VAD-gap candidates (P0), 187 need VAD (P2), 107 transcript-boundary (P3), 66 already covered by neighboring segment timestamps (P3); no silence discarded; no ASR processed. Sessions15-17 candidate-specific coverage remains incomplete; no canonical promotions.
+PG_CURRENT_PROGRESS=pg-1 identity HIGH; 1,140 segments/4,431 words; reach 99.82%; 110 timestamp gaps await VAD; WAITING_RESOURCES. PARTIAL candidates metadata-triaged: 448 raw -> 385 derived; P0=25 VAD-confirmed ASR candidates, P1=187 need VAD, P2=107 boundary candidates (all neighbor text present, 139 gaps 1.51-3.99s, no segment overlap; no ASR escalation yet), P3=66 already covered; no silence discarded; no ASR processed. Sessions15-17 candidate-specific coverage remains incomplete; no canonical promotions.
 Session 1 media reach is 99.82%, but speech coverage remains unassessed; no retranscription or canonical promotion. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
 PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
 PG_SOURCE_IDENTITY_AUDIT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_logical_20_source_identity_provenance_audit.json/.md; all 20 path/size verified; all 16 sidecar hashes/names/timestamps valid; seven MISSING sources checked against all 77 unmatched sidecars (zero session-number matches); source media SHA omitted to avoid large I/O
@@ -110,7 +110,11 @@ PG_WINDOWS_NEEDING_VAD=187
 PG_WINDOWS_NEEDING_ASR=25 (P0 VAD candidates only; meaningful content still unverified)
 PG_WINDOWS_DISCARDED_NO_SPEECH=0 (metadata cannot prove silence/non-speech)
 PG_RECOVERY_WINDOWS_PROCESSED=0
-PG_RECOVERY_TRIAGE_COUNTS=ALREADY_COVERED_BY_NEIGHBOR:66; TRANSCRIPT_BOUNDARY_GAP:107; NEEDS_VAD:187; VAD_CONFIRMED_GAP:25; raw duplicate/context overlaps:0; micro/context merges:63
+PG_WINDOWS_BOUNDARY=107 (cheap reconciliation complete; retained P2, no ASR escalation)
+PG_WINDOWS_ALREADY_COVERED=66
+PG_WINDOWS_PROCESSED=0
+PG_RECOVERY_TRIAGE_COUNTS=P0:25; P1:187; P2:107; P3:66; raw duplicate/context overlaps:0; context merges:63
+PG_BOUNDARY_RECONCILIATION=107 windows; 139 gaps 1.51-3.99s; neighbor context on both sides; canonical time overlap:0; audio evidence:NOT_RUN; ASR escalation:0
 
 ## HISTORICAL_RESULTS
 
