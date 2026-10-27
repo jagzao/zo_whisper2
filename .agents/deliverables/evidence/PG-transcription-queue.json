@@ -384,63 +384,126 @@
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
+      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "MISSING",
+        "full_transcription_started": false
+      }
     },
     {
       "media_id": "pg-9",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
+      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "MISSING",
+        "full_transcription_started": false
+      }
     },
     {
       "media_id": "pg-10",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
+      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "MISSING",
+        "full_transcription_started": false
+      }
     },
     {
       "media_id": "pg-11",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
+      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "MISSING",
+        "full_transcription_started": false
+      }
     },
     {
       "media_id": "pg-12",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
+      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "MISSING",
+        "full_transcription_started": false
+      }
     },
     {
       "media_id": "pg-13",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
+      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "MISSING",
+        "full_transcription_started": false
+      }
     },
     {
       "media_id": "pg-15",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "full large-v3 transcription after source is revalidated",
+      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
       "transcript_state": "MISSING",
-      "lock": "IDLE"
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "MISSING",
+        "full_transcription_started": false
+      }
     }
   ],
   "active_workers": []

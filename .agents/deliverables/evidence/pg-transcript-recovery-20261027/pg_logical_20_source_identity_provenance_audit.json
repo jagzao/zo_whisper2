@@ -19,7 +19,9 @@
     "all_sidecar_audio_names_match": true,
     "all_segment_times_valid": true,
     "all_segment_orders_monotonic": true,
-    "all_word_orders_monotonic": true
+    "all_word_orders_monotonic": true,
+    "missing_source_same_session_candidates": 0,
+    "all_seven_missing_sidecars_rechecked": true
   },
   "records": [
     {
@@ -103,7 +105,9 @@
       "transcript_match_status": "NO_MATCH_FOUND",
       "queue_state": "MISSING",
       "sidecars": [],
-      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR"
+      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR",
+      "unmatched_same_session_sidecar_candidates": [],
+      "no_sidecar_provenance_check": "NO_MATCH_FOUND and no unmatched sidecar bearing same session number"
     },
     {
       "media_id": "pg-e3d73ded7776de64",
@@ -354,7 +358,9 @@
       "transcript_match_status": "NO_MATCH_FOUND",
       "queue_state": "MISSING",
       "sidecars": [],
-      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR"
+      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR",
+      "unmatched_same_session_sidecar_candidates": [],
+      "no_sidecar_provenance_check": "NO_MATCH_FOUND and no unmatched sidecar bearing same session number"
     },
     {
       "media_id": "pg-10",
@@ -367,7 +373,9 @@
       "transcript_match_status": "NO_MATCH_FOUND",
       "queue_state": "MISSING",
       "sidecars": [],
-      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR"
+      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR",
+      "unmatched_same_session_sidecar_candidates": [],
+      "no_sidecar_provenance_check": "NO_MATCH_FOUND and no unmatched sidecar bearing same session number"
     },
     {
       "media_id": "pg-11",
@@ -380,7 +388,9 @@
       "transcript_match_status": "NO_MATCH_FOUND",
       "queue_state": "MISSING",
       "sidecars": [],
-      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR"
+      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR",
+      "unmatched_same_session_sidecar_candidates": [],
+      "no_sidecar_provenance_check": "NO_MATCH_FOUND and no unmatched sidecar bearing same session number"
     },
     {
       "media_id": "pg-12",
@@ -393,7 +403,9 @@
       "transcript_match_status": "NO_MATCH_FOUND",
       "queue_state": "MISSING",
       "sidecars": [],
-      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR"
+      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR",
+      "unmatched_same_session_sidecar_candidates": [],
+      "no_sidecar_provenance_check": "NO_MATCH_FOUND and no unmatched sidecar bearing same session number"
     },
     {
       "media_id": "pg-13",
@@ -406,7 +418,9 @@
       "transcript_match_status": "NO_MATCH_FOUND",
       "queue_state": "MISSING",
       "sidecars": [],
-      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR"
+      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR",
+      "unmatched_same_session_sidecar_candidates": [],
+      "no_sidecar_provenance_check": "NO_MATCH_FOUND and no unmatched sidecar bearing same session number"
     },
     {
       "media_id": "pg-58194dc5b0eb5cc6",
@@ -454,7 +468,9 @@
       "transcript_match_status": "NO_MATCH_FOUND",
       "queue_state": "MISSING",
       "sidecars": [],
-      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR"
+      "provenance_status": "SOURCE_VERIFIED_NO_SIDECAR",
+      "unmatched_same_session_sidecar_candidates": [],
+      "no_sidecar_provenance_check": "NO_MATCH_FOUND and no unmatched sidecar bearing same session number"
     },
     {
       "media_id": "pg-98250af646a5c138",

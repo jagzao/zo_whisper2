@@ -1,6 +1,6 @@
 # P&G 20-source identity and provenance audit
 
-- Logical sources: 20; mapped source sizes matched: 20; sidecar files: 16; sidecar SHA-256 matches: 16; missing sources: 7; provenance review flags: 0.
+- Logical sources: 20; mapped source sizes matched: 20; candidate sidecar files: 16; sidecar SHA-256 matches: 16; missing sources: 7; provenance review flags: 0.
 - Sidecars with invalid segment timestamps: 0; segment/word order monotonic: 16/16 and 16/16; source audio basename matches: 16/16.
 - Zero-duration word timestamps: 803 total across candidates; retained as word-timing defects, separate from segment boundary validity.
  - Source-media SHA-256 not computed to avoid large-media I/O; source canonical path, exact file size and mapped duration checked.
@@ -28,4 +28,4 @@
 | pg-611c4b9e32914de6 | PARTIAL | 1 | 78.85% | MATCHED |
 | pg-4957e30bcb15f2bf | PARTIAL | 1 | 99.85% | MATCHED |
 
-All 20 canonical source paths exist at the recorded sizes. All 16 sidecar files match manifest SHA-256 and reference the corresponding source basename. All sidecar segment timestamps are valid and ordered. Divergent candidates remain separate. Seven sources have no candidate sidecar and remain genuinely missing in the current inventory.
+All 20 canonical source paths exist at the recorded sizes. All 16 sidecar files match manifest SHA-256 and reference the corresponding source basename. All sidecar segment timestamps are valid and ordered. Divergent candidates remain separate. Seven sources have no candidate sidecar; all 77 unmatched repository sidecars were checked for the same session number, with zero possible matches. These seven remain genuinely missing in the current inventory.
