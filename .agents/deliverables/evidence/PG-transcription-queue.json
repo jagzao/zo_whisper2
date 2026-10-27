@@ -152,7 +152,7 @@
       "video": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
       "transcript": "CarpetaTranscripciones/py_pg/pg_Ams_kap_app_support_s10_segments.json",
       "state": "NEEDS_TARGETED_RECOVERY",
-      "next_action": "3 major VAD windows reviewed; candidates duplicate neighboring transcript or courtesy-only. Audit remaining VAD coverage before marking source complete.",
+      "next_action": "3 VAD gaps and 588.361s tail reviewed; tail has 0.992s VAD speech without supported ASR. Continue internal VAD-gap audit; aggregate uncovered remains 547.508s.",
       "transcript_state": "PARTIAL",
       "lock": "IDLE"
     },

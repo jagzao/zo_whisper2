@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "source": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
+  "tail_start": 3901.3,
+  "tail_end": 4489.6609,
+  "vad_regions": 1,
+  "vad_speech_seconds": 0.992,
+  "regions": [
+    {
+      "start": 3902.468,
+      "end": 3903.46
+    }
+  ],
+  "asr_candidates": 23,
+  "asr_no_speech_probability_range": [
+    0.1416785717010498,
+    0.960961639881134
+  ]
+}

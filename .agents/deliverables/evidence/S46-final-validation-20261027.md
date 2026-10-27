@@ -7,5 +7,5 @@
 - Syntax: `compileall -q src/transcript_pipeline/documentation tests` PASS.
 - `git diff --check` PASS.
 - Source, visual, claim gates: PASS (visual 7/7); speech gate: NEEDS_REVIEW (5.730s low-confidence); Golden 2: not generated.
-- Session 10 targeted pass: 3/3 candidate windows reviewed; no canonical sidecar changed; source remains queued for broader coverage work.
+- Session 10 targeted pass: 3/3 VAD windows compared with neighbors; 588.361s tail ASR run and VAD-audited (one 0.992s speech region without supported ASR); no canonical sidecar changed; source remains queued with 547.508s aggregate uncovered speech.
 - Documents corpus remains frozen. No merge or deployment.

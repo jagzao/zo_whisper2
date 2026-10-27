@@ -53,7 +53,7 @@ PG_TRANSCRIPTS_PARTIAL=8
 PG_TRANSCRIPTS_NEEDS_REVIEW=4 (S46 plus 3 divergent Session 15?17 copies)
 PG_TRANSCRIPTS_MISSING=8
 PG_TRANSCRIPTS_FAILED=0
-PG_TRANSCRIPTION_COMPLETE=NO; queue holds 8 full jobs, 11 targeted recovery jobs, and S46 source-audio review; no active worker lock. Session 10 had 3 major VAD windows rechecked; all candidates duplicate neighboring transcript or are courtesy-only; 547.508s total reported uncovered speech still requires broader audit.
+PG_TRANSCRIPTION_COMPLETE=NO; queue holds 8 full jobs, 11 targeted recovery jobs, and S46 source-audio review; no active worker lock. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
 PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
 PG_TRANSCRIPT_QUEUE=.agents/deliverables/evidence/PG-transcription-queue.json/.md
 

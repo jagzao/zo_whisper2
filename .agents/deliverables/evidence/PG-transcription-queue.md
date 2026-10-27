@@ -24,7 +24,7 @@ Persistent one-source-at-a-time queue. Recovery outputs remain candidates until 
 - `pg_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording.mp4` ? NEEDS_TARGETED_RECOVERY: audit uncovered VAD intervals, then contextual large-v3 recovery
 - `pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4` ? NEEDS_FULL_TRANSCRIPTION: full large-v3 transcription after source is revalidated
 - `pg_AMS_KAP_-_Compliance_-_Session_2.mp4` ? NEEDS_TARGETED_RECOVERY: audit uncovered VAD intervals, then contextual large-v3 recovery
-- `pg_Ams_kap_app_support_s10.mp4` ? NEEDS_TARGETED_RECOVERY: 3 major VAD windows reviewed; candidates duplicate neighboring transcript or courtesy-only. Audit remaining VAD coverage before marking source complete.
+- `pg_Ams_kap_app_support_s10.mp4` ? NEEDS_TARGETED_RECOVERY: 3 VAD gaps and 588.361s tail reviewed; tail has 0.992s VAD speech without supported ASR. Continue internal VAD-gap audit; aggregate uncovered remains 547.508s.
 - `pg_Ams_kap_app_support_s46.mp4` ? NEEDS_REVIEW: review source audio for gap-062 (0.810s) and prior-recovery-3443 (4.920s); 83/83 contextual windows complete
 - `pg_Ams_kap_compliance_s4.mp4` ? NEEDS_TARGETED_RECOVERY: audit uncovered VAD intervals, then contextual large-v3 recovery
 - `pg_Shadow_221026.mp4` ? NEEDS_TARGETED_RECOVERY: audit uncovered VAD intervals, then contextual large-v3 recovery

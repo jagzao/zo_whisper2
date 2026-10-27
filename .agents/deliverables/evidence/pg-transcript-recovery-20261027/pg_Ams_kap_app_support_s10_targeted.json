@@ -262,11 +262,543 @@
       "attempted_at": "2026-10-27T15:21:02Z",
       "semantic_classification": "ALREADY_REPRESENTED",
       "review_note": "Candidate diverges lexically, but canonical transcript covers ?RTCIS live tables? and ?not in this application.?"
+    },
+    "tail-3901": {
+      "status": "COMPLETE",
+      "gap_start": 3901.3,
+      "gap_end": 4486.6609,
+      "clip_start": 3898.3,
+      "clip_end": 4489.6609,
+      "language": "en",
+      "segments": [
+        {
+          "start": 3898.7,
+          "end": 3899.22,
+          "text": "Thank you.",
+          "avg_logprob": -0.4034715034067631,
+          "no_speech_prob": 0.1416785717010498,
+          "words": [
+            {
+              "start": 3898.7,
+              "end": 3899.1,
+              "word": " Thank",
+              "prob": 0.725
+            },
+            {
+              "start": 3899.1,
+              "end": 3899.22,
+              "word": " you.",
+              "prob": 0.962
+            }
+          ]
+        },
+        {
+          "start": 3899.22,
+          "end": 3899.92,
+          "text": "Thank you, everyone.",
+          "avg_logprob": -0.4034715034067631,
+          "no_speech_prob": 0.1416785717010498,
+          "words": [
+            {
+              "start": 3899.22,
+              "end": 3899.48,
+              "word": " Thank",
+              "prob": 0.648
+            },
+            {
+              "start": 3899.48,
+              "end": 3899.72,
+              "word": " you,",
+              "prob": 0.997
+            },
+            {
+              "start": 3899.72,
+              "end": 3899.92,
+              "word": " everyone.",
+              "prob": 0.726
+            }
+          ]
+        },
+        {
+          "start": 3900.12,
+          "end": 3900.58,
+          "text": "Thank you.",
+          "avg_logprob": -0.4034715034067631,
+          "no_speech_prob": 0.1416785717010498,
+          "words": [
+            {
+              "start": 3900.12,
+              "end": 3900.5,
+              "word": " Thank",
+              "prob": 0.847
+            },
+            {
+              "start": 3900.5,
+              "end": 3900.58,
+              "word": " you.",
+              "prob": 0.998
+            }
+          ]
+        },
+        {
+          "start": 3900.58,
+          "end": 3900.9,
+          "text": "Bye-bye.",
+          "avg_logprob": -0.4034715034067631,
+          "no_speech_prob": 0.1416785717010498,
+          "words": [
+            {
+              "start": 3900.58,
+              "end": 3900.72,
+              "word": " Bye",
+              "prob": 0.723
+            },
+            {
+              "start": 3900.72,
+              "end": 3900.9,
+              "word": "-bye.",
+              "prob": 0.877
+            }
+          ]
+        },
+        {
+          "start": 3937.3,
+          "end": 3940.1,
+          "text": "Thank you.",
+          "avg_logprob": -0.26764442523320514,
+          "no_speech_prob": 0.9296300411224365,
+          "words": [
+            {
+              "start": 3937.3,
+              "end": 3938.7,
+              "word": " Thank",
+              "prob": 0.223
+            },
+            {
+              "start": 3938.7,
+              "end": 3940.1,
+              "word": " you.",
+              "prob": 0.998
+            }
+          ]
+        },
+        {
+          "start": 3966.44,
+          "end": 3968.9,
+          "text": "Thank you.",
+          "avg_logprob": -0.3988426923751831,
+          "no_speech_prob": 0.870530366897583,
+          "words": [
+            {
+              "start": 3966.44,
+              "end": 3967.84,
+              "word": " Thank",
+              "prob": 0.085
+            },
+            {
+              "start": 3967.84,
+              "end": 3968.9,
+              "word": " you.",
+              "prob": 0.994
+            }
+          ]
+        },
+        {
+          "start": 3995.42,
+          "end": 3998.22,
+          "text": "Thank you.",
+          "avg_logprob": -0.31506051619847614,
+          "no_speech_prob": 0.898723304271698,
+          "words": [
+            {
+              "start": 3995.42,
+              "end": 3996.82,
+              "word": " Thank",
+              "prob": 0.101
+            },
+            {
+              "start": 3996.82,
+              "end": 3998.22,
+              "word": " you.",
+              "prob": 0.996
+            }
+          ]
+        },
+        {
+          "start": 4028.34,
+          "end": 4030.26,
+          "text": "Thank you.",
+          "avg_logprob": -0.37567031880219776,
+          "no_speech_prob": 0.8861980438232422,
+          "words": [
+            {
+              "start": 4028.34,
+              "end": 4029.74,
+              "word": " Thank",
+              "prob": 0.059
+            },
+            {
+              "start": 4029.74,
+              "end": 4030.26,
+              "word": " you.",
+              "prob": 0.995
+            }
+          ]
+        },
+        {
+          "start": 4059.32,
+          "end": 4062.12,
+          "text": "Thank you.",
+          "avg_logprob": -0.5518511931101481,
+          "no_speech_prob": 0.9030537605285645,
+          "words": [
+            {
+              "start": 4059.32,
+              "end": 4060.72,
+              "word": " Thank",
+              "prob": 0.034
+            },
+            {
+              "start": 4060.72,
+              "end": 4062.12,
+              "word": " you.",
+              "prob": 0.993
+            }
+          ]
+        },
+        {
+          "start": 4087.06,
+          "end": 4089.86,
+          "text": "Thank you.",
+          "avg_logprob": -0.4026065766811371,
+          "no_speech_prob": 0.9173901081085205,
+          "words": [
+            {
+              "start": 4087.06,
+              "end": 4088.46,
+              "word": " Thank",
+              "prob": 0.077
+            },
+            {
+              "start": 4088.46,
+              "end": 4089.86,
+              "word": " you.",
+              "prob": 0.997
+            }
+          ]
+        },
+        {
+          "start": 4113.86,
+          "end": 4115.7,
+          "text": "Thank you.",
+          "avg_logprob": -0.7001584271589915,
+          "no_speech_prob": 0.9209324717521667,
+          "words": [
+            {
+              "start": 4113.86,
+              "end": 4115.26,
+              "word": " Thank",
+              "prob": 0.019
+            },
+            {
+              "start": 4115.26,
+              "end": 4115.7,
+              "word": " you.",
+              "prob": 0.986
+            }
+          ]
+        },
+        {
+          "start": 4147.46,
+          "end": 4150.26,
+          "text": "Thank you.",
+          "avg_logprob": -0.42310208082199097,
+          "no_speech_prob": 0.8940481543540955,
+          "words": [
+            {
+              "start": 4147.46,
+              "end": 4148.86,
+              "word": " Thank",
+              "prob": 0.047
+            },
+            {
+              "start": 4148.86,
+              "end": 4150.26,
+              "word": " you.",
+              "prob": 0.993
+            }
+          ]
+        },
+        {
+          "start": 4177.86,
+          "end": 4179.62,
+          "text": "Thank you.",
+          "avg_logprob": -0.6687197089195251,
+          "no_speech_prob": 0.8992100954055786,
+          "words": [
+            {
+              "start": 4177.86,
+              "end": 4179.26,
+              "word": " Thank",
+              "prob": 0.036
+            },
+            {
+              "start": 4179.26,
+              "end": 4179.62,
+              "word": " you.",
+              "prob": 0.976
+            }
+          ]
+        },
+        {
+          "start": 4202.98,
+          "end": 4204.84,
+          "text": "Thank you.",
+          "avg_logprob": -0.7076571881771088,
+          "no_speech_prob": 0.898486316204071,
+          "words": [
+            {
+              "start": 4202.98,
+              "end": 4204.38,
+              "word": " Thank",
+              "prob": 0.046
+            },
+            {
+              "start": 4204.38,
+              "end": 4204.84,
+              "word": " you.",
+              "prob": 0.991
+            }
+          ]
+        },
+        {
+          "start": 4236.62,
+          "end": 4239.26,
+          "text": "Thank you.",
+          "avg_logprob": -0.629937599102656,
+          "no_speech_prob": 0.9306937456130981,
+          "words": [
+            {
+              "start": 4236.62,
+              "end": 4238.02,
+              "word": " Thank",
+              "prob": 0.033
+            },
+            {
+              "start": 4238.02,
+              "end": 4239.26,
+              "word": " you.",
+              "prob": 0.987
+            }
+          ]
+        },
+        {
+          "start": 4268.38,
+          "end": 4271.18,
+          "text": "Thank you.",
+          "avg_logprob": -0.3482673068841298,
+          "no_speech_prob": 0.9303820133209229,
+          "words": [
+            {
+              "start": 4268.38,
+              "end": 4269.78,
+              "word": " Thank",
+              "prob": 0.115
+            },
+            {
+              "start": 4269.78,
+              "end": 4271.18,
+              "word": " you.",
+              "prob": 0.996
+            }
+          ]
+        },
+        {
+          "start": 4296.5,
+          "end": 4299.14,
+          "text": "Thank you.",
+          "avg_logprob": -0.3800802181164424,
+          "no_speech_prob": 0.9128179550170898,
+          "words": [
+            {
+              "start": 4296.5,
+              "end": 4297.9,
+              "word": " Thank",
+              "prob": 0.076
+            },
+            {
+              "start": 4297.9,
+              "end": 4299.14,
+              "word": " you.",
+              "prob": 0.994
+            }
+          ]
+        },
+        {
+          "start": 4339.4,
+          "end": 4342.2,
+          "text": "I don't know.",
+          "avg_logprob": -0.852767713367939,
+          "no_speech_prob": 0.9186352491378784,
+          "words": [
+            {
+              "start": 4339.4,
+              "end": 4340.8,
+              "word": " I",
+              "prob": 0.012
+            },
+            {
+              "start": 4340.8,
+              "end": 4342.2,
+              "word": " don't",
+              "prob": 0.605
+            },
+            {
+              "start": 4342.2,
+              "end": 4342.2,
+              "word": " know.",
+              "prob": 0.82
+            }
+          ]
+        },
+        {
+          "start": 4371.2,
+          "end": 4374.1,
+          "text": "I don't know.",
+          "avg_logprob": -0.7659082487225533,
+          "no_speech_prob": 0.9221770763397217,
+          "words": [
+            {
+              "start": 4371.2,
+              "end": 4372.6,
+              "word": " I",
+              "prob": 0.011
+            },
+            {
+              "start": 4372.6,
+              "end": 4374.0,
+              "word": " don't",
+              "prob": 0.599
+            },
+            {
+              "start": 4374.0,
+              "end": 4374.1,
+              "word": " know.",
+              "prob": 0.803
+            }
+          ]
+        },
+        {
+          "start": 4378.3,
+          "end": 4378.92,
+          "text": "Thank you.",
+          "avg_logprob": -0.5934459964434305,
+          "no_speech_prob": 0.9524668455123901,
+          "words": [
+            {
+              "start": 4378.3,
+              "end": 4378.3,
+              "word": " Thank",
+              "prob": 0.018
+            },
+            {
+              "start": 4378.3,
+              "end": 4378.92,
+              "word": " you.",
+              "prob": 0.991
+            }
+          ]
+        },
+        {
+          "start": 4416.72,
+          "end": 4419.52,
+          "text": "Thank you.",
+          "avg_logprob": -0.7564179102579752,
+          "no_speech_prob": 0.960961639881134,
+          "words": [
+            {
+              "start": 4416.72,
+              "end": 4418.12,
+              "word": " Thank",
+              "prob": 0.016
+            },
+            {
+              "start": 4418.12,
+              "end": 4419.52,
+              "word": " you.",
+              "prob": 0.988
+            }
+          ]
+        },
+        {
+          "start": 4457.94,
+          "end": 4466.44,
+          "text": "I don't know.",
+          "avg_logprob": -0.927397832274437,
+          "no_speech_prob": 0.9289177060127258,
+          "words": [
+            {
+              "start": 4457.94,
+              "end": 4459.34,
+              "word": " I",
+              "prob": 0.014
+            },
+            {
+              "start": 4459.34,
+              "end": 4460.74,
+              "word": " don't",
+              "prob": 0.58
+            },
+            {
+              "start": 4460.74,
+              "end": 4466.44,
+              "word": " know.",
+              "prob": 0.825
+            }
+          ]
+        },
+        {
+          "start": 4476.1,
+          "end": 4477.86,
+          "text": "Thank you.",
+          "avg_logprob": -0.47509560982386273,
+          "no_speech_prob": 0.8060516715049744,
+          "words": [
+            {
+              "start": 4476.1,
+              "end": 4477.5,
+              "word": " Thank",
+              "prob": 0.099
+            },
+            {
+              "start": 4477.5,
+              "end": 4477.86,
+              "word": " you.",
+              "prob": 0.994
+            }
+          ]
+        }
+      ],
+      "attempted_at": "2026-10-27T15:39:45Z"
     }
   },
-  "completed_windows": 3,
-  "last_window": "gap-003",
-  "memory_available_gib": 5.88,
-  "review_state": "REVIEWED_CANDIDATES_ONLY",
-  "known_knowledge_gaps_in_these_windows": 0
+  "completed_windows": 4,
+  "last_window": "tail-3901",
+  "memory_available_gib": 4.09,
+  "review_state": "REVIEWED_WINDOWS_AND_TAIL; SOURCE_REMAINS_PARTIAL",
+  "known_knowledge_gaps_in_these_windows": 0,
+  "tail_review": {
+    "start": 3901.3,
+    "end": 4489.6609,
+    "duration_seconds": 588.361,
+    "vad_regions": 1,
+    "vad_speech_seconds": 0.992,
+    "asr_candidate_segments": 23,
+    "semantic_disposition": "NO_MERGE",
+    "basis": "Only one 0.992s VAD region in the tail; large-v3 emits repeated thank-you/I-dont-know phrases elsewhere with high no-speech probabilities. No candidate aligns confidently to the VAD region.",
+    "unresolved_speech_seconds": 0.992,
+    "canonical_transcript_modified": false,
+    "overall_source_uncovered_speech_seconds": 547.508,
+    "source_state": "NEEDS_TARGETED_RECOVERY"
+  }
 }
