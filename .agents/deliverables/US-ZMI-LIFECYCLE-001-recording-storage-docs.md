@@ -15,7 +15,7 @@ LOCAL_ASR_AUTHORIZATION=STANDING_APPROVED
 EXTERNAL_PG_CORPUS_PROCESSING=NOT_AUTHORIZED
 HEAVY_QUEUE_COUNT=19 (pg-1 VAD audit + 11 targeted recovery jobs + 7 missing-source transcriptions), serial order
 HEAVY_QUEUE_ORDER=pg-1 VAD/speech coverage, gap and tail audit > Compliance Session10 targeted windows > Session13 VAD-tail classification > Session14 targeted windows > Session7 > legacy Compliance Session2 > App Support S10 > App Support S4 > Shadow > Session15 candidate coverage > Session16 candidate coverage > Session17 tail/candidate coverage > missing Compliance Sessions12,2,3,4,5,6,9 sequentially.
-WAITING_RESOURCES=pg-1 VAD audit; host has 3.67 GB available, vmmemWSL uses 233% CPU, total sampled CPU 43%; large-v3 and Silero VAD assets are cached; recheck before launch
+WAITING_RESOURCES=pg-1 VAD audit; latest host sample 3.67 GB available, vmmemWSL 233% CPU, total sampled CPU 43%; recheck before launch
 BLOCKED_COMPONENTS=S46_OWNER_AUDIO_REVIEW
 INDEPENDENT_WORK_AVAILABLE=20-source identity/provenance audit complete; candidate windows prepared for all 8 PARTIAL sources; continue semantic text/metadata reconciliation and generic documentation work
 PROJECT_GLOBAL_BLOCKER=NO
@@ -72,8 +72,8 @@ PG_NEEDS_REVIEW_REASONS=pg-1 VAD pending; Sessions15-17 divergent copies lack co
 PG_TRANSCRIPTION_COMPLETE=NO; serial heavy queue count=19 (pg-1 + 11 targeted/reconciliation + 7 full transcription); no active heavy worker.
 PG_CURRENT_SOURCE=pg-1
 PG_CURRENT_STAGE=WAITING_RESOURCES
-PG_CURRENT_ACTION=VAD/speech coverage, internal-gap analysis, final-gap classification; do not retranscribe
-PG_CURRENT_PROGRESS=pg-1 identity HIGH; source/sidecar duration aligned; 1,140 segments/4,431 words; reach 99.82%; 110 word gaps >1.5s await VAD; WAITING_RESOURCES. Identity audit: all 20 source paths/sizes match; all 16 sidecars hash-match provenance map/source basename; segment timestamps valid and ordered; seven missing sources confirmed against all 77 unmatched sidecars (zero same-session candidates). PARTIAL prep: eight sources, 987 word gaps >1.5s, 448 merged 5s-context windows: 25 overlap existing major VAD gaps (P1), 423 are timestamp-only (P2); all unreviewed, local ASR standing-approved, processing pending meaningful-speech confirmation. Session15: two divergent candidates, A VAD 82.83%, B unvalidated. Session16: two divergent candidates, 42.94% reach, A VAD 82.70%/218.278s uncovered; B fills one sampled A VAD gap with acknowledgements but remains unvalidated. Session17: two divergent candidates, 49.58% reach, A VAD 91.71% over partial prefix; ~928.386s tail unclassified; token Jaccard 0.9638 and sampled major gaps remain absent from both. Session7: 99.84% reach, 86.40% speech coverage/387.212s uncovered. Legacy Session2: 98.71% reach, 90.80%/294.542s uncovered. App Support S4: 78.85% reach, 93.58%/207.916s uncovered. Shadow: 99.85% reach, 80.85%/364.596s uncovered. App Support S10: 86.90% reach, 79.34%/547.508s uncovered; 588.361s tail review found only 0.992s unsupported VAD speech. No canonical promotions.
+PG_CURRENT_ACTION=pg-1 VAD/speech audit only when headroom safe; do not run recovery ASR before its VAD slot
+PG_CURRENT_PROGRESS=pg-1 identity HIGH; 1,140 segments/4,431 words; reach 99.82%; 110 timestamp gaps await VAD; WAITING_RESOURCES. PARTIAL candidates metadata-triaged: 448 raw -> 385 derived; 25 existing VAD-gap candidates (P0), 187 need VAD (P2), 107 transcript-boundary (P3), 66 already covered by neighboring segment timestamps (P3); no silence discarded; no ASR processed. Sessions15-17 candidate-specific coverage remains incomplete; no canonical promotions.
 Session 1 media reach is 99.82%, but speech coverage remains unassessed; no retranscription or canonical promotion. Session 10 had 3 major VAD windows and the 588.361s tail reviewed; no transcript candidates accepted. Tail VAD has 0.992s unresolved without supported ASR; aggregate uncovered remains 547.508s, so Session 10 stays PARTIAL and needs further internal-gap review.
 PG_TRANSCRIPT_MAP=.agents/deliverables/evidence/PG-logical-media-transcript-map.json/.md
 PG_SOURCE_IDENTITY_AUDIT=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_logical_20_source_identity_provenance_audit.json/.md; all 20 path/size verified; all 16 sidecar hashes/names/timestamps valid; seven MISSING sources checked against all 77 unmatched sidecars (zero session-number matches); source media SHA omitted to avoid large I/O
@@ -101,6 +101,16 @@ KANBAN_BLOCKED=S46 speech gate requires source-audio review for 5.730s low-confi
 KANBAN_OWNER_PENDING=S46 Golden 2 review after all gates pass; corpus generation frozen
 BLOCKER=BLOCKED_COMPONENT=S46_OWNER_AUDIO_REVIEW; Juan must review gap-062 and prior-recovery-3443 (5.730s). pg-1 VAD is WAITING_RESOURCES within its component only; PROJECT_GLOBAL_BLOCKER=NO.
 NEXT_ACTION=Continue pg-1 VAD audit alone when resource headroom is safe; Juan reviews S46 audio; generate Golden 2 only if all S46 gates pass; continue P&G queue serially
+
+PG_RECOVERY_TRIAGE=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_recovery_window_triage.json/.md; metadata-only, no ASR/VAD/energy inference
+PG_RECOVERY_WINDOWS_RAW=448
+PG_RECOVERY_WINDOWS_AFTER_DEDUP=385
+PG_WINDOWS_VAD_CONFIRMED=25
+PG_WINDOWS_NEEDING_VAD=187
+PG_WINDOWS_NEEDING_ASR=25 (P0 VAD candidates only; meaningful content still unverified)
+PG_WINDOWS_DISCARDED_NO_SPEECH=0 (metadata cannot prove silence/non-speech)
+PG_RECOVERY_WINDOWS_PROCESSED=0
+PG_RECOVERY_TRIAGE_COUNTS=ALREADY_COVERED_BY_NEIGHBOR:66; TRANSCRIPT_BOUNDARY_GAP:107; NEEDS_VAD:187; VAD_CONFIRMED_GAP:25; raw duplicate/context overlaps:0; micro/context merges:63
 
 ## HISTORICAL_RESULTS
 
