@@ -10,13 +10,11 @@ from tests.fixtures.documentation_v2 import materialize_frames_dir
 from tests.fixtures.documentation_v2.mock_synthesis import (
     MockAllowAllGuard,
     MockAlwaysMalformedProvider,
-    MockDenyGuard,
     MockFreeFormProvider,
     MockKTSynthesisProvider,
     MockMalformedThenValidProvider,
     MockReferenceSynthesisProvider,
 )
-from transcript_pipeline.llm.provider import LLMProviderType
 from transcript_pipeline.documentation.evidence import build_evidence_timeline, load_persisted_steps
 from transcript_pipeline.documentation.grounding import (
     validate_knowledge_document,
@@ -26,9 +24,9 @@ from transcript_pipeline.documentation.knowledge_models import (
     KnowledgeClaim,
     KnowledgeDocument,
     KnowledgeSection,
+    SynthesisMetadata,
     SynthesizedProcedure,
     SynthesizedStep,
-    SynthesisMetadata,
 )
 from transcript_pipeline.documentation.pipeline_v2 import generate_documentation_v2
 from transcript_pipeline.documentation.synthesis import (
@@ -38,6 +36,7 @@ from transcript_pipeline.documentation.synthesis import (
     STATUS_UNAVAILABLE,
     SynthesisService,
 )
+from transcript_pipeline.llm.provider import LLMProviderType
 
 KT_CONFIG = {
     "name": "Acme",
@@ -543,8 +542,8 @@ def test_delta005_executive_summary_never_uses_ungrounded_summary(tmp_path):
 
 def test_delta005_semantic_chunks_and_knowledge_package_keep_prose_refs(tmp_path):
     from transcript_pipeline.documentation.knowledge_models import executive_summary_evidence_refs
-    from transcript_pipeline.documentation.semantic_package import _build_chunks
     from transcript_pipeline.documentation.models import DocumentationSource
+    from transcript_pipeline.documentation.semantic_package import _build_chunks
     from transcript_pipeline.knowledge.package_builder import build_knowledge_package_from_document
 
     frames_dir, timeline = _timeline(tmp_path)
@@ -590,3 +589,14 @@ def test_delta005_semantic_chunks_and_knowledge_package_keep_prose_refs(tmp_path
     assert knowledge["summaryEvidenceRefs"] == [evidence_id]
     assert knowledge["sections"][0]["summaryEvidenceRefs"] == [evidence_id]
     assert knowledge["procedures"][0]["metadataEvidenceRefs"] == [evidence_id]
+    assert "kavExecutionRunbooks" not in knowledge
+    import json
+
+    from transcript_pipeline.knowledge.package_builder import write_package_files
+    files = write_package_files(tmp_path / "ai-package", package)
+    assert files["kav_runbooks"].is_file()
+    runbook_artifact = json.loads(files["kav_runbooks"].read_text(encoding="utf-8"))
+    assert runbook_artifact["validationState"] == "PASS"
+    runbooks = runbook_artifact["runbooks"]
+    assert runbooks[0]["actionability"] == "GUIDED"
+    assert runbooks[0]["steps"][0]["evidence_refs"] == [evidence_id]

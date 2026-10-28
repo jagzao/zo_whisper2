@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from transcript_pipeline.documentation.production import run_pilot
 from transcript_pipeline.documentation.session_pack import (
     MediaEvidenceBundle,
     consolidate_claims_across_sessions,
@@ -109,6 +110,25 @@ def test_suppressed_gallery_topic_does_not_block_semantic_visual_coverage(tmp_pa
                             "selected": False})
     result = generate_session_pack(evidence, tmp_path)
     assert result["gates"]["VISUAL_TOPIC_COVERAGE"] == "PASS"
+
+
+def test_zero_procedures_are_not_a_fabricated_grounding_pass(tmp_path):
+    result = generate_session_pack(_bundle(), tmp_path)
+    assert result["pack"]["procedures"] == []
+    assert result["gates"]["PROCEDURE_GROUNDING"] == "NOT_APPLICABLE"
+    assert result["gates"]["KAV_RUNBOOK_VALIDATION"] == "NOT_APPLICABLE"
+    assert result["gates"]["SECOND_BRAIN_READY"] == "FAIL"
+    import json
+    runbooks_path = result.get("kav_runbooks") or result["paths"]["kav_runbooks"]
+    assert json.loads(runbooks_path.read_text(encoding="utf-8"))["runbooks"] == []
+    assert runbooks_path.is_file()
+
+
+def test_pilot_treats_not_applicable_procedure_gate_as_non_blocking(tmp_path):
+    result = run_pilot([_bundle()], tmp_path)
+    assert result["gates"]["PROCEDURE_GROUNDING"] == "NOT_APPLICABLE"
+    assert result["status"] == "PASS"
+    assert result["prevents_corpus_generation"] is False
 
 
 def test_unresolved_application_identity_blocks_ready(tmp_path):

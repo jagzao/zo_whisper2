@@ -9,6 +9,14 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from transcript_pipeline.documentation.kav_contract import (
+    build_runbooks,
+    embedding_ready,
+    extract_procedures,
+    procedure_grounding,
+    second_brain_ready,
+    validate_runbooks,
+)
 from transcript_pipeline.documentation.mission_pack import (
     consolidate_application_claims,
     validate_claim_records,
@@ -358,7 +366,8 @@ def evaluate_session_pack_gates(*, transcript_state: str, speech_gate: str, visu
                                 claim_errors: list[str], diagram_errors: list[str], application_ids: set[str],
                                 low_confidence_ratio: float, procedures: list[dict[str, Any]],
                                 application_errors: list[str], source_map_errors: list[str],
-                                timeline_errors: list[str], relation_errors: list[str]) -> dict[str, str]:
+                                timeline_errors: list[str], relation_errors: list[str],
+                                valid_evidence_ids: set[str] | None = None) -> dict[str, str]:
     gates = {
         "TRANSCRIPT_SPEECH_COVERAGE": "PASS" if transcript_state == "VALID" and speech_gate == "PASS" else "FAIL",
         "VISUAL_TOPIC_COVERAGE": "PASS" if visual_gate == "PASS" else "FAIL",
@@ -370,9 +379,9 @@ def evaluate_session_pack_gates(*, transcript_state: str, speech_gate: str, visu
         "EVIDENCE_TIMELINE_CHRONOLOGICAL": "PASS" if not timeline_errors else "FAIL",
         "DIAGRAM_RELATION_GROUNDING": "PASS" if not relation_errors else "FAIL",
         "LOW_CONFIDENCE_FILLER": "PASS" if low_confidence_ratio < .1 else "FAIL",
-        "PROCEDURE_GROUNDING": "PASS" if all(item.get("source_ids") for item in procedures) else "PASS",
+        "PROCEDURE_GROUNDING": procedure_grounding(procedures, valid_evidence_ids or set())[0],
     }
-    gates["QUALITY_GATE"] = "PASS" if all(value == "PASS" for value in gates.values()) else "FAIL"
+    gates["QUALITY_GATE"] = "PASS" if all(value in {"PASS", "NOT_APPLICABLE"} for value in gates.values()) else "FAIL"
     return gates
 
 
@@ -436,6 +445,17 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         resolution = resolve_application_identity(candidate, known_applications or [])
         applications.append({**candidate, **resolution})
     claims = extract_claims(evidence, applications)
+    resolved_apps = [item for item in applications if item.get("status") in {"MATCH_CONFIRMED", "NEW_APPLICATION"}]
+    procedure_app_id = resolved_apps[0].get("application_id") if len(resolved_apps) == 1 else None
+    procedures = extract_procedures(
+        evidence.transcript_segments, media_id=evidence.media_id, application_id=procedure_app_id
+    )
+    valid_evidence_ids = {str(item.get("segment_id")) for item in evidence.transcript_segments}
+    valid_evidence_ids.update(str(item.get("frame_id")) for item in evidence.frames)
+    valid_evidence_ids.update(str(item.get("id")) for item in evidence.evidence_events)
+    procedure_gate, procedure_errors = procedure_grounding(procedures, valid_evidence_ids)
+    runbooks = build_runbooks(procedures, source_session=evidence.media_id)
+    runbook_gate, runbook_errors = validate_runbooks(runbooks, valid_evidence_ids)
     frames_by_id = {frame["frame_id"]: frame for frame in evidence.frames}
     for frame in evidence.frames:
         if frame.get("ocr_status") == "LOW_CONFIDENCE":
@@ -495,15 +515,26 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     gates = evaluate_session_pack_gates(
         transcript_state=transcript_state, speech_gate=speech_gate, visual_gate=visual_gate,
         claim_errors=claim_errors, diagram_errors=diagram_errors, application_ids=app_ids,
-        low_confidence_ratio=low_ratio, procedures=[], application_errors=application_errors,
+        low_confidence_ratio=low_ratio, procedures=procedures, application_errors=application_errors,
         source_map_errors=[], timeline_errors=validate_timeline_chronology(evidence.evidence_events),
-        relation_errors=relation_errors,
+        relation_errors=relation_errors, valid_evidence_ids=valid_evidence_ids,
     )
     ambiguous_apps = [item for item in applications if item.get("status") == "AMBIGUOUS"]
     gates["APPLICATION_RESOLUTION"] = "PASS" if app_ids - {"SESSION_GENERAL"} and not ambiguous_apps else "FAIL"
+    gates["PROCEDURE_GROUNDING"] = procedure_gate
+    gates["KAV_RUNBOOK_VALIDATION"] = runbook_gate
     gates["QUALITY_GATE"] = "PASS" if all(
-        value == "PASS" for key, value in gates.items() if key != "QUALITY_GATE"
+        value in {"PASS", "NOT_APPLICABLE"} for key, value in gates.items() if key != "QUALITY_GATE"
     ) else "FAIL"
+    gates["SECOND_BRAIN_READY"] = second_brain_ready(
+        quality_gate=gates["QUALITY_GATE"], claim_provenance=gates["CLAIM_LEDGER"],
+        application_resolution=gates["APPLICATION_RESOLUTION"], has_application=bool(app_ids - {"SESSION_GENERAL"}),
+        conflicts_promoted=any(item.get("verification_state") == "CONFLICTING" for item in claims),
+        package_policy="NOT_EVALUATED", raw_transcript_published=False, raw_media_published=False,
+        procedure_gate=procedure_gate, runbook_gate=runbook_gate,
+    )
+    embedding_is_ready, embedding_chunks = embedding_ready([])
+    gates["EMBEDDING_READY"] = "YES" if embedding_is_ready else "NO"
     quality_state = "READY" if gates["QUALITY_GATE"] == "PASS" else "NEEDS_REVIEW"
     basename = Path(str(evidence.video_metadata.get("basename") or evidence.media_id)).stem
     title = str(evidence.video_metadata.get("title") or basename)
@@ -525,16 +556,22 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
              "verification_state": "NEEDS_REVIEW"}] if not applications else []),
         "diagrams": diagrams, "visual_topics": evidence.visual_topics,
         "evidence_events": evidence.evidence_events, "transcript_quality": evidence.speech_coverage,
-        "procedures": [],
+        "procedures": procedures,
+        "procedure_errors": procedure_errors, "kav_runbook_errors": runbook_errors,
+        "embedding_inputs": embedding_chunks,
     }
     output_dir.mkdir(parents=True, exist_ok=True)
+    kav_path = output_dir / "KAV_EXECUTION_RUNBOOKS.json"
+    kav_path.write_text(json.dumps({"schema_version": 1, "runbooks": runbooks},
+                                   indent=2, ensure_ascii=False), encoding="utf-8")
     if quality_state != "READY":
         diagnostic_path = output_dir / f"{basename}-diagnostic.json"
         diagnostic_path.write_text(json.dumps(pack, indent=2, ensure_ascii=False), encoding="utf-8")
-        return {"status": quality_state, "gates": gates, "diagnostic": diagnostic_path, "pack": pack}
+        return {"status": quality_state, "gates": gates, "diagnostic": diagnostic_path,
+                "kav_runbooks": kav_path, "pack": pack}
     markdown = _markdown(pack)
     paths = {"json": output_dir / f"{basename}.json", "md": output_dir / f"{basename}.md",
-             "pdf": output_dir / f"{basename}.pdf"}
+             "pdf": output_dir / f"{basename}.pdf", "kav_runbooks": kav_path}
     paths["json"].write_text(json.dumps(pack, indent=2, ensure_ascii=False), encoding="utf-8")
     paths["md"].write_text(markdown, encoding="utf-8")
     _write_pdf(markdown, paths["pdf"], title)

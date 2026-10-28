@@ -128,6 +128,14 @@ Execution + Verification Receipt
 - no automatic truth promotion;
 - future confidence/learning input.
 
+### FEATURE-KNOW-007 — Deterministic KAV operationalization
+- generic procedure extraction only from ordered operational evidence;
+- procedure grounding fails on missing or partial provenance and is `NOT_APPLICABLE` when empty;
+- separate versioned `KAV_EXECUTION_RUNBOOKS.json` output;
+- fail-closed actionability, input, approval, current-state, stop, prohibition, and escalation contract;
+- `SECOND_BRAIN_READY` and `EMBEDDING_READY` gates; Gemini remains deferred.
+- detailed acceptance: `US-ZO-KNOWLEDGE-002-kav-operational-contract.md`.
+
 ## Delivery phases
 
 ### Phase 1 — Knowledge publishing + retrieval
@@ -146,6 +154,10 @@ Vertical slice:
 - fake deterministic capability first;
 - then one real low-risk tool binding;
 - Azure Data Factory real binding is a separate controlled adapter if credentials/tools exist.
+
+## Producer operationalization completion
+
+`US-ZO-KNOWLEDGE-002` completes the producer-side procedure/runbook contract and deterministic readiness gates. It does not publish project knowledge, execute runbooks, or generate embeddings.
 
 ## Non-goals for first implementation
 

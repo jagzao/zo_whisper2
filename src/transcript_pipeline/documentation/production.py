@@ -210,11 +210,15 @@ def run_pilot(bundles: list[Any], output_dir: Path, limit: int = 3) -> dict[str,
         result = run_session_pack(bundle, output_dir / str(bundle.get("media_id", "unknown")))
         pack = result.get("pack", {})
         items.append({"media_id": bundle.get("media_id"), "status": result["status"], "gates": _pilot_gate_map(pack)})
-    aggregate = {gate: "PASS" if items and all(item["gates"][gate] == "PASS" for item in items) else "FAIL"
-                 for gate in PILOT_GATES}
-    return {"status": "PASS" if items and all(value == "PASS" for value in aggregate.values()) else "FAIL",
+    aggregate = {}
+    for gate in PILOT_GATES:
+        states = [item["gates"][gate] for item in items]
+        aggregate[gate] = ("NOT_APPLICABLE" if states and all(state == "NOT_APPLICABLE" for state in states)
+                           else "PASS" if states and all(state in {"PASS", "NOT_APPLICABLE"} for state in states)
+                           else "FAIL")
+    return {"status": "PASS" if items and all(value in {"PASS", "NOT_APPLICABLE"} for value in aggregate.values()) else "FAIL",
             "selected": [item["media_id"] for item in items], "items": items, "gates": aggregate,
-            "prevents_corpus_generation": any(value != "PASS" for value in aggregate.values())}
+            "prevents_corpus_generation": any(value not in {"PASS", "NOT_APPLICABLE"} for value in aggregate.values())}
 
 
 def discover_application_groups(session_packs: list[dict[str, Any]],

@@ -379,6 +379,10 @@ def build_knowledge_package_from_document(
                 preconditions=list(procedure.prerequisites),
                 expected_outcomes=list(procedure.expected_outcomes),
             ).to_dict()
+        procedure_payload["steps"] = [
+            {**step_payload, "evidenceRefs": list(source_step.evidence_refs)}
+            for step_payload, source_step in zip(procedure_payload["steps"], procedure.steps)
+        ]
         procedure_payload.update({
             "purpose": procedure.purpose,
             "evidenceRefs": list(procedure.evidence_refs),
@@ -479,4 +483,25 @@ def write_package_files(ai_package_dir: Path, package: KnowledgePackage) -> dict
             json.dumps(procedure.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8"
         )
         written["procedure"] = procedure_path
+    from transcript_pipeline.documentation.kav_contract import build_runbooks, validate_runbooks
+
+    runbooks = build_runbooks(
+        package.knowledge.get("procedures", []),
+        source_session=str(package.source.get("sourceId") or package.knowledge_id),
+        evidence_index=package.evidence,
+    )
+    valid_evidence_ids = {str(item.get("evidenceId") or item.get("evidence_id"))
+                          for item in package.evidence}
+    runbook_validation, runbook_errors = validate_runbooks(runbooks, valid_evidence_ids)
+    if runbook_validation == "FAIL":
+        for runbook in runbooks:
+            runbook["status"] = "REVIEW_REQUIRED"
+    runbooks_path = ai_package_dir / "KAV_EXECUTION_RUNBOOKS.json"
+    runbooks_path.write_text(
+        json.dumps({"schemaVersion": 1, "validationState": runbook_validation,
+                    "validationErrors": runbook_errors, "runbooks": runbooks},
+                   indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    written["kav_runbooks"] = runbooks_path
     return written
