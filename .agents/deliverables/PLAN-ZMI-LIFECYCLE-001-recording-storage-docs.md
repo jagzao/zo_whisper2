@@ -24,7 +24,7 @@ This explicitly resolves earlier conflicting release rules in this plan and the 
 
 
 - No worktree. Preserve all existing working-tree edits; never reset, stash, or clean. Commit coherent checkpoints and push them.
-- Model order: Z.AI/GLM; if auth/provider unavailable, OpenCode Go/DeepSeek Flash; then local DeepSeek/Ollama; then any available current coding model. DeepSeek Pro only for a difficult blocker after cheaper attempts. GLM auth failure is `MODEL_DEGRADED=YES`, never a project blocker.
+- Model order per `.agents/protocols/model-routing.md`: (1) OpenCode Go / DeepSeek Flash for routine coding; (2) local coding model / Ollama / DeepSeek; (3) another economical coding model; (4) GPT-6 Luna or larger only for genuinely difficult work. Fall back automatically on unavailability, record `MODEL_DEGRADED=YES` with `MODEL_FALLBACK_REASON`, and never treat model availability as a project blocker.
 - Synthetic/isolated data for tests. Never test destructive cleanup against user originals.
 - New/changed business logic must have relevant unit tests and those tests must pass. Build/import/start and migration/data-safety checks are mandatory. Integration, Playwright, E2E, Docker, security scans, and resource-heavy gates are advisory; run when practical and record `PASS`, `FAIL_ADVISORY`, `ENV_BLOCKED`, `NOT_CONFIGURED`, or `NOT_RUN` with evidence. RAM controls execution strategy, never publication eligibility.
 - Commit and push code, canonical SDD, and the single active Kanban. Deploy only the final pushed HEAD, preserve rollback, shared data, and any active job.

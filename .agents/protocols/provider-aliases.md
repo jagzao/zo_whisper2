@@ -8,10 +8,11 @@ Keep orchestration semantics stable while provider/model availability changes. T
 
 | Alias | Intended pool | Responsibility |
 |---|---|---|
-| `STRONG_PLANNER` | owner-authorized high-capability planner | Initial implementation plan and bounded architectural re-plan only |
-| `PRIMARY_CODER` | OpenCode Go | Normal production implementation |
-| `FREE_WORKER` | Ollama local | Search, mechanical edits, deterministic lint/type/test repairs, docs |
-| `SECONDARY_CODER` | Ollama Pro / Ollama Cloud | Overflow, difficult bug, alternative coding attempt |
+| `ECONOMICAL_CODER` | OpenCode Go / DeepSeek Flash, then local/Ollama, then other economical | Default routine implementation; cheapest viable tier |
+| `PRIMARY_CODER` | Same pool as `ECONOMICAL_CODER` | Normal production implementation |
+| `FREE_WORKER` | Local coding model / Ollama local | Search, mechanical edits, deterministic lint/type/test repairs, docs |
+| `SECONDARY_CODER` | Alternate economical model (Ollama Pro / Ollama Cloud) | Overflow, difficult bug, alternative coding attempt |
+| `STRONG_PLANNER` | Premium/large model (GPT-6 Luna-class or larger) | Initial plan and bounded architectural re-plan; genuinely difficult work only |
 | `REVIEWER` | configured review model | Independent review of diff/evidence; no product-scope invention |
 
 Provider credentials, account tokens, base URLs and concrete private model IDs belong in the user's OpenCode/Ollama configuration, not in Git.
@@ -21,6 +22,19 @@ Provider credentials, account tokens, base URLs and concrete private model IDs b
 Project-lead resolves aliases from the locally configured agents/pools. If one pool is unavailable, it automatically routes to the next permitted tier from `model-routing.md`.
 
 A pool failure is not an owner blocker unless every permitted implementation route is unavailable and the remaining dependency genuinely requires owner/account action.
+
+## Cost-aware resolution
+
+Routine coding ladder (first available wins):
+
+1. OpenCode Go / DeepSeek Flash (`ECONOMICAL_CODER`).
+2. Local coding model / Ollama / DeepSeek.
+3. Another economical coding model.
+4. GPT-6 Luna or larger models — genuinely difficult work only.
+
+Premium models are not the default. Return to the economical tier after each hard step.
+
+Record per task: `ACTIVE_ORCHESTRATION_MODEL`, `MODEL_ROLE`, `MODEL_DEGRADED`, `MODEL_FALLBACK_REASON`.
 
 ## Owner-analysis boundary
 

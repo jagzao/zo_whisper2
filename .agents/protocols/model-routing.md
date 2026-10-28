@@ -6,6 +6,19 @@ Use expensive intelligence only where it materially improves outcome. Use determ
 
 Provider/model names are runtime aliases so credentials and vendor choices can change without rewriting product specs.
 
+## Cost policy
+
+Default to the cheapest model that reliably completes the task. Escalate only when evidence shows the cheaper tier cannot complete it.
+
+Routine coding ladder (first available wins):
+
+1. OpenCode Go / DeepSeek Flash (`ECONOMICAL_CODER`).
+2. Local coding model / Ollama / DeepSeek.
+3. Another economical coding model.
+4. GPT-6 Luna or larger models — genuinely difficult work only.
+
+Correctness gates are unchanged by this policy. Cheaper models never lower acceptance criteria, test coverage, review requirements, or release gates.
+
 ## Roles
 
 ### STRONG_PLANNER
@@ -21,12 +34,13 @@ Rules:
 - does not run normal fix loops
 - is not invoked merely because a unit test fails
 - plan is subordinate to frozen spec
+- reserve GPT-6 Luna-class or larger models for genuinely difficult planning or debugging
 
 Runtime provider: configurable. The owner may use Claude/GPT interactively for product analysis; autonomous access requires whatever authorized provider is actually connected at runtime.
 
-### PRIMARY_CODER
+### PRIMARY_CODER (ECONOMICAL_CODER)
 
-Default: OpenCode Go.
+Default: OpenCode Go with DeepSeek Flash-class economical model.
 
 Purpose:
 - normal production feature implementation
@@ -36,7 +50,7 @@ Purpose:
 
 ### FREE_WORKER
 
-Default: Ollama local.
+Default: local coding model / Ollama.
 
 Purpose:
 - repository search/exploration
@@ -52,7 +66,7 @@ Do not assign a high-risk architectural rewrite to FREE_WORKER merely because it
 
 ### SECONDARY_CODER
 
-Default: Ollama Pro / Ollama Cloud.
+Default: another economical coding model (Ollama Pro / Ollama Cloud or equivalent).
 
 Purpose:
 - overflow when PRIMARY_CODER is unavailable
@@ -60,9 +74,16 @@ Purpose:
 - difficult bug after compact evidence + regression test exist
 - second independent coding approach
 
+### Premium escalation
+
+Premium/large models (GPT-6 Luna or larger) are reserved for genuinely difficult work: complex architecture, hard cross-cutting refactors, or debugging where cheaper tiers stagnated with evidence. Return to the economical tier immediately after the hard step.
+
 ## Failure routing
 
 ```
+ROUTINE IMPLEMENTATION
+  -> ECONOMICAL_CODER (OpenCode Go / DeepSeek Flash -> local -> other economical)
+
 MECHANICAL / EXACT DIAGNOSTIC
   -> FREE_WORKER
 
@@ -71,6 +92,9 @@ NORMAL PRODUCTION DEFECT
 
 SAME ERROR SIGNATURE AFTER 2 MEANINGFUL ATTEMPTS
   -> SECONDARY_CODER
+
+GENUINELY DIFFICULT WORK (evidence required)
+  -> STRONG_PLANNER / large model
 
 CODER TIERS FAIL BECAUSE TECHNICAL PREMISE IS WRONG
   -> STRONG_PLANNER bounded re-plan
@@ -112,3 +136,13 @@ Validation tools do not require an LLM:
 - GitHub Actions
 
 LLMs interpret a concise failure only when repair is needed.
+
+## Cost telemetry
+
+Record per task:
+- active orchestration model
+- role
+- degraded flag
+- fallback reason
+
+Canonical keys: `ACTIVE_ORCHESTRATION_MODEL`, `MODEL_ROLE`, `MODEL_DEGRADED`, `MODEL_FALLBACK_REASON`.
