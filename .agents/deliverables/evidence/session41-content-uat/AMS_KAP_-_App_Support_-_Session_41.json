@@ -4309,8 +4309,8 @@
       "version": 1,
       "application_id": "pgregdoc-com",
       "topic": "Operations",
-      "canonical_fact": "PG RegDoc: I think the only thing missing is the fact that the application is not fully developed.",
-      "claim": "PG RegDoc: I think the only thing missing is the fact that the application is not fully developed.",
+      "canonical_fact": "PG RegDoc: Evidence suggests the only thing missing is the fact that the application is not fully developed.",
+      "claim": "PG RegDoc: Evidence suggests the only thing missing is the fact that the application is not fully developed.",
       "source_type": "SEMANTIC_CONSOLIDATED",
       "source_types": [
         "TRANSCRIPT"
@@ -5944,8 +5944,8 @@
       "version": 1,
       "application_id": "pgregdoc-com",
       "topic": "Operations",
-      "canonical_fact": "PG RegDoc: I think the only thing missing is the fact that the application is not fully developed.",
-      "claim": "PG RegDoc: I think the only thing missing is the fact that the application is not fully developed.",
+      "canonical_fact": "PG RegDoc: Evidence suggests the only thing missing is the fact that the application is not fully developed.",
+      "claim": "PG RegDoc: Evidence suggests the only thing missing is the fact that the application is not fully developed.",
       "source_type": "SEMANTIC_CONSOLIDATED",
       "source_types": [
         "TRANSCRIPT"
@@ -6561,8 +6561,8 @@
       "version": 1,
       "application_id": "pgregdoc-com",
       "topic": "Operations",
-      "canonical_fact": "PG RegDoc: I think the only thing missing is the fact that the application is not fully developed.",
-      "claim": "PG RegDoc: I think the only thing missing is the fact that the application is not fully developed.",
+      "canonical_fact": "PG RegDoc: Evidence suggests the only thing missing is the fact that the application is not fully developed.",
+      "claim": "PG RegDoc: Evidence suggests the only thing missing is the fact that the application is not fully developed.",
       "source_type": "SEMANTIC_CONSOLIDATED",
       "source_types": [
         "TRANSCRIPT"
@@ -10885,7 +10885,7 @@
     "meeting_gallery_claims_suppressed": 22,
     "material_semantic_claim_count": 20,
     "visual_semantic_claim_count": 14,
-    "raw_transcript_final_claim_count": 1,
+    "raw_transcript_final_claim_count": 0,
     "raw_ocr_final_claim_count": 0,
     "semantic_duplicate_claim_count": 0,
     "duplicate_support_refs_consolidated": 3

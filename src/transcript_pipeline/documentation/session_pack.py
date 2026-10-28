@@ -435,6 +435,7 @@ def _canonical_fact_text(text: str, app_name: str) -> str:
         value = re.sub(rf"^{re.escape(app_name)}:\s*", "", value, flags=re.I)
     value = re.sub(r"^(?:so|and then|then|well|basically|you know)\s+", "", value, flags=re.I)
     value = re.sub(r"^(?:because )?initially,?\s*(?:just wanted to share that\s*)?initially\s+", "", value, flags=re.I)
+    value = re.sub(r"^(?:i think|i believe) (.+)$", r"Evidence suggests \1", value, flags=re.I)
     export = re.match(r"^record describes (.+?) data export through (.+?) to (.+)$", value, re.I)
     if export:
         value = f"Data is exported from {export.group(1)} through {export.group(2)} to {export.group(3)}"

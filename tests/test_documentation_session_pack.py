@@ -549,6 +549,12 @@ def test_canonical_claim_removes_speaker_filler_without_dropping_uncertainty():
     fact = consolidate_semantic_claims([claim], [{"application_id": "service-alpha", "name": "Service Alpha"}], "session")[0]
     assert fact["canonical_fact"] == "Service Alpha: Evidence suggests there are limited users for this application."
     assert fact["verification_state"] == "SOURCE_UNCERTAIN"
+    claim["claim"] = "I think the application is not fully developed."
+    claim["ambiguities"] = ["i think"]
+    fact = consolidate_semantic_claims([claim], [{"application_id": "service-alpha", "name": "Service Alpha"}], "session")[0]
+    assert "I think" not in fact["canonical_fact"]
+    assert "Evidence suggests" in fact["canonical_fact"]
+    assert fact["verification_state"] == "SOURCE_UNCERTAIN"
 
 
 def test_evidence_summary_is_rewritten_as_canonical_data_flow():
