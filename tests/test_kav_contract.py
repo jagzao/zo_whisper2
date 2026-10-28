@@ -2,6 +2,7 @@ import hashlib
 
 from transcript_pipeline.documentation.kav_contract import (
     build_runbooks,
+    embedding_chunk_id,
     embedding_ready,
     evaluate_runbook_preflight,
     extract_procedures,
@@ -27,6 +28,57 @@ def test_procedure_extraction_needs_ordered_actions_and_ignores_information_only
     assert [step["order"] for step in procedures[0]["steps"]] == [1, 2, 3]
     assert all(step["evidence_refs"] for step in procedures[0]["steps"])
     assert procedures[0]["actionability"] == "GUIDED"
+
+
+def test_extraction_finds_multiple_independent_procedures_without_evidence_leakage():
+    segments = [
+        {"segment_id": "a1", "start": 5, "text": "First, open the access request.", "application_id": "app-access"},
+        {"segment_id": "a2", "start": 6, "text": "Click the access details."},
+        {"segment_id": "a3", "start": 8, "text": "Finally submit the access request."},
+        {"segment_id": "b1", "start": 1200, "text": "First, review retention settings.", "application_id": "app-records"},
+        {"segment_id": "b2", "start": 1202, "text": "Open retention evidence."},
+        {"segment_id": "b3", "start": 1204, "text": "Finally attach the retention evidence."},
+        {"segment_id": "info", "start": 2400, "text": "The discussion also covered general planning."},
+    ]
+    procedures = extract_procedures(segments, media_id="multi")
+    assert len(procedures) == 2
+    assert procedures[0]["procedure_id"] != procedures[1]["procedure_id"]
+    assert [procedure["application_id"] for procedure in procedures] == ["app-access", "app-records"]
+    assert set(procedures[0]["evidence_refs"]).isdisjoint(procedures[1]["evidence_refs"])
+    books = build_runbooks(procedures, source_session="multi")
+    assert len(books) == 2
+    assert [set(book["source_evidence"]) for book in books] == [
+        set(procedure["evidence_refs"]) for procedure in procedures
+    ]
+    assert validate_runbooks(books, {segment["segment_id"] for segment in segments})[0] == "PASS"
+
+
+def test_invalid_early_anchor_does_not_hide_later_valid_workflow():
+    procedures = extract_procedures([
+        {"segment_id": "bad1", "start": 1, "text": "First, open the access form."},
+        {"segment_id": "bad2", "start": 500, "text": "First, review retention settings."},
+        {"segment_id": "good2", "start": 502, "text": "Open retention evidence."},
+    ], media_id="recovery")
+    assert len(procedures) == 1
+    assert procedures[0]["evidence_refs"] == ["good2"] or set(procedures[0]["evidence_refs"]) == {"bad2", "good2"}
+
+
+def test_long_procedure_and_topic_transition_closure():
+    procedures = extract_procedures([
+        {"segment_id": "l1", "start": 1, "text": "First, open access settings."},
+        {"segment_id": "l2", "start": 110, "text": "Select access role configuration."},
+        {"segment_id": "l3", "start": 220, "text": "Finally save the access configuration."},
+        {"segment_id": "t1", "start": 400, "text": "First, review retention policy."},
+        {"segment_id": "t2", "start": 402, "text": "Open retention evidence."},
+        {"segment_id": "t3", "start": 450, "text": "Open payroll report."},
+        {"segment_id": "t4", "start": 500, "text": "First, review vendor qualification."},
+        {"segment_id": "t5", "start": 502, "text": "Open vendor records."},
+    ], media_id="long")
+    assert len(procedures) == 3
+    assert len(procedures[0]["steps"]) == 3
+    assert procedures[0]["steps"][-1]["source_timestamp"] - procedures[0]["steps"][0]["source_timestamp"] > 45
+    assert "t3" not in procedures[1]["evidence_refs"]
+    assert "t4" not in procedures[1]["evidence_refs"]
 
 
 def test_procedure_grounding_pass_fail_and_not_applicable():
@@ -109,6 +161,7 @@ def test_embedding_handoff_accepts_curated_chunks_only_and_hashes_content():
                "verification_status": "HUMAN_REVIEWED", "confidence": 0.95,
                "provenance_pointers": ["e1"], "curated": True,
                "content_hash": "sha256:" + hashlib.sha256(b"Reviewed access workflow.").hexdigest()}
+    curated["chunk_id"] = embedding_chunk_id(curated)
     report = embedding_ready([curated, {**curated, "knowledge_id": "raw", "raw_transcript": True},
                               {**curated, "knowledge_id": "state", "execution_state": True}],
                              second_brain_ready_state="PASS")
@@ -120,3 +173,30 @@ def test_embedding_handoff_accepts_curated_chunks_only_and_hashes_content():
     assert embedding_ready([curated], second_brain_ready_state="PASS")["DOCUMENT_EMBEDDING_READY"]
     assert not embedding_ready([{**curated, "conflicting": True}], second_brain_ready_state="PASS")["DOCUMENT_EMBEDDING_READY"]
     assert not embedding_ready([{**curated, "confidence": 0.4}], second_brain_ready_state="PASS")["DOCUMENT_EMBEDDING_READY"]
+
+
+def test_embedding_accounting_uses_chunk_ids_for_same_knowledge_document():
+    chunks = []
+    for topic, content, confidence in (
+        ("access-a", "Reviewed access workflow A.", 0.95),
+        ("access-b", "Reviewed access workflow B.", 0.9),
+        ("access-c", "Reviewed access workflow C.", 0.2),
+    ):
+        chunk = {"knowledge_id": "one-document", "version": 1, "project_id": "p1",
+                 "canonical_topic": topic, "content": content, "source_knowledge_ids": ["k0"],
+                 "verification_status": "HUMAN_REVIEWED", "confidence": confidence,
+                 "provenance_pointers": [topic], "curated": True,
+                 "content_hash": "sha256:" + hashlib.sha256(content.encode()).hexdigest()}
+        chunk["chunk_id"] = embedding_chunk_id(chunk)
+        chunks.append(chunk)
+    intended = {chunk["chunk_id"] for chunk in chunks}
+    rejected_id = chunks[2]["chunk_id"]
+    report = embedding_ready(chunks, second_brain_ready_state="PASS", intended_chunk_ids=intended)
+    assert len({chunk["knowledge_id"] for chunk in chunks}) == 1
+    assert len({chunk["chunk_id"] for chunk in chunks}) == 3
+    assert not report["DOCUMENT_EMBEDDING_READY"]
+    assert report["rejected_chunks"][0]["chunk_id"] == rejected_id
+    assert not embedding_ready(chunks, second_brain_ready_state="PASS", intended_chunk_ids=intended,
+                               accepted_exclusions={"wrong-id": "excluded"})["DOCUMENT_EMBEDDING_READY"]
+    assert embedding_ready(chunks, second_brain_ready_state="PASS", intended_chunk_ids=intended,
+                           accepted_exclusions={rejected_id: "low confidence"})["DOCUMENT_EMBEDDING_READY"]

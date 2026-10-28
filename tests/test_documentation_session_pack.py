@@ -103,6 +103,19 @@ def test_low_confidence_ocr_cannot_ground_visual_claim_or_diagram(tmp_path):
     assert not any(claim.get("frame_id") for claim in result["pack"]["claims"])
 
 
+def test_missing_visual_confidence_is_unknown_not_zero(tmp_path):
+    evidence = _bundle()
+    evidence.frames[0].pop("ocr_confidence")
+    evidence.frames[0].pop("confidence", None)
+    result = generate_session_pack(evidence, tmp_path)
+    visual_claim = next(claim for claim in result["pack"]["claims"] if claim["source_type"] == "VIDEO_FRAME")
+    assert visual_claim["confidence"] is None
+    assert result["gates"]["LOW_CONFIDENCE_FILLER"] == "PASS"
+    diagnostics = result["pack"]["claim_confidence_diagnostics"]
+    assert diagnostics["missing_confidence_count"] == 1
+    assert diagnostics["low_confidence_claim_count"] == 0
+
+
 def test_suppressed_gallery_topic_does_not_block_semantic_visual_coverage(tmp_path):
     evidence = _bundle()
     evidence.frames.append({"frame_id": "gallery", "timestamp": 30, "visual_type": "MEETING_GALLERY",
@@ -122,6 +135,29 @@ def test_zero_procedures_are_not_a_fabricated_grounding_pass(tmp_path):
     runbooks_path = result.get("kav_runbooks") or result["paths"]["kav_runbooks"]
     assert json.loads(runbooks_path.read_text(encoding="utf-8"))["runbooks"] == []
     assert runbooks_path.is_file()
+
+
+def test_session_pack_writes_separate_runbooks_for_each_procedure(tmp_path):
+    evidence = _bundle()
+    evidence.application_candidates = [
+        {"name": "Access Portal", "aliases": [], "provenance": []},
+        {"name": "Records Portal", "aliases": [], "provenance": []},
+    ]
+    evidence.transcript_segments = [
+        {"start": 1, "end": 2, "text": "First, open the Access Portal request."},
+        {"start": 3, "end": 4, "text": "Click the Access Portal details."},
+        {"start": 5, "end": 6, "text": "Finally submit the Access Portal request."},
+        {"start": 1200, "end": 1201, "text": "First, review Records Portal retention settings."},
+        {"start": 1202, "end": 1203, "text": "Open Records Portal retention evidence."},
+        {"start": 1204, "end": 1205, "text": "Finally attach Records Portal retention evidence."},
+    ]
+    result = generate_session_pack(evidence, tmp_path)
+    runbooks = __import__("json").loads(result["paths"]["kav_runbooks"].read_text(encoding="utf-8"))["runbooks"]
+    assert len(result["pack"]["procedures"]) == len(runbooks) == 2
+    assert {procedure["application_id"] for procedure in result["pack"]["procedures"]} == {
+        "access-portal", "records-portal"
+    }
+    assert set(runbooks[0]["source_evidence"]).isdisjoint(runbooks[1]["source_evidence"])
 
 
 def test_pilot_treats_not_applicable_procedure_gate_as_non_blocking(tmp_path):

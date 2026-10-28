@@ -447,8 +447,20 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     claims = extract_claims(evidence, applications)
     resolved_apps = [item for item in applications if item.get("status") in {"MATCH_CONFIRMED", "NEW_APPLICATION"}]
     procedure_app_id = resolved_apps[0].get("application_id") if len(resolved_apps) == 1 else None
+    app_aliases = [
+        (_normalize_name(str(alias)), str(app["application_id"]))
+        for app in resolved_apps
+        for alias in [app.get("name"), *app.get("aliases", [])]
+        if alias and app.get("application_id")
+    ]
+    procedure_segments = []
+    for segment in evidence.transcript_segments:
+        normalized_text = _normalize_name(str(segment.get("text", "")))
+        matches = {app_id for alias, app_id in app_aliases if alias and alias in normalized_text}
+        resolved_segment_app = segment.get("application_id") or (next(iter(matches)) if len(matches) == 1 else None)
+        procedure_segments.append({**segment, "application_id": resolved_segment_app})
     procedures = extract_procedures(
-        evidence.transcript_segments, media_id=evidence.media_id, application_id=procedure_app_id
+        procedure_segments, media_id=evidence.media_id, application_id=procedure_app_id
     )
     valid_evidence_ids = {str(item.get("segment_id")) for item in evidence.transcript_segments}
     valid_evidence_ids.update(str(item.get("frame_id")) for item in evidence.frames)
@@ -463,12 +475,15 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         text = str(frame.get("ocr_text", "")).strip()
         if len(text.split()) < 3:
             continue
+        frame_confidence = frame.get("ocr_confidence")
+        if frame_confidence is None:
+            frame_confidence = frame.get("confidence")
         frame_claim = {
             "claim_id": _stable_id("claim", evidence.media_id, frame["frame_id"], text),
             "application_id": frame.get("application_id", "SESSION_GENERAL"), "claim": text,
             "source_type": "VIDEO_FRAME", "source_id": evidence.media_id,
             "timestamp": frame["timestamp"], "frame_id": frame["frame_id"],
-            "confidence": float(frame.get("ocr_confidence") or frame.get("confidence") or 0),
+            "confidence": float(frame_confidence) if frame_confidence is not None else None,
             "verification_state": "VISUAL_CONFIRMED", "first_seen": {"session_id": evidence.media_id, "timestamp": frame["timestamp"]},
             "last_confirmed": None, "supporting_sources": [{"source_id": evidence.media_id,
             "source_type": "VIDEO_FRAME", "timestamp": frame["timestamp"], "frame_id": frame["frame_id"],
@@ -511,7 +526,18 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     transcript_state = evidence.speech_coverage.get("transcript_state", "NEEDS_REVIEW")
     speech_gate = evidence.speech_coverage.get("speech_quality_gate", "FAIL")
     material_claims = [item for item in claims if item.get("verification_state") not in UNCERTAIN_STATES]
-    low_ratio = sum(float(item.get("confidence") or 0) < .5 for item in material_claims) / max(1, len(material_claims))
+    known_confidence = [float(item["confidence"]) for item in material_claims
+                        if item.get("confidence") is not None]
+    low_confidence_count = sum(value < .5 for value in known_confidence)
+    low_ratio = low_confidence_count / max(1, len(known_confidence))
+    confidence_by_source: dict[str, dict[str, int]] = {}
+    for item in material_claims:
+        source_type = str(item.get("source_type") or "UNKNOWN")
+        counts = confidence_by_source.setdefault(source_type, {"low_confidence": 0, "missing_confidence": 0})
+        if item.get("confidence") is None:
+            counts["missing_confidence"] += 1
+        elif float(item["confidence"]) < .5:
+            counts["low_confidence"] += 1
     gates = evaluate_session_pack_gates(
         transcript_state=transcript_state, speech_gate=speech_gate, visual_gate=visual_gate,
         claim_errors=claim_errors, diagram_errors=diagram_errors, application_ids=app_ids,
@@ -559,6 +585,13 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         "diagrams": diagrams, "visual_topics": evidence.visual_topics,
         "evidence_events": evidence.evidence_events, "transcript_quality": evidence.speech_coverage,
         "procedures": procedures,
+        "claim_confidence_diagnostics": {
+            "material_claim_count": len(material_claims),
+            "low_confidence_claim_count": low_confidence_count,
+            "low_confidence_ratio": low_ratio,
+            "missing_confidence_count": sum(item.get("confidence") is None for item in material_claims),
+            "by_source_type": confidence_by_source,
+        },
         "kav_execution_runbooks": runbooks,
         "embedding_report": embedding_report,
         "procedure_errors": procedure_errors, "kav_runbook_errors": runbook_errors,

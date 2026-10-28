@@ -11,11 +11,14 @@ MATERIAL_ACTIONS = {
     "GRANT_ACCESS", "REVOKE_ACCESS", "MODIFY_RETENTION",
 }
 _ACTION = re.compile(
-    r"\b(click|select|open|navigate|enter|type|choose|update|change|review|verify|"
-    r"create|add|remove|assign|grant|revoke|submit|save|disable|delete|decommission)\b",
+    r"\b(click|select|open|navigate|enter|type|choose|update|change|review|verify|check|"
+    r"create|add|remove|assign|grant|revoke|submit|save|disable|delete|decommission|attach|"
+    r"fill|complete|request|raise|use|point)\b",
     re.I,
 )
 _ORDER = re.compile(r"\b(first|then|next|after that|finally|step\s+\d+)\b", re.I)
+_START_ORDER = re.compile(r"\b(first|step\s+1|to begin|start by|starting with)\b", re.I)
+_WORKFLOW_END = re.compile(r"\b(finally|workflow complete|that(?:'s| is) it|done with (?:this|the) workflow)\b", re.I)
 _PARAMETERS = {
     r"\b(password|passcode|credential|secret|token|api key)\b": "credential",
     r"\bacs\s+url\b": "acs_url", r"\burl\b": "url",
@@ -37,6 +40,13 @@ def _id(*parts: Any) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
+def embedding_chunk_id(chunk: dict[str, Any]) -> str:
+    normalized = " ".join(str(chunk.get("content", "")).split())
+    raw = "|".join((str(chunk.get("knowledge_id", "")), str(chunk.get("version", "")),
+                    str(chunk.get("canonical_topic", "")), normalized))
+    return "chunk-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+
+
 def _action_name(text: str) -> str:
     lowered = text.casefold()
     if re.search(r"\b(change|update|modify)\b.{0,40}\bproduction\b", lowered):
@@ -51,6 +61,9 @@ def _action_name(text: str) -> str:
         "select": "SELECT", "choose": "SELECT", "enter": "ENTER_VALUE",
         "type": "ENTER_VALUE", "update": "UPDATE", "change": "UPDATE",
         "review": "REVIEW", "verify": "VERIFY", "create": "CREATE",
+        "check": "REVIEW", "attach": "ATTACH", "fill": "ENTER_VALUE",
+        "complete": "COMPLETE", "request": "PREPARE_REQUEST", "raise": "PREPARE_REQUEST",
+        "use": "NAVIGATE", "point": "REVIEW",
         "add": "ADD", "remove": "REMOVE", "assign": "ASSIGN",
         "grant": "GRANT_ACCESS", "revoke": "REVOKE_ACCESS", "submit": "SUBMIT",
         "save": "SAVE", "disable": "DISABLE", "delete": "DELETE",
@@ -60,31 +73,61 @@ def _action_name(text: str) -> str:
 
 def extract_procedures(segments: list[dict[str, Any]], *, media_id: str,
                        application_id: str | None = None) -> list[dict[str, Any]]:
-    """Group a local chronological action cluster after an explicit sequence anchor."""
+    """Find multiple evidence-grounded ordered action clusters across a recording."""
     ordered_segments = sorted(segments, key=lambda item: float(item.get("start", 0)))
+    procedures: list[dict[str, Any]] = []
     candidate: list[dict[str, Any]] = []
-    anchor_at: float | None = None
+    cluster_application: str | None = None
     topic: set[str] = set()
     last_action_at: float | None = None
+
+    def finish() -> None:
+        nonlocal candidate, cluster_application, topic, last_action_at
+        if len(candidate) >= 2 and all(step["evidence_refs"] for step in candidate):
+            refs = list(dict.fromkeys(ref for step in candidate for ref in step["evidence_refs"]))
+            procedure_id = f"proc-{_id(media_id, *refs)}"
+            procedures.append({
+                "procedure_id": procedure_id,
+                "title": "Demonstrated operational workflow",
+                "purpose": "Follow the ordered actions evidenced in the source recording.",
+                "application_id": cluster_application or application_id,
+                "actionability": "GUIDED",
+                "trigger": "The operator has confirmed the task and current approved workflow.",
+                "required_inputs": [],
+                "preconditions": ["Validate the current approved UI and policy before proceeding."],
+                "steps": candidate,
+                "expected_outcomes": [],
+                "evidence_refs": refs,
+                "confidence": min(step["confidence"] for step in candidate),
+                "verification_state": "SYNTHESIZED_UNREVIEWED",
+            })
+        candidate, cluster_application, topic, last_action_at = [], None, set(), None
+
     for segment in ordered_segments:
         text = re.sub(r"\s+", " ", str(segment.get("text", "")).strip())
         if not text:
             continue
-        if _ORDER.search(text):
-            if anchor_at is None:
-                candidate, topic = [], set()
-                anchor_at = float(segment.get("start", 0))
-        if anchor_at is None:
+        timestamp = float(segment.get("start", 0))
+        starts_workflow = bool(_START_ORDER.search(text))
+        if starts_workflow:
+            finish()
+        if not candidate and not starts_workflow:
             continue
-        if float(segment.get("start", 0)) - anchor_at > 45:
-            break
+        if candidate and last_action_at is not None and timestamp - last_action_at > 180:
+            finish()
+            continue
         if not _ACTION.search(text):
             continue
         tokens = _topic_tokens(text)
-        timestamp = float(segment.get("start", 0))
-        if (candidate and topic and not (tokens & topic) and last_action_at is not None
-                and timestamp - last_action_at > 15):
-            break
+        segment_application = segment.get("application_id")
+        topic_changed = bool(candidate and topic and tokens and not (tokens & topic))
+        application_changed = bool(candidate and segment_application and cluster_application
+                                   and segment_application != cluster_application)
+        inactive = last_action_at is not None and timestamp - last_action_at > 180
+        if candidate and (application_changed or inactive or (topic_changed and timestamp - (last_action_at or timestamp) > 30)):
+            finish()
+            if not starts_workflow:
+                continue
         safe_text = _SECRET.sub(lambda match: match.group(1) + " [REDACTED]", text)
         refs = [str(segment.get("segment_id"))] if segment.get("segment_id") else []
         if not refs:
@@ -99,24 +142,12 @@ def extract_procedures(segments: list[dict[str, Any]], *, media_id: str,
         })
         topic.update(tokens)
         last_action_at = timestamp
-    if len(candidate) < 2 or anchor_at is None:
-        return []
-    procedure_id = f"proc-{_id(media_id, *(step['evidence_refs'][0] for step in candidate))}"
-    return [{
-        "procedure_id": procedure_id,
-        "title": "Demonstrated operational workflow",
-        "purpose": "Follow the ordered actions evidenced in the source recording.",
-        "application_id": application_id,
-        "actionability": "GUIDED",
-        "trigger": "The operator has confirmed the task and current approved workflow.",
-        "required_inputs": [],
-        "preconditions": ["Validate the current approved UI and policy before proceeding."],
-        "steps": candidate,
-        "expected_outcomes": [],
-        "evidence_refs": list(dict.fromkeys(ref for step in candidate for ref in step["evidence_refs"])),
-        "confidence": min(step["confidence"] for step in candidate),
-        "verification_state": "SYNTHESIZED_UNREVIEWED",
-    }]
+        if segment_application and not cluster_application:
+            cluster_application = str(segment_application)
+        if _WORKFLOW_END.search(text):
+            finish()
+    finish()
+    return procedures
 
 
 def _topic_tokens(text: str) -> set[str]:
@@ -333,22 +364,29 @@ def embedding_ready(chunks: list[dict[str, Any]], *, second_brain_ready_state: s
         expected_hash = "sha256:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()
         if chunk.get("content_hash") != expected_hash:
             reasons.append("INVALID_CONTENT_HASH")
+        chunk_id = embedding_chunk_id(chunk)
+        if chunk.get("chunk_id") != chunk_id:
+            reasons.append("INVALID_CHUNK_ID")
         if second_brain_ready_state != "PASS":
             reasons.append("SECOND_BRAIN_NOT_READY")
-        required = ("knowledge_id", "version", "project_id", "canonical_topic", "source_knowledge_ids",
+        required = ("chunk_id", "knowledge_id", "version", "project_id", "canonical_topic", "source_knowledge_ids",
                     "verification_status", "confidence", "provenance_pointers", "content_hash")
         if any(not chunk.get(key) for key in required):
             reasons.append("MISSING_IDENTITY_OR_PROVENANCE")
         if chunk.get("conflicting") or chunk.get("unreviewed_conflict"):
             reasons.append("CONFLICT")
         if reasons:
-            rejected.append({"chunk": chunk, "rejection_reasons": sorted(set(reasons))})
+            rejected.append({"chunk_id": chunk_id, "chunk": chunk,
+                             "rejection_reasons": sorted(set(reasons))})
         else:
-            eligible.append({**chunk, "content": normalized, "content_hash": expected_hash})
-    ids = intended_chunk_ids if intended_chunk_ids is not None else {str(c.get("knowledge_id")) for c in chunks}
-    rejected_ids = {str(item["chunk"].get("knowledge_id")) for item in rejected}
+            eligible.append({**chunk, "chunk_id": chunk_id, "content": normalized, "content_hash": expected_hash})
+    ids = intended_chunk_ids if intended_chunk_ids is not None else {embedding_chunk_id(c) for c in chunks}
+    rejected_ids = {str(item["chunk_id"]) for item in rejected}
     explicitly_excluded = accepted_exclusions or {}
-    accounted = {str(item.get("knowledge_id")) for item in eligible} | {key for key in explicitly_excluded if explicitly_excluded[key]}
-    document_ready = second_brain_ready_state == "PASS" and bool(ids) and ids <= accounted and not (rejected_ids - set(explicitly_excluded))
+    accounted = {str(item.get("chunk_id")) for item in eligible} | {
+        key for key, reason in explicitly_excluded.items() if isinstance(reason, str) and reason.strip()
+    }
+    document_ready = (second_brain_ready_state == "PASS" and bool(ids) and ids <= accounted
+                      and not (rejected_ids - set(explicitly_excluded)))
     return {"CHUNK_EMBEDDING_ELIGIBLE": bool(eligible), "DOCUMENT_EMBEDDING_READY": document_ready,
             "eligible_chunks": eligible, "rejected_chunks": rejected}
