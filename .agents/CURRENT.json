@@ -1,8 +1,10 @@
 {
   "project": "whisper",
-  "active_sdd": ".agents/deliverables/US-ZMI-LIFECYCLE-001-recording-storage-docs.md",
+  "active_sdd": ".agents/deliverables/US-ZO-KNOWLEDGE-002-kav-operational-contract.md",
   "branch": "delta/zmi-docs-transcript-gate",
-  "served_revision": "987219438c9cc8bd920dfe1e928f292e70a7fd03",
-  "last_result": "Active implementation 228205d; status-only pointer, not merged/deployed. SESSION_41_OWNER_UAT=PASS. S46 source/visual/claim gates PASS; speech NEEDS_REVIEW with 23/79 large-v3 contextual windows checkpointed, 91.63% conservative effective coverage. P&G: 20/20 readable videos resolved; 15 physical sidecars for 12 logical sources (3 divergent copies); 8 MISSING, 8 PARTIAL, 4 NEEDS_REVIEW, 0 UNASSESSED. Focused docs suite 166 PASS; Ruff and syntax PASS. S43=BLOCKED_SOURCE/OWNER_REQUIRED. Corpus synthesis FROZEN.",
-  "updated_at": "2026-10-27T02:52:00Z"
+  "served_revision": "ca825e1961875e5d811040402011d0193378d87a",
+  "last_result": "PRODUCT_DEVELOPMENT_COMPLETE=YES; DOCUMENTS_V3_CORE=YES; KAV_OPERATIONALIZATION=YES; SESSION41_REGRESSION=PASS (0 runbooks; both gates NOT_APPLICABLE); PROCEDURAL_ACCEPTANCE_FIXTURE=PASS (1 grounded runbook; source remains PARTIAL); SECOND_BRAIN_READY=NO; EMBEDDING_READY=NO; GEMINI_EMBEDDINGS=DEFERRED; P_AND_G_PUBLISH=NO; OWNER_ACCEPTANCE=PENDING; RELEASE_READY=NO; MERGED_TO_MAIN=NO; DEPLOYED=NO.",
+  "updated_at": "2026-10-28T16:35:43.443371Z",
+  "active_head": "ca825e1",
+  "development_status": "IMPLEMENTED_PENDING_INDEPENDENT_AUDIT"
 }
