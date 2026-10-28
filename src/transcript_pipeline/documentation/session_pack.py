@@ -454,7 +454,7 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     valid_evidence_ids.update(str(item.get("frame_id")) for item in evidence.frames)
     valid_evidence_ids.update(str(item.get("id")) for item in evidence.evidence_events)
     procedure_gate, procedure_errors = procedure_grounding(procedures, valid_evidence_ids)
-    runbooks = build_runbooks(procedures, source_session=evidence.media_id)
+    runbooks = build_runbooks(procedures, source_session=evidence.media_id, claims=claims)
     runbook_gate, runbook_errors = validate_runbooks(runbooks, valid_evidence_ids)
     frames_by_id = {frame["frame_id"]: frame for frame in evidence.frames}
     for frame in evidence.frames:
@@ -523,8 +523,10 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     gates["APPLICATION_RESOLUTION"] = "PASS" if app_ids - {"SESSION_GENERAL"} and not ambiguous_apps else "FAIL"
     gates["PROCEDURE_GROUNDING"] = procedure_gate
     gates["KAV_RUNBOOK_VALIDATION"] = runbook_gate
+    gates["KAV_EXECUTION_READY"] = "NO"
     gates["QUALITY_GATE"] = "PASS" if all(
-        value in {"PASS", "NOT_APPLICABLE"} for key, value in gates.items() if key != "QUALITY_GATE"
+        value in {"PASS", "NOT_APPLICABLE"} for key, value in gates.items()
+        if key not in {"QUALITY_GATE", "KAV_EXECUTION_READY"}
     ) else "FAIL"
     gates["SECOND_BRAIN_READY"] = second_brain_ready(
         quality_gate=gates["QUALITY_GATE"], claim_provenance=gates["CLAIM_LEDGER"],
@@ -533,8 +535,8 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         package_policy="NOT_EVALUATED", raw_transcript_published=False, raw_media_published=False,
         procedure_gate=procedure_gate, runbook_gate=runbook_gate,
     )
-    embedding_is_ready, embedding_chunks = embedding_ready([])
-    gates["EMBEDDING_READY"] = "YES" if embedding_is_ready else "NO"
+    embedding_report = embedding_ready([], second_brain_ready_state=gates["SECOND_BRAIN_READY"])
+    gates["EMBEDDING_READY"] = "YES" if embedding_report["DOCUMENT_EMBEDDING_READY"] else "NO"
     quality_state = "READY" if gates["QUALITY_GATE"] == "PASS" else "NEEDS_REVIEW"
     basename = Path(str(evidence.video_metadata.get("basename") or evidence.media_id)).stem
     title = str(evidence.video_metadata.get("title") or basename)
@@ -557,8 +559,10 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         "diagrams": diagrams, "visual_topics": evidence.visual_topics,
         "evidence_events": evidence.evidence_events, "transcript_quality": evidence.speech_coverage,
         "procedures": procedures,
+        "kav_execution_runbooks": runbooks,
+        "embedding_report": embedding_report,
         "procedure_errors": procedure_errors, "kav_runbook_errors": runbook_errors,
-        "embedding_inputs": embedding_chunks,
+        "embedding_inputs": embedding_report["eligible_chunks"],
     }
     output_dir.mkdir(parents=True, exist_ok=True)
     kav_path = output_dir / "KAV_EXECUTION_RUNBOOKS.json"

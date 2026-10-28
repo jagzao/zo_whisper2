@@ -16,11 +16,20 @@ _ACTION = re.compile(
     re.I,
 )
 _ORDER = re.compile(r"\b(first|then|next|after that|finally|step\s+\d+)\b", re.I)
-_SENSITIVE = re.compile(
-    r"\b(password|credential|secret|token|api key|acs url|entity id|group name|"
-    r"entitlement id|role name|retention period|business justification|ticket id|request id)\b",
-    re.I,
-)
+_PARAMETERS = {
+    r"\b(password|passcode|credential|secret|token|api key)\b": "credential",
+    r"\bacs\s+url\b": "acs_url", r"\burl\b": "url",
+    r"\bentity\s+id\b": "entity_id", r"\b(identifier|id)\b": "identifier",
+    r"\brole(?:\s+name)?\b": "role", r"\bgroup(?:\s+name)?\b": "group",
+    r"\bentitlement(?:\s+id)?\b": "entitlement",
+    r"\b(environment|production environment)\b": "environment",
+    r"\b(owner|contact|application owner)\b": "owner_or_contact",
+    r"\bbusiness justification\b": "business_justification",
+    r"\b(ticket|request)(?:\s+id|\s+number)?\b": "ticket_or_request_id",
+    r"\bretention(?:\s+period|\s+setting)?\b": "retention_setting",
+    r"\b(configuration|connection) value\b": "configuration_value",
+}
+_SECRET = re.compile(r"\b(password|passcode|secret|token|api key|credential)\b\s*(?:is|:|=)?\s*([^\s,;]+)?", re.I)
 
 
 def _id(*parts: Any) -> str:
@@ -51,31 +60,46 @@ def _action_name(text: str) -> str:
 
 def extract_procedures(segments: list[dict[str, Any]], *, media_id: str,
                        application_id: str | None = None) -> list[dict[str, Any]]:
-    """Accept only two or more evidence-linked actions with explicit ordering cues."""
+    """Group a local chronological action cluster after an explicit sequence anchor."""
+    ordered_segments = sorted(segments, key=lambda item: float(item.get("start", 0)))
     candidate: list[dict[str, Any]] = []
-    saw_order = False
-    for segment in sorted(segments, key=lambda item: float(item.get("start", 0))):
+    anchor_at: float | None = None
+    topic: set[str] = set()
+    last_action_at: float | None = None
+    for segment in ordered_segments:
         text = re.sub(r"\s+", " ", str(segment.get("text", "")).strip())
-        ordered = bool(_ORDER.search(text))
-        saw_order = saw_order or ordered
-        if _SENSITIVE.search(text):
-            return []
-        if not text or not _ACTION.search(text):
+        if not text:
             continue
-        if not ordered:
-            return []
+        if _ORDER.search(text):
+            if anchor_at is None:
+                candidate, topic = [], set()
+                anchor_at = float(segment.get("start", 0))
+        if anchor_at is None:
+            continue
+        if float(segment.get("start", 0)) - anchor_at > 45:
+            break
+        if not _ACTION.search(text):
+            continue
+        tokens = _topic_tokens(text)
+        timestamp = float(segment.get("start", 0))
+        if (candidate and topic and not (tokens & topic) and last_action_at is not None
+                and timestamp - last_action_at > 15):
+            break
+        safe_text = _SECRET.sub(lambda match: match.group(1) + " [REDACTED]", text)
+        refs = [str(segment.get("segment_id"))] if segment.get("segment_id") else []
+        if not refs:
+            continue
+        values = _required_values(text)
         candidate.append({
-            "order": len(candidate) + 1,
-            "instruction": text,
-            "semantic_action": _action_name(text),
-            "semantic_target": None,
-            "required_values": [],
-            "evidence_refs": [str(segment.get("segment_id", ""))] if segment.get("segment_id") else [],
-            "source_timestamp": segment.get("start"),
-            "frame_id": segment.get("frame_id"),
+            "order": len(candidate) + 1, "instruction": safe_text,
+            "semantic_action": _action_name(text), "semantic_target": None,
+            "required_values": values, "evidence_refs": refs,
+            "source_timestamp": segment.get("start"), "frame_id": segment.get("frame_id"),
             "confidence": min(0.8, float(segment.get("confidence", 0.65))),
         })
-    if len(candidate) < 2 or not saw_order or any(not step["evidence_refs"] for step in candidate):
+        topic.update(tokens)
+        last_action_at = timestamp
+    if len(candidate) < 2 or anchor_at is None:
         return []
     procedure_id = f"proc-{_id(media_id, *(step['evidence_refs'][0] for step in candidate))}"
     return [{
@@ -85,7 +109,7 @@ def extract_procedures(segments: list[dict[str, Any]], *, media_id: str,
         "application_id": application_id,
         "actionability": "GUIDED",
         "trigger": "The operator has confirmed the task and current approved workflow.",
-        "required_inputs": ["Confirm all required values from an approved current source."],
+        "required_inputs": [],
         "preconditions": ["Validate the current approved UI and policy before proceeding."],
         "steps": candidate,
         "expected_outcomes": [],
@@ -93,6 +117,21 @@ def extract_procedures(segments: list[dict[str, Any]], *, media_id: str,
         "confidence": min(step["confidence"] for step in candidate),
         "verification_state": "SYNTHESIZED_UNREVIEWED",
     }]
+
+
+def _topic_tokens(text: str) -> set[str]:
+    ignored = {"first", "then", "next", "finally", "open", "click", "select", "enter", "submit", "review", "the", "and", "with", "this", "that", "after", "once", "request", "form"}
+    return {token for token in re.findall(r"[a-z]{4,}", text.casefold()) if token not in ignored}
+
+
+def _required_values(text: str) -> list[dict[str, str]]:
+    values = []
+    for pattern, key in _PARAMETERS.items():
+        if key == "url" and re.search(r"\bacs\s+url\b", text, re.I):
+            continue
+        if re.search(pattern, text, re.I):
+            values.append({"key": key, "status": "REQUIRED_UNRESOLVED", "source": "APPROVED_CURRENT_SOURCE"})
+    return values
 
 
 def procedure_grounding(procedures: list[dict[str, Any]], valid_evidence_ids: set[str]) -> tuple[str, list[str]]:
@@ -113,7 +152,8 @@ def procedure_grounding(procedures: list[dict[str, Any]], valid_evidence_ids: se
 
 
 def build_runbooks(procedures: list[dict[str, Any]], *, source_session: str,
-                   evidence_index: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+                   evidence_index: list[dict[str, Any]] | None = None,
+                   claims: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     evidence_by_id = {str(item.get("evidence_id") or item.get("evidenceId")): item
                       for item in (evidence_index or [])}
     runbooks = []
@@ -151,6 +191,11 @@ def build_runbooks(procedures: list[dict[str, Any]], *, source_session: str,
                 "current_live_validation_required": True,
             })
         all_refs = list(dict.fromkeys(ref for step in steps for ref in step["evidence_refs"]))
+        claim_ids = [str(claim.get("claim_id")) for claim in (claims or [])
+                     if claim.get("claim_id") and set(all_refs) & _claim_evidence_refs(claim)]
+        capture = []
+        if any(step["action"] in MATERIAL_ACTIONS for step in steps):
+            capture = ["PRE_CHANGE_STATE", "POST_CHANGE_STATE", "CONFIRMATION_MESSAGE"]
         identifier = str(procedure.get("procedure_id") or procedure.get("procedureId")
                          or procedure.get("id") or f"runbook-{_id(source_session, procedure.get('title'))}")
         runbooks.append({
@@ -158,10 +203,11 @@ def build_runbooks(procedures: list[dict[str, Any]], *, source_session: str,
             "application_id": procedure.get("application_id", procedure.get("applicationId")),
             "title": str(procedure.get("title", "Evidence-grounded workflow")),
             "status": "CANDIDATE", "actionability": actionability,
+            "execution_ready": False,
             "trigger": procedure.get("trigger", "Confirm the task and approved current workflow."),
             "required_inputs": list(procedure.get("required_inputs", procedure.get("requiredInputs", []))),
             "preconditions": list(procedure.get("preconditions", procedure.get("prerequisites", []))),
-            "steps": steps, "evidence_to_capture": all_refs,
+            "steps": steps, "evidence_to_capture": capture,
             "approval_required_before": sorted(approvals),
             "stop_conditions": [
                 "A required value, approval, identifier, credential, URL, or policy is missing.",
@@ -171,12 +217,23 @@ def build_runbooks(procedures: list[dict[str, Any]], *, source_session: str,
                 "Never infer credentials, URLs, identifiers, groups, entitlements, roles, retention, owners, justification, approval, environment, or ticket IDs.",
                 "Do not submit or make material changes without explicit approval.",
             ],
-            "escalation": {"condition": "Missing or conflicting required information", "target": "Juan", "instruction": "Stop and request an approved value or human review."},
-            "source_sessions": [source_session], "source_claims": [], "source_evidence": all_refs,
+            "escalation": {"condition": "Missing or conflicting required information", "target": "AUTHORIZED_REVIEWER", "instruction": "Stop and request an approved value or human review."},
+            "source_sessions": [source_session], "source_claims": claim_ids, "source_evidence": all_refs,
             "verification_state": procedure.get("verification_state", "SYNTHESIZED_UNREVIEWED"),
             "confidence": float(procedure.get("confidence", 0.0)),
         })
     return runbooks
+
+
+def _claim_evidence_refs(claim: dict[str, Any]) -> set[str]:
+    refs = {str(value) for value in claim.get("evidence_refs", [])}
+    for source in claim.get("supporting_sources", []):
+        for key in ("source_id", "segment_id", "frame_id", "source_evidence_id"):
+            if source.get(key):
+                refs.add(str(source[key]))
+        refs.update(str(segment.get("segment_id")) for segment in source.get("segments", [])
+                    if segment.get("segment_id"))
+    return refs
 
 
 def validate_runbooks(runbooks: list[dict[str, Any]], valid_evidence_ids: set[str]) -> tuple[str, list[str]]:
@@ -211,9 +268,12 @@ def evaluate_runbook_preflight(runbook: dict[str, Any], *, supplied_values: dict
                                current_live_matches: bool | None,
                                approved_actions: set[str] | None = None) -> dict[str, Any]:
     """Fail closed on missing inputs, unvalidated historical UI, conflicts, or approvals."""
-    missing = sorted({str(value) for step in runbook.get("steps", [])
-                      for value in step.get("required_values", [])
-                      if value not in supplied_values or supplied_values.get(value) in (None, "")})
+    required = list(runbook.get("required_inputs", [])) + [
+        value for step in runbook.get("steps", []) for value in step.get("required_values", [])]
+    missing = sorted({str(value.get("key") or value.get("name")) if isinstance(value, dict) else str(value)
+                      for value in required
+                      if (str(value.get("key") or value.get("name")) if isinstance(value, dict) else str(value)) not in supplied_values
+                      or supplied_values.get(str(value.get("key") or value.get("name")) if isinstance(value, dict) else str(value)) in (None, "")})
     if missing:
         return {"status": "STOP", "reason": "MISSING_REQUIRED_VALUES", "missing_values": missing}
     if current_live_matches is None:
@@ -243,25 +303,52 @@ def second_brain_ready(*, quality_gate: str, claim_provenance: str, application_
     return "PASS" if all(checks) else "FAIL"
 
 
-def embedding_ready(chunks: list[dict[str, Any]]) -> tuple[bool, list[dict[str, Any]]]:
-    safe = []
+def embedding_ready(chunks: list[dict[str, Any]], *, second_brain_ready_state: str = "FAIL",
+                    intended_chunk_ids: set[str] | None = None,
+                    accepted_exclusions: dict[str, str] | None = None) -> dict[str, Any]:
+    eligible, rejected = [], []
     for chunk in chunks:
         try:
             confidence = float(chunk.get("confidence", 0))
         except (TypeError, ValueError):
-            continue
+            confidence = 0
         prohibited = ("conflicting", "unreviewed_conflict", "contains_secret", "raw_transcript",
                       "raw_transcript_text", "raw_ocr", "raw_ocr_dump", "diagnostic",
                       "raw_execution_state", "kav_execution_state", "execution_state")
-        if (chunk.get("curated") is not True or chunk.get("verification_status") not in {"HUMAN_REVIEWED", "CONFIRMED"}
-                or any(chunk.get(key) for key in prohibited) or confidence < 0.8):
-            continue
+        reasons = []
         content = str(chunk.get("content", ""))
-        if _SENSITIVE.search(content):
-            continue
+        if not content.strip():
+            reasons.append("EMPTY_CONTENT")
+        if chunk.get("curated") is not True:
+            reasons.append("NOT_CURATED")
+        if chunk.get("verification_status") != "HUMAN_REVIEWED":
+            reasons.append("NOT_HUMAN_REVIEWED")
+        if any(chunk.get(key) for key in prohibited):
+            reasons.append("PROHIBITED_CONTENT")
+        if confidence < 0.8:
+            reasons.append("LOW_CONFIDENCE")
+        if _SECRET.search(content):
+            reasons.append("SECRET_CONTENT")
+        normalized = " ".join(content.split())
+        expected_hash = "sha256:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+        if chunk.get("content_hash") != expected_hash:
+            reasons.append("INVALID_CONTENT_HASH")
+        if second_brain_ready_state != "PASS":
+            reasons.append("SECOND_BRAIN_NOT_READY")
         required = ("knowledge_id", "version", "project_id", "canonical_topic", "source_knowledge_ids",
-                    "verification_status", "confidence", "provenance_pointers")
-        if any(key not in chunk for key in required):
-            continue
-        safe.append({**chunk, "content_hash": "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()})
-    return bool(safe), safe
+                    "verification_status", "confidence", "provenance_pointers", "content_hash")
+        if any(not chunk.get(key) for key in required):
+            reasons.append("MISSING_IDENTITY_OR_PROVENANCE")
+        if chunk.get("conflicting") or chunk.get("unreviewed_conflict"):
+            reasons.append("CONFLICT")
+        if reasons:
+            rejected.append({"chunk": chunk, "rejection_reasons": sorted(set(reasons))})
+        else:
+            eligible.append({**chunk, "content": normalized, "content_hash": expected_hash})
+    ids = intended_chunk_ids if intended_chunk_ids is not None else {str(c.get("knowledge_id")) for c in chunks}
+    rejected_ids = {str(item["chunk"].get("knowledge_id")) for item in rejected}
+    explicitly_excluded = accepted_exclusions or {}
+    accounted = {str(item.get("knowledge_id")) for item in eligible} | {key for key in explicitly_excluded if explicitly_excluded[key]}
+    document_ready = second_brain_ready_state == "PASS" and bool(ids) and ids <= accounted and not (rejected_ids - set(explicitly_excluded))
+    return {"CHUNK_EMBEDDING_ELIGIBLE": bool(eligible), "DOCUMENT_EMBEDDING_READY": document_ready,
+            "eligible_chunks": eligible, "rejected_chunks": rejected}

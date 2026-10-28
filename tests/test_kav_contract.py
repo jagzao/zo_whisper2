@@ -1,3 +1,5 @@
+import hashlib
+
 from transcript_pipeline.documentation.kav_contract import (
     build_runbooks,
     embedding_ready,
@@ -16,10 +18,13 @@ def test_procedure_extraction_needs_ordered_actions_and_ignores_information_only
     ], media_id="s1") == []
     procedures = extract_procedures([
         {"segment_id": "a", "start": 1, "text": "First, open the access form."},
-        {"segment_id": "b", "start": 2, "text": "Next, review the requested role."},
+        {"segment_id": "b", "start": 2, "text": "Click the access Identity Federation section."},
+        {"segment_id": "c", "start": 3, "text": "Select the access connection modification."},
+        {"segment_id": "d", "start": 4, "text": "The cafeteria closes at five."},
+        {"segment_id": "e", "start": 80, "text": "Open the payroll report."},
     ], media_id="s1", application_id="app-a")
     assert len(procedures) == 1
-    assert [step["order"] for step in procedures[0]["steps"]] == [1, 2]
+    assert [step["order"] for step in procedures[0]["steps"]] == [1, 2, 3]
     assert all(step["evidence_refs"] for step in procedures[0]["steps"])
     assert procedures[0]["actionability"] == "GUIDED"
 
@@ -50,23 +55,42 @@ def test_kav_runbook_requires_inputs_preserves_approval_stops_and_escalates():
     assert runbooks[0]["escalation"]["target"]
     assert validate_runbooks(runbooks, {"e1"})[0] == "PASS"
     assert validate_runbooks([], set())[0] == "NOT_APPLICABLE"
-    assert evaluate_runbook_preflight(runbooks[0], supplied_values={}, current_live_matches=None)["reason"] == "CURRENT_LIVE_VALIDATION_REQUIRED"
-    assert evaluate_runbook_preflight(runbooks[0], supplied_values={}, current_live_matches=True)["reason"] == "APPROVAL_REQUIRED"
-    assert evaluate_runbook_preflight(runbooks[0], supplied_values={}, current_live_matches=False)["reason"] == "HISTORICAL_INSTRUCTION_CONFLICT_REVIEW"
+    supplied = {"Confirm the request": "approved input"}
+    assert evaluate_runbook_preflight(runbooks[0], supplied_values=supplied, current_live_matches=None)["reason"] == "CURRENT_LIVE_VALIDATION_REQUIRED"
+    assert evaluate_runbook_preflight(runbooks[0], supplied_values=supplied, current_live_matches=True)["reason"] == "APPROVAL_REQUIRED"
+    assert evaluate_runbook_preflight(runbooks[0], supplied_values=supplied, current_live_matches=False)["reason"] == "HISTORICAL_INSTRUCTION_CONFLICT_REVIEW"
 
 
 def test_unknown_required_value_stops_without_inventing_a_value():
     runbook = {"actionability": "EXECUTABLE_WITH_CONFIRMATION", "approval_required_before": [],
-               "steps": [{"required_values": ["approved_role"]}]}
+               "steps": [{"required_values": [{"key": "approved_role", "status": "REQUIRED_UNRESOLVED"}]}]}
     result = evaluate_runbook_preflight(runbook, supplied_values={}, current_live_matches=True)
     assert result == {"status": "STOP", "reason": "MISSING_REQUIRED_VALUES", "missing_values": ["approved_role"]}
 
 
-def test_unknown_sensitive_values_are_never_copied_into_procedures():
-    assert extract_procedures([
-        {"segment_id": "a", "start": 1, "text": "First, enter password hunter2."},
-        {"segment_id": "b", "start": 2, "text": "Next, submit the request."},
-    ], media_id="s1") == []
+def test_unknown_parameters_preserved_and_actual_secret_redacted():
+    procedure = extract_procedures([
+        {"segment_id": "a", "start": 1, "text": "First, open the access settings for ACS URL, entity ID, role, group and password."},
+        {"segment_id": "b", "start": 2, "text": "Click the access role and group configuration."},
+        {"segment_id": "c", "start": 3, "text": "Then enter the access password hunter2."},
+    ], media_id="s1")[0]
+    values = {value["key"] for step in procedure["steps"] for value in step["required_values"]}
+    assert {"acs_url", "entity_id", "role", "group", "credential"} <= values
+    assert "hunter2" not in str(procedure)
+
+
+def test_claim_provenance_capture_separation_and_generic_escalation():
+    claim = {"claim_id": "c1", "supporting_sources": [{"segment_id": "e1"}]}
+    proc = {"procedure_id": "p1", "title": "Update", "actionability": "GUIDED",
+            "steps": [{"order": 1, "instruction": "Submit request", "semantic_action": "SUBMIT", "evidence_refs": ["e1"]}]}
+    book = build_runbooks([proc], source_session="s1", claims=[claim])[0]
+    assert book["source_claims"] == ["c1"]
+    assert book["source_evidence"] == ["e1"]
+    assert "e1" not in book["evidence_to_capture"]
+    assert book["escalation"]["target"] == "AUTHORIZED_REVIEWER"
+    assert "Juan" not in str(book)
+    assert book["actionability"] == "GUIDED"
+    assert book["execution_ready"] is False
 
 
 def test_second_brain_gate_includes_procedure_and_runbook_contract():
@@ -83,9 +107,16 @@ def test_embedding_handoff_accepts_curated_chunks_only_and_hashes_content():
     curated = {"knowledge_id": "k1", "version": 1, "project_id": "p1", "canonical_topic": "access",
                "content": "Reviewed access workflow.", "source_knowledge_ids": ["k0"],
                "verification_status": "HUMAN_REVIEWED", "confidence": 0.95,
-               "provenance_pointers": ["e1"], "curated": True}
-    ready, chunks = embedding_ready([curated, {**curated, "knowledge_id": "raw", "raw_transcript": True},
-                                     {**curated, "knowledge_id": "state", "execution_state": True}])
-    assert ready and len(chunks) == 1 and chunks[0]["content_hash"].startswith("sha256:")
-    assert embedding_ready([{**curated, "conflicting": True}]) == (False, [])
-    assert embedding_ready([{**curated, "confidence": 0.4}]) == (False, [])
+               "provenance_pointers": ["e1"], "curated": True,
+               "content_hash": "sha256:" + hashlib.sha256(b"Reviewed access workflow.").hexdigest()}
+    report = embedding_ready([curated, {**curated, "knowledge_id": "raw", "raw_transcript": True},
+                              {**curated, "knowledge_id": "state", "execution_state": True}],
+                             second_brain_ready_state="PASS")
+    assert len(report["eligible_chunks"]) == 1
+    assert report["eligible_chunks"][0]["content_hash"].startswith("sha256:")
+    assert not report["DOCUMENT_EMBEDDING_READY"]
+    assert embedding_ready([{**curated, "content": "  "}], second_brain_ready_state="PASS")["rejected_chunks"]
+    assert not embedding_ready([curated], second_brain_ready_state="FAIL")["DOCUMENT_EMBEDDING_READY"]
+    assert embedding_ready([curated], second_brain_ready_state="PASS")["DOCUMENT_EMBEDDING_READY"]
+    assert not embedding_ready([{**curated, "conflicting": True}], second_brain_ready_state="PASS")["DOCUMENT_EMBEDDING_READY"]
+    assert not embedding_ready([{**curated, "confidence": 0.4}], second_brain_ready_state="PASS")["DOCUMENT_EMBEDDING_READY"]
