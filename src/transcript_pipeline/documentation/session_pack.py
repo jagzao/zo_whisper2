@@ -124,6 +124,8 @@ def normalize_evidence_bundle(bundle: MediaEvidenceBundle | dict[str, Any]) -> M
         for key in ("ocr_status", "ocr_text", "ocr_confidence", "retry_count", "engine", "source_image"):
             if key not in frame and key in ocr:
                 frame[key] = ocr[key]
+        if not frame.get("semantic_topic") and frame.get("topic"):
+            frame["semantic_topic"] = frame["topic"]
     for topic in value["visual_topics"]:
         if not isinstance(topic, dict):
             continue
@@ -198,6 +200,37 @@ def discover_application_candidates(bundle: MediaEvidenceBundle) -> list[dict[st
                     "provenance": [{"source_id": bundle.media_id, "segment_id": segment["segment_id"],
                                     "timestamp": segment["start"], "source_type": "TRANSCRIPT"}],
                 })
+    for event in bundle.evidence_events:
+        name = str(event.get("application") or "").strip()
+        if name and name.casefold() not in {"session", "unknown", "none"}:
+            candidates.append({"name": name, "aliases": [name], "status": "NEW_APPLICATION",
+                               "provenance": [{"source_id": bundle.media_id, "event_id": event.get("id"),
+                                               "timestamp": event.get("start"), "source_type": "EVIDENCE_EVENT"}]})
+    for frame in bundle.frames:
+        name = str(frame.get("application") or "").strip()
+        if name and name.casefold() not in {"session_general", "session", "other", "unknown"}:
+            readable_name = str(frame.get("topic_title") or name).strip()
+            readable_name = re.sub(r"\s+(?:application\s+)?(?:overview|summary|catalogue\s+record|technical\s+architecture|data\s+flow)$",
+                                   "", readable_name, flags=re.I)
+            candidates.append({"name": name, "aliases": [name], "status": "NEW_APPLICATION",
+                               "display_name": readable_name,
+                               "provenance": [{"source_id": bundle.media_id, "frame_id": frame.get("frame_id"),
+                                               "timestamp": frame.get("timestamp"), "source_type": "VIDEO_FRAME"}]})
+    event_candidates = [item for item in candidates if any(ref.get("event_id") for ref in item.get("provenance", []))]
+    for candidate in list(candidates):
+        if not any(ref.get("frame_id") for ref in candidate.get("provenance", [])):
+            continue
+        compact = re.sub(r"[^a-z0-9]", "", str(candidate.get("name", "")).casefold())
+        for event_candidate in event_candidates:
+            event_name = str(event_candidate.get("name", ""))
+            event_compact = re.sub(r"[^a-z0-9]", "", event_name.casefold())
+            overlap = set(_slug(candidate["name"]).split("-")) & set(_slug(event_name).split("-"))
+            if compact in event_compact or event_compact in compact or len(overlap) >= 2:
+                event_candidate.setdefault("aliases", []).append(candidate["name"])
+                event_candidate.setdefault("provenance", []).extend(candidate.get("provenance", []))
+                event_candidate["display_name"] = candidate.get("display_name") or event_candidate.get("display_name")
+                candidates.remove(candidate)
+                break
     unique: dict[str, dict[str, Any]] = {}
     for candidate in candidates:
         name = str(candidate.get("name", "")).strip()
@@ -229,6 +262,8 @@ def resolve_application_identity(candidate: dict[str, Any], known: list[dict[str
         return {"application_id": None, "status": "AMBIGUOUS", "matched_candidates": [x.get("application_id") for x in matches]}
     if not candidate.get("name"):
         return {"application_id": None, "status": "AMBIGUOUS", "matched_candidates": []}
+    if not candidate.get("provenance"):
+        return {"application_id": None, "status": "NEEDS_REVIEW"}
     return {"application_id": _slug(str(candidate["name"])), "status": "NEW_APPLICATION"}
 
 
@@ -254,14 +289,73 @@ def extract_claims(bundle: MediaEvidenceBundle, applications: list[dict[str, Any
         for alias in [app.get("name"), *app.get("aliases", [])]
         if alias
     }
+    application_anchors = []
+    for item in [*bundle.evidence_events, *bundle.frames]:
+        name = str(item.get("application") or "").strip()
+        app_id = aliases.get(_normalize_name(name))
+        timestamp = item.get("start", item.get("timestamp"))
+        if app_id and timestamp is not None:
+            start = _seconds(timestamp)
+            end = _seconds(item.get("end", timestamp))
+            application_anchors.append((start, end, app_id))
     factual = re.compile(r"\b(is|are|has|have|uses|depends|runs|contains|supports|provides|allows|requires|stores|connects|means|could)\b", re.I)
     claims = []
+    events = [event for event in bundle.evidence_events if str(event.get("summary", "")).strip()]
+    event_claim_ids = {str(claim_id) for event in events for claim_id in event.get("claim_ids", [])}
+    for event in events:
+        text = re.sub(r"\s+", " ", str(event.get("summary", "")).strip()).rstrip(" .")
+        if len(text.split()) < 5 or re.search(r"\b(?:meeting|presentation|handoff|hello|thanks|suspicious phrase)\b", text, re.I):
+            continue
+        app_name = str(event.get("application") or "").strip()
+        if app_name.casefold() in {"session", "session_general", "unknown", "none"}:
+            continue
+        matches = {app_id for alias, app_id in aliases.items() if alias and _normalize_name(alias) == _normalize_name(app_name)}
+        app_id = next(iter(matches)) if len(matches) == 1 else "SESSION_GENERAL"
+        app_label = next((str(app.get("display_name") or app.get("name")) for app in applications
+                          if app.get("application_id") == app_id), app_name)
+        uncertain = bool(classify_ambiguity(text)) or bool(event.get("verification_state") in UNCERTAIN_STATES)
+        claim_id = _stable_id("claim", bundle.media_id, event.get("id"), text)
+        claim_text = text
+        prefix = app_label if app_label and _normalize_name(claim_text).startswith(_normalize_name(app_label)) else app_name
+        if prefix and _normalize_name(claim_text).startswith(_normalize_name(prefix)):
+            claim_text = re.sub(rf"^{re.escape(prefix)}\s*:?\s*", "", claim_text, flags=re.I)
+        claim = f"{app_label}: {claim_text}." if app_label and app_id != "SESSION_GENERAL" else claim_text + "."
+        claims.append({
+            "claim_id": claim_id, "application_id": app_id, "claim": claim,
+            "source_type": "EVIDENCE_EVENT", "source_id": bundle.media_id,
+            "timestamp": _seconds(event.get("start", 0)), "frame_id": None,
+            "confidence": float(event.get("confidence", 0.85 if not uncertain else 0.4)),
+            "verification_state": "SOURCE_UNCERTAIN" if uncertain else "SOURCE_CONFIRMED",
+            "first_seen": {"session_id": bundle.media_id, "timestamp": _seconds(event.get("start", 0))},
+            "last_confirmed": None,
+            "supporting_sources": [{"source_id": bundle.media_id, "source_type": "EVIDENCE_EVENT",
+                                     "event_id": event.get("id"), "source_claim_ids": event.get("claim_ids", []),
+                                     "source_types": event.get("source_types", [])}],
+            "conflicts": [], "ambiguities": classify_ambiguity(text),
+        })
     for segment in bundle.transcript_segments:
         text = re.sub(r"\s+", " ", str(segment.get("text", "")).strip())
-        if len(text.split()) < 5 or not factual.search(text):
+        if any(_seconds(event.get("start", 0)) <= float(segment.get("start", 0))
+               <= _seconds(event.get("end", event.get("start", 0))) for event in events):
+            continue
+        if len(text.split()) < 5 or not factual.search(text) or text.endswith("...") or not text.endswith((".", "?", "!")):
+            continue
+        if text.endswith("?") or re.search(r"\b(?:hello|thanks|let me share|can you see|let's start|any questions|can we move|give me a second|schedule|attendees|make up session|we'll be covering|sorry,? [A-Z])\b", text, re.I):
             continue
         uncertain = bool(classify_ambiguity(text))
-        matches = {app_id for alias, app_id in aliases.items() if alias and alias in _normalize_name(text)}
+        timestamp = float(segment["start"])
+        interval_events = [event for event in bundle.evidence_events
+                           if event.get("application") and str(event.get("application")).casefold() != "session"
+                           and _seconds(event.get("start", 0)) <= timestamp <= _seconds(event.get("end", event.get("start", 0)))]
+        event_app = str(interval_events[-1].get("application")) if interval_events else None
+        matches = {app_id for alias, app_id in aliases.items() if alias and
+                   (alias in _normalize_name(text) or (event_app and alias == _normalize_name(event_app)))}
+        if not matches:
+            nearest = sorted((min(abs(timestamp - start), abs(timestamp - end)), app_id)
+                             for start, end, app_id in application_anchors)
+            if nearest and nearest[0][0] <= 45 and (len(nearest) == 1 or nearest[0][1] == nearest[1][1]
+                                                     or nearest[0][0] < nearest[1][0]):
+                matches = {nearest[0][1]}
         app_id = next(iter(matches)) if len(matches) == 1 else "SESSION_GENERAL"
         claim_id = _stable_id("claim", bundle.media_id, segment["segment_id"], text)
         claims.append({
@@ -389,25 +483,72 @@ def build_derived_diagrams(frames: list[dict[str, Any]] | None = None) -> list[d
     return extract_diagram_graphs(frames or [])
 
 
+def _executive_brief(applications: list[dict[str, Any]]) -> str:
+    preferred = ["Architecture / hosting", "Purpose / business context", "Data / storage",
+                 "Integrations / dependencies", "Support / lifecycle"]
+    paragraphs = []
+    for app in applications:
+        sections = {section.get("title"): section.get("claims", []) for section in app.get("sections", [])}
+        claims = [section_claims[0]["claim"] for name in preferred
+                  if (section_claims := sections.get(name))]
+        if claims:
+            label = f"{app['name']}: "
+            first = claims[0]
+            if first.casefold().startswith(label.casefold()):
+                first = first[len(label):]
+            paragraphs.append(f"{app['name']}: {first}")
+    return "\n\n".join(paragraphs) or "No material semantic knowledge passed evidence review; this pack requires review."
+
+
 def _markdown(pack: dict[str, Any]) -> str:
-    lines = [f"# {pack['title']}", "", f"**State:** {pack['quality_state']}", "",
-             "## Executive Brief", "", pack.get("executive_brief", "Evidence-derived recording notes."), ""]
+    lines = [f"# {pack['title']}", "", f"State: {pack['quality_state']}", "",
+             "## Executive Brief", "", pack.get("executive_brief", ""), "", "## Applications", ""]
     for application in pack.get("applications", []):
         lines.extend([f"## {application['name']}", ""])
         for section in application.get("sections", []):
             lines.extend([f"### {section['title']}", ""])
-            lines.extend(f"- {claim['claim']} [{claim['claim_id']}]" for claim in section.get("claims", []))
-            if not section.get("claims"):
-                lines.append("NOT EVIDENCED")
+            for claim in section.get("claims", []):
+                refs = _unique_values([ref.get("event_id") or ref.get("frame_id")
+                                       or next((segment.get("segment_id") for segment in ref.get("segments", [])), None)
+                                       for ref in claim.get("supporting_sources", [])])
+                refs = [str(ref) for ref in refs if ref]
+                suffix = f" [Evidence: {', '.join(refs)}]" if refs else ""
+                lines.append(f"- {claim['claim']}{suffix}")
             lines.append("")
+    if pack.get("procedures"):
+        lines.extend(["## Procedures", ""])
+        lines.extend(f"- {item.get('title') or item.get('purpose')}" for item in pack["procedures"])
+        lines.append("")
     if pack.get("ambiguities"):
         lines.extend(["## Ambiguities / Needs Review", ""])
-        lines.extend(f"- {item['claim']} — {item['source_id']} @ {item['timestamp']}" for item in pack["ambiguities"])
+        lines.extend(f"- {item['claim']} - {item['source_id']} @ {item['timestamp']}" for item in pack["ambiguities"])
     if pack.get("diagrams"):
         lines.extend(["## Derived Diagrams", ""])
         lines.extend(f"- {item['diagram_id']} from {', '.join(frame['frame_id'] for frame in item['source_frames'])}" for item in pack["diagrams"])
     lines.extend(["", "## Evidence Timeline", ""])
-    lines.extend(f"- {item['start']} {item.get('source_type')} {item['id']}" for item in pack["evidence_events"])
+    for item in pack["evidence_events"]:
+        summary = str(item.get("summary") or item.get("text") or "Evidence event")
+        if "suspicious" in summary.casefold():
+            summary = "Source wording flagged for review."
+        app = str(item.get("application") or "Session")
+        for candidate in pack.get("application_candidates", []):
+            app_pack = next((value for value in pack.get("applications", [])
+                             if value.get("application_id") == candidate.get("application_id")), None)
+            aliases = [candidate.get("name"), *candidate.get("aliases", [])]
+            if app_pack and any(_normalize_name(str(alias)) == _normalize_name(app) for alias in aliases if alias):
+                app = str(app_pack["name"])
+                break
+        if app.casefold() in {"session", "session_general", "unknown", "none"}:
+            app = next((str(app_pack["name"]) for app_pack in pack.get("applications", [])
+                        if item.get("id") in {ref.get("event_id") for claim in app_pack.get("claims", [])
+                                               for ref in claim.get("supporting_sources", [])}), "Session")
+        start = _seconds(item.get("start", 0))
+        end = _seconds(item.get("end", item.get("start", 0)))
+        def clock(value: float) -> str:
+            hours, remainder = divmod(int(value), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        lines.append(f"- {clock(start)}-{clock(end)} | {app} | {summary} | Evidence: {item.get('id')}")
     return "\n".join(lines) + "\n"
 
 
@@ -431,7 +572,8 @@ def _write_pdf(markdown_text: str, path: Path, title: str) -> None:
         elif line.startswith("# "):
             continue
         else:
-            story.append(Paragraph(escape(line), styles["BodyText"]))
+            body = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", escape(line))
+            story.append(Paragraph(body, styles["BodyText"]))
     SimpleDocTemplate(str(path), pagesize=letter, rightMargin=.65 * inch, leftMargin=.65 * inch).build(story)
 
 
@@ -469,36 +611,86 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     runbooks = build_runbooks(procedures, source_session=evidence.media_id, claims=claims)
     runbook_gate, runbook_errors = validate_runbooks(runbooks, valid_evidence_ids)
     frames_by_id = {frame["frame_id"]: frame for frame in evidence.frames}
+    raw_ocr_claims_suppressed = 0
+    gallery_claims_suppressed = 0
+    visual_claims = []
+    application_alias_ids = {_normalize_name(str(alias)): app.get("application_id")
+                             for app in applications
+                             for alias in [app.get("name"), *app.get("aliases", [])]
+                             if alias and app.get("application_id")}
     for frame in evidence.frames:
-        if frame.get("ocr_status") == "LOW_CONFIDENCE":
+        visual_type = str(frame.get("visual_type") or "OTHER").upper()
+        ocr_text = str(frame.get("ocr_text") or "").strip()
+        if ocr_text:
+            raw_ocr_claims_suppressed += 1
+        if visual_type in {"MEETING_GALLERY", "BLACK_OR_EMPTY", "OTHER", "SESSION_GENERAL"}:
+            gallery_claims_suppressed += int(bool(ocr_text))
             continue
-        text = str(frame.get("ocr_text", "")).strip()
-        if len(text.split()) < 3:
+        if not frame.get("selected", False):
             continue
-        frame_confidence = frame.get("ocr_confidence")
-        if frame_confidence is None:
-            frame_confidence = frame.get("confidence")
-        frame_claim = {
-            "claim_id": _stable_id("claim", evidence.media_id, frame["frame_id"], text),
-            "application_id": frame.get("application_id", "SESSION_GENERAL"), "claim": text,
-            "source_type": "VIDEO_FRAME", "source_id": evidence.media_id,
-            "timestamp": frame["timestamp"], "frame_id": frame["frame_id"],
-            "confidence": float(frame_confidence) if frame_confidence is not None else None,
-            "verification_state": "VISUAL_CONFIRMED", "first_seen": {"session_id": evidence.media_id, "timestamp": frame["timestamp"]},
-            "last_confirmed": None, "supporting_sources": [{"source_id": evidence.media_id,
-            "source_type": "VIDEO_FRAME", "timestamp": frame["timestamp"], "frame_id": frame["frame_id"],
-            "ocr_text": text}], "conflicts": [],
-        }
-        claims.append(frame_claim)
+        # OCR remains evidence; semantic content comes from reviewed structured frame assertions.
+        assertions = frame.get("assertions") or []
+        for assertion in assertions:
+            if not isinstance(assertion, dict):
+                continue
+            if str(assertion.get("assertion_type", "")).casefold() not in {"relationships", "data_flows", "configuration_fields"}:
+                continue
+            evidence_ref = assertion.get("provenance", {})
+            statement = assertion.get("statement") or assertion.get("value")
+            if not statement or (evidence_ref.get("review_state") != "HUMAN_REVIEWED"
+                                 and not frame.get("transcript_text")):
+                continue
+            text = str(statement).strip()
+            confidence = assertion.get("confidence", evidence_ref.get("confidence", frame.get("confidence")))
+            visual_claims.append({
+                "claim_id": _stable_id("claim", evidence.media_id, frame["frame_id"], text),
+                "application_id": application_alias_ids.get(_normalize_name(str(frame.get("application") or "")),
+                                                              frame.get("application_id", "SESSION_GENERAL")), "claim": text,
+                "source_type": "VIDEO_FRAME", "source_id": evidence.media_id,
+                "timestamp": frame["timestamp"], "frame_id": frame["frame_id"],
+                "confidence": float(confidence) if confidence is not None else None,
+                "verification_state": "VISUAL_CONFIRMED", "first_seen": {"session_id": evidence.media_id, "timestamp": frame["timestamp"]},
+                "last_confirmed": None, "supporting_sources": [{"source_id": evidence.media_id,
+                "source_type": "VIDEO_FRAME", "timestamp": frame["timestamp"], "frame_id": frame["frame_id"]}], "conflicts": [],
+            })
+    claims.extend(visual_claims)
+    deduplicated_claims: dict[tuple[str, str], dict[str, Any]] = {}
+    for claim in claims:
+        key = (str(claim.get("application_id")), _normalize_name(str(claim.get("claim", ""))))
+        prior = deduplicated_claims.get(key)
+        if prior is None:
+            deduplicated_claims[key] = claim
+        else:
+            prior["supporting_sources"] = _unique_values([*prior.get("supporting_sources", []),
+                                                          *claim.get("supporting_sources", [])])
+    claims = list(deduplicated_claims.values())
     apps = []
     app_ids = {item.get("application_id") for item in applications if item.get("application_id")}
     for app_id in sorted(app_ids):
         app = next(item for item in applications if item.get("application_id") == app_id)
         app_claims = [item for item in claims if item.get("application_id") == app_id]
         publishable_claims = [item for item in app_claims if item.get("verification_state") not in UNCERTAIN_STATES]
-        apps.append({"application_id": app_id, "name": app.get("name", app_id),
-                     "sections": [{"title": "Evidence-derived knowledge", "claims": publishable_claims,
-                                   "claim_ids": [item["claim_id"] for item in publishable_claims]}]})
+        if not publishable_claims:
+            continue
+        categories = {
+            "Purpose / business context": ("purpose", "supports", "provides", "used for"),
+            "Architecture / hosting": ("azure", "backend", "hosted", "server", "cloud", "environment"),
+            "Integrations / dependencies": ("subscription", "factory", "integration", "mail", "network", "endpoint", "vnet"),
+            "Data / storage": ("sql", "database", "data", "storage", "record"),
+            "Authentication / access": ("auth", "access", "permission", "login", "account", "role"),
+            "Support / lifecycle": ("support", "owner", "lifecycle", "sunset", "decommission", "status"),
+            "Operational notes": (),
+        }
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for claim in publishable_claims:
+            text = str(claim["claim"]).casefold()
+            category = next((name for name, terms in categories.items() if terms and any(term in text for term in terms)),
+                            "Operational notes")
+            grouped.setdefault(category, []).append(claim)
+        sections = [{"title": name, "claims": rows, "claim_ids": [item["claim_id"] for item in rows]}
+                    for name, rows in grouped.items()]
+        apps.append({"application_id": app_id, "name": app.get("display_name") or app.get("name", app_id), "claims": publishable_claims,
+                     "sections": sections})
     if not apps:
         general = [item for item in claims if item.get("application_id") == "SESSION_GENERAL"
                    and item.get("verification_state") not in UNCERTAIN_STATES]
@@ -518,10 +710,22 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         str(frame["semantic_topic"]) for frame in evidence.frames
         if frame.get("semantic_topic") and frame.get("visual_type") not in {"BLACK_OR_EMPTY", "MEETING_GALLERY"}
     }
-    selected_topics = {
-        str(frame["semantic_topic"]) for frame in evidence.frames
-        if frame.get("semantic_topic") and frame.get("selected", True) and _semantic_topic_sources(frame)
-    }
+    selected_topics = set()
+    app_aliases = {_normalize_name(str(alias)) for app in applications
+                   for alias in [app.get("name"), *app.get("aliases", [])] if alias}
+    for frame in evidence.frames:
+        if not frame.get("semantic_topic") or not frame.get("selected", True):
+            continue
+        if _semantic_topic_sources(frame):
+            selected_topics.add(str(frame["semantic_topic"]))
+            continue
+        frame_app = _normalize_name(str(frame.get("application") or ""))
+        timestamp = float(frame.get("timestamp", 0))
+        if any(event.get("summary") and frame_app in app_aliases
+               and _normalize_name(str(event.get("application") or "")) in app_aliases
+               and abs(_seconds(event.get("start", 0)) - timestamp) <= 60
+               for event in evidence.evidence_events):
+            selected_topics.add(str(frame["semantic_topic"]))
     visual_gate = "PASS" if semantic_topics and semantic_topics <= selected_topics else "FAIL"
     transcript_state = evidence.speech_coverage.get("transcript_state", "NEEDS_REVIEW")
     speech_gate = evidence.speech_coverage.get("speech_quality_gate", "FAIL")
@@ -546,7 +750,21 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         relation_errors=relation_errors, valid_evidence_ids=valid_evidence_ids,
     )
     ambiguous_apps = [item for item in applications if item.get("status") == "AMBIGUOUS"]
-    gates["APPLICATION_RESOLUTION"] = "PASS" if app_ids - {"SESSION_GENERAL"} and not ambiguous_apps else "FAIL"
+    provenance_ids = valid_evidence_ids | {evidence.media_id}
+    applications_with_claims = {claim.get("application_id") for claim in claims
+                                if claim.get("verification_state") not in UNCERTAIN_STATES}
+    applications_with_claims.update(item.get("application_id") for item in procedures if item.get("application_id"))
+    unresolved_provenance = [item for item in applications if item.get("application_id") and
+                             not any((ref.get("event_id") in provenance_ids or ref.get("frame_id") in provenance_ids
+                                      or ref.get("segment_id") in provenance_ids or ref.get("source_id") == evidence.media_id)
+                                     for ref in item.get("provenance", []))]
+    gates["APPLICATION_RESOLUTION"] = "PASS" if (
+        app_ids - {"SESSION_GENERAL"} and not ambiguous_apps and not unresolved_provenance
+        and all(item.get("application_id") and item.get("name") for item in applications
+                if item.get("status") in {"MATCH_CONFIRMED", "NEW_APPLICATION"})
+        and all(item.get("application_id") in applications_with_claims or item.get("mentioned_no_material_knowledge")
+                for item in applications if item.get("status") in {"MATCH_CONFIRMED", "NEW_APPLICATION"})
+    ) else "FAIL"
     gates["PROCEDURE_GROUNDING"] = procedure_gate
     gates["KAV_RUNBOOK_VALIDATION"] = runbook_gate
     gates["KAV_EXECUTION_READY"] = "NO"
@@ -573,7 +791,7 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
                                 or evidence.video_metadata.get("basename") or evidence.media_id),
         "source_video": evidence.video_metadata.get("basename", evidence.media_id), "title": title,
         "quality_state": quality_state, "quality_gates": gates,
-        "executive_brief": "Evidence-derived session knowledge; source support is recorded for each claim.",
+        "executive_brief": _executive_brief(apps),
         "applications": apps, "application_candidates": applications, "claims": claims,
         "ambiguities": [item for item in claims if item.get("verification_state") in UNCERTAIN_STATES]
         + [{"claim": f"Application identity unresolved for {item.get('name') or 'this session'}.",
@@ -592,6 +810,11 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
             "missing_confidence_count": sum(item.get("confidence") is None for item in material_claims),
             "by_source_type": confidence_by_source,
         },
+        "content_diagnostics": {"raw_transcript_fragments_suppressed": len(evidence.transcript_segments) if any(
+            str(event.get("summary", "")).strip() for event in evidence.evidence_events) else 0,
+            "raw_ocr_claims_suppressed": raw_ocr_claims_suppressed,
+            "meeting_gallery_claims_suppressed": gallery_claims_suppressed,
+            "material_semantic_claim_count": len(material_claims), "visual_semantic_claim_count": len(visual_claims)},
         "kav_execution_runbooks": runbooks,
         "embedding_report": embedding_report,
         "procedure_errors": procedure_errors, "kav_runbook_errors": runbook_errors,
@@ -601,17 +824,17 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     kav_path = output_dir / "KAV_EXECUTION_RUNBOOKS.json"
     kav_path.write_text(json.dumps({"schema_version": 1, "runbooks": runbooks},
                                    indent=2, ensure_ascii=False), encoding="utf-8")
-    if quality_state != "READY":
-        diagnostic_path = output_dir / f"{basename}-diagnostic.json"
-        diagnostic_path.write_text(json.dumps(pack, indent=2, ensure_ascii=False), encoding="utf-8")
-        return {"status": quality_state, "gates": gates, "diagnostic": diagnostic_path,
-                "kav_runbooks": kav_path, "pack": pack}
     markdown = _markdown(pack)
     paths = {"json": output_dir / f"{basename}.json", "md": output_dir / f"{basename}.md",
              "pdf": output_dir / f"{basename}.pdf", "kav_runbooks": kav_path}
     paths["json"].write_text(json.dumps(pack, indent=2, ensure_ascii=False), encoding="utf-8")
     paths["md"].write_text(markdown, encoding="utf-8")
     _write_pdf(markdown, paths["pdf"], title)
+    if quality_state != "READY":
+        diagnostic_path = output_dir / f"{basename}-diagnostic.json"
+        diagnostic_path.write_text(json.dumps(pack, indent=2, ensure_ascii=False), encoding="utf-8")
+        return {"status": quality_state, "gates": gates, "diagnostic": diagnostic_path, "paths": paths,
+                "kav_runbooks": kav_path, "pack": pack}
     return {"status": "READY", "gates": gates, "paths": paths, "pack": pack}
 
 

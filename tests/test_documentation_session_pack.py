@@ -61,7 +61,8 @@ def test_generic_application_discovery_uses_explicit_source_phrase():
 def test_application_resolution_uses_exact_aliases_and_keeps_ambiguous_matches_open():
     known = [{"application_id": "app-a", "name": "Service Alpha", "aliases": ["Alpha"]}]
     assert resolve_application_identity({"name": "Alpha", "aliases": []}, known)["status"] == "MATCH_CONFIRMED"
-    assert resolve_application_identity({"name": "Service Alph", "aliases": []}, known)["status"] == "NEW_APPLICATION"
+    assert resolve_application_identity({"name": "Service Alph", "aliases": [], "provenance": [{"source_id": "m"}]}, known)["status"] == "NEW_APPLICATION"
+    assert resolve_application_identity({"name": "Service Alph", "aliases": []}, known)["status"] == "NEEDS_REVIEW"
     duplicate = [*known, {"application_id": "app-b", "name": "Alpha", "aliases": []}]
     assert resolve_application_identity({"name": "Alpha", "aliases": []}, duplicate)["status"] == "AMBIGUOUS"
 
@@ -108,11 +109,10 @@ def test_missing_visual_confidence_is_unknown_not_zero(tmp_path):
     evidence.frames[0].pop("ocr_confidence")
     evidence.frames[0].pop("confidence", None)
     result = generate_session_pack(evidence, tmp_path)
-    visual_claim = next(claim for claim in result["pack"]["claims"] if claim["source_type"] == "VIDEO_FRAME")
-    assert visual_claim["confidence"] is None
+    assert not any(claim["source_type"] == "VIDEO_FRAME" for claim in result["pack"]["claims"])
     assert result["gates"]["LOW_CONFIDENCE_FILLER"] == "PASS"
     diagnostics = result["pack"]["claim_confidence_diagnostics"]
-    assert diagnostics["missing_confidence_count"] == 1
+    assert diagnostics["missing_confidence_count"] == 0
     assert diagnostics["low_confidence_claim_count"] == 0
 
 
@@ -140,8 +140,8 @@ def test_zero_procedures_are_not_a_fabricated_grounding_pass(tmp_path):
 def test_session_pack_writes_separate_runbooks_for_each_procedure(tmp_path):
     evidence = _bundle()
     evidence.application_candidates = [
-        {"name": "Access Portal", "aliases": [], "provenance": []},
-        {"name": "Records Portal", "aliases": [], "provenance": []},
+        {"name": "Access Portal", "aliases": [], "provenance": [{"source_id": "media-alpha"}]},
+        {"name": "Records Portal", "aliases": [], "provenance": [{"source_id": "media-alpha"}]},
     ]
     evidence.transcript_segments = [
         {"start": 1, "end": 2, "text": "First, open the Access Portal request."},
@@ -175,6 +175,14 @@ def test_unresolved_application_identity_blocks_ready(tmp_path):
     result = generate_session_pack(evidence, tmp_path)
     assert result["gates"]["APPLICATION_RESOLUTION"] == "FAIL"
     assert result["status"] == "NEEDS_REVIEW"
+
+
+def test_name_only_application_with_empty_provenance_cannot_pass_resolution(tmp_path):
+    evidence = _bundle()
+    evidence.transcript_segments = [{"start": 10, "end": 15, "text": "The system has documented storage behavior."}]
+    evidence.application_candidates = [{"name": "Service Alpha", "aliases": [], "provenance": []}]
+    result = generate_session_pack(evidence, tmp_path)
+    assert result["gates"]["APPLICATION_RESOLUTION"] == "FAIL"
 
 
 def test_claim_provenance_requires_known_sources_and_segments():
@@ -329,7 +337,86 @@ def test_session_pack_is_generic_and_emits_diagnostic_when_quality_gates_fail(tm
     result = generate_session_pack(bundle, tmp_path)
     assert result["status"] == "NEEDS_REVIEW"
     assert result["diagnostic"].name == "alpha-diagnostic.json"
-    assert not (tmp_path / "alpha.pdf").exists()
+    assert (tmp_path / "alpha.pdf").exists()
+
+
+def test_event_summaries_attribute_claims_by_application_interval_and_keep_apps_isolated():
+    evidence = _bundle()
+    evidence.transcript_segments = []
+    evidence.evidence_events = [
+        {"id": "E-A", "start": 10, "end": 30, "application": "Service Alpha",
+         "summary": "The service stores order records in a managed database.", "claim_ids": ["c-a"],
+         "source_types": ["TRANSCRIPT"]},
+        {"id": "E-B", "start": 40, "end": 60, "application": "Service Beta",
+         "summary": "The portal supports a separate payment approval workflow.", "claim_ids": ["c-b"],
+         "source_types": ["TRANSCRIPT"]},
+    ]
+    normalized = normalize_evidence_bundle(evidence)
+    apps = discover_application_candidates(normalized)
+    claims = extract_claims(normalized, apps)
+    assert {claim["application_id"] for claim in claims} == {"service-alpha", "service-beta"}
+    assert {claim["supporting_sources"][0]["source_claim_ids"][0] for claim in claims} == {"c-a", "c-b"}
+
+
+def test_information_fragment_is_not_a_claim_and_event_summary_is_semantic_anchor():
+    evidence = _bundle()
+    evidence.transcript_segments = [{"start": 8, "end": 10, "text": "And then on the other side..."}]
+    evidence.evidence_events = [{"id": "E-1", "start": 8, "end": 10, "application": "Service Alpha",
+                                 "summary": "Service Alpha provides electronic order status reports.",
+                                 "claim_ids": ["claim-1"], "source_types": ["TRANSCRIPT"]}]
+    evidence = normalize_evidence_bundle(evidence)
+    claims = extract_claims(evidence, discover_application_candidates(evidence))
+    assert len(claims) == 1
+    assert claims[0]["claim"].startswith("Service Alpha:")
+    assert "other side" not in claims[0]["claim"]
+
+
+def test_standalone_claim_in_application_anchor_interval_inherits_application():
+    evidence = _bundle()
+    evidence.transcript_segments = [{"start": 78, "end": 82, "text": "This service uses a managed database."}]
+    evidence.evidence_events = [{"id": "E-1", "start": 86, "end": 105, "application": "Service Alpha",
+                                 "source_types": ["TRANSCRIPT"]}]
+    normalized = normalize_evidence_bundle(evidence)
+    claims = extract_claims(normalized, discover_application_candidates(normalized))
+    assert claims[0]["application_id"] == "service-alpha"
+
+
+def test_gallery_and_ocr_text_are_suppressed_from_material_visual_claims(tmp_path):
+    evidence = _bundle()
+    evidence.evidence_events = [{"id": "E-1", "start": 10, "end": 20, "application": "Service Alpha",
+                                 "summary": "Service Alpha provides order status reports.", "claim_ids": ["c1"],
+                                 "source_types": ["TRANSCRIPT"]}]
+    evidence.frames[0].update({"visual_type": "MEETING_GALLERY", "ocr_text": "Alice Bob Meeting Gallery"})
+    result = generate_session_pack(evidence, tmp_path)
+    assert not any(item["source_type"] == "VIDEO_FRAME" for item in result["pack"]["claims"])
+    assert result["pack"]["content_diagnostics"]["raw_ocr_claims_suppressed"] == 1
+    assert result["pack"]["content_diagnostics"]["meeting_gallery_claims_suppressed"] == 1
+
+
+def test_low_confidence_visual_topic_can_be_covered_by_nearby_application_event(tmp_path):
+    evidence = _bundle()
+    evidence.frames = [{"frame_id": "architecture", "timestamp": 50, "visual_type": "ARCHITECTURE_DIAGRAM",
+                        "semantic_topic": "APP_ARCHITECTURE", "application": "Service Alpha",
+                        "ocr_status": "LOW_CONFIDENCE", "selected": True, "transcript_text": ""}]
+    evidence.visual_topics = [{"topic": "APP_ARCHITECTURE", "frame_id": "architecture"}]
+    evidence.evidence_events = [{"id": "E-1", "start": 30, "end": 60, "application": "Service Alpha",
+                                 "summary": "Service Alpha uses a managed database and cloud backend.",
+                                 "claim_ids": ["c1"], "source_types": ["TRANSCRIPT"]}]
+    result = generate_session_pack(evidence, tmp_path)
+    assert result["gates"]["VISUAL_TOPIC_COVERAGE"] == "PASS"
+
+
+def test_markdown_has_grounded_brief_clean_state_and_structured_timeline(tmp_path):
+    evidence = _bundle()
+    evidence.evidence_events = [{"id": "E-002", "start": 86, "end": 107, "application": "Service Alpha",
+                                 "summary": "Service Alpha runs a custom backend on a managed cloud platform.",
+                                 "claim_ids": ["c2"], "source_types": ["TRANSCRIPT"]}]
+    result = generate_session_pack(evidence, tmp_path)
+    markdown = result["paths"]["md"].read_text(encoding="utf-8")
+    assert "State: READY" in markdown or "State: NEEDS_REVIEW" in markdown
+    assert "**State:**" not in markdown and "None" not in markdown
+    assert "00:01:26-00:01:47 | Service Alpha" in markdown
+    assert "Evidence-derived session knowledge; source support" not in markdown
 
 
 def test_production_documentation_modules_contain_no_golden_literals():

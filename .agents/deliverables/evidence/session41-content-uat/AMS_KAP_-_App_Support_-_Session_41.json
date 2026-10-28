@@ -1,0 +1,4206 @@
+{
+  "schema_version": 2,
+  "document_type": "SESSION_KNOWLEDGE_PACK",
+  "media_id": "session41-current-engine-content-uat",
+  "source_identity": "AMS_KAP_-_App_Support_-_Session_41.mp4",
+  "source_video": "AMS_KAP_-_App_Support_-_Session_41.mp4",
+  "title": "App Support Session 41",
+  "quality_state": "READY",
+  "quality_gates": {
+    "TRANSCRIPT_SPEECH_COVERAGE": "PASS",
+    "VISUAL_TOPIC_COVERAGE": "PASS",
+    "CLAIM_LEDGER": "PASS",
+    "DIAGRAM_PROVENANCE": "PASS",
+    "APPLICATION_SEGMENTATION": "PASS",
+    "APPLICATION_CLAIM_ISOLATION": "PASS",
+    "SOURCE_ARTIFACT_DEDUP": "PASS",
+    "EVIDENCE_TIMELINE_CHRONOLOGICAL": "PASS",
+    "DIAGRAM_RELATION_GROUNDING": "PASS",
+    "LOW_CONFIDENCE_FILLER": "PASS",
+    "PROCEDURE_GROUNDING": "NOT_APPLICABLE",
+    "QUALITY_GATE": "PASS",
+    "APPLICATION_RESOLUTION": "PASS",
+    "KAV_RUNBOOK_VALIDATION": "NOT_APPLICABLE",
+    "KAV_EXECUTION_READY": "NO",
+    "SECOND_BRAIN_READY": "FAIL",
+    "EMBEDDING_READY": "NO"
+  },
+  "executive_brief": "North America CPRT: Record describes Salesforce LEX data export through SaaS/ETL to fulfilment vendor servers or P&G-hosted database\n\nPG RegDoc: custom backend, P&G Azure (slide), SQL and mail subscription service.",
+  "applications": [
+    {
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "name": "North America CPRT",
+      "claims": [
+        {
+          "claim_id": "claim-afeb211ac1b2",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "North America CPRT: Presenter reports no resource-group permission.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 713.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 713.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-015",
+              "source_claim_ids": [
+                "C-023"
+              ],
+              "source_types": [
+                "TRANSCRIPT"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-fab0ea958eff",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "North America CPRT: Participant advises trying AMS Admin identity; result not shown.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 766.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 766.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-016",
+              "source_claim_ids": [
+                "C-023"
+              ],
+              "source_types": [
+                "TRANSCRIPT"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-06fe285fa21c",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "North America CPRT: Data floor/code/scripts, access problem, and no prepared slides.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 900.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 900.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-017",
+              "source_claim_ids": [
+                "C-022",
+                "C-024"
+              ],
+              "source_types": [
+                "TRANSCRIPT"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-5834fd1d3efa",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "North America CPRT: Attempt to switch to AMS Admin account/retrieve access; 74.78-second speech gap occurs in this interval.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1002.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1002.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-018",
+              "source_claim_ids": [
+                "C-023"
+              ],
+              "source_types": [
+                "TRANSCRIPT"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-75d5c51c0f1b",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "North America CPRT: Sunset to leverage optimized; decommissioning undecided.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1103.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1103.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-021",
+              "source_claim_ids": [
+                "C-019"
+              ],
+              "source_types": [
+                "TRANSCRIPT"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-38cc751c9025",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "North America CPRT: Limited tickets/use impression and future decommission request expectation.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1234.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1234.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-022",
+              "source_claim_ids": [
+                "C-020",
+                "C-021"
+              ],
+              "source_types": [
+                "TRANSCRIPT"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-114a31ebd786",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "North America CPRT: Application catalogue screenshot shows app description, lifecycle, access context, and support group.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1251.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1251.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-020",
+              "source_claim_ids": [
+                "C-016",
+                "C-017",
+                "C-018",
+                "C-019"
+              ],
+              "source_types": [
+                "VIDEO_FRAME_OCR",
+                "V-004"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-3608b8859e69",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "Catalogue record lists Paul Senn as owner",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png",
+          "confidence": 0.93,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1251.8396398378377
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-020c2b01286d",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "Catalogue record lists P&G AMS Support Team as support group",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png",
+          "confidence": 0.93,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1251.8396398378377
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-4b997648bc01",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "Record describes Salesforce LEX data export through SaaS/ETL to fulfilment vendor servers or P&G-hosted database",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png",
+          "confidence": 0.93,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1251.8396398378377
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-36fcd488edb5",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "Database access is limited to named PG NA CPRT business, technology development, and operations groups",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png",
+          "confidence": 0.93,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1251.8396398378377
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-87e765834dfd",
+          "application_id": "north-america-central-product-research-testing-panelist-payments",
+          "claim": "Salesforce LEX -> SaaS/ETL application -> fulfilment vendor servers or P&G-hosted database",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png",
+          "confidence": 0.93,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 1251.8396398378377
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png"
+            }
+          ],
+          "conflicts": []
+        }
+      ],
+      "sections": [
+        {
+          "title": "Authentication / access",
+          "claims": [
+            {
+              "claim_id": "claim-afeb211ac1b2",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "North America CPRT: Presenter reports no resource-group permission.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 713.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 713.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-015",
+                  "source_claim_ids": [
+                    "C-023"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-5834fd1d3efa",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "North America CPRT: Attempt to switch to AMS Admin account/retrieve access; 74.78-second speech gap occurs in this interval.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1002.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1002.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-018",
+                  "source_claim_ids": [
+                    "C-023"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-114a31ebd786",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "North America CPRT: Application catalogue screenshot shows app description, lifecycle, access context, and support group.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1251.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1251.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-020",
+                  "source_claim_ids": [
+                    "C-016",
+                    "C-017",
+                    "C-018",
+                    "C-019"
+                  ],
+                  "source_types": [
+                    "VIDEO_FRAME_OCR",
+                    "V-004"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            }
+          ],
+          "claim_ids": [
+            "claim-afeb211ac1b2",
+            "claim-5834fd1d3efa",
+            "claim-114a31ebd786"
+          ]
+        },
+        {
+          "title": "Operational notes",
+          "claims": [
+            {
+              "claim_id": "claim-fab0ea958eff",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "North America CPRT: Participant advises trying AMS Admin identity; result not shown.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 766.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 766.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-016",
+                  "source_claim_ids": [
+                    "C-023"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            }
+          ],
+          "claim_ids": [
+            "claim-fab0ea958eff"
+          ]
+        },
+        {
+          "title": "Data / storage",
+          "claims": [
+            {
+              "claim_id": "claim-06fe285fa21c",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "North America CPRT: Data floor/code/scripts, access problem, and no prepared slides.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 900.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 900.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-017",
+                  "source_claim_ids": [
+                    "C-022",
+                    "C-024"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-3608b8859e69",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "Catalogue record lists Paul Senn as owner",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png",
+              "confidence": 0.93,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1251.8396398378377
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 1251.8396398378377,
+                  "frame_id": "frame_0021.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-020c2b01286d",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "Catalogue record lists P&G AMS Support Team as support group",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png",
+              "confidence": 0.93,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1251.8396398378377
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 1251.8396398378377,
+                  "frame_id": "frame_0021.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-36fcd488edb5",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "Database access is limited to named PG NA CPRT business, technology development, and operations groups",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png",
+              "confidence": 0.93,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1251.8396398378377
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 1251.8396398378377,
+                  "frame_id": "frame_0021.png"
+                }
+              ],
+              "conflicts": []
+            }
+          ],
+          "claim_ids": [
+            "claim-06fe285fa21c",
+            "claim-3608b8859e69",
+            "claim-020c2b01286d",
+            "claim-36fcd488edb5"
+          ]
+        },
+        {
+          "title": "Support / lifecycle",
+          "claims": [
+            {
+              "claim_id": "claim-75d5c51c0f1b",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "North America CPRT: Sunset to leverage optimized; decommissioning undecided.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1103.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1103.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-021",
+                  "source_claim_ids": [
+                    "C-019"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-38cc751c9025",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "North America CPRT: Limited tickets/use impression and future decommission request expectation.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1234.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1234.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-022",
+                  "source_claim_ids": [
+                    "C-020",
+                    "C-021"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            }
+          ],
+          "claim_ids": [
+            "claim-75d5c51c0f1b",
+            "claim-38cc751c9025"
+          ]
+        },
+        {
+          "title": "Architecture / hosting",
+          "claims": [
+            {
+              "claim_id": "claim-4b997648bc01",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "Record describes Salesforce LEX data export through SaaS/ETL to fulfilment vendor servers or P&G-hosted database",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png",
+              "confidence": 0.93,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1251.8396398378377
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 1251.8396398378377,
+                  "frame_id": "frame_0021.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-87e765834dfd",
+              "application_id": "north-america-central-product-research-testing-panelist-payments",
+              "claim": "Salesforce LEX -> SaaS/ETL application -> fulfilment vendor servers or P&G-hosted database",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 1251.8396398378377,
+              "frame_id": "frame_0021.png",
+              "confidence": 0.93,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 1251.8396398378377
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 1251.8396398378377,
+                  "frame_id": "frame_0021.png"
+                }
+              ],
+              "conflicts": []
+            }
+          ],
+          "claim_ids": [
+            "claim-4b997648bc01",
+            "claim-87e765834dfd"
+          ]
+        }
+      ]
+    },
+    {
+      "application_id": "pgregdoc-com",
+      "name": "PG RegDoc",
+      "claims": [
+        {
+          "claim_id": "claim-34c8d444d7c7",
+          "application_id": "pgregdoc-com",
+          "claim": "PG RegDoc: custom backend, P&G Azure (slide), SQL and mail subscription service.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 86.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 86.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-002",
+              "source_claim_ids": [
+                "C-002"
+              ],
+              "source_types": [
+                "TRANSCRIPT",
+                "V-001"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-ec2b1b220a1c",
+          "application_id": "pgregdoc-com",
+          "claim": "PG RegDoc: Public SDS/technical documents and REACH reference; speaker disclaims REACH familiarity.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 107.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 107.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-003",
+              "source_claim_ids": [
+                "C-003",
+                "C-004",
+                "C-005"
+              ],
+              "source_types": [
+                "TRANSCRIPT"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-01b05d3fd208",
+          "application_id": "pgregdoc-com",
+          "claim": "PG RegDoc: Subscriptions, notifications, admin functions, and role descriptions.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 129.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 129.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-005",
+              "source_claim_ids": [
+                "C-006",
+                "C-007"
+              ],
+              "source_types": [
+                "TRANSCRIPT",
+                "V-001"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-5b9443ed7cc0",
+          "application_id": "pgregdoc-com",
+          "claim": "PG RegDoc: Manual SDS maintenance/PDF retrieval and developer configuration; data-flow slide.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 307.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 307.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-008",
+              "source_claim_ids": [
+                "C-009",
+                "C-010"
+              ],
+              "source_types": [
+                "TRANSCRIPT",
+                "V-002"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-831bb563418e",
+          "application_id": "pgregdoc-com",
+          "claim": "PG RegDoc: Production/development, Azure SQL, Data Factory, private endpoints and virtual networks.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 353.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 353.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-009",
+              "source_claim_ids": [
+                "C-011"
+              ],
+              "source_types": [
+                "TRANSCRIPT",
+                "V-003"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-f2b831202871",
+          "application_id": "pgregdoc-com",
+          "claim": "PG RegDoc: Owner/classification/BIA; authentication term uncertain and IT Access named.",
+          "source_type": "EVIDENCE_EVENT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 400.0,
+          "frame_id": null,
+          "confidence": 0.85,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 400.0
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "EVIDENCE_EVENT",
+              "event_id": "E-010",
+              "source_claim_ids": [
+                "C-012",
+                "C-013"
+              ],
+              "source_types": [
+                "TRANSCRIPT",
+                "V-003"
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-4825e8437861",
+          "application_id": "pgregdoc-com",
+          "claim": "So this is a custom backend application hosted on PNG Azure.",
+          "source_type": "TRANSCRIPT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 78.38,
+          "frame_id": null,
+          "confidence": 0.75,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 78.38
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "TRANSCRIPT",
+              "timestamp": 78.38,
+              "segments": [
+                {
+                  "start": 78.38,
+                  "end": 82.24,
+                  "text": " So this is a custom backend application hosted on PNG Azure.",
+                  "words": [
+                    {
+                      "word": " So",
+                      "start": 78.38,
+                      "end": 78.82,
+                      "prob": 0.997
+                    },
+                    {
+                      "word": " this",
+                      "start": 78.82,
+                      "end": 79.1,
+                      "prob": 0.994
+                    },
+                    {
+                      "word": " is",
+                      "start": 79.1,
+                      "end": 79.24,
+                      "prob": 1.0
+                    },
+                    {
+                      "word": " a",
+                      "start": 79.24,
+                      "end": 79.36,
+                      "prob": 0.999
+                    },
+                    {
+                      "word": " custom",
+                      "start": 79.36,
+                      "end": 79.74,
+                      "prob": 0.999
+                    },
+                    {
+                      "word": " backend",
+                      "start": 79.74,
+                      "end": 80.32,
+                      "prob": 0.812
+                    },
+                    {
+                      "word": " application",
+                      "start": 80.32,
+                      "end": 80.94,
+                      "prob": 1.0
+                    },
+                    {
+                      "word": " hosted",
+                      "start": 80.94,
+                      "end": 81.44,
+                      "prob": 0.998
+                    },
+                    {
+                      "word": " on",
+                      "start": 81.44,
+                      "end": 81.7,
+                      "prob": 0.996
+                    },
+                    {
+                      "word": " PNG",
+                      "start": 81.7,
+                      "end": 82.02,
+                      "prob": 0.933
+                    },
+                    {
+                      "word": " Azure.",
+                      "start": 82.02,
+                      "end": 82.24,
+                      "prob": 0.973
+                    }
+                  ],
+                  "segment_id": "seg-50d0a83c6bc1"
+                }
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-f6999f83511c",
+          "application_id": "pgregdoc-com",
+          "claim": "And then this application uses a SQL database and a mail subscription service.",
+          "source_type": "TRANSCRIPT",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 83.02,
+          "frame_id": null,
+          "confidence": 0.75,
+          "verification_state": "SOURCE_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 83.02
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "TRANSCRIPT",
+              "timestamp": 83.02,
+              "segments": [
+                {
+                  "start": 83.02,
+                  "end": 88.16,
+                  "text": " And then this application uses a SQL database and a mail subscription service.",
+                  "words": [
+                    {
+                      "word": " And",
+                      "start": 83.02,
+                      "end": 83.34,
+                      "prob": 0.994
+                    },
+                    {
+                      "word": " then",
+                      "start": 83.34,
+                      "end": 83.54,
+                      "prob": 0.982
+                    },
+                    {
+                      "word": " this",
+                      "start": 83.54,
+                      "end": 83.72,
+                      "prob": 0.994
+                    },
+                    {
+                      "word": " application",
+                      "start": 83.72,
+                      "end": 84.06,
+                      "prob": 1.0
+                    },
+                    {
+                      "word": " uses",
+                      "start": 84.06,
+                      "end": 84.5,
+                      "prob": 1.0
+                    },
+                    {
+                      "word": " a",
+                      "start": 84.5,
+                      "end": 84.78,
+                      "prob": 0.81
+                    },
+                    {
+                      "word": " SQL",
+                      "start": 84.78,
+                      "end": 85.48,
+                      "prob": 0.999
+                    },
+                    {
+                      "word": " database",
+                      "start": 85.48,
+                      "end": 85.9,
+                      "prob": 1.0
+                    },
+                    {
+                      "word": " and",
+                      "start": 85.9,
+                      "end": 86.9,
+                      "prob": 0.989
+                    },
+                    {
+                      "word": " a",
+                      "start": 86.9,
+                      "end": 87.06,
+                      "prob": 0.995
+                    },
+                    {
+                      "word": " mail",
+                      "start": 87.06,
+                      "end": 87.26,
+                      "prob": 0.976
+                    },
+                    {
+                      "word": " subscription",
+                      "start": 87.26,
+                      "end": 87.6,
+                      "prob": 0.999
+                    },
+                    {
+                      "word": " service.",
+                      "start": 87.6,
+                      "end": 88.16,
+                      "prob": 0.999
+                    }
+                  ],
+                  "segment_id": "seg-ff3193b8d76a"
+                }
+              ]
+            }
+          ],
+          "conflicts": [],
+          "ambiguities": []
+        },
+        {
+          "claim_id": "claim-a28391cdc00a",
+          "application_id": "pgregdoc-com",
+          "claim": "Admin employees use a browser to maintain country safety data sheets and export PDFs",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-6f429c15f568",
+          "application_id": "pgregdoc-com",
+          "claim": "Retailers and consumers use a browser to retrieve available PDF documents",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-530003ae826f",
+          "application_id": "pgregdoc-com",
+          "claim": "Application developers use a browser for manual application configuration",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-313583e242df",
+          "application_id": "pgregdoc-com",
+          "claim": "PGRegDoc.com uses PingID for authentication",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-30b4e97c36a1",
+          "application_id": "pgregdoc-com",
+          "claim": "P&G admin employees -> browser -> PGRegDoc.com: maintain country safety data sheets",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-697194b775d6",
+          "application_id": "pgregdoc-com",
+          "claim": "PGRegDoc.com -> browser -> retailers and consumers: retrieve available documents as PDFs",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-63b621942151",
+          "application_id": "pgregdoc-com",
+          "claim": "Application developers -> browser -> PGRegDoc.com: manual configuration",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-9980a9d653e3",
+          "application_id": "pgregdoc-com",
+          "claim": "PGRegDoc.com <-> PingID: authentication",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png",
+          "confidence": 0.95,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 341.4108108648648
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-95ac0b253977",
+          "application_id": "pgregdoc-com",
+          "claim": "PGRegDoc is hosted in Microsoft Azure",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-e19d353841f2",
+          "application_id": "pgregdoc-com",
+          "claim": "Azure SQL supports data storage",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-ceb653d2efc5",
+          "application_id": "pgregdoc-com",
+          "claim": "Azure Data Factory supports data processing and application operations",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-6c0b0a5b22ed",
+          "application_id": "pgregdoc-com",
+          "claim": "Private endpoints and virtual networks control network paths to key Azure services",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-1ed2668f7204",
+          "application_id": "pgregdoc-com",
+          "claim": "Production and development environments are separate",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-3ef9c2318181",
+          "application_id": "pgregdoc-com",
+          "claim": "Users access PGRegDoc securely through web browsers",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-5d99f26f1299",
+          "application_id": "pgregdoc-com",
+          "claim": "Azure SQL provides data storage",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        },
+        {
+          "claim_id": "claim-22023770444a",
+          "application_id": "pgregdoc-com",
+          "claim": "Azure Data Factory supports processing and application operations",
+          "source_type": "VIDEO_FRAME",
+          "source_id": "session41-current-engine-content-uat",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png",
+          "confidence": 0.86,
+          "verification_state": "VISUAL_CONFIRMED",
+          "first_seen": {
+            "session_id": "session41-current-engine-content-uat",
+            "timestamp": 455.2144144864864
+          },
+          "last_confirmed": null,
+          "supporting_sources": [
+            {
+              "source_id": "session41-current-engine-content-uat",
+              "source_type": "VIDEO_FRAME",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png"
+            }
+          ],
+          "conflicts": []
+        }
+      ],
+      "sections": [
+        {
+          "title": "Architecture / hosting",
+          "claims": [
+            {
+              "claim_id": "claim-34c8d444d7c7",
+              "application_id": "pgregdoc-com",
+              "claim": "PG RegDoc: custom backend, P&G Azure (slide), SQL and mail subscription service.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 86.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 86.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-002",
+                  "source_claim_ids": [
+                    "C-002"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT",
+                    "V-001"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-831bb563418e",
+              "application_id": "pgregdoc-com",
+              "claim": "PG RegDoc: Production/development, Azure SQL, Data Factory, private endpoints and virtual networks.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 353.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 353.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-009",
+                  "source_claim_ids": [
+                    "C-011"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT",
+                    "V-003"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-4825e8437861",
+              "application_id": "pgregdoc-com",
+              "claim": "So this is a custom backend application hosted on PNG Azure.",
+              "source_type": "TRANSCRIPT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 78.38,
+              "frame_id": null,
+              "confidence": 0.75,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 78.38
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "TRANSCRIPT",
+                  "timestamp": 78.38,
+                  "segments": [
+                    {
+                      "start": 78.38,
+                      "end": 82.24,
+                      "text": " So this is a custom backend application hosted on PNG Azure.",
+                      "words": [
+                        {
+                          "word": " So",
+                          "start": 78.38,
+                          "end": 78.82,
+                          "prob": 0.997
+                        },
+                        {
+                          "word": " this",
+                          "start": 78.82,
+                          "end": 79.1,
+                          "prob": 0.994
+                        },
+                        {
+                          "word": " is",
+                          "start": 79.1,
+                          "end": 79.24,
+                          "prob": 1.0
+                        },
+                        {
+                          "word": " a",
+                          "start": 79.24,
+                          "end": 79.36,
+                          "prob": 0.999
+                        },
+                        {
+                          "word": " custom",
+                          "start": 79.36,
+                          "end": 79.74,
+                          "prob": 0.999
+                        },
+                        {
+                          "word": " backend",
+                          "start": 79.74,
+                          "end": 80.32,
+                          "prob": 0.812
+                        },
+                        {
+                          "word": " application",
+                          "start": 80.32,
+                          "end": 80.94,
+                          "prob": 1.0
+                        },
+                        {
+                          "word": " hosted",
+                          "start": 80.94,
+                          "end": 81.44,
+                          "prob": 0.998
+                        },
+                        {
+                          "word": " on",
+                          "start": 81.44,
+                          "end": 81.7,
+                          "prob": 0.996
+                        },
+                        {
+                          "word": " PNG",
+                          "start": 81.7,
+                          "end": 82.02,
+                          "prob": 0.933
+                        },
+                        {
+                          "word": " Azure.",
+                          "start": 82.02,
+                          "end": 82.24,
+                          "prob": 0.973
+                        }
+                      ],
+                      "segment_id": "seg-50d0a83c6bc1"
+                    }
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-95ac0b253977",
+              "application_id": "pgregdoc-com",
+              "claim": "PGRegDoc is hosted in Microsoft Azure",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-6c0b0a5b22ed",
+              "application_id": "pgregdoc-com",
+              "claim": "Private endpoints and virtual networks control network paths to key Azure services",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-1ed2668f7204",
+              "application_id": "pgregdoc-com",
+              "claim": "Production and development environments are separate",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            }
+          ],
+          "claim_ids": [
+            "claim-34c8d444d7c7",
+            "claim-831bb563418e",
+            "claim-4825e8437861",
+            "claim-95ac0b253977",
+            "claim-6c0b0a5b22ed",
+            "claim-1ed2668f7204"
+          ]
+        },
+        {
+          "title": "Operational notes",
+          "claims": [
+            {
+              "claim_id": "claim-ec2b1b220a1c",
+              "application_id": "pgregdoc-com",
+              "claim": "PG RegDoc: Public SDS/technical documents and REACH reference; speaker disclaims REACH familiarity.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 107.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 107.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-003",
+                  "source_claim_ids": [
+                    "C-003",
+                    "C-004",
+                    "C-005"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-6f429c15f568",
+              "application_id": "pgregdoc-com",
+              "claim": "Retailers and consumers use a browser to retrieve available PDF documents",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-530003ae826f",
+              "application_id": "pgregdoc-com",
+              "claim": "Application developers use a browser for manual application configuration",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-697194b775d6",
+              "application_id": "pgregdoc-com",
+              "claim": "PGRegDoc.com -> browser -> retailers and consumers: retrieve available documents as PDFs",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-63b621942151",
+              "application_id": "pgregdoc-com",
+              "claim": "Application developers -> browser -> PGRegDoc.com: manual configuration",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            }
+          ],
+          "claim_ids": [
+            "claim-ec2b1b220a1c",
+            "claim-6f429c15f568",
+            "claim-530003ae826f",
+            "claim-697194b775d6",
+            "claim-63b621942151"
+          ]
+        },
+        {
+          "title": "Integrations / dependencies",
+          "claims": [
+            {
+              "claim_id": "claim-01b05d3fd208",
+              "application_id": "pgregdoc-com",
+              "claim": "PG RegDoc: Subscriptions, notifications, admin functions, and role descriptions.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 129.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 129.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-005",
+                  "source_claim_ids": [
+                    "C-006",
+                    "C-007"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT",
+                    "V-001"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-f6999f83511c",
+              "application_id": "pgregdoc-com",
+              "claim": "And then this application uses a SQL database and a mail subscription service.",
+              "source_type": "TRANSCRIPT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 83.02,
+              "frame_id": null,
+              "confidence": 0.75,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 83.02
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "TRANSCRIPT",
+                  "timestamp": 83.02,
+                  "segments": [
+                    {
+                      "start": 83.02,
+                      "end": 88.16,
+                      "text": " And then this application uses a SQL database and a mail subscription service.",
+                      "words": [
+                        {
+                          "word": " And",
+                          "start": 83.02,
+                          "end": 83.34,
+                          "prob": 0.994
+                        },
+                        {
+                          "word": " then",
+                          "start": 83.34,
+                          "end": 83.54,
+                          "prob": 0.982
+                        },
+                        {
+                          "word": " this",
+                          "start": 83.54,
+                          "end": 83.72,
+                          "prob": 0.994
+                        },
+                        {
+                          "word": " application",
+                          "start": 83.72,
+                          "end": 84.06,
+                          "prob": 1.0
+                        },
+                        {
+                          "word": " uses",
+                          "start": 84.06,
+                          "end": 84.5,
+                          "prob": 1.0
+                        },
+                        {
+                          "word": " a",
+                          "start": 84.5,
+                          "end": 84.78,
+                          "prob": 0.81
+                        },
+                        {
+                          "word": " SQL",
+                          "start": 84.78,
+                          "end": 85.48,
+                          "prob": 0.999
+                        },
+                        {
+                          "word": " database",
+                          "start": 85.48,
+                          "end": 85.9,
+                          "prob": 1.0
+                        },
+                        {
+                          "word": " and",
+                          "start": 85.9,
+                          "end": 86.9,
+                          "prob": 0.989
+                        },
+                        {
+                          "word": " a",
+                          "start": 86.9,
+                          "end": 87.06,
+                          "prob": 0.995
+                        },
+                        {
+                          "word": " mail",
+                          "start": 87.06,
+                          "end": 87.26,
+                          "prob": 0.976
+                        },
+                        {
+                          "word": " subscription",
+                          "start": 87.26,
+                          "end": 87.6,
+                          "prob": 0.999
+                        },
+                        {
+                          "word": " service.",
+                          "start": 87.6,
+                          "end": 88.16,
+                          "prob": 0.999
+                        }
+                      ],
+                      "segment_id": "seg-ff3193b8d76a"
+                    }
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            }
+          ],
+          "claim_ids": [
+            "claim-01b05d3fd208",
+            "claim-f6999f83511c"
+          ]
+        },
+        {
+          "title": "Data / storage",
+          "claims": [
+            {
+              "claim_id": "claim-5b9443ed7cc0",
+              "application_id": "pgregdoc-com",
+              "claim": "PG RegDoc: Manual SDS maintenance/PDF retrieval and developer configuration; data-flow slide.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 307.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 307.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-008",
+                  "source_claim_ids": [
+                    "C-009",
+                    "C-010"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT",
+                    "V-002"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-a28391cdc00a",
+              "application_id": "pgregdoc-com",
+              "claim": "Admin employees use a browser to maintain country safety data sheets and export PDFs",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-30b4e97c36a1",
+              "application_id": "pgregdoc-com",
+              "claim": "P&G admin employees -> browser -> PGRegDoc.com: maintain country safety data sheets",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            }
+          ],
+          "claim_ids": [
+            "claim-5b9443ed7cc0",
+            "claim-a28391cdc00a",
+            "claim-30b4e97c36a1"
+          ]
+        },
+        {
+          "title": "Authentication / access",
+          "claims": [
+            {
+              "claim_id": "claim-f2b831202871",
+              "application_id": "pgregdoc-com",
+              "claim": "PG RegDoc: Owner/classification/BIA; authentication term uncertain and IT Access named.",
+              "source_type": "EVIDENCE_EVENT",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 400.0,
+              "frame_id": null,
+              "confidence": 0.85,
+              "verification_state": "SOURCE_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 400.0
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "EVIDENCE_EVENT",
+                  "event_id": "E-010",
+                  "source_claim_ids": [
+                    "C-012",
+                    "C-013"
+                  ],
+                  "source_types": [
+                    "TRANSCRIPT",
+                    "V-003"
+                  ]
+                }
+              ],
+              "conflicts": [],
+              "ambiguities": []
+            },
+            {
+              "claim_id": "claim-313583e242df",
+              "application_id": "pgregdoc-com",
+              "claim": "PGRegDoc.com uses PingID for authentication",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-9980a9d653e3",
+              "application_id": "pgregdoc-com",
+              "claim": "PGRegDoc.com <-> PingID: authentication",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 341.4108108648648,
+              "frame_id": "frame_0005.png",
+              "confidence": 0.95,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 341.4108108648648
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 341.4108108648648,
+                  "frame_id": "frame_0005.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-3ef9c2318181",
+              "application_id": "pgregdoc-com",
+              "claim": "Users access PGRegDoc securely through web browsers",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            }
+          ],
+          "claim_ids": [
+            "claim-f2b831202871",
+            "claim-313583e242df",
+            "claim-9980a9d653e3",
+            "claim-3ef9c2318181"
+          ]
+        },
+        {
+          "title": "Purpose / business context",
+          "claims": [
+            {
+              "claim_id": "claim-e19d353841f2",
+              "application_id": "pgregdoc-com",
+              "claim": "Azure SQL supports data storage",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-ceb653d2efc5",
+              "application_id": "pgregdoc-com",
+              "claim": "Azure Data Factory supports data processing and application operations",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-5d99f26f1299",
+              "application_id": "pgregdoc-com",
+              "claim": "Azure SQL provides data storage",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            },
+            {
+              "claim_id": "claim-22023770444a",
+              "application_id": "pgregdoc-com",
+              "claim": "Azure Data Factory supports processing and application operations",
+              "source_type": "VIDEO_FRAME",
+              "source_id": "session41-current-engine-content-uat",
+              "timestamp": 455.2144144864864,
+              "frame_id": "frame_0007.png",
+              "confidence": 0.86,
+              "verification_state": "VISUAL_CONFIRMED",
+              "first_seen": {
+                "session_id": "session41-current-engine-content-uat",
+                "timestamp": 455.2144144864864
+              },
+              "last_confirmed": null,
+              "supporting_sources": [
+                {
+                  "source_id": "session41-current-engine-content-uat",
+                  "source_type": "VIDEO_FRAME",
+                  "timestamp": 455.2144144864864,
+                  "frame_id": "frame_0007.png"
+                }
+              ],
+              "conflicts": []
+            }
+          ],
+          "claim_ids": [
+            "claim-e19d353841f2",
+            "claim-ceb653d2efc5",
+            "claim-5d99f26f1299",
+            "claim-22023770444a"
+          ]
+        }
+      ]
+    }
+  ],
+  "application_candidates": [
+    {
+      "name": "pgregdoc.com",
+      "aliases": [
+        "pgregdoc.com",
+        "PG_REGDOC",
+        "PG_REGDOC",
+        "PG_REGDOC",
+        "PG_REGDOC",
+        "PG_REGDOC",
+        "PG_REGDOC",
+        "PG_REGDOC",
+        "PG_REGDOC"
+      ],
+      "status": "NEW_APPLICATION",
+      "provenance": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-002",
+          "timestamp": "00:01:26",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0000.png",
+          "timestamp": 56.9018018108108,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0001.png",
+          "timestamp": 113.8036036216216,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0002.png",
+          "timestamp": 170.7054054324324,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0003.png",
+          "timestamp": 227.6072072432432,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0004.png",
+          "timestamp": 284.50900905405405,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0005.png",
+          "timestamp": 341.4108108648648,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0006.png",
+          "timestamp": 398.3126126756756,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0007.png",
+          "timestamp": 455.2144144864864,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-003",
+          "timestamp": "00:01:47",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-005",
+          "timestamp": "00:02:09",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-007",
+          "timestamp": "00:04:24",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-008",
+          "timestamp": "00:05:07",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-009",
+          "timestamp": "00:05:53",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-010",
+          "timestamp": "00:06:40",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-011",
+          "timestamp": "00:07:09",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-012",
+          "timestamp": "00:08:00",
+          "source_type": "EVIDENCE_EVENT"
+        }
+      ],
+      "display_name": "PG RegDoc",
+      "application_id": "pgregdoc-com"
+    },
+    {
+      "name": "North America Central Product Research Testing Panelist Payments",
+      "aliases": [
+        "North America Central Product Research Testing Panelist Payments",
+        "NA_CPRT_PANELIST_PAYMENTS"
+      ],
+      "status": "NEW_APPLICATION",
+      "provenance": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-015",
+          "timestamp": "00:11:53",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "frame_id": "frame_0021.png",
+          "timestamp": 1251.8396398378377,
+          "source_type": "VIDEO_FRAME"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-016",
+          "timestamp": "00:12:46",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-017",
+          "timestamp": "00:15:00",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-018",
+          "timestamp": "00:16:42",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-021",
+          "timestamp": "00:18:23",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-022",
+          "timestamp": "00:20:34",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-023",
+          "timestamp": "00:20:50",
+          "source_type": "EVIDENCE_EVENT"
+        },
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "event_id": "E-020",
+          "timestamp": "00:20:51",
+          "source_type": "EVIDENCE_EVENT"
+        }
+      ],
+      "display_name": "North America CPRT",
+      "application_id": "north-america-central-product-research-testing-panelist-payments"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim-34c8d444d7c7",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: custom backend, P&G Azure (slide), SQL and mail subscription service.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 86.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 86.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-002",
+          "source_claim_ids": [
+            "C-002"
+          ],
+          "source_types": [
+            "TRANSCRIPT",
+            "V-001"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-ec2b1b220a1c",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: Public SDS/technical documents and REACH reference; speaker disclaims REACH familiarity.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 107.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 107.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-003",
+          "source_claim_ids": [
+            "C-003",
+            "C-004",
+            "C-005"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-01b05d3fd208",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: Subscriptions, notifications, admin functions, and role descriptions.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 129.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 129.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-005",
+          "source_claim_ids": [
+            "C-006",
+            "C-007"
+          ],
+          "source_types": [
+            "TRANSCRIPT",
+            "V-001"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-35b187e029a3",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: Question and response establish public website support via backend; frontend boundary remains unclear.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 264.0,
+      "frame_id": null,
+      "confidence": 0.4,
+      "verification_state": "SOURCE_UNCERTAIN",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 264.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-007",
+          "source_claim_ids": [
+            "C-008"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": [
+        "unclear"
+      ]
+    },
+    {
+      "claim_id": "claim-5b9443ed7cc0",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: Manual SDS maintenance/PDF retrieval and developer configuration; data-flow slide.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 307.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 307.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-008",
+          "source_claim_ids": [
+            "C-009",
+            "C-010"
+          ],
+          "source_types": [
+            "TRANSCRIPT",
+            "V-002"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-831bb563418e",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: Production/development, Azure SQL, Data Factory, private endpoints and virtual networks.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 353.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 353.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-009",
+          "source_claim_ids": [
+            "C-011"
+          ],
+          "source_types": [
+            "TRANSCRIPT",
+            "V-003"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-f2b831202871",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: Owner/classification/BIA; authentication term uncertain and IT Access named.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 400.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 400.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-010",
+          "source_claim_ids": [
+            "C-012",
+            "C-013"
+          ],
+          "source_types": [
+            "TRANSCRIPT",
+            "V-003"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-afeb211ac1b2",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "North America CPRT: Presenter reports no resource-group permission.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 713.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 713.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-015",
+          "source_claim_ids": [
+            "C-023"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-fab0ea958eff",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "North America CPRT: Participant advises trying AMS Admin identity; result not shown.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 766.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 766.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-016",
+          "source_claim_ids": [
+            "C-023"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-06fe285fa21c",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "North America CPRT: Data floor/code/scripts, access problem, and no prepared slides.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 900.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 900.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-017",
+          "source_claim_ids": [
+            "C-022",
+            "C-024"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-5834fd1d3efa",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "North America CPRT: Attempt to switch to AMS Admin account/retrieve access; 74.78-second speech gap occurs in this interval.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1002.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1002.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-018",
+          "source_claim_ids": [
+            "C-023"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-75d5c51c0f1b",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "North America CPRT: Sunset to leverage optimized; decommissioning undecided.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1103.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1103.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-021",
+          "source_claim_ids": [
+            "C-019"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-38cc751c9025",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "North America CPRT: Limited tickets/use impression and future decommission request expectation.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1234.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1234.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-022",
+          "source_claim_ids": [
+            "C-020",
+            "C-021"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-114a31ebd786",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "North America CPRT: Application catalogue screenshot shows app description, lifecycle, access context, and support group.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1251.0,
+      "frame_id": null,
+      "confidence": 0.85,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1251.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-020",
+          "source_claim_ids": [
+            "C-016",
+            "C-017",
+            "C-018",
+            "C-019"
+          ],
+          "source_types": [
+            "VIDEO_FRAME_OCR",
+            "V-004"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-4825e8437861",
+      "application_id": "pgregdoc-com",
+      "claim": "So this is a custom backend application hosted on PNG Azure.",
+      "source_type": "TRANSCRIPT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 78.38,
+      "frame_id": null,
+      "confidence": 0.75,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 78.38
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "TRANSCRIPT",
+          "timestamp": 78.38,
+          "segments": [
+            {
+              "start": 78.38,
+              "end": 82.24,
+              "text": " So this is a custom backend application hosted on PNG Azure.",
+              "words": [
+                {
+                  "word": " So",
+                  "start": 78.38,
+                  "end": 78.82,
+                  "prob": 0.997
+                },
+                {
+                  "word": " this",
+                  "start": 78.82,
+                  "end": 79.1,
+                  "prob": 0.994
+                },
+                {
+                  "word": " is",
+                  "start": 79.1,
+                  "end": 79.24,
+                  "prob": 1.0
+                },
+                {
+                  "word": " a",
+                  "start": 79.24,
+                  "end": 79.36,
+                  "prob": 0.999
+                },
+                {
+                  "word": " custom",
+                  "start": 79.36,
+                  "end": 79.74,
+                  "prob": 0.999
+                },
+                {
+                  "word": " backend",
+                  "start": 79.74,
+                  "end": 80.32,
+                  "prob": 0.812
+                },
+                {
+                  "word": " application",
+                  "start": 80.32,
+                  "end": 80.94,
+                  "prob": 1.0
+                },
+                {
+                  "word": " hosted",
+                  "start": 80.94,
+                  "end": 81.44,
+                  "prob": 0.998
+                },
+                {
+                  "word": " on",
+                  "start": 81.44,
+                  "end": 81.7,
+                  "prob": 0.996
+                },
+                {
+                  "word": " PNG",
+                  "start": 81.7,
+                  "end": 82.02,
+                  "prob": 0.933
+                },
+                {
+                  "word": " Azure.",
+                  "start": 82.02,
+                  "end": 82.24,
+                  "prob": 0.973
+                }
+              ],
+              "segment_id": "seg-50d0a83c6bc1"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-f6999f83511c",
+      "application_id": "pgregdoc-com",
+      "claim": "And then this application uses a SQL database and a mail subscription service.",
+      "source_type": "TRANSCRIPT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 83.02,
+      "frame_id": null,
+      "confidence": 0.75,
+      "verification_state": "SOURCE_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 83.02
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "TRANSCRIPT",
+          "timestamp": 83.02,
+          "segments": [
+            {
+              "start": 83.02,
+              "end": 88.16,
+              "text": " And then this application uses a SQL database and a mail subscription service.",
+              "words": [
+                {
+                  "word": " And",
+                  "start": 83.02,
+                  "end": 83.34,
+                  "prob": 0.994
+                },
+                {
+                  "word": " then",
+                  "start": 83.34,
+                  "end": 83.54,
+                  "prob": 0.982
+                },
+                {
+                  "word": " this",
+                  "start": 83.54,
+                  "end": 83.72,
+                  "prob": 0.994
+                },
+                {
+                  "word": " application",
+                  "start": 83.72,
+                  "end": 84.06,
+                  "prob": 1.0
+                },
+                {
+                  "word": " uses",
+                  "start": 84.06,
+                  "end": 84.5,
+                  "prob": 1.0
+                },
+                {
+                  "word": " a",
+                  "start": 84.5,
+                  "end": 84.78,
+                  "prob": 0.81
+                },
+                {
+                  "word": " SQL",
+                  "start": 84.78,
+                  "end": 85.48,
+                  "prob": 0.999
+                },
+                {
+                  "word": " database",
+                  "start": 85.48,
+                  "end": 85.9,
+                  "prob": 1.0
+                },
+                {
+                  "word": " and",
+                  "start": 85.9,
+                  "end": 86.9,
+                  "prob": 0.989
+                },
+                {
+                  "word": " a",
+                  "start": 86.9,
+                  "end": 87.06,
+                  "prob": 0.995
+                },
+                {
+                  "word": " mail",
+                  "start": 87.06,
+                  "end": 87.26,
+                  "prob": 0.976
+                },
+                {
+                  "word": " subscription",
+                  "start": 87.26,
+                  "end": 87.6,
+                  "prob": 0.999
+                },
+                {
+                  "word": " service.",
+                  "start": 87.6,
+                  "end": 88.16,
+                  "prob": 0.999
+                }
+              ],
+              "segment_id": "seg-ff3193b8d76a"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    {
+      "claim_id": "claim-a28391cdc00a",
+      "application_id": "pgregdoc-com",
+      "claim": "Admin employees use a browser to maintain country safety data sheets and export PDFs",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-6f429c15f568",
+      "application_id": "pgregdoc-com",
+      "claim": "Retailers and consumers use a browser to retrieve available PDF documents",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-530003ae826f",
+      "application_id": "pgregdoc-com",
+      "claim": "Application developers use a browser for manual application configuration",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-313583e242df",
+      "application_id": "pgregdoc-com",
+      "claim": "PGRegDoc.com uses PingID for authentication",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-30b4e97c36a1",
+      "application_id": "pgregdoc-com",
+      "claim": "P&G admin employees -> browser -> PGRegDoc.com: maintain country safety data sheets",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-697194b775d6",
+      "application_id": "pgregdoc-com",
+      "claim": "PGRegDoc.com -> browser -> retailers and consumers: retrieve available documents as PDFs",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-63b621942151",
+      "application_id": "pgregdoc-com",
+      "claim": "Application developers -> browser -> PGRegDoc.com: manual configuration",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-9980a9d653e3",
+      "application_id": "pgregdoc-com",
+      "claim": "PGRegDoc.com <-> PingID: authentication",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 341.4108108648648,
+      "frame_id": "frame_0005.png",
+      "confidence": 0.95,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 341.4108108648648
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 341.4108108648648,
+          "frame_id": "frame_0005.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-95ac0b253977",
+      "application_id": "pgregdoc-com",
+      "claim": "PGRegDoc is hosted in Microsoft Azure",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-e19d353841f2",
+      "application_id": "pgregdoc-com",
+      "claim": "Azure SQL supports data storage",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-ceb653d2efc5",
+      "application_id": "pgregdoc-com",
+      "claim": "Azure Data Factory supports data processing and application operations",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-6c0b0a5b22ed",
+      "application_id": "pgregdoc-com",
+      "claim": "Private endpoints and virtual networks control network paths to key Azure services",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-1ed2668f7204",
+      "application_id": "pgregdoc-com",
+      "claim": "Production and development environments are separate",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-3ef9c2318181",
+      "application_id": "pgregdoc-com",
+      "claim": "Users access PGRegDoc securely through web browsers",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-5d99f26f1299",
+      "application_id": "pgregdoc-com",
+      "claim": "Azure SQL provides data storage",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-22023770444a",
+      "application_id": "pgregdoc-com",
+      "claim": "Azure Data Factory supports processing and application operations",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 455.2144144864864,
+      "frame_id": "frame_0007.png",
+      "confidence": 0.86,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 455.2144144864864
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 455.2144144864864,
+          "frame_id": "frame_0007.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-3608b8859e69",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "Catalogue record lists Paul Senn as owner",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1251.8396398378377,
+      "frame_id": "frame_0021.png",
+      "confidence": 0.93,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1251.8396398378377
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-020c2b01286d",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "Catalogue record lists P&G AMS Support Team as support group",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1251.8396398378377,
+      "frame_id": "frame_0021.png",
+      "confidence": 0.93,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1251.8396398378377
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-4b997648bc01",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "Record describes Salesforce LEX data export through SaaS/ETL to fulfilment vendor servers or P&G-hosted database",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1251.8396398378377,
+      "frame_id": "frame_0021.png",
+      "confidence": 0.93,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1251.8396398378377
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-36fcd488edb5",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "Database access is limited to named PG NA CPRT business, technology development, and operations groups",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1251.8396398378377,
+      "frame_id": "frame_0021.png",
+      "confidence": 0.93,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1251.8396398378377
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "claim_id": "claim-87e765834dfd",
+      "application_id": "north-america-central-product-research-testing-panelist-payments",
+      "claim": "Salesforce LEX -> SaaS/ETL application -> fulfilment vendor servers or P&G-hosted database",
+      "source_type": "VIDEO_FRAME",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 1251.8396398378377,
+      "frame_id": "frame_0021.png",
+      "confidence": 0.93,
+      "verification_state": "VISUAL_CONFIRMED",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 1251.8396398378377
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "VIDEO_FRAME",
+          "timestamp": 1251.8396398378377,
+          "frame_id": "frame_0021.png"
+        }
+      ],
+      "conflicts": []
+    }
+  ],
+  "ambiguities": [
+    {
+      "claim_id": "claim-35b187e029a3",
+      "application_id": "pgregdoc-com",
+      "claim": "PG RegDoc: Question and response establish public website support via backend; frontend boundary remains unclear.",
+      "source_type": "EVIDENCE_EVENT",
+      "source_id": "session41-current-engine-content-uat",
+      "timestamp": 264.0,
+      "frame_id": null,
+      "confidence": 0.4,
+      "verification_state": "SOURCE_UNCERTAIN",
+      "first_seen": {
+        "session_id": "session41-current-engine-content-uat",
+        "timestamp": 264.0
+      },
+      "last_confirmed": null,
+      "supporting_sources": [
+        {
+          "source_id": "session41-current-engine-content-uat",
+          "source_type": "EVIDENCE_EVENT",
+          "event_id": "E-007",
+          "source_claim_ids": [
+            "C-008"
+          ],
+          "source_types": [
+            "TRANSCRIPT"
+          ]
+        }
+      ],
+      "conflicts": [],
+      "ambiguities": [
+        "unclear"
+      ]
+    }
+  ],
+  "diagrams": [],
+  "visual_topics": [
+    "NA_CPRT_SERVICE_CATALOG_RECORD",
+    "PG_REGDOC_DATA_FLOW",
+    "PG_REGDOC_OVERVIEW",
+    "PG_REGDOC_TECHNICAL_ARCHITECTURE"
+  ],
+  "evidence_events": [
+    {
+      "id": "E-001",
+      "start": "00:00:47",
+      "end": "00:01:17",
+      "application": "SESSION",
+      "summary": "Opening identifies two applications and names the North America application.",
+      "claim_ids": [
+        "C-001"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-002",
+      "start": "00:01:26",
+      "end": "00:01:47",
+      "application": "pgregdoc.com",
+      "summary": "PG RegDoc custom backend, P&G Azure (slide), SQL and mail subscription service.",
+      "claim_ids": [
+        "C-002"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-001"
+      ]
+    },
+    {
+      "id": "E-003",
+      "start": "00:01:47",
+      "end": "00:02:09",
+      "application": "pgregdoc.com",
+      "summary": "Public SDS/technical documents and REACH reference; speaker disclaims REACH familiarity.",
+      "claim_ids": [
+        "C-003",
+        "C-004",
+        "C-005"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-005",
+      "start": "00:02:09",
+      "end": "00:03:25",
+      "application": "pgregdoc.com",
+      "summary": "Subscriptions, notifications, admin functions, and role descriptions.",
+      "claim_ids": [
+        "C-006",
+        "C-007"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-001"
+      ]
+    },
+    {
+      "id": "E-007",
+      "start": "00:04:24",
+      "end": "00:04:38",
+      "application": "pgregdoc.com",
+      "summary": "Question and response establish public website support via backend; frontend boundary remains unclear.",
+      "claim_ids": [
+        "C-008"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-008",
+      "start": "00:05:07",
+      "end": "00:05:41",
+      "application": "pgregdoc.com",
+      "summary": "Manual SDS maintenance/PDF retrieval and developer configuration; data-flow slide.",
+      "claim_ids": [
+        "C-009",
+        "C-010"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-002"
+      ]
+    },
+    {
+      "id": "E-009",
+      "start": "00:05:53",
+      "end": "00:06:40",
+      "application": "pgregdoc.com",
+      "summary": "Production/development, Azure SQL, Data Factory, private endpoints and virtual networks.",
+      "claim_ids": [
+        "C-011"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-003"
+      ]
+    },
+    {
+      "id": "E-010",
+      "start": "00:06:40",
+      "end": "00:07:09",
+      "application": "pgregdoc.com",
+      "summary": "Owner/classification/BIA; authentication term uncertain and IT Access named.",
+      "claim_ids": [
+        "C-012",
+        "C-013"
+      ],
+      "source_types": [
+        "TRANSCRIPT",
+        "V-003"
+      ]
+    },
+    {
+      "id": "E-011",
+      "start": "00:07:09",
+      "end": "00:07:56",
+      "application": "pgregdoc.com",
+      "summary": "Incomplete application maturity/open-source statement.",
+      "claim_ids": [
+        "C-014"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-012",
+      "start": "00:08:00",
+      "end": "00:09:50",
+      "application": "pgregdoc.com",
+      "summary": "Technical presentation deferred; presenter says not prepared and lacks access.",
+      "claim_ids": [
+        "C-015"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-015",
+      "start": "00:11:53",
+      "end": "00:12:45",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Presenter reports no resource-group permission.",
+      "claim_ids": [
+        "C-023"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-016",
+      "start": "00:12:46",
+      "end": "00:13:18",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Participant advises trying AMS Admin identity; result not shown.",
+      "claim_ids": [
+        "C-023"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-017",
+      "start": "00:15:00",
+      "end": "00:16:20",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Data floor/code/scripts, access problem, and no prepared slides.",
+      "claim_ids": [
+        "C-022",
+        "C-024"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-018",
+      "start": "00:16:42",
+      "end": "00:18:40",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Attempt to switch to AMS Admin account/retrieve access; 74.78-second speech gap occurs in this interval.",
+      "claim_ids": [
+        "C-023"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-021",
+      "start": "00:18:23",
+      "end": "00:20:34",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Sunset to leverage optimized; decommissioning undecided.",
+      "claim_ids": [
+        "C-019"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-022",
+      "start": "00:20:34",
+      "end": "00:20:50",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Limited tickets/use impression and future decommission request expectation.",
+      "claim_ids": [
+        "C-020",
+        "C-021"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-023",
+      "start": "00:20:50",
+      "end": "00:20:56",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Suspicious phrase 'transition to corruption mining'.",
+      "claim_ids": [
+        "C-025"
+      ],
+      "source_types": [
+        "TRANSCRIPT"
+      ]
+    },
+    {
+      "id": "E-020",
+      "start": "00:20:51",
+      "end": "00:20:51",
+      "application": "North America Central Product Research Testing Panelist Payments",
+      "summary": "Application catalogue screenshot shows app description, lifecycle, access context, and support group.",
+      "claim_ids": [
+        "C-016",
+        "C-017",
+        "C-018",
+        "C-019"
+      ],
+      "source_types": [
+        "VIDEO_FRAME_OCR",
+        "V-004"
+      ]
+    },
+    {
+      "id": "E-024",
+      "start": "00:23:55.890",
+      "end": "00:35:05.367",
+      "application": "SESSION",
+      "summary": "No transcript segment reaches this final 669.477-second video interval; later sampled frames show gallery only.",
+      "claim_ids": [],
+      "source_types": [
+        "SOURCE_COVERAGE",
+        "VIDEO_FRAME"
+      ]
+    }
+  ],
+  "transcript_quality": {
+    "transcript_state": "VALID",
+    "speech_quality_gate": "PASS"
+  },
+  "procedures": [],
+  "claim_confidence_diagnostics": {
+    "material_claim_count": 36,
+    "low_confidence_claim_count": 0,
+    "low_confidence_ratio": 0.0,
+    "missing_confidence_count": 0,
+    "by_source_type": {
+      "EVIDENCE_EVENT": {
+        "low_confidence": 0,
+        "missing_confidence": 0
+      },
+      "TRANSCRIPT": {
+        "low_confidence": 0,
+        "missing_confidence": 0
+      },
+      "VIDEO_FRAME": {
+        "low_confidence": 0,
+        "missing_confidence": 0
+      }
+    }
+  },
+  "content_diagnostics": {
+    "raw_transcript_fragments_suppressed": 172,
+    "raw_ocr_claims_suppressed": 31,
+    "meeting_gallery_claims_suppressed": 22,
+    "material_semantic_claim_count": 36,
+    "visual_semantic_claim_count": 21
+  },
+  "kav_execution_runbooks": [],
+  "embedding_report": {
+    "CHUNK_EMBEDDING_ELIGIBLE": false,
+    "DOCUMENT_EMBEDDING_READY": false,
+    "eligible_chunks": [],
+    "rejected_chunks": []
+  },
+  "procedure_errors": [],
+  "kav_runbook_errors": [],
+  "embedding_inputs": []
+}
