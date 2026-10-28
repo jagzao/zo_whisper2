@@ -6,7 +6,11 @@ import pytest
 from transcript_pipeline.documentation.production import run_pilot
 from transcript_pipeline.documentation.session_pack import (
     MediaEvidenceBundle,
+    classify_semantic_topic,
+    compare_session_pack_to_golden,
     consolidate_claims_across_sessions,
+    consolidate_diagram_graphs,
+    consolidate_semantic_claims,
     deduplicate_source_artifacts,
     discover_application_candidates,
     extract_claims,
@@ -100,7 +104,7 @@ def test_low_confidence_ocr_cannot_ground_visual_claim_or_diagram(tmp_path):
     assert extract_diagram_graphs(evidence.frames) == []
     result = generate_session_pack(evidence, tmp_path)
     assert result["status"] == "NEEDS_REVIEW"
-    assert all(claim["source_type"] == "TRANSCRIPT" for claim in result["pack"]["claims"])
+    assert all("VIDEO_FRAME" not in claim.get("source_types", []) for claim in result["pack"]["claims"])
     assert not any(claim.get("frame_id") for claim in result["pack"]["claims"])
 
 
@@ -436,3 +440,131 @@ def test_application_discovery_accepts_generic_identity_statement():
     candidates = discover_application_candidates(normalize_evidence_bundle(evidence))
     assert [item["name"] for item in candidates] == ["AtlasDesk"]
     assert candidates[0]["provenance"][0]["timestamp"] == 2
+
+
+def test_semantic_duplicates_keep_all_source_provenance_and_canonicalize_talk():
+    app = [{"application_id": "service-alpha", "name": "Service Alpha"}]
+    sources = [
+        {"source_id": "s", "source_type": "TRANSCRIPT", "timestamp": 12,
+         "segments": [{"segment_id": "seg-1", "start": 12, "end": 14}]},
+        {"source_id": "s", "source_type": "EVIDENCE_EVENT", "event_id": "E-1", "timestamp": 12},
+        {"source_id": "s", "source_type": "VIDEO_FRAME", "frame_id": "F-1", "timestamp": 13},
+    ]
+    claims = [{"application_id": "service-alpha", "claim": text, "source_type": source["source_type"],
+               "timestamp": source["timestamp"], "confidence": .9, "verification_state": "SOURCE_CONFIRMED",
+               "supporting_sources": [source], "ambiguities": []}
+              for text, source in zip(("So this application is hosted on Cloud Platform.",
+                                       "Service Alpha is hosted on Cloud Platform.",
+                                       "The application is hosted on Cloud Platform."), sources)]
+    result = consolidate_semantic_claims(claims, app, "session")
+    assert len(result) == 1
+    assert {item["source_type"] for item in result[0]["source_evidence_refs"]} == {"TRANSCRIPT", "EVIDENCE_EVENT", "VIDEO_FRAME"}
+    assert result[0]["canonical_fact"].endswith("hosted on Cloud Platform.")
+    assert result[0]["source_session"] == "session"
+
+
+def test_uncertainty_is_not_strengthened_and_temporal_fact_requests_live_validation():
+    app = [{"application_id": "service-alpha", "name": "Service Alpha"}]
+    claim = {"application_id": "service-alpha", "claim": "Maybe the owner is the Platform team.",
+             "source_type": "TRANSCRIPT", "timestamp": 20, "confidence": .4,
+             "verification_state": "SOURCE_UNCERTAIN", "supporting_sources": [
+                 {"source_id": "s", "source_type": "TRANSCRIPT", "timestamp": 20,
+                  "segments": [{"segment_id": "seg-2", "start": 20, "end": 21}]}], "ambiguities": ["maybe"]}
+    fact = consolidate_semantic_claims([claim], app, "session")[0]
+    assert fact["verification_state"] == "SOURCE_UNCERTAIN"
+    assert fact["current_live_validation_required"] is True
+    assert fact["observed_at"]["source_session"] == "session"
+
+
+def test_semantic_equivalent_action_phrasings_merge_with_all_evidence():
+    app = [{"application_id": "service-alpha", "name": "Service Alpha", "aliases": ["servicealpha.com"]}]
+    claims = [
+        {"application_id": "service-alpha", "claim": "ServiceAlpha.com uses IdentityHub for authentication.",
+         "source_type": "VIDEO_FRAME", "timestamp": 30, "confidence": .9, "verification_state": "SOURCE_CONFIRMED",
+         "supporting_sources": [{"source_id": "s", "source_type": "VIDEO_FRAME", "frame_id": "F-1"}], "ambiguities": []},
+        {"application_id": "service-alpha", "claim": "Service Alpha <-> IdentityHub: authentication.",
+         "source_type": "EVIDENCE_EVENT", "timestamp": 31, "confidence": .9, "verification_state": "SOURCE_CONFIRMED",
+         "supporting_sources": [{"source_id": "s", "source_type": "EVIDENCE_EVENT", "event_id": "E-1"}], "ambiguities": []},
+    ]
+    result = consolidate_semantic_claims(claims, app, "session")
+    assert len(result) == 1
+    assert {item["source_type"] for item in result[0]["source_evidence_refs"]} == {"VIDEO_FRAME", "EVIDENCE_EVENT"}
+
+
+def test_semantic_flow_summary_and_visual_flow_merge_as_one_fact():
+    app = [{"application_id": "service-alpha", "name": "Service Alpha"}]
+    claims = [
+        {"application_id": "service-alpha", "claim": "Record describes Salesforce LEX data export through SaaS/ETL to fulfilment vendor servers.",
+         "source_type": "EVIDENCE_EVENT", "timestamp": 50, "confidence": .9, "verification_state": "SOURCE_CONFIRMED",
+         "supporting_sources": [{"source_id": "s", "source_type": "EVIDENCE_EVENT", "event_id": "E-2"}], "ambiguities": []},
+        {"application_id": "service-alpha", "claim": "Salesforce LEX -> SaaS/ETL application -> fulfilment vendor servers.",
+         "source_type": "VIDEO_FRAME", "timestamp": 51, "confidence": .9, "verification_state": "SOURCE_CONFIRMED",
+         "supporting_sources": [{"source_id": "s", "source_type": "VIDEO_FRAME", "frame_id": "F-2"}], "ambiguities": []},
+    ]
+    result = consolidate_semantic_claims(claims, app, "session")
+    assert len(result) == 1
+    assert {item["source_type"] for item in result[0]["source_evidence_refs"]} == {"EVIDENCE_EVENT", "VIDEO_FRAME"}
+
+
+def test_compound_application_type_and_hosting_facts_split_and_hosting_support_merges():
+    app = [{"application_id": "service-alpha", "name": "Service Alpha"}]
+    claims = [
+        {"application_id": "service-alpha", "claim": "So this is a custom backend application hosted on CloudOne.",
+         "source_type": "TRANSCRIPT", "timestamp": 60, "confidence": .75, "verification_state": "SOURCE_CONFIRMED",
+         "supporting_sources": [{"source_id": "s", "source_type": "TRANSCRIPT", "timestamp": 60,
+                                 "segments": [{"segment_id": "seg-4", "start": 60, "end": 62}]}], "ambiguities": []},
+        {"application_id": "service-alpha", "claim": "Service Alpha is hosted in CloudOne.",
+         "source_type": "VIDEO_FRAME", "timestamp": 61, "confidence": .9, "verification_state": "SOURCE_CONFIRMED",
+         "supporting_sources": [{"source_id": "s", "source_type": "VIDEO_FRAME", "frame_id": "F-4"}], "ambiguities": []},
+    ]
+    result = consolidate_semantic_claims(claims, app, "session")
+    assert len(result) == 2
+    hosting = next(fact for fact in result if "hosted" in fact["canonical_fact"])
+    assert {ref["source_type"] for ref in hosting["source_evidence_refs"]} == {"TRANSCRIPT", "VIDEO_FRAME"}
+
+
+def test_identical_grounded_diagrams_merge_and_keep_frame_provenance():
+    diagrams = [{"diagram_id": "d1", "application": "Service Alpha", "nodes": [{"label": "A"}, {"label": "B"}],
+                 "edges": [{"source": "A", "target": "B", "relation_type": "USES", "directed": True}],
+                 "source_frames": [{"frame_id": "F-1"}], "source_evidence_ids": ["F-1"]},
+                {"diagram_id": "d2", "application": "Service Alpha", "nodes": [{"label": "B"}, {"label": "A"}],
+                 "edges": [{"source": "A", "target": "B", "relation_type": "USES", "directed": True}],
+                 "source_frames": [{"frame_id": "F-2"}], "source_evidence_ids": ["F-2"]}]
+    result = consolidate_diagram_graphs(diagrams)
+    assert len(result) == 1
+    assert result[0]["source_evidence_ids"] == ["F-1", "F-2"]
+
+
+def test_semantic_topics_route_architecture_and_access_separately():
+    assert classify_semantic_topic("Azure SQL supports storage for the application") == "Data / storage"
+    assert classify_semantic_topic("Access was denied while requesting permission") == "Authentication / access"
+
+
+def test_canonical_claim_removes_speaker_filler_without_dropping_uncertainty():
+    claim = {"application_id": "service-alpha", "claim": "My impression is that there are limited users for this application.",
+             "source_type": "TRANSCRIPT", "timestamp": 40, "confidence": .6,
+             "verification_state": "SOURCE_UNCERTAIN", "supporting_sources": [
+                 {"source_id": "s", "source_type": "TRANSCRIPT", "timestamp": 40,
+                  "segments": [{"segment_id": "seg-3", "start": 40, "end": 42}]}], "ambiguities": ["my impression"]}
+    fact = consolidate_semantic_claims([claim], [{"application_id": "service-alpha", "name": "Service Alpha"}], "session")[0]
+    assert fact["canonical_fact"] == "Service Alpha: Evidence suggests there are limited users for this application."
+    assert fact["verification_state"] == "SOURCE_UNCERTAIN"
+
+
+def test_evidence_summary_is_rewritten_as_canonical_data_flow():
+    claim = {"application_id": "service-alpha", "claim": "Service Alpha: Record describes Atlas data export through Bridge to Archive.",
+             "source_type": "EVIDENCE_EVENT", "timestamp": 45, "confidence": .9,
+             "verification_state": "SOURCE_CONFIRMED", "supporting_sources": [
+                 {"source_id": "s", "source_type": "EVIDENCE_EVENT", "event_id": "E-4"}], "ambiguities": []}
+    fact = consolidate_semantic_claims([claim], [{"application_id": "service-alpha", "name": "Service Alpha"}], "session")[0]
+    assert fact["canonical_fact"] == "Service Alpha: Data is exported from Atlas through Bridge to Archive."
+
+
+def test_golden_comparison_detects_topic_and_diagram_coverage_regression():
+    pack = {"canonical_facts": [], "applications": [], "diagrams": [], "open_questions": [], "glossary": [],
+            "rendered_sections": []}
+    golden = {"claims": [{"claim_id": "g1"}], "applications": [{"sections": [
+        {"title": "Architecture", "claims": [{"claim_id": "g1"}]}]}],
+        "derived_diagrams": [{}], "common_sections": {"Open Questions": [{}], "Glossary": [{}]}}
+    result = compare_session_pack_to_golden(pack, golden)
+    assert result["COVERAGE_REGRESSION"] == "YES"
