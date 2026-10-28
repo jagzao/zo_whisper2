@@ -87,6 +87,48 @@ def test_metrics_empty_state_reports_none_rates(client, env):
     assert data["avg_processing_time_seconds"] is None
 
 
+def test_v3_served_state_and_generation_expose_source_blocker(client, env):
+    media = env["videos"] / "sample.mp4"
+    media.write_bytes(b"media")
+    media_id = mid(MediaRoot.VIDEOS, "sample.mp4")
+    state = client.get(f"/api/documentation/v3/state{q(media_id)}", headers=AUTH_HEADERS)
+    assert state.status_code == 200
+    assert state.get_json()["documentation_state"] == "BLOCKED_SOURCE"
+    generated = client.post(f"/api/documentation/v3/generate{q(media_id)}", headers=AUTH_HEADERS)
+    assert generated.status_code == 409
+    assert generated.get_json()["state"] == "BLOCKED_SOURCE"
+
+
+def test_v3_served_generation_publishes_and_opens_document_trio(client, env):
+    media = env["videos"] / "sample.mp4"
+    media.write_bytes(b"media")
+    media_id = mid(MediaRoot.VIDEOS, "sample.mp4")
+    evidence_dir = dashboard_app._documentation_dirs(media) / "evidence"
+    evidence_dir.mkdir(parents=True)
+    bundle = {
+        "media_id": media_id,
+        "video_metadata": {"basename": "sample.mp4", "duration": 120, "media_valid": True},
+        "transcript_segments": [
+            {"segment_id": "seg-1", "start": 10, "end": 15, "text": "The service is called Service Alpha."},
+            {"segment_id": "seg-2", "start": 16, "end": 20, "text": "Service Alpha provides order status reports."},
+        ],
+        "speech_coverage": {"transcript_state": "VALID", "speech_quality_gate": "PASS"},
+        "frames": [{"frame_id": "frame-a", "timestamp": 14, "visual_type": "APPLICATION_UI",
+                    "ocr_status": "SUCCESS", "ocr_text": "Service Alpha order status", "ocr_confidence": .9,
+                    "source_image": "frame-a.png", "semantic_topic": "ORDER_STATUS", "selected": True}],
+        "ocr_results": [], "visual_topics": [{"topic": "ORDER_STATUS", "frame_ids": ["frame-a"]}],
+        "application_candidates": [], "evidence_events": [],
+    }
+    (evidence_dir / "media-evidence-bundle.json").write_text(json.dumps(bundle), encoding="utf-8")
+    generated = client.post(f"/api/documentation/v3/generate{q(media_id)}", headers=AUTH_HEADERS)
+    assert generated.status_code == 200
+    assert generated.get_json()["state"] == "READY"
+    state = client.get(f"/api/documentation/v3/state{q(media_id)}", headers=AUTH_HEADERS).get_json()
+    assert state["documentation_state"] == "V3_READY"
+    opened = client.get(f"/api/documentation/v3/file{q(media_id)}&kind=md", headers=AUTH_HEADERS)
+    assert opened.status_code == 200
+
+
 def test_metrics_computed_from_processed_db_and_metadata(client, env):
     db = {
         "hash1": {"hash": "hash1", "status": "completed"},

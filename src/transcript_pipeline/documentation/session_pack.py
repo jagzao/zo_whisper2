@@ -7,6 +7,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from transcript_pipeline.documentation.mission_pack import (
     consolidate_application_claims,
@@ -140,6 +141,33 @@ def normalize_evidence_bundle(bundle: MediaEvidenceBundle | dict[str, Any]) -> M
 
 def discover_application_candidates(bundle: MediaEvidenceBundle) -> list[dict[str, Any]]:
     candidates = [dict(item) for item in bundle.application_candidates]
+    metadata = bundle.video_metadata
+    for item in metadata.get("applications", []) if isinstance(metadata.get("applications", []), list) else []:
+        if isinstance(item, dict):
+            candidates.append(dict(item))
+    metadata_name = None
+    for key in ("application_name", "application", "visible_application_title", "app_name", "cmdb_name"):
+        value = metadata.get(key)
+        if isinstance(value, str) and value.strip():
+            metadata_name = value
+            break
+    url = str(metadata.get("url", "") or "")
+    domain = metadata.get("domain") or metadata.get("url_domain") or (urlparse(url).hostname if url else None)
+    metadata_name = metadata_name or domain or metadata.get("cmdb_id")
+    if metadata_name:
+        candidates.append({
+            "name": metadata_name,
+            "aliases": list(metadata.get("application_aliases", [])),
+            "application_id": metadata.get("application_id") or metadata.get("cmdb_id"),
+            "visible_title": metadata.get("visible_application_title"),
+            "domain": domain,
+            "support_context": metadata.get("support_context"),
+            "known_identifiers": list(metadata.get("known_identifiers", [])),
+            "identity_signals": [value for value in (metadata.get("visible_application_title"), domain,
+                                                       metadata.get("cmdb_id"), metadata.get("support_context")) if value],
+            "status": "NEW_APPLICATION",
+            "provenance": [{"source_id": bundle.media_id, "source_type": "VIDEO_METADATA"}],
+        })
     patterns = [
         re.compile(
             r"\b(?:application|system|platform|tool|service|product)\s+(?:is\s+)?(?:called|named)\s+['\"“]?([\w][\w .&()/-]{1,70})",
@@ -481,6 +509,9 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
     title = str(evidence.video_metadata.get("title") or basename)
     pack = {
         "schema_version": 2, "document_type": "SESSION_KNOWLEDGE_PACK", "media_id": evidence.media_id,
+        "source_identity": str(evidence.video_metadata.get("source_sha256")
+                                or evidence.video_metadata.get("path")
+                                or evidence.video_metadata.get("basename") or evidence.media_id),
         "source_video": evidence.video_metadata.get("basename", evidence.media_id), "title": title,
         "quality_state": quality_state, "quality_gates": gates,
         "executive_brief": "Evidence-derived session knowledge; source support is recorded for each claim.",
@@ -527,6 +558,7 @@ def consolidate_claims_across_sessions(session_packs: list[dict[str, Any]]) -> l
             item["supporting_claims"] = [item.get("claim_id")] if item.get("claim_id") else []
             item["supporting_sessions"] = [media_id]
             item["supporting_frames"] = [item["frame_id"]] if item.get("frame_id") else []
+            item["merge_relation"] = claim.get("merge_relation")
             identity = applications.get(item.get("application_id"), {})
             if identity.get("status") == "AMBIGUOUS" or item.get("application_id") in {None, "SESSION_GENERAL"}:
                 unresolved.append({"application_id": None, "claim": item.get("claim"),
@@ -598,8 +630,18 @@ def merge_cross_session_facts(existing: list[dict[str, Any]], incoming: list[dic
 
 
 def generate_application_mission_pack(application_id: str, facts: list[dict[str, Any]], output_dir: Path) -> dict[str, Any]:
-    selected = [item for item in facts if item.get("application_id") == application_id]
-    if not selected or any(not item.get("evidence_refs") or not item.get("supporting_sessions") for item in selected):
+    selected = [dict(item) for item in facts if item.get("application_id") == application_id]
+    for item in selected:
+        item.setdefault("supporting_evidence", list(item.get("evidence_refs", [])))
+        item.setdefault("supporting_claims", [])
+        item.setdefault("first_seen", {"session_id": (item.get("supporting_sessions") or [None])[0]})
+        item.setdefault("last_confirmed", item["first_seen"])
+        item.setdefault("confidence", 0)
+        item.setdefault("status", "NEEDS_REVIEW")
+        item.setdefault("conflicts", [])
+    if not selected or any(not item.get("evidence_refs") or not item.get("supporting_sessions")
+                           or not item.get("supporting_claims") or not item.get("supporting_evidence")
+                           for item in selected):
         raise ValueError("Mission Pack requires provenance-grounded application facts")
     app_name = application_id.replace("-", " ").title()
     slug = _slug(application_id)
@@ -715,6 +757,8 @@ def generate_cross_session_knowledge(
         normalized_packs.append(pack)
 
     facts = consolidate_claims_across_sessions(normalized_packs)
+    if any(fact.get("merge_relation") for fact in facts):
+        facts = merge_cross_session_facts([], facts)
     sessions_by_app: dict[str, set[str]] = {}
     for fact in facts:
         if fact.get("application_id"):

@@ -34,3 +34,6 @@ def test_partial_transcript_writes_diagnostic_and_blocks_ready_manual(tmp_path):
     assert result["transcript_quality"]["transcript_state"] == "PARTIAL"
     assert (frames_dir / "manual" / "diagnostic-report.json").exists()
     assert not (frames_dir / "manual" / "MANUAL.md").exists()
+    bundle = json.loads((frames_dir / "evidence" / "media-evidence-bundle.json").read_text(encoding="utf-8"))
+    assert bundle["media_id"] == "source.mp4"
+    assert bundle["speech_coverage"]["transcript_state"] == "PARTIAL"

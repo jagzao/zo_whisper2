@@ -175,6 +175,32 @@ def generate_documentation_v2(
         })
 
     # Compatibility evidence source (SPEC §10: manual/steps.json).
+    from transcript_pipeline.documentation.production import build_media_evidence_bundle
+
+    media_evidence = build_media_evidence_bundle(
+        media_id=str(video_info.get("media_id") or video_name),
+        video_metadata={**video_info, "basename": Path(video_name).name,
+                        "title": video_info.get("title") or Path(video_name).stem},
+        transcript_segments=[
+            {"segment_id": item.source_segment_ids[0] if item.source_segment_ids else item.evidence_id,
+             "start": item.timestamp_start, "end": item.timestamp_end, "text": item.transcript_excerpt,
+             "confidence": {"high": 0.9, "medium": 0.65, "low": 0.35}.get(item.confidence, 0.6)}
+            for item in timeline.items if item.transcript_excerpt and not item.untimed
+        ],
+        speech_coverage={**transcript_quality,
+                         "speech_quality_gate": transcript_quality.get("speech_quality_gate", "FAIL")},
+        visual_report=visual_report,
+        evidence_events=[
+            {"id": item.evidence_id, "start": item.timestamp_start, "end": item.timestamp_end,
+             "source_type": item.evidence_source, "source_id": str(video_info.get("media_id") or video_name),
+             "frame_id": item.frame_ref}
+            for item in timeline.items
+        ],
+    )
+    (frames_dir / "evidence" / "media-evidence-bundle.json").write_text(
+        json.dumps(media_evidence, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
     engine._write_steps_json(manual_dir, source, steps)
 
     doc_config = normalize_documentation_config(

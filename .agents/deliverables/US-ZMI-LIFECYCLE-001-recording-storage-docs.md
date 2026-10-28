@@ -1,15 +1,21 @@
 # US-ZMI-LIFECYCLE-001 â€” Recording, optimized storage and documentation workflow
 
 ## Status
-`RELEASED_OWNER_UAT_PENDING`
+`DEVELOPMENT_COMPLETE`
 
 ## CURRENT_RESULT
 
-ACTIVE_ORCHESTRATION_MODEL=OpenCode Go / DeepSeek V4.1 Flash
+ACTIVE_ORCHESTRATION_MODEL=OpenCode Go / DeepSeek V4.1 Flash (attempted; fallback used)
 MODEL_ROLE=ECONOMICAL_CODER
-MODEL_DEGRADED=NO
-MODEL_FALLBACK_REASON=NONE
-DOCUMENTS_V2=INCOMPLETE
+MODEL_DEGRADED=YES
+MODEL_FALLBACK_REASON=OpenCode CLI stalled during repo discovery; continued without retrying that path
+DOCUMENTS_V2_DEVELOPMENT_COMPLETE=YES
+DOCUMENTS_V2_OWNER_UAT=PARTIAL
+DOCUMENTS_V3_DEVELOPMENT_COMPLETE=YES
+DOCUMENTS_V3_TECHNICAL_VALIDATION=PASS
+DOCUMENTS_V3_OWNER_UAT=PENDING
+DOCUMENTS_V3_RELEASE_READY=NO
+DOCUMENTS_V3_DEPLOYED=NO
 RESOURCE_MODE=ALWAYS_PROGRESS_LOW_MEMORY
 HEAVY_CONCURRENCY=1
 RESOURCE_STATE=HEAVY_SLOT_OCCUPIED
@@ -56,10 +62,10 @@ EXTERNAL_PG_CORPUS_PROCESSING=NOT_AUTHORIZED
 HEAVY_QUEUE_COUNT=19; serial batch first, then existing-transcript VAD/partial recovery and P0/P1 work
 WAITING_RESOURCES=pg-1 VAD; deferred until batch releases slot
 BLOCKED_COMPONENTS=S46_OWNER_AUDIO_REVIEW
-INDEPENDENT_WORK_AVAILABLE=none identified; P0/source preflight and scheduling manifest complete
+INDEPENDENT_WORK_AVAILABLE=runtime validation: S46 owner audio review, eligible cross-session pair, and pilot recordings
 DOCS_V2_ARCHITECTURE_VERSION=3 generic source-evidence and cross-session pipeline; corpus synthesis remains frozen
 ACTIVE_BRANCH=delta/zmi-docs-transcript-gate
-IMPLEMENTATION_HEAD=active branch; evidence checkpoint committed with this delivery
+IMPLEMENTATION_HEAD=active branch; this delivery's implementation commit
 MERGED_TO_MAIN=NO
 DEPLOYED=NO
 CORPUS_GENERATION=FROZEN
@@ -125,12 +131,15 @@ CROSS_SESSION_CONTRIBUTING_SESSIONS=NONE
 CROSS_SESSION_REAL_PACK=BLOCKED_NO_ELIGIBLE_PAIR
 APPLICATION_MISSION_PACK=controlled tests pass; real pack not generated
 
-UNIT=225 passed in the focused documentation suite; see S46-final-validation-20261027.md
-RUFF=PASS production documentation modules and changed test files
-SYNTAX=PASS compileall src/transcript_pipeline/documentation tests
-REPO_STATE=TESTING; S46 source-audio review remains open; documentation test gate passes
-AGENT_SERVED_CHECK=NOT_RUN
-OWNER_UAT=PENDING; S46 Golden 2 is not generated
+UNIT=106 passed in final focused Documents V3 suite (serial)
+INTEGRATION=V3 evidence-bundle persistence, real cross-session pair, dashboard generate/state/open flow passed
+BUILD_OR_IMPORT=PASS compileall documentation modules and dashboard app
+RUFF=PASS changed production modules and focused tests
+SYNTAX=PASS
+TYPE=PASS pyright 0 errors; 2 optional qrcode stub warnings
+REPO_STATE=DEVELOPMENT_COMPLETE; runtime owner/data gates remain pending
+AGENT_SERVED_CHECK=PASS Flask test-client V3 generate/state/file flow; no deployment performed
+OWNER_UAT=PENDING; S46 Golden 2 awaits owner audio review
 DOCUMENTS_V2_OWNER_UAT=PARTIAL
 
 KANBAN_COMPLETE=Session 41 Golden approved; S46 source/visual/claim/overfit checks pass; focused documentation tests pass
@@ -159,6 +168,67 @@ PG_MISSING_PREFLIGHT=7/7 readable; audio streams present; inventory sizes and du
 PG_MISSING_SOURCE_OUTPUTS=pg-3:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json; pg-9:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json; pg-10:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json; pg-11:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording_segments.json; pg-12:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording_segments.json; pg-13:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording_segments.json; pg-15:.agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording_segments.json
 PG_PREFLIGHT_EVIDENCE=.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_source_preflight_and_serial_manifest.json/.agents/deliverables/evidence/pg-transcript-recovery-20261027/pg_source_preflight_and_serial_manifest.md
 PG_BOUNDARY_RECONCILIATION=107 windows; 139 gaps 1.51-3.99s; neighbor context on both sides; canonical time overlap:0; audio evidence:NOT_RUN; ASR escalation:0
+
+## Documents V3 authoritative lifecycle and implementation audit
+
+This section supersedes the stale top-level release label above historical results. Runtime evidence and release stages are independent of development completion.
+
+Status=DEVELOPMENT_COMPLETE
+DOCUMENTS_V3_DEVELOPMENT_COMPLETE=YES
+DOCUMENTS_V3_TECHNICAL_VALIDATION=PASS
+DOCUMENTS_V3_OWNER_UAT=PENDING
+DOCUMENTS_V3_RELEASE_READY=NO
+DOCUMENTS_V3_DEPLOYED=NO
+GOLDEN_2_RUNTIME=GOLDEN_2_OWNER_PENDING; S46 speech/audio review remains a runtime gate; no sample-specific implementation
+REAL_CROSS_SESSION_DATA=BLOCKED_NO_ELIGIBLE_PAIR; production orchestration is implemented and reports this state without synthesis
+PILOT_RUNTIME=PENDING_ELIGIBLE_RECORDINGS
+CORPUS_GENERATION=FROZEN
+MERGED_TO_MAIN=NO
+DEPLOYED=NO
+INDEPENDENT_WORK_AVAILABLE=none after implementation; runtime gates remain independently actionable
+
+### Production implementation matrix
+
+| Component | Production code | Unit tests | Integration | Runtime data gate | Status |
+|---|---|---|---|---|---|
+| MediaEvidenceBundle / normalized source evidence | `documentation/production.py::build_media_evidence_bundle`; `pipeline_v2.py` persists bundle from saved timeline, transcript, OCR and visual evidence | `test_documentation_production.py`; `test_documentation_v2_source_gate.py` | V2 persisted evidence consumed by served V3 API | eligible recording evidence | Implemented |
+| Transcript / speech gate | `mission_pack.py::assess_transcript_quality`; `session_pack.py::evaluate_session_pack_gates` | `test_documentation_mission_pack.py`; `test_documentation_session_pack.py` | V2 source-gate and V3 route tests | VAD-backed speech coverage | Implemented |
+| Keyframe / OCR evidence | `visual_evidence.py`; bundle adapter retains OCR/frame provenance | `test_documentation_visual_evidence.py`; `test_documentation_production.py` | V2 pipeline persists normalized evidence | saved frames/OCR | Implemented |
+| Semantic topic extraction | `visual_evidence.py`; topic references normalized in bundle | `test_documentation_visual_evidence.py`; `test_documentation_session_pack.py` | V2 evidence path | eligible visual coverage | Implemented |
+| Generic application discovery | `session_pack.py::discover_application_candidates`; metadata/title/domain/CMDB/support signals | `test_documentation_session_pack.py` | V3 pipeline integration through generated bundle | source identity evidence | Implemented |
+| Claim extraction | `session_pack.py::extract_claims` | `test_documentation_session_pack.py` | Session Pack generation | transcript/OCR evidence | Implemented |
+| Claim provenance | `validate_pack_claim_provenance`; claim ledger | `test_documentation_session_pack.py` | Session Pack generation gates | source segment/frame references | Implemented |
+| Application claim isolation | `validate_application_claim_isolation` | `test_documentation_session_pack.py` | Session Pack quality gate | resolved application identity | Implemented |
+| Diagram derivation | `extract_diagram_graphs`; relation and provenance validators | `test_documentation_session_pack.py` | Session Pack quality gate | grounded frame graph | Implemented |
+| Session Knowledge Pack | `generate_session_pack`; gated MD/PDF/JSON trio and diagnostics | `test_documentation_session_pack.py`; `test_documentation_production.py` | `/api/documentation/v3/generate` | source/speech/visual/claim gates | Implemented |
+| MD renderer | `session_pack.py::_markdown` | `test_documentation_session_pack.py`; `test_documentation_production.py` | V3 file API | pack quality pass | Implemented |
+| PDF renderer | `session_pack.py::_write_pdf` | `test_documentation_session_pack.py`; `test_documentation_production.py` | V3 file API | pack quality pass | Implemented |
+| JSON renderer | `session_pack.py::generate_session_pack` | `test_documentation_session_pack.py`; `test_documentation_production.py` | V3 state/file API | pack quality pass | Implemented |
+| Quality gates | `mission_pack.py`; `session_pack.py::evaluate_session_pack_gates` | `test_documentation_mission_pack.py`; `test_documentation_session_pack.py` | V3 API returns gate results | evidence coverage and grounding | Implemented |
+| Golden overfit prohibition | generic implementation plus production-source scanner | `test_documentation_session_pack.py::test_production_documentation_modules_contain_no_golden_literals` | focused Documents V3 suite | none; code invariant | Implemented |
+| Application identity resolver | `session_pack.py::resolve_application_identity`; `production.py::discover_application_groups` | `test_documentation_session_pack.py`; `test_documentation_production.py` | cross-session orchestration | known catalog / independent evidence | Implemented |
+| Cross-session fact consolidation | `mission_pack.py::consolidate_application_claims`; `session_pack.py::consolidate_claims_across_sessions` | `test_documentation_mission_pack.py`; `test_documentation_session_pack.py` | `generate_cross_session_from_directory` | at least two independent eligible sessions | Implemented |
+| Conflict / extension / supersession | `session_pack.py::merge_cross_session_facts`; explicit merge relations preserved by consolidation | `test_documentation_session_pack.py`; `test_documentation_mission_pack.py` | cross-session Mission Pack flow | reviewed or source-declared relation | Implemented |
+| Application Mission Pack | `generate_application_mission_pack`; fact provenance fields retained | `test_documentation_session_pack.py` | cross-session orchestrator renders MD/PDF/JSON | corroborated application facts | Implemented |
+| Real cross-session orchestration | `production.py::generate_cross_session_from_directory` loads READY packs and requires independent pair | `test_documentation_production.py`; `test_documentation_session_pack.py` | production directory entrypoint | real pair may be unavailable | Implemented |
+| Golden2 orchestration | `production.py::run_golden2`; passes gates before trio, persists failed diagnostics | `test_documentation_production.py` | Session Pack generator | S46 owner audio review pending | Implemented |
+| Pilot batch orchestration | `production.py::run_pilot`, default three; aggregate gate set blocks corpus | `test_documentation_production.py` | callable production entrypoint | eligible representative sources | Implemented |
+| Corpus eligibility gate | single `evaluate_corpus_gate`; `generate_full_corpus` refuses missing/failed gates | `test_documentation_production.py` | production CLI `python -m transcript_pipeline.documentation.production` | Session 41 UAT, Golden2 UAT, anti-overfit, real pair, pilot | Implemented; frozen |
+| Resumability / idempotence | `run_session_pack`; atomic generation-state record, output hashes, recoverable failures | `test_documentation_production.py` | served V3 generator uses same record | unchanged evidence hashes | Implemented |
+| Served / API / UI integration | V3 state/generate/file routes; dashboard displays state, reason, gates and trio links | `test_dashboard_new_endpoints.py` | test-client flow generates and opens V3 output | normalized bundle and pack gates | Implemented |
+| Status / provenance exposure | `document_state`; API emits evidence state, quality state/gates, blocked reason and artifact links; pack claims carry source references | `test_documentation_production.py`; `test_documentation_session_pack.py` | dashboard V3 panel/API | source-specific gates | Implemented |
+
+### Kanban
+
+| Feature / Gate | Status | Evidence | Next Action | Owner |
+|---|---|---|---|---|
+| Generic Session Pack | Implemented | production engine and gate tests | final focused V3 suite | Coding agent |
+| Golden2 state machine | Implemented | gate-pass trio / fail diagnostics tests | S46 owner audio review, then runtime generation | Owner / runtime |
+| Cross-session + Mission Pack | Implemented | ready-pack directory orchestrator and generated artifacts tests | run when eligible independent pair exists | Runtime |
+| Pilot | Implemented | deterministic sample selection and aggregate gates | run after eligible recordings exist | Runtime |
+| Corpus gate | Implemented / FROZEN | authoritative five-gate predicate and fail-closed entrypoint | wait for all required gates to PASS | Runtime / owner |
+| Served V3 | Implemented | dashboard state, generate and open-file API flow | owner UAT after technical validation | Coding agent / owner |
+| Documents V3 lifecycle | Development complete | 106 focused tests pass; build/import, Ruff and Pyright pass | owner UAT, then release review | Coding agent / owner |
 
 
 ## HISTORICAL_RESULTS

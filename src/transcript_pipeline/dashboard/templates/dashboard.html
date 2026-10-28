@@ -2624,16 +2624,27 @@
             if (!el || !mediaId) return;
             el.innerHTML = '<p style="color:var(--muted)">Loading documentation...</p>';
             const res = await api('/api/documentation?id=' + encodeURIComponent(mediaId));
+            const v3 = await api('/api/documentation/v3/state?id=' + encodeURIComponent(mediaId));
             if (!res.ok) {
-                el.innerHTML = `<p style="color:var(--muted)">${res.error || 'No documentation generated for this video yet.'}</p>`;
+                const canGenerate = v3.documentation_state === 'READY_FOR_V3';
+                const links = Object.entries(v3.files || {}).map(([kind, url]) => `<a href="${url}" target="_blank" rel="noopener" class="ai-package-link">V3 ${kind.toUpperCase()}</a>`).join(' · ');
+                const failedGates = Object.entries(v3.quality_gates || {}).filter(([, state]) => state !== 'PASS').map(([name]) => name).join(', ');
+                el.innerHTML = `<p style="color:var(--muted)">${res.error || 'No documentation generated for this video yet.'}</p><div class="ai-package-summary"><strong>Documents V3:</strong> ${escapeHtml(v3.documentation_state || 'BLOCKED_SOURCE')} ${v3.reason ? `— ${escapeHtml(v3.reason)}` : ''} ${failedGates ? `<div>Quality gates: ${escapeHtml(failedGates)}</div>` : ''} ${links} ${canGenerate ? '<button class="secondary" onclick="generateDocsV3()">Generate V3</button>' : ''}</div>`;
                 return;
             }
             if (res.documentation_status === 'DOCUMENT_SYNTHESIS_PENDING_V2') {
-                el.innerHTML = '<p class="status pending">Documentation V2 pending regeneration after Session 41 approval.</p>';
+                const links = Object.entries(v3.files || {}).map(([kind, url]) => `<a href="${url}" target="_blank" rel="noopener" class="ai-package-link">V3 ${kind.toUpperCase()}</a>`).join(' · ');
+                const failedGates = Object.entries(v3.quality_gates || {}).filter(([, state]) => state !== 'PASS').map(([name]) => name).join(', ');
+                el.innerHTML = `<p class="status pending">Legacy synthesis pending owner gate.</p><div class="ai-package-summary"><strong>Documents V3:</strong> ${escapeHtml(v3.documentation_state || 'BLOCKED_SOURCE')} ${v3.reason ? `— ${escapeHtml(v3.reason)}` : ''} ${failedGates ? `<div>Quality gates: ${escapeHtml(failedGates)}</div>` : ''} ${links} ${v3.documentation_state === 'READY_FOR_V3' ? '<button class="secondary" onclick="generateDocsV3()">Generate V3</button>' : ''}</div>`;
                 return;
             }
             window._docsSteps = res.steps || [];
             const manifest = res.manifest;
+            const v3Files = v3.files || {};
+            const failedV3Gates = Object.entries(v3.quality_gates || {}).filter(([, state]) => state !== 'PASS').map(([name]) => name).join(', ');
+            const v3Links = ['md', 'pdf', 'json'].filter(k => v3Files[k])
+                .map(k => `<a href="${v3Files[k]}" target="_blank" rel="noopener" class="ai-package-link">V3 ${k.toUpperCase()}</a>`).join(' · ');
+            const v3Panel = `<div class="ai-package-summary"><strong>Documents V3:</strong> ${escapeHtml(v3.documentation_state || 'BLOCKED_SOURCE')} ${v3.reason ? `— ${escapeHtml(v3.reason)}` : ''} ${failedV3Gates ? `· Quality gates: ${escapeHtml(failedV3Gates)}` : ''} ${v3Links ? `· ${v3Links}` : ''} ${v3.documentation_state === 'READY_FOR_V3' ? `<button class="secondary" onclick="generateDocsV3()">Generate V3</button>` : ''}</div>`;
             const lowCount = (res.steps || []).filter(s => s.confidence === 'low').length;
             const reviewedCount = (res.steps || []).filter(s => s.reviewed).length;
             const files = res.ai_package_files || {};
@@ -2664,9 +2675,18 @@
             const historyPanel = versions.length
                 ? `<section class="doc-version-history"><label>Documentation version <select id="docVersionSelect" onchange="viewDocumentationVersion(this.value)">${versions.map(v => `<option value="${v.documentation_version}">v${v.documentation_version} · ${escapeHtml(v.generated_at || '')}</option>`).join('')}</select></label><div id="docVersionMetadata" class="muted"></div><div id="docEvidenceLinks" class="ai-package-links"></div><pre id="docVersionPreview" class="hidden"></pre></section>`
                 : '';
-            el.innerHTML = humanBundle + aiSummary + historyPanel + `<div id="docsStepsList"></div>`;
+            el.innerHTML = humanBundle + v3Panel + aiSummary + historyPanel + `<div id="docsStepsList"></div>`;
             renderDocsSteps();
             if (versions.length) await viewDocumentationVersion(versions[0].documentation_version);
+        }
+
+        async function generateDocsV3() {
+            const mediaId = encodeURIComponent(window._mediaId);
+            const result = await fetch(`/api/documentation/v3/generate?id=${mediaId}`, { method: 'POST' });
+            const body = await result.json();
+            if (result.ok) showToast(`Documents V3: ${body.state}`);
+            else showToast(body.reason || body.error || 'Documents V3 generation blocked');
+            loadDocs();
         }
 
         async function viewDocumentationVersion(versionNumber) {

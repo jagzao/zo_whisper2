@@ -814,7 +814,7 @@ def _transcript_coverage(transcript_path: Path, media_duration: float | None, ex
     leading_gap = max(0.0, timed_segments[0][0])
     trailing_gap = max(0.0, media_duration - last_timestamp) if media_duration else None
     status = "TRANSCRIPT_READY"
-    if (coverage is None or last_timestamp > media_duration * 1.05 or leading_gap > 300
+    if (coverage is None or media_duration is None or last_timestamp > media_duration * 1.05 or leading_gap > 300
             or max_internal_gap > 300 or (trailing_gap is not None and trailing_gap > 300)):
         status = "TRANSCRIPT_PARTIAL"
     return {"status": status, "last_timestamp": last_timestamp, "coverage_percent": coverage,
@@ -2720,6 +2720,73 @@ def api_documentation_generate() -> Any:
             _doc_generation_inflight.discard(media_id)
 
     return jsonify({"ok": True, "documentation": _resolve_documentation(target, root)})
+
+
+@app.route("/api/documentation/v3/state")
+def api_documentation_v3_state() -> Any:
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    from transcript_pipeline.documentation.production import document_state
+
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None:
+        return jsonify({"ok": False, "error": "No documentation evidence location"}), 404
+    evidence = frames_parent / "evidence" / "media-evidence-bundle.json"
+    output = frames_parent / "v3"
+    pack = output / f"{target.stem}.json"
+    state = document_state(evidence, pack)
+    state.update({"ok": True, "media_id": request.args.get("id", ""),
+                  "reason": state.get("reason") or (None if evidence.is_file() else "Normalized MediaEvidenceBundle is not available yet."),
+                  "generate_url": f"/api/documentation/v3/generate?id={quote(request.args.get('id', ''), safe='')}",
+                  "files": {kind: f"/api/documentation/v3/file?id={quote(request.args.get('id', ''), safe='')}&kind={kind}"
+                            for kind in ("md", "pdf", "json") if (output / f"{target.stem}.{kind}").is_file()}})
+    return jsonify(state)
+
+
+@app.route("/api/documentation/v3/generate", methods=["POST"])
+def api_documentation_v3_generate() -> Any:
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None:
+        return jsonify({"ok": False, "error": "No documentation evidence location"}), 404
+    evidence_path = frames_parent / "evidence" / "media-evidence-bundle.json"
+    if not evidence_path.is_file():
+        return jsonify({"ok": False, "state": "BLOCKED_SOURCE",
+                        "reason": "Normalized MediaEvidenceBundle is not available yet."}), 409
+    media_id = request.args.get("id", "")
+    with _doc_generation_lock:
+        if media_id in _doc_generation_inflight:
+            return jsonify({"ok": False, "state": "GENERATING", "error": "V3 generation is already running."}), 409
+        _doc_generation_inflight.add(media_id)
+    try:
+        from transcript_pipeline.documentation.production import run_session_pack
+
+        bundle = json.loads(evidence_path.read_text(encoding="utf-8"))
+        result = run_session_pack(bundle, frames_parent / "v3")
+        return jsonify({"ok": True, "state": result["status"],
+                        "generation_state": result.get("generation_state"),
+                        "gates": result.get("gates"),
+                        "files": {key: str(value) for key, value in result.get("paths", {}).items()}})
+    except (OSError, ValueError, TypeError) as exc:
+        logger.exception("[DOCS V3] generation failed for %s", target.name)
+        return jsonify({"ok": False, "state": "FAILED_RECOVERABLE", "error": str(exc)}), 500
+    finally:
+        with _doc_generation_lock:
+            _doc_generation_inflight.discard(media_id)
+
+
+@app.route("/api/documentation/v3/file")
+def api_documentation_v3_file() -> Any:
+    target = _from_media_id(request.args.get("id", ""), [MediaRoot.VIDEOS, MediaRoot.AUDIO])
+    kind = request.args.get("kind", "")
+    if kind not in {"md", "pdf", "json"}:
+        return jsonify({"ok": False, "error": "Unsupported document format"}), 400
+    frames_parent = _documentation_dirs(target)
+    if frames_parent is None:
+        return jsonify({"ok": False, "error": "No documentation evidence location"}), 404
+    path = frames_parent / "v3" / f"{target.stem}.{kind}"
+    if not path.is_file():
+        return jsonify({"ok": False, "error": "Document is not ready"}), 404
+    return send_file(path, as_attachment=False)
 
 
 @app.route("/doc-asset")

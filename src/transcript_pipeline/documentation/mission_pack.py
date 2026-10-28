@@ -67,7 +67,7 @@ def measure_source_coverage(
     first = min(starts, default=None)
     last = max(ends, default=None)
     visual = sorted(float(t) for t in visual_timestamps)
-    gaps = [
+    gaps: list[dict[str, Any]] = [
         {"start": float(a["end"]), "end": float(b["start"]), "seconds": float(b["start"]) - float(a["end"])}
         for a, b in zip(transcript_segments, transcript_segments[1:])
         if a.get("end") is not None and b.get("start") is not None
@@ -134,7 +134,7 @@ def assess_transcript_quality(
         normalized.append((start, end))
     normalized.sort()
     first, last = normalized[0][0], max(end for _, end in normalized)
-    gaps = [
+    gaps: list[dict[str, Any]] = [
         {"start": previous_end, "end": start, "seconds": round(start - previous_end, 3)}
         for (_, previous_end), (start, _) in zip(normalized, normalized[1:])
         if start - previous_end > 30
@@ -419,7 +419,10 @@ def consolidate_application_claims(
         app_id = item.get("application_id")
         source_id = item.get("source_id")
         session_id = item.get("session_id") or item.get("first_seen", {}).get("session_id")
-        if not all(isinstance(value, str) and value.strip() for value in (claim, app_id, source_id, session_id)):
+        if (not isinstance(claim, str) or not claim.strip()
+                or not isinstance(app_id, str) or not app_id.strip()
+                or not isinstance(source_id, str) or not source_id.strip()
+                or not isinstance(session_id, str) or not session_id.strip()):
             continue
         if app_id == "SESSION_GENERAL":
             continue
@@ -443,6 +446,7 @@ def consolidate_application_claims(
             "status": "NEEDS_REVIEW" if item.get("verification_state") in {"SOURCE_UNCERTAIN", "NEEDS_REVIEW", "CONFLICTING"} else "CONFIRMED",
             "verification_state": item.get("verification_state", "NEEDS_REVIEW"),
             "conflicts": list(item.get("conflicts", [])),
+            "merge_relation": item.get("merge_relation"),
         }
         facts = merge_application_facts(facts, [fact])
     for fact in facts:
