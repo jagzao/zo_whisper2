@@ -495,11 +495,11 @@
       "source_readable": true,
       "audio_stream_present": true,
       "audio_stream_count": 1,
-      "duration_seconds": 2607.8125,
+      "duration_seconds": 2607.744,
       "duration_matches_map": true,
       "duration_delta_seconds": 0.001,
-      "state": "QUEUED",
-      "stage": "QUEUED",
+      "state": "NEEDS_REVIEW",
+      "stage": "OUTPUT_PERSISTED",
       "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json",
       "output_destination_parent_exists": false,
       "output_checkpoint_present": false,
@@ -553,8 +553,16 @@
           "state": "QUEUED"
         }
       ],
-      "preflight_state": "READY_TO_QUEUE",
-      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+      "preflight_state": "OUTPUT_IDENTITY_VALIDATED_HIGH",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media",
+      "canonical_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording_segments.json",
+      "segments": 1723,
+      "words": 6387,
+      "invalid_timestamps": 0,
+      "last_segment_end": 2602.75,
+      "media_reach_percent": 99.81,
+      "speech_coverage": "NOT_YET_VALIDATED",
+      "completed_at": "2026-10-27T18:43:59Z"
     },
     {
       "media_id": "pg-9",
@@ -1068,7 +1076,7 @@
     "missing_checkpoints_present": 0,
     "missing_outputs_will_be_candidates_until_validation": true
   },
-  "updated_at": "2026-10-28T01:42:52Z",
+  "updated_at": "2026-10-28T01:56:24Z",
   "local_asr_authorization": "STANDING_APPROVED",
   "external_pg_corpus_processing": "NOT_AUTHORIZED",
   "session16_17_comparison": {
@@ -1109,9 +1117,23 @@
   "worker_pid": 1,
   "active_process_pid": 47,
   "worker_alive": true,
-  "status_api_consistent": false,
-  "evidence_conflict": true,
+  "status_api_consistent": "PARTIAL; batch job/controller alive, API stage store, per-file log identifies pg-10 TRANSCRIBE",
+  "evidence_conflict": false,
   "pg9_state": "NEEDS_REVIEW",
   "pg9_checkpoint": "NONE",
-  "pg9_recovery_action": "NONE; output completed and identity reconciled; VAD/speech coverage review pending"
+  "pg9_recovery_action": "NONE; output completed and identity reconciled; VAD/speech coverage review pending",
+  "active_batch_remaining": 4,
+  "active_batch_remaining_media_ids": [
+    "pg-11",
+    "pg-12",
+    "pg-13",
+    "pg-15"
+  ],
+  "next_batch_source": "pg-11",
+  "next_non_batch_heavy_job": "pg-1 VAD",
+  "pg_valid": 0,
+  "pg_partial": 8,
+  "pg_needs_review": 7,
+  "pg_missing": 5,
+  "pg_failed": 0
 }
