@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-27T21:42:00Z",
+  "updated_at": "2026-10-28T01:42:52Z",
   "policy": "one worker per media; source identity is immutable; recovery outputs remain separate until validated",
   "records": [
     {
@@ -441,9 +441,49 @@
     {
       "media_id": "pg-9",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
+      "transcript": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
+      "state": "NEEDS_REVIEW",
+      "next_action": "Full transcription output persisted and source identity/duration reconciled; 904 segments are timestamp-valid through 3571.18s of 3572.032s. VAD/speech coverage remains unassessed; no retranscription. Review after the current heavy slot releases.",
+      "transcript_state": "NEEDS_REVIEW",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_size_match": true,
+        "candidate_sidecar_count": 0,
+        "same_session_unmatched_sidecars": 0,
+        "state": "NEEDS_REVIEW",
+        "full_transcription_started": true,
+        "job_state": "COMPLETED",
+        "model": "large-v3",
+        "checkpoint": "NONE",
+        "active_stage": null,
+        "active_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
+        "output_validated": true,
+        "transcript_identity": "HIGH",
+        "segments_validated": 904,
+        "words_validated": 8573,
+        "invalid_timestamps": 0,
+        "media_duration_seconds": 3572.032,
+        "last_segment_end": 3571.18,
+        "speech_coverage": "NOT_YET_VALIDATED",
+        "completed_at": "2026-10-28T00:49:36Z"
+      },
+      "job_state": "COMPLETED",
+      "job_state_history": [
+        "QUEUED",
+        "PROCESSING",
+        "COMPLETED"
+      ],
+      "model": "large-v3",
+      "checkpoint": null
+    },
+    {
+      "media_id": "pg-10",
+      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
       "transcript": null,
       "state": "PROCESSING",
-      "next_action": "Adopt active whisper-zmi-1 transcription; do not schedule duplicate. Validate generated transcript identity/output on completion, reconcile queue counts, then continue serially with pg-1 VAD.",
+      "next_action": "Adopt current whisper-zmi-1 master pass; do not schedule duplicate. TRANSCRIBE started 2026-10-28T00:49:43Z; VAD enabled at 00:51:07Z; output/checkpoint unavailable until source completion.",
       "transcript_state": "MISSING",
       "lock": "IDLE",
       "progress": {
@@ -458,40 +498,13 @@
         "model": "large-v3",
         "checkpoint": "NONE (full root pipeline has no chunk checkpoint)",
         "active_stage": "TRANSCRIBE",
-        "active_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json"
+        "active_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json",
+        "last_progress_at": "2026-10-28T00:51:07Z"
       },
       "job_state": "PROCESSING",
       "job_state_history": [
         "QUEUED",
         "PROCESSING"
-      ],
-      "model": "large-v3",
-      "checkpoint": null,
-      "active_heavy_job": "whisper-zmi-1 / transcript_pipeline.pipeline.master"
-    },
-    {
-      "media_id": "pg-10",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
-      "transcript": null,
-      "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
-      "transcript_state": "MISSING",
-      "lock": "IDLE",
-      "progress": {
-        "identity_match": "HIGH",
-        "source_path_match": true,
-        "source_size_match": true,
-        "candidate_sidecar_count": 0,
-        "same_session_unmatched_sidecars": 0,
-        "state": "MISSING",
-        "full_transcription_started": false,
-        "job_state": "QUEUED",
-        "model": "large-v3",
-        "checkpoint": null
-      },
-      "job_state": "QUEUED",
-      "job_state_history": [
-        "QUEUED"
       ],
       "model": "large-v3",
       "checkpoint": null
@@ -608,13 +621,14 @@
   "active_workers": [
     {
       "pid": 0,
-      "pid_namespace": "container PID is not host PID; sentinel reserves serial queue slot",
+      "pid_namespace": "container PID sentinel reserves serial queue slot",
       "container": "whisper-zmi-1",
-      "container_pid": 6865,
-      "media_id": "pg-9",
+      "container_pid": 47,
+      "controller_pid": 1,
+      "media_id": "pg-10",
       "job": "transcript_pipeline.pipeline.master full transcription",
       "model": "large-v3",
-      "started_at": "2026-10-27T15:01:48.479454+00:00",
+      "started_at": "2026-10-28T00:49:37.070000+00:00",
       "external_process": true
     }
   ]

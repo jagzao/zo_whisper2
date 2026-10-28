@@ -3,7 +3,7 @@
   "created_by": "local read-only preflight",
   "resource_mode": "ALWAYS_PROGRESS_LOW_MEMORY",
   "heavy_concurrency": 1,
-  "active_heavy_job": "whisper-zmi-1 / transcript_pipeline.pipeline.master",
+  "active_heavy_job": "whisper-zmi-1 / transcript_pipeline.pipeline.master (batch)",
   "next_heavy_job": "pg-1 VAD audit",
   "waiting_resources": "pg-1",
   "recovery_windows_raw": 448,
@@ -567,8 +567,8 @@
       "duration_seconds": 3572.032,
       "duration_matches_map": true,
       "duration_delta_seconds": 0.0,
-      "state": "PROCESSING",
-      "stage": "TRANSCRIBE",
+      "state": "NEEDS_REVIEW",
+      "stage": "OUTPUT_PERSISTED",
       "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
       "output_destination_parent_exists": false,
       "output_checkpoint_present": false,
@@ -630,12 +630,18 @@
           "state": "QUEUED"
         }
       ],
-      "preflight_state": "ACTIVE_ADOPTED",
+      "preflight_state": "OUTPUT_IDENTITY_VALIDATED_HIGH",
       "temporary_audio_extraction": "NONE; planned runner decodes directly from source media",
       "active_heavy_job": "whisper-zmi-1 / transcript_pipeline.pipeline.master",
       "active_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
       "active_checkpoint": "NONE",
-      "chunk_plan_state": "NOT_APPLICABLE_ACTIVE_ROOT_PIPELINE"
+      "chunk_plan_state": "NOT_APPLICABLE_ACTIVE_ROOT_PIPELINE",
+      "canonical_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
+      "segments": 904,
+      "words": 8573,
+      "invalid_timestamps": 0,
+      "speech_coverage": "NOT_YET_VALIDATED",
+      "completed_at": "2026-10-28T00:49:36Z"
     },
     {
       "media_id": "pg-10",
@@ -648,8 +654,8 @@
       "duration_seconds": 3011.4565,
       "duration_matches_map": true,
       "duration_delta_seconds": 0.0,
-      "state": "QUEUED",
-      "stage": "QUEUED",
+      "state": "PROCESSING",
+      "stage": "TRANSCRIBE",
       "output_destination": ".agents/deliverables/evidence/pg-transcript-recovery/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json",
       "output_destination_parent_exists": false,
       "output_checkpoint_present": false,
@@ -711,8 +717,13 @@
           "state": "QUEUED"
         }
       ],
-      "preflight_state": "READY_TO_QUEUE",
-      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media"
+      "preflight_state": "ACTIVE_ADOPTED",
+      "temporary_audio_extraction": "NONE; planned runner decodes directly from source media",
+      "active_heavy_job": "whisper-zmi-1 / transcript_pipeline.pipeline.master",
+      "active_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json",
+      "active_checkpoint": "NONE",
+      "chunk_plan_state": "NOT_APPLICABLE_ACTIVE_ROOT_PIPELINE",
+      "last_progress_at": "2026-10-28T00:51:07Z"
     },
     {
       "media_id": "pg-11",
@@ -1057,7 +1068,7 @@
     "missing_checkpoints_present": 0,
     "missing_outputs_will_be_candidates_until_validation": true
   },
-  "updated_at": "2026-10-27T21:42:00Z",
+  "updated_at": "2026-10-28T01:42:52Z",
   "local_asr_authorization": "STANDING_APPROVED",
   "external_pg_corpus_processing": "NOT_AUTHORIZED",
   "session16_17_comparison": {
@@ -1082,14 +1093,25 @@
     },
     "selection_rule": "Keep both candidate copies; candidate-specific coverage remains unavailable without VAD; do not select canonical by inference."
   },
-  "active_media_id": "pg-9",
-  "active_source": "Videos/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording.mp4",
+  "active_media_id": "pg-10",
+  "active_source": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
   "active_project": "P&G",
   "active_stage": "TRANSCRIBE",
-  "active_progress": "large-v3 full transcription in progress; duration 3572.032s; checkpoint unavailable in root pipeline",
-  "active_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording_segments.json",
+  "active_progress": "RUNNING_SLOW; media duration 3011.456s; VAD enabled at 2026-10-28T00:51:07Z; no checkpoint/output yet; process thread CPU +36.3s over 15.8s while output/log remained unchanged",
+  "active_output": "CarpetaTranscripciones/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json",
   "active_checkpoint": "NONE",
   "resource_state": "HEAVY_SLOT_OCCUPIED",
-  "heavy_slot_occupied_by": "pg-9",
-  "critical_pressure": false
+  "heavy_slot_occupied_by": "pg-10",
+  "critical_pressure": false,
+  "api_stage": "store",
+  "last_progress_at": "2026-10-28T00:51:07Z",
+  "progress_delta": "pg-10 output 0 bytes; no checkpoint; master log unchanged; prior pg-9 output persisted and tracker completed at 00:49:36Z",
+  "worker_pid": 1,
+  "active_process_pid": 47,
+  "worker_alive": true,
+  "status_api_consistent": false,
+  "evidence_conflict": true,
+  "pg9_state": "NEEDS_REVIEW",
+  "pg9_checkpoint": "NONE",
+  "pg9_recovery_action": "NONE; output completed and identity reconciled; VAD/speech coverage review pending"
 }
