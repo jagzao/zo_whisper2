@@ -1341,7 +1341,11 @@ def _markdown(pack: dict[str, Any]) -> str:
     if pack.get("glossary"):
         lines.extend(["## Glossary", ""])
         for item in pack["glossary"]:
-            refs = ", ".join(ref.get("event_id") or ref.get("frame_id") or "" for ref in item.get("source_evidence_refs", []))
+            refs = ", ".join(
+                str(ref_id)
+                for ref in item.get("source_evidence_refs", [])
+                if (ref_id := ref.get("event_id") or ref.get("frame_id"))
+            )
             lines.append(f"- **{item['term']}**: {item['recorded_context']}" + (f" [Evidence: {refs}]" if refs else ""))
         lines.append("")
     lines.extend(["", "## Evidence Timeline", ""])

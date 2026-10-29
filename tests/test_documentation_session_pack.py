@@ -6,6 +6,7 @@ import pytest
 from transcript_pipeline.documentation.production import run_pilot
 from transcript_pipeline.documentation.session_pack import (
     MediaEvidenceBundle,
+    _markdown,
     build_open_questions,
     classify_semantic_topic,
     compare_session_pack_to_golden,
@@ -575,6 +576,19 @@ def test_golden_comparison_detects_topic_and_diagram_coverage_regression():
         "derived_diagrams": [{}], "common_sections": {"Open Questions": [{}], "Glossary": [{}]}}
     result = compare_session_pack_to_golden(pack, golden)
     assert result["COVERAGE_REGRESSION"] == "YES"
+
+
+def test_glossary_renderer_omits_empty_evidence_references():
+    rendered = _markdown({"title": "Session", "quality_state": "READY", "executive_brief": "Summary.",
+                         "applications": [], "canonical_facts": [], "claims": [],
+                         "diagrams": [], "open_questions": [], "evidence_events": [],
+                         "glossary": [{"term": "Example", "recorded_context": "Recorded meaning.",
+                                       "source_evidence_refs": [{"frame_id": "frame_0005.png"},
+                                                                 {"event_id": None, "frame_id": None},
+                                                                 {}]}],
+                         "quality_evidence_notes": [], "procedures": []})
+    assert "[Evidence: frame_0005.png]" in rendered
+    assert "[Evidence: frame_0005.png, , ]" not in rendered
 
 
 def test_golden_comparison_requires_material_fact_coverage_within_topic():
