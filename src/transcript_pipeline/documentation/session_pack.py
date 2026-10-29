@@ -604,6 +604,10 @@ def _canonical_fact_text(text: str, app_name: str) -> str:
         value = f"{app_name} provides external access to public safety data sheets and technical documents and supports subscriptions and email notifications"
     value = re.sub(r"^(?:this|the) application\b", app_name, value, flags=re.I)
     value = re.sub(r"^my impression is that (.+)$", r"Evidence suggests \1", value, flags=re.I)
+    lifecycle = re.match(r"^(?:but )?since .+? is in (.+?) lifecycle status,? we will be proceeding with the transition to .+$",
+                         value, re.I)
+    if lifecycle:
+        value = f"The application is in {lifecycle.group(1).strip()} lifecycle status"
     value = re.sub(r"^from an admin perspective, the application\b", app_name, value, flags=re.I)
     value = re.sub(r"^data classification for this is\s+", "The application's data classification is ", value, flags=re.I)
     value = re.sub(r",\s*[^,.;]+?\s+and so forth\b", "", value, flags=re.I)
@@ -636,7 +640,12 @@ def _semantic_key(text: str, app_name: str | list[str]) -> str:
     value = re.sub(r"\bcom\b", " ", value)
     value = re.sub(r"\b(?:this|the) application\b", " ", value)
     value = re.sub(r"\b(?:so|then|basically|you know|i mean|actually|this|that|the)\b", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
+    value = re.sub(r"\s+", " ", value).strip()
+    if "lifecycle" in value and re.search(r"\bleverage\s*(?:optimized?|optimize)\b", value):
+        return "application lifecycle leverage optimize"
+    if "lifecycle" in value and re.search(r"\bsunset\b", value):
+        return "application lifecycle sunset"
+    return value
 
 
 def _same_semantic_fact(left: str, right: str) -> bool:

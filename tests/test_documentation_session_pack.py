@@ -662,3 +662,34 @@ def test_repeated_broken_passive_transcript_is_not_promoted_as_a_fact():
     claims = extract_claims(bundle, [{"application_id": "service-alpha", "name": "Service Alpha",
                                      "aliases": ["Service Alpha"]}])
     assert claims == []
+
+
+def test_lifecycle_sentence_keeps_observed_status_without_future_transition_guess():
+    source = {"application_id": "service-alpha", "claim":
+              "Since this service is in review lifecycle status, we will be proceeding with the transition to an unclear target.",
+              "source_type": "TRANSCRIPT", "timestamp": 10, "confidence": .8,
+              "verification_state": "SOURCE_CONFIRMED", "supporting_sources": [{"source_id": "s",
+              "source_type": "TRANSCRIPT", "timestamp": 10,
+              "segments": [{"segment_id": "seg-10", "start": 10, "end": 12}]}], "ambiguities": []}
+    fact = consolidate_semantic_claims([source], [{"application_id": "service-alpha", "name": "Service Alpha"}], "s")[0]
+    assert "review lifecycle status" in fact["canonical_fact"]
+    assert "unclear target" not in fact["canonical_fact"]
+    assert fact["current_live_validation_required"] is True
+
+
+def test_equivalent_lifecycle_status_merges_and_retains_both_sources():
+    app = [{"application_id": "service-alpha", "name": "Service Alpha"}]
+    claims = [
+        {"application_id": "service-alpha", "claim": "Application catalogue records lifecycle as Leverage/Optimize.",
+         "source_type": "VIDEO_FRAME", "timestamp": 10, "confidence": .9,
+         "verification_state": "VISUAL_CONFIRMED", "supporting_sources": [
+             {"source_id": "s", "source_type": "VIDEO_FRAME", "frame_id": "f1"}], "ambiguities": []},
+        {"application_id": "service-alpha", "claim": "Service Alpha is in leverage optimized lifecycle status.",
+         "source_type": "TRANSCRIPT", "timestamp": 11, "confidence": .8,
+         "verification_state": "SOURCE_CONFIRMED", "supporting_sources": [
+             {"source_id": "s", "source_type": "TRANSCRIPT", "timestamp": 11,
+              "segments": [{"segment_id": "s1", "start": 11, "end": 12}]}], "ambiguities": []},
+    ]
+    facts = consolidate_semantic_claims(claims, app, "s")
+    assert len(facts) == 1
+    assert {source["source_type"] for source in facts[0]["source_evidence_refs"]} == {"VIDEO_FRAME", "TRANSCRIPT"}

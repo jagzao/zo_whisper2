@@ -1,5 +1,5 @@
 {
-  "canonical_facts": 37,
+  "canonical_facts": 36,
   "golden_canonical_facts": 30,
   "applications": 2,
   "golden_applications": 2,
@@ -29,7 +29,7 @@
   ],
   "uncovered_golden_topics": [],
   "GOLDEN_MATERIAL_FACTS": 23,
-  "V3_MATERIAL_FACTS": 32,
+  "V3_MATERIAL_FACTS": 31,
   "GOLDEN_FACTS_SEMANTICALLY_COVERED": 23,
   "MISSING_GOLDEN_MATERIAL_FACTS": [],
   "missing_golden_topics": [],
@@ -41,7 +41,7 @@
   "golden_glossary_entries": 4,
   "raw_transcript_claims": 0,
   "semantic_duplicates": 0,
-  "duplicate_support_refs_consolidated": 13,
+  "duplicate_support_refs_consolidated": 14,
   "low_confidence_claims": 0,
   "golden_low_confidence_claims": 4,
   "unsupported_facts": 0,
@@ -57,11 +57,11 @@
     "PG_REGDOC"
   ],
   "APPLICATION_CLAIM_COUNTS": {
-    "NA_CPRT_PANELIST_PAYMENTS": 8,
+    "NA_CPRT_PANELIST_PAYMENTS": 7,
     "PG_REGDOC": 24
   },
   "SESSION_GENERAL_CLAIMS": 0,
-  "MATERIAL_SEMANTIC_CLAIMS": 32,
+  "MATERIAL_SEMANTIC_CLAIMS": 31,
   "VISUAL_SEMANTIC_CLAIMS": 16,
   "RAW_TRANSCRIPT_FRAGMENTS_SUPPRESSED": 172,
   "RAW_OCR_CLAIMS_SUPPRESSED": 31,

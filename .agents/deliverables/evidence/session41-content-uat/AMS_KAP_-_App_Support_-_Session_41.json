@@ -95,8 +95,8 @@
           "ambiguities": []
         },
         {
-          "claim_id": "claim-41b09206499d",
-          "knowledge_id": "knowledge-f95404352982",
+          "claim_id": "claim-2f40188b4f24",
+          "knowledge_id": "knowledge-42ca4da1c659",
           "version": 1,
           "application_id": "north-america-central-product-research-testing-panelist-payments",
           "topic": "Lifecycle",
@@ -172,8 +172,8 @@
           "ambiguities": []
         },
         {
-          "claim_id": "claim-e9c5db634150",
-          "knowledge_id": "knowledge-d691fb20f43c",
+          "claim_id": "claim-61c74714e59c",
+          "knowledge_id": "knowledge-bd24b2570d9d",
           "version": 1,
           "application_id": "north-america-central-product-research-testing-panelist-payments",
           "topic": "Lifecycle",
@@ -181,66 +181,8 @@
           "claim": "NA_CPRT_PANELIST_PAYMENTS: Application catalogue records lifecycle as Leverage/Optimize.",
           "source_type": "SEMANTIC_CONSOLIDATED",
           "source_types": [
+            "TRANSCRIPT",
             "VIDEO_FRAME"
-          ],
-          "source_id": "session41-final-owner-uat",
-          "source_session": "session41-final-owner-uat",
-          "source_sessions": [
-            "session41-final-owner-uat"
-          ],
-          "timestamp": 1251.8396398378377,
-          "observed_at": {
-            "source_session": "session41-final-owner-uat",
-            "timestamp_seconds": 1251.8396398378377,
-            "timecode": "00:20:51"
-          },
-          "support_observations": [
-            {
-              "source_session": "session41-final-owner-uat",
-              "timestamp_seconds": 1251.8396398378377,
-              "timecode": "00:20:51"
-            }
-          ],
-          "current_live_validation_required": true,
-          "current_state": "NOT_CURRENTLY_VERIFIED",
-          "frame_id": "frame_0021.png",
-          "confidence": 0.93,
-          "verification_state": "SOURCE_CONFIRMED",
-          "first_seen": {
-            "session_id": "session41-final-owner-uat",
-            "timestamp": 1251.8396398378377
-          },
-          "last_confirmed": null,
-          "supporting_sources": [
-            {
-              "source_type": "VIDEO_FRAME",
-              "frame_id": "frame_0021.png",
-              "timestamp": 1251.8396398378377,
-              "source_id": "session41-final-owner-uat"
-            }
-          ],
-          "source_evidence_refs": [
-            {
-              "source_type": "VIDEO_FRAME",
-              "frame_id": "frame_0021.png",
-              "timestamp": 1251.8396398378377,
-              "source_id": "session41-final-owner-uat"
-            }
-          ],
-          "conflicts": [],
-          "ambiguities": []
-        },
-        {
-          "claim_id": "claim-243088b87392",
-          "knowledge_id": "knowledge-09a5b83ce522",
-          "version": 1,
-          "application_id": "north-america-central-product-research-testing-panelist-payments",
-          "topic": "Lifecycle",
-          "canonical_fact": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-          "claim": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-          "source_type": "SEMANTIC_CONSOLIDATED",
-          "source_types": [
-            "TRANSCRIPT"
           ],
           "source_id": "session41-final-owner-uat",
           "source_session": "session41-final-owner-uat",
@@ -258,11 +200,16 @@
               "source_session": "session41-final-owner-uat",
               "timestamp_seconds": 1248.4,
               "timecode": "00:20:48"
+            },
+            {
+              "source_session": "session41-final-owner-uat",
+              "timestamp_seconds": 1251.8396398378377,
+              "timecode": "00:20:51"
             }
           ],
           "current_live_validation_required": true,
           "current_state": "NOT_CURRENTLY_VERIFIED",
-          "frame_id": null,
+          "frame_id": "frame_0021.png",
           "confidence": 0.75,
           "verification_state": "SOURCE_CONFIRMED",
           "first_seen": {
@@ -291,6 +238,12 @@
                 }
               ],
               "source_id": "session41-final-owner-uat"
+            },
+            {
+              "source_type": "VIDEO_FRAME",
+              "frame_id": "frame_0021.png",
+              "timestamp": 1251.8396398378377,
+              "source_id": "session41-final-owner-uat"
             }
           ],
           "source_evidence_refs": [
@@ -313,6 +266,12 @@
                   "end": 1256.46
                 }
               ],
+              "source_id": "session41-final-owner-uat"
+            },
+            {
+              "source_type": "VIDEO_FRAME",
+              "frame_id": "frame_0021.png",
+              "timestamp": 1251.8396398378377,
               "source_id": "session41-final-owner-uat"
             }
           ],
@@ -628,8 +587,8 @@
           "title": "Lifecycle",
           "claims": [
             {
-              "claim_id": "claim-41b09206499d",
-              "knowledge_id": "knowledge-f95404352982",
+              "claim_id": "claim-2f40188b4f24",
+              "knowledge_id": "knowledge-42ca4da1c659",
               "version": 1,
               "application_id": "north-america-central-product-research-testing-panelist-payments",
               "topic": "Lifecycle",
@@ -705,8 +664,8 @@
               "ambiguities": []
             },
             {
-              "claim_id": "claim-e9c5db634150",
-              "knowledge_id": "knowledge-d691fb20f43c",
+              "claim_id": "claim-61c74714e59c",
+              "knowledge_id": "knowledge-bd24b2570d9d",
               "version": 1,
               "application_id": "north-america-central-product-research-testing-panelist-payments",
               "topic": "Lifecycle",
@@ -714,66 +673,8 @@
               "claim": "NA_CPRT_PANELIST_PAYMENTS: Application catalogue records lifecycle as Leverage/Optimize.",
               "source_type": "SEMANTIC_CONSOLIDATED",
               "source_types": [
+                "TRANSCRIPT",
                 "VIDEO_FRAME"
-              ],
-              "source_id": "session41-final-owner-uat",
-              "source_session": "session41-final-owner-uat",
-              "source_sessions": [
-                "session41-final-owner-uat"
-              ],
-              "timestamp": 1251.8396398378377,
-              "observed_at": {
-                "source_session": "session41-final-owner-uat",
-                "timestamp_seconds": 1251.8396398378377,
-                "timecode": "00:20:51"
-              },
-              "support_observations": [
-                {
-                  "source_session": "session41-final-owner-uat",
-                  "timestamp_seconds": 1251.8396398378377,
-                  "timecode": "00:20:51"
-                }
-              ],
-              "current_live_validation_required": true,
-              "current_state": "NOT_CURRENTLY_VERIFIED",
-              "frame_id": "frame_0021.png",
-              "confidence": 0.93,
-              "verification_state": "SOURCE_CONFIRMED",
-              "first_seen": {
-                "session_id": "session41-final-owner-uat",
-                "timestamp": 1251.8396398378377
-              },
-              "last_confirmed": null,
-              "supporting_sources": [
-                {
-                  "source_type": "VIDEO_FRAME",
-                  "frame_id": "frame_0021.png",
-                  "timestamp": 1251.8396398378377,
-                  "source_id": "session41-final-owner-uat"
-                }
-              ],
-              "source_evidence_refs": [
-                {
-                  "source_type": "VIDEO_FRAME",
-                  "frame_id": "frame_0021.png",
-                  "timestamp": 1251.8396398378377,
-                  "source_id": "session41-final-owner-uat"
-                }
-              ],
-              "conflicts": [],
-              "ambiguities": []
-            },
-            {
-              "claim_id": "claim-243088b87392",
-              "knowledge_id": "knowledge-09a5b83ce522",
-              "version": 1,
-              "application_id": "north-america-central-product-research-testing-panelist-payments",
-              "topic": "Lifecycle",
-              "canonical_fact": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-              "claim": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-              "source_type": "SEMANTIC_CONSOLIDATED",
-              "source_types": [
-                "TRANSCRIPT"
               ],
               "source_id": "session41-final-owner-uat",
               "source_session": "session41-final-owner-uat",
@@ -791,11 +692,16 @@
                   "source_session": "session41-final-owner-uat",
                   "timestamp_seconds": 1248.4,
                   "timecode": "00:20:48"
+                },
+                {
+                  "source_session": "session41-final-owner-uat",
+                  "timestamp_seconds": 1251.8396398378377,
+                  "timecode": "00:20:51"
                 }
               ],
               "current_live_validation_required": true,
               "current_state": "NOT_CURRENTLY_VERIFIED",
-              "frame_id": null,
+              "frame_id": "frame_0021.png",
               "confidence": 0.75,
               "verification_state": "SOURCE_CONFIRMED",
               "first_seen": {
@@ -824,6 +730,12 @@
                     }
                   ],
                   "source_id": "session41-final-owner-uat"
+                },
+                {
+                  "source_type": "VIDEO_FRAME",
+                  "frame_id": "frame_0021.png",
+                  "timestamp": 1251.8396398378377,
+                  "source_id": "session41-final-owner-uat"
                 }
               ],
               "source_evidence_refs": [
@@ -847,6 +759,12 @@
                     }
                   ],
                   "source_id": "session41-final-owner-uat"
+                },
+                {
+                  "source_type": "VIDEO_FRAME",
+                  "frame_id": "frame_0021.png",
+                  "timestamp": 1251.8396398378377,
+                  "source_id": "session41-final-owner-uat"
                 }
               ],
               "conflicts": [],
@@ -854,9 +772,8 @@
             }
           ],
           "claim_ids": [
-            "claim-41b09206499d",
-            "claim-e9c5db634150",
-            "claim-243088b87392"
+            "claim-2f40188b4f24",
+            "claim-61c74714e59c"
           ]
         },
         {
@@ -5828,8 +5745,8 @@
       "ambiguities": []
     },
     {
-      "claim_id": "claim-41b09206499d",
-      "knowledge_id": "knowledge-f95404352982",
+      "claim_id": "claim-2f40188b4f24",
+      "knowledge_id": "knowledge-42ca4da1c659",
       "version": 1,
       "application_id": "north-america-central-product-research-testing-panelist-payments",
       "topic": "Lifecycle",
@@ -5905,8 +5822,8 @@
       "ambiguities": []
     },
     {
-      "claim_id": "claim-e9c5db634150",
-      "knowledge_id": "knowledge-d691fb20f43c",
+      "claim_id": "claim-61c74714e59c",
+      "knowledge_id": "knowledge-bd24b2570d9d",
       "version": 1,
       "application_id": "north-america-central-product-research-testing-panelist-payments",
       "topic": "Lifecycle",
@@ -5914,66 +5831,8 @@
       "claim": "NA_CPRT_PANELIST_PAYMENTS: Application catalogue records lifecycle as Leverage/Optimize.",
       "source_type": "SEMANTIC_CONSOLIDATED",
       "source_types": [
+        "TRANSCRIPT",
         "VIDEO_FRAME"
-      ],
-      "source_id": "session41-final-owner-uat",
-      "source_session": "session41-final-owner-uat",
-      "source_sessions": [
-        "session41-final-owner-uat"
-      ],
-      "timestamp": 1251.8396398378377,
-      "observed_at": {
-        "source_session": "session41-final-owner-uat",
-        "timestamp_seconds": 1251.8396398378377,
-        "timecode": "00:20:51"
-      },
-      "support_observations": [
-        {
-          "source_session": "session41-final-owner-uat",
-          "timestamp_seconds": 1251.8396398378377,
-          "timecode": "00:20:51"
-        }
-      ],
-      "current_live_validation_required": true,
-      "current_state": "NOT_CURRENTLY_VERIFIED",
-      "frame_id": "frame_0021.png",
-      "confidence": 0.93,
-      "verification_state": "SOURCE_CONFIRMED",
-      "first_seen": {
-        "session_id": "session41-final-owner-uat",
-        "timestamp": 1251.8396398378377
-      },
-      "last_confirmed": null,
-      "supporting_sources": [
-        {
-          "source_type": "VIDEO_FRAME",
-          "frame_id": "frame_0021.png",
-          "timestamp": 1251.8396398378377,
-          "source_id": "session41-final-owner-uat"
-        }
-      ],
-      "source_evidence_refs": [
-        {
-          "source_type": "VIDEO_FRAME",
-          "frame_id": "frame_0021.png",
-          "timestamp": 1251.8396398378377,
-          "source_id": "session41-final-owner-uat"
-        }
-      ],
-      "conflicts": [],
-      "ambiguities": []
-    },
-    {
-      "claim_id": "claim-243088b87392",
-      "knowledge_id": "knowledge-09a5b83ce522",
-      "version": 1,
-      "application_id": "north-america-central-product-research-testing-panelist-payments",
-      "topic": "Lifecycle",
-      "canonical_fact": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-      "claim": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-      "source_type": "SEMANTIC_CONSOLIDATED",
-      "source_types": [
-        "TRANSCRIPT"
       ],
       "source_id": "session41-final-owner-uat",
       "source_session": "session41-final-owner-uat",
@@ -5991,11 +5850,16 @@
           "source_session": "session41-final-owner-uat",
           "timestamp_seconds": 1248.4,
           "timecode": "00:20:48"
+        },
+        {
+          "source_session": "session41-final-owner-uat",
+          "timestamp_seconds": 1251.8396398378377,
+          "timecode": "00:20:51"
         }
       ],
       "current_live_validation_required": true,
       "current_state": "NOT_CURRENTLY_VERIFIED",
-      "frame_id": null,
+      "frame_id": "frame_0021.png",
       "confidence": 0.75,
       "verification_state": "SOURCE_CONFIRMED",
       "first_seen": {
@@ -6024,6 +5888,12 @@
             }
           ],
           "source_id": "session41-final-owner-uat"
+        },
+        {
+          "source_type": "VIDEO_FRAME",
+          "frame_id": "frame_0021.png",
+          "timestamp": 1251.8396398378377,
+          "source_id": "session41-final-owner-uat"
         }
       ],
       "source_evidence_refs": [
@@ -6046,6 +5916,12 @@
               "end": 1256.46
             }
           ],
+          "source_id": "session41-final-owner-uat"
+        },
+        {
+          "source_type": "VIDEO_FRAME",
+          "frame_id": "frame_0021.png",
+          "timestamp": 1251.8396398378377,
           "source_id": "session41-final-owner-uat"
         }
       ],
@@ -8927,8 +8803,8 @@
       "ambiguities": []
     },
     {
-      "claim_id": "claim-41b09206499d",
-      "knowledge_id": "knowledge-f95404352982",
+      "claim_id": "claim-2f40188b4f24",
+      "knowledge_id": "knowledge-42ca4da1c659",
       "version": 1,
       "application_id": "north-america-central-product-research-testing-panelist-payments",
       "topic": "Lifecycle",
@@ -9004,8 +8880,8 @@
       "ambiguities": []
     },
     {
-      "claim_id": "claim-e9c5db634150",
-      "knowledge_id": "knowledge-d691fb20f43c",
+      "claim_id": "claim-61c74714e59c",
+      "knowledge_id": "knowledge-bd24b2570d9d",
       "version": 1,
       "application_id": "north-america-central-product-research-testing-panelist-payments",
       "topic": "Lifecycle",
@@ -9013,66 +8889,8 @@
       "claim": "NA_CPRT_PANELIST_PAYMENTS: Application catalogue records lifecycle as Leverage/Optimize.",
       "source_type": "SEMANTIC_CONSOLIDATED",
       "source_types": [
+        "TRANSCRIPT",
         "VIDEO_FRAME"
-      ],
-      "source_id": "session41-final-owner-uat",
-      "source_session": "session41-final-owner-uat",
-      "source_sessions": [
-        "session41-final-owner-uat"
-      ],
-      "timestamp": 1251.8396398378377,
-      "observed_at": {
-        "source_session": "session41-final-owner-uat",
-        "timestamp_seconds": 1251.8396398378377,
-        "timecode": "00:20:51"
-      },
-      "support_observations": [
-        {
-          "source_session": "session41-final-owner-uat",
-          "timestamp_seconds": 1251.8396398378377,
-          "timecode": "00:20:51"
-        }
-      ],
-      "current_live_validation_required": true,
-      "current_state": "NOT_CURRENTLY_VERIFIED",
-      "frame_id": "frame_0021.png",
-      "confidence": 0.93,
-      "verification_state": "SOURCE_CONFIRMED",
-      "first_seen": {
-        "session_id": "session41-final-owner-uat",
-        "timestamp": 1251.8396398378377
-      },
-      "last_confirmed": null,
-      "supporting_sources": [
-        {
-          "source_type": "VIDEO_FRAME",
-          "frame_id": "frame_0021.png",
-          "timestamp": 1251.8396398378377,
-          "source_id": "session41-final-owner-uat"
-        }
-      ],
-      "source_evidence_refs": [
-        {
-          "source_type": "VIDEO_FRAME",
-          "frame_id": "frame_0021.png",
-          "timestamp": 1251.8396398378377,
-          "source_id": "session41-final-owner-uat"
-        }
-      ],
-      "conflicts": [],
-      "ambiguities": []
-    },
-    {
-      "claim_id": "claim-243088b87392",
-      "knowledge_id": "knowledge-09a5b83ce522",
-      "version": 1,
-      "application_id": "north-america-central-product-research-testing-panelist-payments",
-      "topic": "Lifecycle",
-      "canonical_fact": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-      "claim": "NA_CPRT_PANELIST_PAYMENTS: But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining.",
-      "source_type": "SEMANTIC_CONSOLIDATED",
-      "source_types": [
-        "TRANSCRIPT"
       ],
       "source_id": "session41-final-owner-uat",
       "source_session": "session41-final-owner-uat",
@@ -9090,11 +8908,16 @@
           "source_session": "session41-final-owner-uat",
           "timestamp_seconds": 1248.4,
           "timecode": "00:20:48"
+        },
+        {
+          "source_session": "session41-final-owner-uat",
+          "timestamp_seconds": 1251.8396398378377,
+          "timecode": "00:20:51"
         }
       ],
       "current_live_validation_required": true,
       "current_state": "NOT_CURRENTLY_VERIFIED",
-      "frame_id": null,
+      "frame_id": "frame_0021.png",
       "confidence": 0.75,
       "verification_state": "SOURCE_CONFIRMED",
       "first_seen": {
@@ -9123,6 +8946,12 @@
             }
           ],
           "source_id": "session41-final-owner-uat"
+        },
+        {
+          "source_type": "VIDEO_FRAME",
+          "frame_id": "frame_0021.png",
+          "timestamp": 1251.8396398378377,
+          "source_id": "session41-final-owner-uat"
         }
       ],
       "source_evidence_refs": [
@@ -9145,6 +8974,12 @@
               "end": 1256.46
             }
           ],
+          "source_id": "session41-final-owner-uat"
+        },
+        {
+          "source_type": "VIDEO_FRAME",
+          "frame_id": "frame_0021.png",
+          "timestamp": 1251.8396398378377,
           "source_id": "session41-final-owner-uat"
         }
       ],
@@ -16697,7 +16532,7 @@
   },
   "procedures": [],
   "claim_confidence_diagnostics": {
-    "material_claim_count": 32,
+    "material_claim_count": 31,
     "low_confidence_claim_count": 0,
     "low_confidence_ratio": 0.0,
     "missing_confidence_count": 0,
@@ -16712,12 +16547,12 @@
     "raw_transcript_fragments_suppressed": 172,
     "raw_ocr_claims_suppressed": 31,
     "meeting_gallery_claims_suppressed": 22,
-    "material_semantic_claim_count": 32,
+    "material_semantic_claim_count": 31,
     "visual_semantic_claim_count": 16,
     "raw_transcript_final_claim_count": 0,
     "raw_ocr_final_claim_count": 0,
     "semantic_duplicate_claim_count": 0,
-    "duplicate_support_refs_consolidated": 13
+    "duplicate_support_refs_consolidated": 14
   },
   "kav_execution_runbooks": [],
   "embedding_report": {

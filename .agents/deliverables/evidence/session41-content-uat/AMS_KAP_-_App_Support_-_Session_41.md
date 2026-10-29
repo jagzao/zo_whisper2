@@ -21,8 +21,7 @@ Facts below describe what was observed in the KT recording. Items marked for liv
 ### Lifecycle
 
 - NA_CPRT_PANELIST_PAYMENTS is in sunset lifecycle status. Observed in KT recording at 00:19:35; current state not verified. [Evidence: seg-b89c18ed9fba]
-- Application catalogue records lifecycle as Leverage/Optimize. Observed in KT recording at 00:20:51; current state not verified. [Evidence: frame_0021.png]
-- But since this is in leverage optimized lifecycle status, we will be proceeding with the transition to corruption mining. Observed in KT recording at 00:20:48; current state not verified. [Evidence: seg-1ebd2e8fdfb3]
+- Application catalogue records lifecycle as Leverage/Optimize. Observed in KT recording at 00:20:48; current state not verified. [Evidence: seg-1ebd2e8fdfb3, frame_0021.png]
 
 ### Operations
 
