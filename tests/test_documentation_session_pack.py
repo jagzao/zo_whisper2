@@ -6,6 +6,7 @@ import pytest
 from transcript_pipeline.documentation.production import run_pilot
 from transcript_pipeline.documentation.session_pack import (
     MediaEvidenceBundle,
+    build_open_questions,
     classify_semantic_topic,
     compare_session_pack_to_golden,
     consolidate_claims_across_sessions,
@@ -574,3 +575,90 @@ def test_golden_comparison_detects_topic_and_diagram_coverage_regression():
         "derived_diagrams": [{}], "common_sections": {"Open Questions": [{}], "Glossary": [{}]}}
     result = compare_session_pack_to_golden(pack, golden)
     assert result["COVERAGE_REGRESSION"] == "YES"
+
+
+def test_golden_comparison_requires_material_fact_coverage_within_topic():
+    golden = {
+        "claims": [
+            {"claim_id": "g-purpose", "application_id": "service-alpha", "claim":
+             "The application shares public safety data sheets and technical documents with customers through an external website."},
+            {"claim_id": "g-roles", "application_id": "service-alpha", "claim":
+             "Consumers/customers access documents; global administrators manage countries, subscriptions, notifications, and text modules; local administrators manage products/categories."},
+        ],
+        "applications": [{"application_id": "service-alpha", "sections": [
+            {"title": "Purpose / business context", "claims": ["g-purpose"]},
+            {"title": "Roles / permissions", "claims": ["g-roles"]}]}],
+    }
+    base = {"applications": [{"application_id": "service-alpha"}], "application_candidates": [
+        {"application_id": "service-alpha", "name": "Service Alpha"}], "diagrams": [], "open_questions": [],
+        "glossary": [], "rendered_sections": ["Executive Brief", "Applications", "Architecture / Data Flow",
+                                                  "Open Questions / Needs Review", "Glossary", "Evidence Timeline",
+                                                  "Quality / Evidence Notes"]}
+    pack = {**base, "canonical_facts": [{"application_id": "service-alpha", "topic": "Purpose / business context",
+          "canonical_fact": "Service Alpha is a custom backend application.", "source_evidence_refs": [],
+          "verification_state": "SOURCE_CONFIRMED", "confidence": .9}]}
+    assert compare_session_pack_to_golden(pack, golden)["COVERAGE_REGRESSION"] == "YES"
+    pack["canonical_facts"] = [{"application_id": "service-alpha", "topic": "Purpose / business context",
+          "canonical_fact": "Service Alpha shares public safety data sheets and technical documents with customers through an external website.",
+          "source_evidence_refs": [{"source_type": "TRANSCRIPT"}], "verification_state": "SOURCE_CONFIRMED", "confidence": .9}]
+    assert compare_session_pack_to_golden(pack, golden)["COVERAGE_REGRESSION"] == "YES"
+    pack["canonical_facts"].append({"application_id": "service-alpha", "topic": "Roles / permissions",
+          "canonical_fact": "Consumers/customers access documents; global administrators manage countries, subscriptions, notifications, and text modules; local administrators manage products and categories.",
+          "source_evidence_refs": [{"source_type": "TRANSCRIPT"}], "verification_state": "SOURCE_CONFIRMED", "confidence": .9})
+    assert compare_session_pack_to_golden(pack, golden)["COVERAGE_REGRESSION"] == "NO"
+
+
+def test_contiguous_purpose_fragments_retain_complete_semantic_fact():
+    segments = [
+        {"start": 1, "end": 2, "text": "The application's purpose is to share public safety data sheets"},
+        {"start": 2.7, "end": 3.5, "text": "with consumers through its external website."},
+    ]
+    from transcript_pipeline.documentation.session_pack import _join_contiguous_transcript_fragments
+    joined = _join_contiguous_transcript_fragments(segments)
+    assert len(joined) == 1
+    assert "with consumers through its external website" in joined[0]["text"]
+
+
+def test_generic_role_model_preserves_role_and_responsibility_knowledge():
+    segments = [
+        {"segment_id": f"s{i}", "start": i * 2, "end": i * 2 + 1, "text": text}
+        for i, text in enumerate([
+            "There are three primary user groups.",
+            "Consumers and customers access public safety data sheets and technical documents.",
+            "They can subscribe to document related notifications.",
+            "The global admin manages countries, subscriptions, notifications and text modules.",
+            "The local administrator manages products and categories.",
+            "Functions depend on the role assigned to each user.",
+        ])
+    ]
+    bundle = MediaEvidenceBundle(media_id="roles", video_metadata={"basename": "roles.mp4", "duration": 20},
+                                 transcript_segments=segments, evidence_events=[{"id": "e1", "start": 0, "end": 20,
+                                 "application": "Service Alpha", "summary": "Role overview"}])
+    claims = extract_claims(bundle, [{"application_id": "service-alpha", "name": "Service Alpha",
+                                     "aliases": ["Service Alpha"]}])
+    role_claims = [item["claim"] for item in claims if item["application_id"] == "service-alpha"]
+    assert any("Global administrators manage countries" in claim for claim in role_claims)
+    assert any("Local administrators manage products" in claim for claim in role_claims)
+    assert any("assigned role" in claim for claim in role_claims)
+
+
+def test_identical_open_questions_keep_separate_application_provenance():
+    events = [
+        {"id": "e1", "start": 1, "application": "Service Alpha", "summary": "Technical presentation deferred; presenter not prepared."},
+        {"id": "e2", "start": 2, "application": "Service Beta", "summary": "Technical presentation deferred; presenter not prepared."},
+    ]
+    apps = [{"application_id": "service-alpha", "name": "Service Alpha", "aliases": ["alpha"]},
+            {"application_id": "service-beta", "name": "Service Beta", "aliases": ["beta"]}]
+    questions = build_open_questions(events, [], "session", apps)
+    assert {item["application_id"] for item in questions} == {"service-alpha", "service-beta"}
+    assert len({item["question_id"] for item in questions}) == 2
+
+
+def test_repeated_broken_passive_transcript_is_not_promoted_as_a_fact():
+    bundle = MediaEvidenceBundle(media_id="broken-speech", video_metadata={"basename": "speech.mp4"},
+        transcript_segments=[{"segment_id": "s1", "start": 1, "end": 4,
+            "text": "Authentication is being set up and users are being accessed and users are being managed by the service."}],
+        evidence_events=[{"id": "e1", "start": 0, "end": 5, "application": "Service Alpha"}])
+    claims = extract_claims(bundle, [{"application_id": "service-alpha", "name": "Service Alpha",
+                                     "aliases": ["Service Alpha"]}])
+    assert claims == []

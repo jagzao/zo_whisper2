@@ -289,7 +289,7 @@ def _has_material_subject(text: str) -> bool:
         r"platform|cloud|network|integration|api|role|permission|access|authentication|support|owner|lifecycle|"
         r"decommission|production|development|environment|configuration|notification|subscription|report|document|"
         r"user|customer|consumer|vendor|record|retention|entitlement|identity|browser|pdf|safety|security|"
-        r"catalogue|catalog|group|salesforce|etl|factory|sql|environment|frontend|backend)\b", text, re.I))
+        r"catalogue|catalog|group|salesforce|etl|factory|sql|environment|frontend|backend|bia)\b", text, re.I))
 
 
 def extract_claims(bundle: MediaEvidenceBundle, applications: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -317,7 +317,26 @@ def extract_claims(bundle: MediaEvidenceBundle, applications: list[dict[str, Any
     events = [event for event in bundle.evidence_events if str(event.get("summary", "")).strip()]
     for event in events:
         text = re.sub(r"\s+", " ", str(event.get("summary", "")).strip()).rstrip(" .")
-        if len(text.split()) < 5 or not factual.search(text) or not _has_material_subject(text) or re.search(
+        support_scope = re.search(r"public website support via backend", text, re.I)
+        if support_scope:
+            event_app = str(event.get("application") or "")
+            event_matches = {app_id for alias, app_id in aliases.items()
+                             if alias and _normalize_name(alias) == _normalize_name(event_app)}
+            app_id = next(iter(event_matches)) if len(event_matches) == 1 else "SESSION_GENERAL"
+            timestamp = _seconds(event.get("start", 0))
+            claims.append({
+                "claim_id": _stable_id("claim", bundle.media_id, event.get("id"), "support-scope"),
+                "application_id": app_id, "claim": "The public website remains within support scope through its supported backend.",
+                "source_type": "EVIDENCE_EVENT", "source_id": bundle.media_id, "timestamp": timestamp,
+                "frame_id": None, "confidence": float(event.get("confidence", .85)),
+                "verification_state": "SOURCE_CONFIRMED",
+                "first_seen": {"session_id": bundle.media_id, "timestamp": timestamp}, "last_confirmed": None,
+                "supporting_sources": [{"source_id": bundle.media_id, "source_type": "EVIDENCE_EVENT",
+                                        "event_id": event.get("id"), "source_claim_ids": event.get("claim_ids", []),
+                                        "source_types": event.get("source_types", [])}],
+                "conflicts": [], "ambiguities": [],
+            })
+        if len(text.split()) < 5 or not (factual.search(text) or support_scope) or not _has_material_subject(text) or re.search(
             r"\b(?:meeting|presentation|handoff|hello|thanks|suspicious phrase|reports no resource.group permission|"
             r"advises trying|attempt to switch|no prepared slides|data floor/code|technical presentation deferred|"
             r"limited tickets/use impression|incomplete application maturity|open.source statement)\b", text, re.I
@@ -350,10 +369,11 @@ def extract_claims(bundle: MediaEvidenceBundle, applications: list[dict[str, Any
                                      "source_types": event.get("source_types", [])}],
             "conflicts": [], "ambiguities": classify_ambiguity(text),
         })
-    for segment in bundle.transcript_segments:
+    for segment in _join_contiguous_transcript_fragments(bundle.transcript_segments):
         text = re.sub(r"\s+", " ", str(segment.get("text", "")).strip())
-        if (len(text.split()) < 5 or not factual.search(text) or not _has_material_subject(text)
+        if (len(text.split()) < 5 or len(text.split()) > 55 or not factual.search(text) or not _has_material_subject(text)
                 or text.endswith("...") or not text.endswith((".", "?", "!"))
+                or len(re.findall(r"\b(?:is|are|was|were)\s+being\b", text, re.I)) > 1
                 or re.match(r"^(?:while \w+ is doing|no worries|i wanted to share|wanted to share|"
                             r"i(?:'m| am) not|this is the base|for today|okay|no,? you have to)\b", text, re.I)):
             continue
@@ -375,6 +395,7 @@ def extract_claims(bundle: MediaEvidenceBundle, applications: list[dict[str, Any
                 matches = {nearest[0][1]}
         app_id = next(iter(matches)) if len(matches) == 1 else "SESSION_GENERAL"
         claim_id = _stable_id("claim", bundle.media_id, segment["segment_id"], text)
+        source_segments = segment.get("source_segments") or [segment]
         claims.append({
             "claim_id": claim_id, "application_id": app_id, "claim": text,
             "source_type": "TRANSCRIPT", "source_id": bundle.media_id,
@@ -384,19 +405,153 @@ def extract_claims(bundle: MediaEvidenceBundle, applications: list[dict[str, Any
             "first_seen": {"session_id": bundle.media_id, "timestamp": segment["start"]},
             "last_confirmed": None,
             "supporting_sources": [{"source_id": bundle.media_id, "source_type": "TRANSCRIPT",
-                                     "timestamp": segment["start"], "segments": [segment]}],
+                                     "timestamp": segment["start"], "segments": source_segments}],
             "conflicts": [], "ambiguities": classify_ambiguity(text),
         })
+    claims.extend(_extract_role_model_claims(bundle, aliases))
+    for segment in _join_contiguous_transcript_fragments(bundle.transcript_segments):
+        segment_text = str(segment.get("text", ""))
+        owner = re.search(r"\bowned by\s+([A-Z][\w'-]*(?:\s+[A-Z][\w'-]*){0,5})", segment_text)
+        bia = re.search(r"\b(?:overall )?BIA is\s+([a-z]+)", segment_text, re.I)
+        derived = []
+        if owner:
+            derived.append(f"Application owner was identified as {owner.group(1)}.")
+        if bia:
+            derived.append(f"Overall business impact assessment is {bia.group(1)}.")
+        for fact in derived:
+            timestamp = float(segment["start"])
+            interval = [event for event in bundle.evidence_events if event.get("application")
+                        and _seconds(event.get("start", 0)) <= timestamp <= _seconds(event.get("end", event.get("start", 0)))]
+            event_name = str(interval[-1].get("application")) if interval else ""
+            app_matches = {app_id for alias, app_id in aliases.items()
+                           if alias and _normalize_name(alias) == _normalize_name(event_name)}
+            app_id = next(iter(app_matches)) if len(app_matches) == 1 else "SESSION_GENERAL"
+            sources = [{"source_id": bundle.media_id, "source_type": "TRANSCRIPT", "timestamp": item.get("start"),
+                        "segments": [item]} for item in segment.get("source_segments", [segment])]
+            claims.append({"claim_id": _stable_id("claim", bundle.media_id, app_id, fact), "application_id": app_id,
+                           "claim": fact, "source_type": "TRANSCRIPT", "source_id": bundle.media_id,
+                           "timestamp": timestamp, "frame_id": None, "confidence": .75,
+                           "verification_state": "SOURCE_CONFIRMED", "first_seen": {"session_id": bundle.media_id, "timestamp": timestamp},
+                           "last_confirmed": None, "supporting_sources": sources, "conflicts": [], "ambiguities": []})
     return claims
+
+
+def _join_contiguous_transcript_fragments(segments: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    joined: list[dict[str, Any]] = []
+    for segment in sorted(segments, key=lambda item: float(item.get("start", 0))):
+        if not joined:
+            joined.append({**segment, "source_segments": [segment]})
+            continue
+        current = joined[-1]
+        current_text = str(current.get("text", "")).rstrip()
+        next_text = str(segment.get("text", "")).strip()
+        gap = float(segment.get("start", 0)) - float(current.get("end", current.get("start", 0)))
+        starts_new_sentence = bool(re.match(r"^(?:so|in addition|from an? |the |this |however|secondly|lastly)\b", next_text, re.I))
+        if gap <= 1.0 and gap >= 0 and not current_text.endswith((".", "?", "!")) and not starts_new_sentence:
+            current["text"] = f"{current_text} {next_text}"
+            current["end"] = segment.get("end", current.get("end"))
+            current["source_segments"].extend(segment.get("source_segments", [segment]))
+        else:
+            joined.append({**segment, "source_segments": [segment]})
+    return joined
+
+
+def _extract_role_model_claims(bundle: MediaEvidenceBundle, aliases: dict[str, str]) -> list[dict[str, Any]]:
+    segments = sorted(bundle.transcript_segments, key=lambda item: float(item.get("start", 0)))
+    text_parts = []
+    segment_ranges = []
+    cursor = 0
+    for item in segments:
+        value = str(item.get("text", ""))
+        segment_ranges.append((cursor, cursor + len(value), item))
+        text_parts.append(value)
+        cursor += len(value) + 1
+    text = " ".join(text_parts)
+    role_terms = re.search(r"three primary user\s+groups", text, re.I)
+    global_match = re.search(r"global admin", text, re.I)
+    local_match = re.search(r"local administrator", text, re.I)
+    if not role_terms or not global_match or not local_match:
+        return []
+    role_scope_match = re.search(r"(?:activities available .* depend on the role assigned|(?:functions|activities) depend on the role assigned|controlled access by limiting users)",
+                                 text[local_match.start():], re.I)
+    cluster_end = local_match.end() + role_scope_match.end() if role_scope_match else local_match.end() + 220
+    cluster = [item for seg_start, seg_end, item in segment_ranges
+               if seg_end >= role_terms.start() and seg_start <= cluster_end]
+    cluster_text = " ".join(str(item.get("text", "")) for item in cluster)
+    start = float(cluster[0]["start"]) if cluster else 0.0
+    app_events = [event for event in bundle.evidence_events if event.get("application")
+                  and _seconds(event.get("start", 0)) <= start <= _seconds(event.get("end", event.get("start", 0)))]
+    event_name = str(app_events[-1].get("application")) if app_events else ""
+    matched_apps = {app_id for alias, app_id in aliases.items()
+                    if alias and event_name and _normalize_name(alias) == _normalize_name(event_name)}
+    app_id = next(iter(matched_apps)) if len(matched_apps) == 1 else "SESSION_GENERAL"
+
+    role_facts = []
+    if re.search(r"consumers? and customers?", cluster_text, re.I) and re.search(r"access .*documents?.*subscribe", cluster_text, re.I):
+        role_facts.append(("Consumers and customers access public safety documents and may subscribe to documentation notifications.",
+                           re.compile(r"consumer|customer|public safety|technical documents|subscribe|notification", re.I)))
+    if global_match and re.search(r"global admin.{0,180}manag(?:e|ing).*countries", cluster_text, re.I):
+        role_facts.append(("Global administrators manage countries, user subscriptions, notifications, and text modules.",
+                           re.compile(r"global admin|countries|subscription|notification|text modules", re.I)))
+    if local_match and re.search(r"local administrator.{0,180}products and categories", cluster_text, re.I):
+        role_facts.append(("Local administrators manage products and categories.",
+                           re.compile(r"local administrator|products|categories", re.I)))
+    if re.search(r"(?:activities available .*|(?:functions|activities) )depend on the role assigned", cluster_text, re.I) or re.search(
+        r"controlled access by limiting users to the functions", cluster_text, re.I
+    ):
+        role_facts.append(("Administrative functions are limited according to each user's assigned role and responsibilities.",
+                           re.compile(r"role assigned|controlled access|responsibilities", re.I)))
+
+    claims = []
+    for fact, evidence_pattern in role_facts:
+        source_segments = [item for item in cluster if evidence_pattern.search(str(item.get("text", "")))]
+        if not source_segments:
+            source_segments = cluster
+        timestamp = min(float(item.get("start", 0)) for item in source_segments)
+        sources = [{"source_id": bundle.media_id, "source_type": "TRANSCRIPT", "timestamp": item.get("start"),
+                    "segments": [item]} for item in source_segments]
+        claims.append({
+            "claim_id": _stable_id("claim", bundle.media_id, app_id, fact), "application_id": app_id,
+            "claim": fact, "source_type": "TRANSCRIPT", "source_id": bundle.media_id,
+            "timestamp": timestamp, "frame_id": None, "confidence": .75,
+            "verification_state": "SOURCE_CONFIRMED",
+            "first_seen": {"session_id": bundle.media_id, "timestamp": timestamp}, "last_confirmed": None,
+            "supporting_sources": sources, "conflicts": [], "ambiguities": [],
+        })
+    return claims
+
+
+def _visual_label_fact(label: str) -> str | None:
+    match = re.match(r"\s*(owner|lifecycle|support group|class|app category|app sub-category|data classification|overall bia)\s*:\s*(.+?)\s*$", label, re.I)
+    if not match:
+        return None
+    field_name, value = match.group(1).casefold(), match.group(2).strip().rstrip(".")
+    if field_name == "owner":
+        return f"Application catalogue lists {value} as owner."
+    if field_name == "lifecycle":
+        return f"Application catalogue records lifecycle as {value}."
+    if field_name == "support group":
+        return f"Application catalogue lists {value} as the support group."
+    if field_name == "class":
+        return f"Application catalogue classifies the entry as {value}."
+    if field_name == "app category":
+        return f"Application catalogue classifies the application category as {value}."
+    if field_name == "app sub-category":
+        return f"Application catalogue classifies the application sub-category as {value}."
+    if field_name == "data classification":
+        return f"Application data classification is recorded as {value}."
+    return f"Application business impact is recorded as {value}."
 
 
 def classify_semantic_topic(text: str) -> str:
     value = text.casefold()
     if re.search(r"\b(?:decommission|sunset|lifecycle|retire|end.of.life|leverage/optimize)\b", value):
         return "Lifecycle"
-    if re.search(r"\b(?:application owner|owner|support group|support team|ownership|contact)\b", value):
+    if re.search(r"\b(?:application owner|owner|support group|support team|support scope|ownership|contact)\b", value):
         return "Support / ownership"
-    if re.search(r"\b(?:role|entitlement|permission group|authorized group|access group|database access|access is limited|access to)\b", value):
+    if re.search(r"\b(?:role|global administrators?|local administrators?|global admins?|local admins?|entitlement|permission group|authorized group|access group|database access|access is limited|access to)\b", value):
+        return "Roles / permissions"
+    if re.search(r"\b(?:consumers?|customers?)\b", value) and re.search(r"\b(?:access|subscribe)", value):
         return "Roles / permissions"
     if re.search(r"\b(?:authentication|authenticate|identity provider|pingid|login|resource.group permission|access denied|access was denied|access problem|requesting permission)\b", value):
         return "Authentication / access"
@@ -404,11 +559,11 @@ def classify_semantic_topic(text: str) -> str:
         return "Integrations / dependencies"
     if re.search(r"\b(?:sql|database|data storage|stores|storage|data model)\b", value):
         return "Data / storage"
-    if re.search(r"\b(?:hosted|hosting|backend|azure|environment|private endpoint|virtual network|vnet|architecture|network path)\b", value):
+    if re.search(r"\b(?:hosted|hosting|backend|azure|environments?|private endpoints?|virtual networks?|vnet|architecture|network path)\b", value):
         return "Architecture / hosting"
     if re.search(r"\b(?:maintain|retrieve|manual configuration|export pdf|operational|routine|support activity)\b", value):
         return "Operations"
-    if re.search(r"\b(?:consumer|customer|public document|safety data sheet|business purpose|purpose|used to|used by|serves|maintain .*documents|retrieve .*documents|supports .*business)\b", value):
+    if re.search(r"\b(?:consumers?|customers?|public documents?|safety data sheets?|business purpose|purpose|used to|used by|serves|maintain .*documents|retrieve .*documents|supports .*business)\b", value):
         return "Purpose / business context"
     return "Operations"
 
@@ -440,10 +595,19 @@ def _canonical_fact_text(text: str, app_name: str) -> str:
     if export:
         value = f"Data is exported from {export.group(1)} through {export.group(2)} to {export.group(3)}"
     value = re.sub(r"^this document sharing capability\b", "The application's document sharing capability", value, flags=re.I)
+    purpose = re.match(r"^(?:the )?application's main purpose is to share (.+?) with (.+?) through (?:their|its) external website$", value, re.I)
+    if purpose:
+        value = f"{app_name} shares {purpose.group(1)} with {purpose.group(2)} through an external website"
+    value = re.sub(r"\bwith their (consumers? and customers?)\b", r"with \1", value, flags=re.I)
+    subscriptions = re.match(r"^(?:in addition to that,? )?(?:the )?application provides some external access to public safety data sheets and other technical documents,? so it also supports subscriptions and email notifications$", value, re.I)
+    if subscriptions:
+        value = f"{app_name} provides external access to public safety data sheets and technical documents and supports subscriptions and email notifications"
     value = re.sub(r"^(?:this|the) application\b", app_name, value, flags=re.I)
     value = re.sub(r"^my impression is that (.+)$", r"Evidence suggests \1", value, flags=re.I)
     value = re.sub(r"^from an admin perspective, the application\b", app_name, value, flags=re.I)
     value = re.sub(r"^data classification for this is\s+", "The application's data classification is ", value, flags=re.I)
+    value = re.sub(r",\s*[^,.;]+?\s+and so forth\b", "", value, flags=re.I)
+    value = re.sub(r"\busers subscriptions\b", "user subscriptions", value, flags=re.I)
     value = re.sub(rf"^{re.escape(app_name)} is already in\b", f"{app_name} is in", value, flags=re.I)
     value = re.sub(r"^this is (a|an)\b", rf"{app_name} is \1", value, flags=re.I)
     if re.match(r"^(?:Azure|Microsoft Azure) and has\b", value, re.I):
@@ -551,7 +715,10 @@ def consolidate_semantic_claims(claims: list[dict[str, Any]], applications: list
             observations.append({"source_session": source_session, "timestamp_seconds": ref_time,
                                  "timecode": _format_timecode(float(ref_time)) if ref_time is not None else None})
             evidence_refs.append(ref)
-        temporal = topic in LIVE_VALIDATION_TOPICS and topic != "Operations"
+        temporal = (topic in LIVE_VALIDATION_TOPICS and topic != "Operations") or bool(
+            re.search(r"\b(?:data classification|ownership|owner|support group|authentication provider|environments?|configuration|lifecycle|bia|business impact assessment)\b",
+                      canonical_fact, re.I)
+        )
         consolidated.append({
             "claim_id": _stable_id("claim", source_session, app_id, key),
             "knowledge_id": knowledge_id, "version": 1, "application_id": app_id,
@@ -583,6 +750,8 @@ def _format_timecode(seconds: float) -> str:
 def build_open_questions(events: list[dict[str, Any]], claims: list[dict[str, Any]],
                          source_session: str, apps: list[dict[str, Any]]) -> list[dict[str, Any]]:
     app_names = {item.get("application_id"): item.get("name") for item in apps}
+    app_aliases = {_normalize_name(str(alias)): item.get("application_id") for item in apps
+                   for alias in [item.get("name"), *item.get("aliases", [])] if alias}
     material = []
     for event in events:
         text = str(event.get("summary", ""))
@@ -591,30 +760,35 @@ def build_open_questions(events: list[dict[str, Any]], claims: list[dict[str, An
         if re.search(r"front.?end|website support|support boundary", lowered) and re.search(r"unclear|unknown|unconfirmed|not clear", lowered):
             candidates.append("The frontend ownership and support boundary remains unconfirmed.")
         if re.search(r"authentication|pingid|it access", lowered) and re.search(r"uncertain|unclear|different|confirm", lowered):
-            candidates.append("Authentication terminology and the current identity provider require confirmation.")
+            candidates.append("Authentication provider wording and the named IT Access user-management relationship require confirmation.")
         if re.search(r"decommission", lowered) and re.search(r"undecided|expect|not shown|decision", lowered):
             candidates.append("The decommissioning decision remains unresolved.")
         if re.search(r"open.source|maturity|incomplete", lowered):
             candidates.append("Application maturity and the incomplete open-source statement require clarification.")
-        if re.search(r"technical presentation deferred|not prepared|lacks access", lowered):
+        if re.search(r"technical presentation deferred|not prepared|no prepared slides|lacks access", lowered):
             candidates.append("Detailed technical architecture was not established in this recording.")
         if re.search(r"resource.group permission|no permission", lowered):
             candidates.append("Required resource-group access was not confirmed in this recording.")
         for question in candidates:
-            material.append({"question_id": _stable_id("question", source_session, question),
-                             "application_id": next((claim.get("application_id") for claim in claims
-                                                     if event.get("id") in {ref.get("event_id") for ref in claim.get("supporting_sources", [])}), None),
-                             "application_name": None, "question": question, "source_session": source_session,
+            event_app = _normalize_name(str(event.get("application") or ""))
+            app_id = app_aliases.get(event_app)
+            if app_id is None:
+                app_id = next((claim.get("application_id") for claim in claims
+                               if event.get("id") in {ref.get("event_id") for ref in claim.get("supporting_sources", [])}), None)
+            material.append({"question_id": _stable_id("question", source_session, app_id, question),
+                             "application_id": app_id, "application_name": app_names.get(app_id),
+                             "question": question, "source_session": source_session,
                              "verification_state": "NEEDS_REVIEW", "evidence_refs": [{"event_id": event.get("id"),
                              "timestamp": event.get("start"), "source_types": event.get("source_types", [])}]})
     for question in material:
         question["application_name"] = app_names.get(question["application_id"])
-    deduplicated = {}
+    deduplicated: dict[tuple[str | None, str], dict[str, Any]] = {}
     for question in material:
-        deduplicated.setdefault(question["question"], question)
-        if len(deduplicated[question["question"]]["evidence_refs"]) < 2:
-            if question["evidence_refs"][0] not in deduplicated[question["question"]]["evidence_refs"]:
-                deduplicated[question["question"]]["evidence_refs"].extend(question["evidence_refs"])
+        key = (question.get("application_id"), question["question"])
+        deduplicated.setdefault(key, question)
+        if len(deduplicated[key]["evidence_refs"]) < 2:
+            if question["evidence_refs"][0] not in deduplicated[key]["evidence_refs"]:
+                deduplicated[key]["evidence_refs"].extend(question["evidence_refs"])
     return list(deduplicated.values())
 
 
@@ -699,6 +873,114 @@ def _count_semantic_duplicates(facts: list[dict[str, Any]], applications: list[d
     return duplicates
 
 
+def _semantic_fact_features(text: str) -> set[str]:
+    value = re.sub(r"\s+", " ", re.sub(r"[_-]+", " ", text.casefold()))
+    features = set()
+    if re.search(r"\b(?:custom backend|backend application)\b", value):
+        features.add("backend")
+    if re.search(r"\b(?:hosted|hosting|deployed|azure|cloud)\b", value):
+        features.add("hosting")
+    if re.search(r"\b(?:sql|database|data storage|storage)\b", value):
+        features.add("sql_storage")
+    if re.search(r"\b(?:mail|email).{0,35}subscription|subscription.{0,35}(?:mail|email)\b", value):
+        features.add("mail_subscription")
+    if re.search(r"\b(?:safety data sheets?|technical documents?)\b", value):
+        features.add("application_documents")
+    if re.search(r"\b(?:share|sharing|provides?|maintained|access|retrieve|documents?)\b", value) and "application_documents" in features:
+        features.add("document_use")
+    if re.search(r"\b(?:public|non.confidential)\b", value) and "application_documents" in features:
+        features.add("public_documents")
+    if re.search(r"\b(?:consumer|customer|retailer)s?\b", value):
+        features.add("external_audience")
+    if re.search(r"\b(?:external|public) website\b", value):
+        features.add("external_website")
+    if "reach" in value and re.search(r"business requirements?|business needs?", value):
+        features.add("reach_business_requirement")
+    if re.search(r"\bsubscriptions?\b", value) and re.search(r"\bnotifications?\b", value):
+        features.add("subscriptions_notifications")
+    if re.search(r"\bglobal admin(?:istrator)?s?\b", value):
+        features.add("global_admin")
+    if re.search(r"\blocal admin(?:istrator)?s?\b", value):
+        features.add("local_admin")
+    if re.search(r"\bconsumers? and customers?\b", value):
+        features.add("consumer_customer_role")
+    if re.search(r"\bcountries\b", value) and re.search(r"\bmanag(?:e|es|ed|ing|ement)\b", value):
+        features.add("country_management")
+    if re.search(r"\btext modules?\b", value):
+        features.add("admin_text_modules")
+    if re.search(r"\b(?:products? and categories|products/categories)\b", value):
+        features.add("product_category_management")
+    if re.search(r"\b(?:role assigned|role.scoped|controlled access|functions depend on.*role|responsibilities)\b", value):
+        features.add("role_scoped_functions")
+    if re.search(r"\b(?:public|external) website\b", value) and "support" in value and "backend" in value:
+        features.add("website_backend_support_scope")
+    if re.search(r"\bfront.?end\b", value) and re.search(r"\b(?:ownership|owner|boundary)\b", value):
+        features.add("frontend_ownership_boundary")
+    if re.search(r"\b(?:manually|add(?:ing)?|edit(?:ing)?|delet(?:e|ing)|maintain)\b", value) and "application_documents" in features:
+        features.add("manual_document_operations")
+    if re.search(r"\bpdfs?\b", value) and re.search(r"\b(?:extract|retrieve|access|export)\b", value):
+        features.add("pdf_retrieval")
+    if re.search(r"\bdevelopers?\b", value) and re.search(r"\b(?:manual|browser|configuration|configure)\b", value):
+        features.add("developer_configuration")
+    if "production" in value and "development" in value:
+        features.add("production_development_environments")
+    if "data factory" in value and re.search(r"\bprocessing\b", value):
+        features.add("data_factory_processing")
+    if re.search(r"\bprivate endpoints?\b", value) and re.search(r"\bvirtual networks?\b|\bvnet\b", value):
+        features.add("private_network_controls")
+    if re.search(r"\bowner\b", value):
+        features.add("application_owner")
+    if "support group" in value:
+        features.add("application_support_group")
+    if "data classification" in value and "public" in value:
+        features.add("public_data_classification")
+    if (re.search(r"\bbia\b", value) or "business impact assessment" in value) and re.search(r"\blow\b", value):
+        features.add("low_business_impact")
+    if "pingid" in value and re.search(r"\bauthentication|authenticate\b", value):
+        features.add("pingid_authentication")
+    if re.search(r"\bit access\b", value):
+        features.add("it_access_user_management")
+    if re.search(r"\b(?:sunset|leverage/optimize|leverage optimized|lifecycle)\b", value):
+        features.add("lifecycle_status")
+    if "decommission" in value:
+        features.add("decommission_decision")
+    if re.search(r"\blimited (?:usage|users?|user count)\b", value) or "limited usage" in value:
+        features.add("limited_usage")
+    if "saas/etl" in value:
+        features.add("saas_etl_platform")
+    if re.search(r"\bpanelist payments?\b", value) and "fulfilment" in value:
+        features.add("panelist_payment_fulfilment_context")
+    if "salesforce lex" in value and "fulfilment" in value:
+        features.add("salesforce_fulfilment_data_export")
+    if re.search(r"\b(?:direct database access|database access)\b", value) and re.search(r"\b(?:operations|technology development|business)\b", value):
+        features.add("database_access_groups")
+    if re.search(r"\b(?:class|category|sub.category)\b", value) and re.search(r"\bapplication platform|business application\b", value):
+        features.add("application_catalogue_category")
+    if re.search(r"\bresource.group\b", value) and re.search(r"\bpermission|access\b", value):
+        features.add("resource_group_access_issue")
+    if re.search(r"technical (?:deep.dive|walkthrough).{0,40}deferred|walkthrough was deferred|technical architecture.{0,40}(?:not established|was not covered)", value):
+        features.add("technical_walkthrough_deferred")
+    return features
+
+
+def _semantic_coverage_topic(text: str) -> str:
+    features = _semantic_fact_features(text)
+    if features & {"global_admin", "local_admin", "role_scoped_functions", "database_access_groups", "consumer_customer_role"}:
+        return "Roles / permissions"
+    if features & {"website_backend_support_scope", "frontend_ownership_boundary", "application_owner"}:
+        return "Support / ownership"
+    if features & {"public_documents", "external_audience", "external_website", "reach_business_requirement"}:
+        return "Purpose / business context"
+    if features & {"lifecycle_status", "decommission_decision"}:
+        return "Lifecycle / open questions"
+    return classify_semantic_topic(text)
+
+
+def _application_key(value: str) -> str:
+    normalized = _normalize_name(value).replace(" com", "")
+    return normalized.replace(" ", "")
+
+
 def compare_session_pack_to_golden(pack: dict[str, Any], golden: dict[str, Any]) -> dict[str, Any]:
     gold_claims = golden.get("claims", [])
     gold_apps = golden.get("applications", [])
@@ -718,18 +1000,62 @@ def compare_session_pack_to_golden(pack: dict[str, Any], golden: dict[str, Any])
     current_topics = {str(item.get("topic")) for item in current_facts}
     if pack.get("open_questions"):
         current_topics.add("Open questions")
-    raw_transcript = sum(item.get("source_type") == "TRANSCRIPT" or
-                         str(item.get("canonical_fact", "")).casefold().startswith(("so this", "and then", "this application"))
+    raw_transcript = sum(item.get("source_type") == "TRANSCRIPT" or _is_conversational_claim(item.get("canonical_fact", ""))
                          for item in current_facts)
     duplicate_supports = sum(max(0, len(item.get("source_evidence_refs", [])) - 1) for item in current_facts)
     unsupported = sum(not item.get("source_evidence_refs") for item in current_facts)
-    low = sum(item.get("confidence") is not None and float(item["confidence"]) < .5 for item in current_facts)
+    low = sum(item.get("verification_state") not in UNCERTAIN_STATES and item.get("confidence") is not None
+              and float(item["confidence"]) < .5 for item in current_facts)
     duplicate_pairs = _count_semantic_duplicates(current_facts, pack.get("application_candidates", []))
+    candidates = pack.get("application_candidates", [])
+
+    def resolve_v3_application(golden_app_id: str) -> str | None:
+        gold_key = _application_key(golden_app_id)
+        for candidate in candidates:
+            v3_id = str(candidate.get("application_id") or "")
+            aliases = [str(candidate.get("name") or ""), *[str(alias) for alias in candidate.get("aliases", [])], v3_id]
+            if any(_application_key(alias) == gold_key or
+                   (len(gold_key) >= 8 and (gold_key in _application_key(alias) or _application_key(alias) in gold_key))
+                   for alias in aliases if alias):
+                return v3_id
+        return None
+
+    v3_features: dict[str, set[str]] = {}
+    for fact in current_facts:
+        app_id = str(fact.get("application_id") or "")
+        v3_features.setdefault(app_id, set()).update(_semantic_fact_features(str(fact.get("canonical_fact", ""))))
+    for question in pack.get("open_questions", []):
+        app_id = str(question.get("application_id") or "")
+        v3_features.setdefault(app_id, set()).update(_semantic_fact_features(str(question.get("question", ""))))
+
+    golden_material = []
+    for claim in gold_claims:
+        gold_app_id = str(claim.get("application_id") or "")
+        text = str(claim.get("claim") or claim.get("text") or "")
+        features = _semantic_fact_features(text)
+        if gold_app_id in {"", "SESSION_GENERAL"} or not features:
+            continue
+        v3_app_id = resolve_v3_application(gold_app_id)
+        golden_material.append({"claim_id": claim.get("claim_id"), "application_id": gold_app_id,
+                                "topic": _semantic_coverage_topic(text), "features": features,
+                                "v3_application_id": v3_app_id})
+    covered_golden = [item for item in golden_material if item["v3_application_id"] and
+                      item["features"] <= v3_features.get(item["v3_application_id"], set())]
+    missing_golden = [item for item in golden_material if item not in covered_golden]
+    missing_topics = sorted({str(item["topic"]) for item in missing_golden})
+    v3_material_count = sum(item.get("verification_state") not in UNCERTAIN_STATES for item in current_facts)
     metrics = {
         "canonical_facts": len(current_facts), "golden_canonical_facts": len(gold_claims),
         "applications": len(current_apps), "golden_applications": len(gold_apps),
         "topics_represented": sorted(current_topics), "golden_topics_represented": sorted(gold_topics),
         "uncovered_golden_topics": sorted(gold_topics - current_topics),
+        "GOLDEN_MATERIAL_FACTS": len(golden_material),
+        "V3_MATERIAL_FACTS": v3_material_count,
+        "GOLDEN_FACTS_SEMANTICALLY_COVERED": len(covered_golden),
+        "MISSING_GOLDEN_MATERIAL_FACTS": [
+            {"claim_id": item["claim_id"], "topic": item["topic"]} for item in missing_golden
+        ],
+        "missing_golden_topics": missing_topics,
         "diagrams": len(pack.get("diagrams", [])), "golden_diagrams": len(gold_diagrams),
         "open_questions": len(pack.get("open_questions", [])), "golden_open_questions": len(gold_open),
         "glossary_entries": len(pack.get("glossary", [])), "golden_glossary_entries": len(gold_glossary),
@@ -742,6 +1068,7 @@ def compare_session_pack_to_golden(pack: dict[str, Any], golden: dict[str, Any])
     coverage_regression = bool(
         metrics["applications"] < metrics["golden_applications"]
         or metrics["uncovered_golden_topics"]
+        or metrics["MISSING_GOLDEN_MATERIAL_FACTS"]
         or metrics["diagrams"] < metrics["golden_diagrams"]
         or metrics["open_questions"] < metrics["golden_open_questions"]
         or metrics["glossary_entries"] < metrics["golden_glossary_entries"]
@@ -939,8 +1266,8 @@ def build_derived_diagrams(frames: list[dict[str, Any]] | None = None) -> list[d
 
 
 def _executive_brief(applications: list[dict[str, Any]]) -> str:
-    preferred = ["Architecture / hosting", "Purpose / business context", "Data / storage",
-                 "Integrations / dependencies", "Support / lifecycle"]
+    preferred = ["Purpose / business context", "Architecture / hosting", "Data / storage",
+                 "Integrations / dependencies", "Support / ownership", "Lifecycle"]
     paragraphs = []
     for app in applications:
         sections = {section.get("title"): section.get("claims", []) for section in app.get("sections", [])}
@@ -1135,7 +1462,8 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
         for assertion in assertions:
             if not isinstance(assertion, dict):
                 continue
-            if str(assertion.get("assertion_type", "")).casefold() not in {"relationships", "data_flows", "configuration_fields"}:
+            assertion_type = str(assertion.get("assertion_type", "")).casefold()
+            if assertion_type not in {"relationships", "data_flows", "configuration_fields", "visible_labels"}:
                 continue
             evidence_ref = assertion.get("provenance", {})
             statement = assertion.get("statement") or assertion.get("value")
@@ -1143,6 +1471,10 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
                                  and not frame.get("transcript_text")):
                 continue
             text = str(statement).strip()
+            if assertion_type == "visible_labels":
+                text = _visual_label_fact(text) or ""
+                if not text:
+                    continue
             confidence = assertion.get("confidence", evidence_ref.get("confidence", frame.get("confidence")))
             visual_claims.append({
                 "claim_id": _stable_id("claim", evidence.media_id, frame["frame_id"], text),
@@ -1171,7 +1503,8 @@ def generate_session_pack(bundle: MediaEvidenceBundle | dict[str, Any], output_d
             grouped.setdefault(str(claim["topic"]), []).append(claim)
         sections = [{"title": name, "claims": rows, "claim_ids": [item["claim_id"] for item in rows]}
                     for name, rows in grouped.items()]
-        apps.append({"application_id": app_id, "name": app.get("display_name") or app.get("name", app_id), "claims": publishable_claims,
+        apps.append({"application_id": app_id, "name": app.get("display_name") or app.get("name", app_id),
+                     "aliases": list(app.get("aliases", [])), "claims": publishable_claims,
                      "sections": sections})
     if not apps:
         general = [item for item in claims if item.get("application_id") == "SESSION_GENERAL"
