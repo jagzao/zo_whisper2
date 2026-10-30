@@ -44,3 +44,25 @@ def test_same_topic_without_reconciliation_is_held_for_review():
     assert result["state"] == "NEEDS_REVIEW"
     assert result["outcomes"][0]["decision"] == "NEEDS_REVIEW"
     assert result["embeddingEligibleCount"] == 0
+
+
+def test_zavi_decision_with_evidence_reaches_review_without_becoming_learned_knowledge():
+    package = {
+        "sessionId": "zavi-package-1", "projectId": "p1",
+        "decisions": [{"id": "d1", "text": "Synthetic service uses SSO.", "evidenceRefs": ["u1"]}],
+    }
+    result = evaluate_meeting_candidates(package, [])
+    assert result["candidateCount"] == 1
+    assert result["state"] == "NEEDS_REVIEW"
+    assert result["outcomes"][0]["decision"] == "NEEDS_REVIEW"
+    assert result["outcomes"][0]["sourceEvidenceRefs"] == ["u1"]
+    assert result["outcomes"][0]["extractionSource"] == "zavi_decision_unreviewed"
+    assert result["embeddingEligibleCount"] == 0
+    assert result["outcomes"][0]["ownerApproved"] is False
+
+
+def test_zavi_decision_without_evidence_is_not_extracted():
+    result = evaluate_meeting_candidates({"sessionId": "zavi-package-2", "projectId": "p1",
+                                          "decisions": [{"text": "Unsupported assertion."}]}, [])
+    assert result["candidateCount"] == 0
+    assert result["embeddingEligibleCount"] == 0

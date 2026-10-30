@@ -15,8 +15,10 @@ def evaluate_meeting_candidates(
     existing: list[dict[str, Any]] | None,
 ) -> dict[str, Any]:
     candidates = package.get("canonicalCandidates", [])
-    if not isinstance(candidates, list):
-        candidates = []
+    extraction_source = "canonical_candidate"
+    if not isinstance(candidates, list) or not candidates:
+        candidates = _unreviewed_decision_candidates(package)
+        extraction_source = "zavi_decision_unreviewed"
     outcomes: list[dict[str, Any]] = []
     for item in candidates:
         if not isinstance(item, dict):
@@ -68,6 +70,7 @@ def evaluate_meeting_candidates(
             "sourceEvidenceRefs": list(evidence_refs),
             "observedAt": package.get("endedAt"),
             "currentLiveValidationRequired": item.get("currentLiveValidationRequired") is True,
+            "extractionSource": item.get("_extractionSource", extraction_source),
         })
 
     needs_review = any(item["decision"] == "NEEDS_REVIEW" for item in outcomes)
@@ -79,6 +82,28 @@ def evaluate_meeting_candidates(
         "embeddingEligibleCount": sum(item["embeddingEligible"] for item in outcomes),
         "outcomes": outcomes,
     }
+
+
+def _unreviewed_decision_candidates(package: dict[str, Any]) -> list[dict[str, Any]]:
+    decisions = package.get("decisions")
+    if not isinstance(decisions, list):
+        return []
+    candidates = []
+    for decision in decisions:
+        if not isinstance(decision, dict) or not isinstance(decision.get("text"), str):
+            continue
+        evidence = decision.get("evidenceRefs")
+        evidence_refs = [ref for ref in evidence if isinstance(ref, str) and ref.strip()] if isinstance(evidence, list) else []
+        if not evidence_refs:
+            continue
+        candidates.append({
+            "canonicalFact": decision["text"],
+            "topic": decision.get("topic", ""),
+            "applicationId": decision.get("applicationId", ""),
+            "evidenceRefs": evidence_refs,
+            "_extractionSource": "zavi_decision_unreviewed",
+        })
+    return candidates
 
 
 def _normalized(value: object) -> str:
