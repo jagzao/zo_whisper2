@@ -67,7 +67,7 @@ def evaluate_pack_readiness(pack: dict[str, Any], *, owner_content_uat: str) -> 
 
 
 def build_curated_chunks(pack: dict[str, Any], *, owner_content_uat: str,
-                         second_brain_ready: str) -> dict[str, Any]:
+                         second_brain_ready: str, project_id: str = PROJECT_ID) -> dict[str, Any]:
     """Build one chunk per approved canonical fact; keep exclusions explicit."""
     facts = pack.get("canonical_facts", [])
     candidates: list[dict[str, Any]] = []
@@ -93,7 +93,7 @@ def build_curated_chunks(pack: dict[str, Any], *, owner_content_uat: str,
                                                        str(fact.get("version", 1)), topic, content)))[:24],
             "knowledge_id": str(fact.get("knowledge_id") or ""),
             "version": int(fact.get("version") or 1),
-            "project_id": PROJECT_ID,
+            "project_id": project_id,
             "application_id": application_id,
             "application": str(app["name"]),
             "application_aliases": [str(alias) for alias in app.get("aliases", []) if alias],

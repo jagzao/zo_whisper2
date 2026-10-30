@@ -334,15 +334,8 @@ def _enforce_local_only() -> Any:
             logger.warning("[SECURITY] Rejected %s with non-local Origin: %s", request.method, origin)
             return jsonify({"ok": False, "error": "This request origin is not authorized."}), 403
 
-        if request.path.startswith("/api/knowledge/intake/meeting") or request.path == "/api/knowledge/search":
-            service_token = os.environ.get("ZAVI_KNOWLEDGE_INTAKE_TOKEN", "").strip()
-            token = request.headers.get("Authorization", "")
-            expected = f"Bearer {service_token}" if service_token else ""
-            if not service_token:
-                return jsonify({"ok": False, "error": "Meeting intake service is not configured."}), 503
-        else:
-            token = request.headers.get("X-Local-Dashboard-Token", "")
-            expected = _DASHBOARD_TOKEN
+        token = request.headers.get("X-Local-Dashboard-Token", "")
+        expected = _DASHBOARD_TOKEN
         if not expected or not secrets.compare_digest(token, expected):
             logger.warning("[SECURITY] Rejected %s with missing/invalid dashboard token", request.method)
             return jsonify({"ok": False, "error": "Dashboard authorization expired. Reload Whisper and try again."}), 403
@@ -352,60 +345,17 @@ def _enforce_local_only() -> Any:
 
 @app.route("/api/knowledge/intake/meeting", methods=["POST"])
 def intake_meeting_package() -> Any:
-    from transcript_pipeline.knowledge.meeting_intake import (
-        MeetingPackageError,
-        store_meeting_package,
-        validate_meeting_package,
-    )
-
-    package = request.get_json(silent=True)
-    try:
-        result = store_meeting_package(ROOT, validate_meeting_package(package))
-    except MeetingPackageError as exc:
-        return jsonify({"ok": False, "error": str(exc)}), 400
-    status = 409 if result["status"] == "CONFLICT" else 200
-    return jsonify({"ok": True, **result}), status
+    return jsonify({"ok": False, "error": "meeting_learning_owned_by_knowledge_service"}), 410
 
 
 @app.route("/api/knowledge/intake/meeting/<session_id>/evaluate", methods=["POST"])
 def evaluate_meeting_intake(session_id: str) -> Any:
-    from transcript_pipeline.knowledge.meeting_intake import evaluate_intake, get_intake_package
-    from transcript_pipeline.knowledge.second_brain import SecondBrainError, SupabaseSecondBrainStore
-
-    if not session_id or len(session_id) > 120:
-        return jsonify({"ok": False, "error": "invalid_session_id"}), 400
-    package = get_intake_package(ROOT, session_id)
-    if package is None:
-        return jsonify({"ok": False, "error": "meeting_intake_not_found"}), 404
-    has_decisions = isinstance(package.get("decisions"), list) and bool(package["decisions"])
-    existing: list[dict[str, Any]] | None = []
-    if package.get("canonicalCandidates") or has_decisions:
-        try:
-            rows = SupabaseSecondBrainStore().list_project_chunks(str(package.get("projectId", "")))
-            existing = []
-            for row in rows:
-                metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-                existing.append({
-                    "projectId": row.get("project_id"),
-                    "applicationId": metadata.get("applicationId"),
-                    "metadata": {
-                        "applicationName": metadata.get("application") or metadata.get("applicationName"),
-                        "applicationAliases": metadata.get("applicationAliases", metadata.get("aliases", [])),
-                    },
-                    "topic": row.get("topic"),
-                    "canonicalFact": metadata.get("canonicalFact") or row.get("content", ""),
-                })
-        except SecondBrainError:
-            return jsonify({"ok": False, "error": "learning_comparison_unavailable"}), 503
-    result = evaluate_intake(ROOT, session_id, existing=existing)
-    if result is None:
-        return jsonify({"ok": False, "error": "meeting_intake_not_found"}), 404
-    return jsonify({"ok": True, **result}), 200
+    return jsonify({"ok": False, "error": "meeting_learning_owned_by_knowledge_service"}), 410
 
 
 @app.route("/api/knowledge/search", methods=["POST"])
-def search_second_brain_knowledge() -> Any:
-    from transcript_pipeline.knowledge.second_brain import SecondBrainError, search_knowledge
+def search_knowledge_service() -> Any:
+    from transcript_pipeline.knowledge.service_client import KnowledgeServiceError, search_knowledge
 
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
@@ -422,10 +372,34 @@ def search_second_brain_knowledge() -> Any:
             or not isinstance(top_k, int) or isinstance(top_k, bool) or not 1 <= top_k <= 50):
         return jsonify({"ok": False, "error": "invalid_search_input"}), 400
     try:
-        result = search_knowledge(project_id, question, application_id=application_id, topic=topic, top_k=top_k)
-    except SecondBrainError as exc:
+        result = search_knowledge(
+            {"projectId": project_id, "question": question, "applicationId": application_id, "topic": topic, "topK": top_k}
+        )
+    except KnowledgeServiceError as exc:
         logger.warning("[knowledge/search] service unavailable: %s", str(exc))
         return jsonify({"ok": False, "error": "knowledge_search_unavailable"}), 503
+    return jsonify({"ok": True, **result}), 200
+
+
+@app.route("/api/knowledge/documents-v3/intake", methods=["POST"])
+def intake_documents_v3() -> Any:
+    from transcript_pipeline.knowledge.service_client import KnowledgeServiceError, submit_documents_v3
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict) or not isinstance(payload.get("pack"), dict):
+        return jsonify({"ok": False, "error": "invalid_documents_v3_input"}), 400
+    project_id, source_id = payload.get("projectId"), payload.get("sourceId")
+    owner_uat, ready = payload.get("ownerContentUat"), payload.get("secondBrainReady")
+    if not all(isinstance(value, str) and value.strip() for value in (project_id, source_id, owner_uat, ready)):
+        return jsonify({"ok": False, "error": "invalid_documents_v3_input"}), 400
+    try:
+        result = submit_documents_v3(
+            payload["pack"], project_id=project_id, source_id=source_id,
+            owner_content_uat=owner_uat, second_brain_ready=ready,
+        )
+    except KnowledgeServiceError as exc:
+        status = 422 if str(exc) == "documents_v3_learning_gate_failed" else 503
+        return jsonify({"ok": False, "error": str(exc)}), status
     return jsonify({"ok": True, **result}), 200
 
 
