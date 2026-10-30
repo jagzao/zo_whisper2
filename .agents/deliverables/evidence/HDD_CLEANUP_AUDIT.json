@@ -273,19 +273,49 @@
       "path": "C:/Users/JAGZA/AppData/Local/Temp/opencode/plv5-delta-001",
       "prunable": true,
       "safeToDelete": false,
-      "reason": "gitdir dangling; physical directory/reference reconciliation not complete"
+      "reason": "gitdir dangling; physical directory/reference reconciliation not complete",
+      "pruned": true,
+      "uniqueCommitPreservedBy": "local plv5-delta-p1 and remote refs",
+      "uniqueCommitsVsFeature": 19,
+      "physicalDirectoryPresent": false
     },
     {
       "path": "C:/Users/JAGZA/AppData/Local/Temp/opencode/plv5-delta-002",
       "prunable": true,
       "safeToDelete": false,
-      "reason": "gitdir dangling; physical directory/reference reconciliation not complete"
+      "reason": "gitdir dangling; physical directory/reference reconciliation not complete",
+      "pruned": true,
+      "uniqueCommitsVsFeature": 0,
+      "localBranchPreserved": "plv5-delta-p2",
+      "physicalDirectoryPresent": false
     },
     {
       "path": "C:/Users/JAGZA/AppData/Local/Temp/opencode/zmi-merge",
       "prunable": true,
       "safeToDelete": false,
-      "reason": "gitdir dangling; physical directory/reference reconciliation not complete"
+      "reason": "gitdir dangling; physical directory/reference reconciliation not complete",
+      "pruned": true,
+      "uniqueCommitPreservedBy": "origin/feat/zmi-docker-runtime-knowledge",
+      "uniqueCommitsVsFeature": 5,
+      "physicalDirectoryPresent": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-dv2-review-delta",
+      "head": "f9f6c251",
+      "uniqueCommitsVsFeature": 0,
+      "trackedDiff": 0,
+      "untracked": 0,
+      "ignored": "artifacts/gates/docs-v2/all-light logs plus regenerable caches",
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-zmi-docker",
+      "head": "7547f30a",
+      "uniqueCommitsVsFeature": 4,
+      "trackedDiff": 3,
+      "untracked": 0,
+      "ignored": "local .env, artifacts, logs and quality reports",
+      "safeToDelete": false
     }
   ],
   "cleanupBlockers": [
@@ -296,10 +326,21 @@
       "why": "safe candidates identified but deletion tool blocked; no bypass used"
     },
     {
-      "task": "worktree deletion",
-      "blocker": "unique branch commits and uncommitted/untracked/ignored content remain",
+      "task": "remaining old worktree removal",
+      "blocker": "tracked modifications, unique commits, ignored artifacts, and local env files remain",
       "ownerActionRequired": true,
-      "why": "cannot discard potentially unique work without explicit disposition"
+      "why": "cannot discard potentially unique work or local configuration without an owner disposition"
     }
-  ]
+  ],
+  "prunedWorktreeMetadata": {
+    "count": 3,
+    "paths": [
+      "C:/Users/JAGZA/AppData/Local/Temp/opencode/plv5-delta-001",
+      "C:/Users/JAGZA/AppData/Local/Temp/opencode/plv5-delta-002",
+      "C:/Users/JAGZA/AppData/Local/Temp/opencode/zmi-merge"
+    ],
+    "physicalDirectoriesWerePresent": false,
+    "uniqueCommitsRemainReferenced": true,
+    "physicalDiskBytesReclaimed": "not_measured"
+  }
 }
