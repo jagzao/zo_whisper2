@@ -13,9 +13,12 @@
     "safeReclaimedBytes": 0
   },
   "processInspection": {
-    "matchingAsrOrFfmpegProcesses": 0,
+    "confirmedAsrOrFfmpegProcesses": 0,
     "ambiguousWhisperPythonProcesses": [42556, 42068],
-    "action": "left_running; command purpose and artifact references not proven"
+    "heavySlotState": "occupied_or_ambiguous",
+    "largestObservedWorkingSetBytes": 1847676928,
+    "freeRamBytesAtLastCheck": 310378496,
+    "action": "left running; command purpose and artifact references not proven; no additional heavy work started"
   },
   "candidates": [
     {
