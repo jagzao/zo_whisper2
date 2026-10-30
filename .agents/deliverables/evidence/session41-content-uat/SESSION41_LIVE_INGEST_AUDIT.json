@@ -1,0 +1,52 @@
+{
+  "source_sha256": "7c39fa701041d36252c2339df4a9a76ed0e69cf188feb64d64cbb582f4d65b96",
+  "SECOND_BRAIN_READY": "PASS",
+  "OWNER_CONTENT_UAT": "PASS",
+  "PACKAGE_POLICY": "PASS",
+  "EMBEDDING_READY": "YES",
+  "intended_chunks": 36,
+  "eligible_chunks": 13,
+  "rejected_chunks": 0,
+  "accepted_exclusion_count": 23,
+  "raw_transcript_published": false,
+  "raw_ocr_published": false,
+  "raw_media_published": false,
+  "GEMINI_LIVE_SMOKE": "PASS",
+  "SECOND_BRAIN_INGESTION": "PASS",
+  "ingestion_result": {
+    "success": true,
+    "syntheticSmoke": "PASS",
+    "model": "gemini-embedding-2",
+    "dimensions": 768,
+    "instructionVersion": "retrieval-v1",
+    "intended": 13,
+    "excluded": 23,
+    "embedded": 13,
+    "unchanged": 0,
+    "inserted": 13,
+    "updated": 0,
+    "retired": 0,
+    "failed": 0,
+    "failedReasons": []
+  },
+  "embedding_model": "gemini-embedding-2",
+  "embedding_dimensions": 768,
+  "embedding_instruction_version": "retrieval-v1",
+  "idempotency_result": {
+    "success": true,
+    "intended": 13,
+    "embedded": 0,
+    "unchanged": 13,
+    "failed": 0,
+    "indexed_rows": 13
+  },
+  "retrieval_uat": {
+    "status": "PASS",
+    "questions": 10,
+    "semantic": true,
+    "application_isolation": true,
+    "provenance_returned": true,
+    "current_state_metadata_returned": true,
+    "raw_transcript_in_answer_context": false
+  }
+}

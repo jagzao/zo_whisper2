@@ -1,0 +1,177 @@
+{
+  "updatedAt": "2026-10-29",
+  "drive": "C:",
+  "beforeCleanup": {
+    "totalBytes": 997814431744,
+    "usedBytes": 877162106880,
+    "freeBytes": 120652324864
+  },
+  "afterCleanup": {
+    "totalBytes": 997814431744,
+    "usedBytes": 877162106880,
+    "freeBytes": 120652324864
+  },
+  "safeReclaimedBytes": 0,
+  "deletionAttempt": {
+    "targets": [
+      ".pytest_cache",
+      ".ruff_cache"
+    ],
+    "result": "REJECTED_BY_COMMAND_POLICY",
+    "removed": false
+  },
+  "transcription": {
+    "formerWorkerPid": 53196,
+    "state": "No active ASR worker confirmed; watcher processes remain running and untouched."
+  },
+  "worktrees": {
+    "created": false,
+    "deleted": false,
+    "inventory": "Several old worktrees have uncommitted content; absent temporary gitdirs also listed; no cleanup performed."
+  },
+  "candidates": [
+    {
+      "PATH": "C:/Dev/Zo/whisper/.pytest_cache",
+      "SIZE_BYTES": 143460,
+      "CAN_REGENERATE": true,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "not_applicable",
+      "SAFE_TO_DELETE": true,
+      "REASON": "Regenerable test cache; safe candidate, deletion blocked by command policy.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper/.ruff_cache",
+      "SIZE_BYTES": 36546,
+      "CAN_REGENERATE": true,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "not_applicable",
+      "SAFE_TO_DELETE": true,
+      "REASON": "Regenerable Ruff cache; safe candidate, deletion blocked by command policy.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper/tmp",
+      "SIZE_BYTES": 50142132,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Contains untracked audit scripts, PDFs and review images; unique content not reconciled.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper/Video_compress",
+      "SIZE_BYTES": 79775291694,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Compression derivatives; source/reference/active-use state not verified.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper/Frames",
+      "SIZE_BYTES": 0,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Potential review/evidence frames; no files visible in measured root scan.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/zavi/.next",
+      "SIZE_BYTES": 749041433,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Build/dev output; active Node process context not verified.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/zavi/desktop/dist",
+      "SIZE_BYTES": 495487060,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Generated desktop output; application references not verified.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/zavi/artifacts",
+      "SIZE_BYTES": 219,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Untracked user artifacts; preserve.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/.worktrees",
+      "SIZE_BYTES": 104294955,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Existing worktree includes 30 uncommitted entries; preserve.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper-dv2-latest",
+      "SIZE_BYTES": 0,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Registered worktree includes 4 uncommitted entries; preserve.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper-dv2-plv5",
+      "SIZE_BYTES": 0,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Registered worktree includes 4 uncommitted entries; preserve.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper-kab-ingest",
+      "SIZE_BYTES": 0,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Registered worktree includes 24 uncommitted entries; preserve.",
+      "DELETED": false
+    },
+    {
+      "PATH": "C:/Dev/Zo/whisper-zmi-docker",
+      "SIZE_BYTES": 0,
+      "CAN_REGENERATE": false,
+      "CANONICAL": false,
+      "ACTIVE_PROCESS_REFERENCE": "unknown",
+      "UNIQUE_UNCOMMITTED_CONTENT": "present_or_unverified",
+      "SAFE_TO_DELETE": false,
+      "REASON": "Registered worktree includes 3 uncommitted entries; preserve.",
+      "DELETED": false
+    }
+  ]
+}

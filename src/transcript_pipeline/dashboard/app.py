@@ -334,7 +334,7 @@ def _enforce_local_only() -> Any:
             logger.warning("[SECURITY] Rejected %s with non-local Origin: %s", request.method, origin)
             return jsonify({"ok": False, "error": "This request origin is not authorized."}), 403
 
-        if request.path == "/api/knowledge/intake/meeting":
+        if request.path.startswith("/api/knowledge/intake/meeting") or request.path == "/api/knowledge/search":
             service_token = os.environ.get("ZAVI_KNOWLEDGE_INTAKE_TOKEN", "").strip()
             token = request.headers.get("Authorization", "")
             expected = f"Bearer {service_token}" if service_token else ""
@@ -365,6 +365,63 @@ def intake_meeting_package() -> Any:
         return jsonify({"ok": False, "error": str(exc)}), 400
     status = 409 if result["status"] == "CONFLICT" else 200
     return jsonify({"ok": True, **result}), status
+
+
+@app.route("/api/knowledge/intake/meeting/<session_id>/evaluate", methods=["POST"])
+def evaluate_meeting_intake(session_id: str) -> Any:
+    from transcript_pipeline.knowledge.meeting_intake import evaluate_intake, get_intake_package
+    from transcript_pipeline.knowledge.second_brain import SecondBrainError, SupabaseSecondBrainStore
+
+    if not session_id or len(session_id) > 120:
+        return jsonify({"ok": False, "error": "invalid_session_id"}), 400
+    package = get_intake_package(ROOT, session_id)
+    if package is None:
+        return jsonify({"ok": False, "error": "meeting_intake_not_found"}), 404
+    existing: list[dict[str, Any]] | None = []
+    if package.get("canonicalCandidates"):
+        try:
+            rows = SupabaseSecondBrainStore().list_project_chunks(str(package.get("projectId", "")))
+            existing = []
+            for row in rows:
+                metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+                existing.append({
+                    "projectId": row.get("project_id"),
+                    "applicationId": metadata.get("applicationId"),
+                    "topic": row.get("topic"),
+                    "canonicalFact": metadata.get("canonicalFact") or row.get("content", ""),
+                })
+        except SecondBrainError:
+            return jsonify({"ok": False, "error": "learning_comparison_unavailable"}), 503
+    result = evaluate_intake(ROOT, session_id, existing=existing)
+    if result is None:
+        return jsonify({"ok": False, "error": "meeting_intake_not_found"}), 404
+    return jsonify({"ok": True, **result}), 200
+
+
+@app.route("/api/knowledge/search", methods=["POST"])
+def search_second_brain_knowledge() -> Any:
+    from transcript_pipeline.knowledge.second_brain import SecondBrainError, search_knowledge
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "invalid_search_input"}), 400
+    project_id = payload.get("projectId")
+    question = payload.get("question")
+    application_id = payload.get("applicationId")
+    topic = payload.get("topic")
+    top_k = payload.get("topK", 8)
+    if (not isinstance(project_id, str) or not 1 <= len(project_id) <= 100
+            or not isinstance(question, str) or not 1 <= len(question.strip()) <= 2000
+            or application_id is not None and (not isinstance(application_id, str) or len(application_id) > 100)
+            or topic is not None and (not isinstance(topic, str) or len(topic) > 200)
+            or not isinstance(top_k, int) or isinstance(top_k, bool) or not 1 <= top_k <= 50):
+        return jsonify({"ok": False, "error": "invalid_search_input"}), 400
+    try:
+        result = search_knowledge(project_id, question, application_id=application_id, topic=topic, top_k=top_k)
+    except SecondBrainError as exc:
+        logger.warning("[knowledge/search] service unavailable: %s", str(exc))
+        return jsonify({"ok": False, "error": "knowledge_search_unavailable"}), 503
+    return jsonify({"ok": True, **result}), 200
 
 
 @app.errorhandler(SecurityError)
