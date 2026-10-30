@@ -66,3 +66,18 @@ def test_zavi_decision_without_evidence_is_not_extracted():
                                           "decisions": [{"text": "Unsupported assertion."}]}, [])
     assert result["candidateCount"] == 0
     assert result["embeddingEligibleCount"] == 0
+
+
+def test_unique_context_hints_resolve_scope_and_compare_without_approving():
+    package = {
+        "sessionId": "zavi-package-3", "projectId": "p1",
+        "contextHints": {"applicationHints": ["Northstar"]}, "topics": ["authentication"],
+        "decisions": [{"text": "Uses SSO.", "evidenceRefs": ["u1"]}],
+    }
+    existing = [{"projectId": "p1", "applicationId": "app1", "topic": "authentication",
+                 "canonicalFact": "Uses SSO.", "metadata": {"applicationName": "Northstar"}}]
+    outcome = evaluate_meeting_candidates(package, existing)["outcomes"][0]
+    assert (outcome["applicationId"], outcome["topic"]) == ("app1", "authentication")
+    assert outcome["comparisonRelation"] == "EXACT"
+    assert outcome["decision"] == "NEEDS_REVIEW"
+    assert outcome["embeddingEligible"] is False

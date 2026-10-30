@@ -17,7 +17,7 @@ def evaluate_meeting_candidates(
     candidates = package.get("canonicalCandidates", [])
     extraction_source = "canonical_candidate"
     if not isinstance(candidates, list) or not candidates:
-        candidates = _unreviewed_decision_candidates(package)
+        candidates = _unreviewed_decision_candidates(package, existing)
         extraction_source = "zavi_decision_unreviewed"
     outcomes: list[dict[str, Any]] = []
     for item in candidates:
@@ -71,6 +71,7 @@ def evaluate_meeting_candidates(
             "observedAt": package.get("endedAt"),
             "currentLiveValidationRequired": item.get("currentLiveValidationRequired") is True,
             "extractionSource": item.get("_extractionSource", extraction_source),
+            "comparisonRelation": relation,
         })
 
     needs_review = any(item["decision"] == "NEEDS_REVIEW" for item in outcomes)
@@ -84,7 +85,9 @@ def evaluate_meeting_candidates(
     }
 
 
-def _unreviewed_decision_candidates(package: dict[str, Any]) -> list[dict[str, Any]]:
+def _unreviewed_decision_candidates(
+    package: dict[str, Any], existing: list[dict[str, Any]] | None
+) -> list[dict[str, Any]]:
     decisions = package.get("decisions")
     if not isinstance(decisions, list):
         return []
@@ -96,14 +99,40 @@ def _unreviewed_decision_candidates(package: dict[str, Any]) -> list[dict[str, A
         evidence_refs = [ref for ref in evidence if isinstance(ref, str) and ref.strip()] if isinstance(evidence, list) else []
         if not evidence_refs:
             continue
+        application_id = decision.get("applicationId", "")
+        if not application_id:
+            application_id = _resolve_application_hint(package, existing)
+        topic = decision.get("topic", "")
+        package_topics = package.get("topics")
+        if not topic and isinstance(package_topics, list) and len(package_topics) == 1:
+            topic = package_topics[0]
         candidates.append({
             "canonicalFact": decision["text"],
-            "topic": decision.get("topic", ""),
-            "applicationId": decision.get("applicationId", ""),
+            "topic": topic,
+            "applicationId": application_id,
             "evidenceRefs": evidence_refs,
             "_extractionSource": "zavi_decision_unreviewed",
         })
     return candidates
+
+
+def _resolve_application_hint(package: dict[str, Any], existing: list[dict[str, Any]] | None) -> str:
+    context = package.get("contextHints")
+    hints = context.get("applicationHints") if isinstance(context, dict) else None
+    if not isinstance(hints, list) or existing is None:
+        return ""
+    normalized_hints = {_normalized(hint) for hint in hints if isinstance(hint, str) and _normalized(hint)}
+    matches = set()
+    for row in existing:
+        if row.get("projectId") != package.get("projectId") or not isinstance(row.get("applicationId"), str):
+            continue
+        metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+        names = [metadata.get("applicationName"), *(
+            metadata.get("applicationAliases") if isinstance(metadata.get("applicationAliases"), list) else []
+        )]
+        if any(isinstance(name, str) and _normalized(name) in normalized_hints for name in names):
+            matches.add(row["applicationId"])
+    return next(iter(matches)) if len(matches) == 1 else ""
 
 
 def _normalized(value: object) -> str:

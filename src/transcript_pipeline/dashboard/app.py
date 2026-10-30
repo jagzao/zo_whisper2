@@ -377,8 +377,9 @@ def evaluate_meeting_intake(session_id: str) -> Any:
     package = get_intake_package(ROOT, session_id)
     if package is None:
         return jsonify({"ok": False, "error": "meeting_intake_not_found"}), 404
+    has_decisions = isinstance(package.get("decisions"), list) and bool(package["decisions"])
     existing: list[dict[str, Any]] | None = []
-    if package.get("canonicalCandidates"):
+    if package.get("canonicalCandidates") or has_decisions:
         try:
             rows = SupabaseSecondBrainStore().list_project_chunks(str(package.get("projectId", "")))
             existing = []
@@ -387,6 +388,10 @@ def evaluate_meeting_intake(session_id: str) -> Any:
                 existing.append({
                     "projectId": row.get("project_id"),
                     "applicationId": metadata.get("applicationId"),
+                    "metadata": {
+                        "applicationName": metadata.get("application") or metadata.get("applicationName"),
+                        "applicationAliases": metadata.get("applicationAliases", metadata.get("aliases", [])),
+                    },
                     "topic": row.get("topic"),
                     "canonicalFact": metadata.get("canonicalFact") or row.get("content", ""),
                 })
