@@ -334,12 +334,37 @@ def _enforce_local_only() -> Any:
             logger.warning("[SECURITY] Rejected %s with non-local Origin: %s", request.method, origin)
             return jsonify({"ok": False, "error": "This request origin is not authorized."}), 403
 
-        token = request.headers.get("X-Local-Dashboard-Token", "")
-        if not secrets.compare_digest(token, _DASHBOARD_TOKEN):
+        if request.path == "/api/knowledge/intake/meeting":
+            service_token = os.environ.get("ZAVI_KNOWLEDGE_INTAKE_TOKEN", "").strip()
+            token = request.headers.get("Authorization", "")
+            expected = f"Bearer {service_token}" if service_token else ""
+            if not service_token:
+                return jsonify({"ok": False, "error": "Meeting intake service is not configured."}), 503
+        else:
+            token = request.headers.get("X-Local-Dashboard-Token", "")
+            expected = _DASHBOARD_TOKEN
+        if not expected or not secrets.compare_digest(token, expected):
             logger.warning("[SECURITY] Rejected %s with missing/invalid dashboard token", request.method)
             return jsonify({"ok": False, "error": "Dashboard authorization expired. Reload Whisper and try again."}), 403
 
     return None
+
+
+@app.route("/api/knowledge/intake/meeting", methods=["POST"])
+def intake_meeting_package() -> Any:
+    from transcript_pipeline.knowledge.meeting_intake import (
+        MeetingPackageError,
+        store_meeting_package,
+        validate_meeting_package,
+    )
+
+    package = request.get_json(silent=True)
+    try:
+        result = store_meeting_package(ROOT, validate_meeting_package(package))
+    except MeetingPackageError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    status = 409 if result["status"] == "CONFLICT" else 200
+    return jsonify({"ok": True, **result}), status
 
 
 @app.errorhandler(SecurityError)
