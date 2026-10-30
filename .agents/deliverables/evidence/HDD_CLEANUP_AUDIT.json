@@ -22,7 +22,7 @@
   },
   "transcription": {
     "formerWorkerPid": 53196,
-    "state": "No active ASR worker confirmed; watcher processes remain running and untouched."
+    "state": "Target audio png_punam_281026.mp3 is marked completed in processed_files.json; former ASR worker exited. Watcher processes remain active and were left untouched. Output artifact path is not separately recorded in the status entry."
   },
   "worktrees": {
     "created": false,
