@@ -8,8 +8,8 @@
   },
   "afterCleanup": {
     "totalBytes": 997814431744,
-    "usedBytes": 864278990848,
-    "freeBytes": 133535440896
+    "usedBytes": 864312930304,
+    "freeBytes": 133501501440
   },
   "safeReclaimedBytes": 0,
   "deletionAttempt": {
@@ -192,7 +192,7 @@
     }
   ],
   "diskChangeSinceBaseline": {
-    "usedBytesDelta": -12883116032,
+    "usedBytesDelta": -12849176576,
     "attribution": "UNATTRIBUTED; no audited cleanup deletion"
   },
   "activeHeavyJob": {
@@ -366,7 +366,7 @@
     "physicalDiskBytesReclaimed": "not_measured"
   },
   "resourceSnapshot": {
-    "freePhysicalMemoryBytes": 4415672320,
+    "freePhysicalMemoryBytes": 3563323392,
     "totalVisibleMemoryBytes": 31802109952,
     "heavyConcurrency": 1
   }
