@@ -37,5 +37,4 @@ def test_search_api_rejects_invalid_filters(tmp_path, monkeypatch):
     with dashboard_app.app.test_client() as client:
         response = client.post("/api/knowledge/search", headers={"X-Local-Dashboard-Token": "dashboard-test"},
                                json={"projectId": "p1", "question": "What?", "topK": 500})
-        assert response.status_code == 400
-
+        assert response.status_code == 400\n
