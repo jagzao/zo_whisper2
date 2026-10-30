@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "auditedAtUtc": "2026-10-30T21:39:02Z",
+  "roots": [
+    "C:\\Dev\\Zo\\whisper",
+    "C:\\Dev\\Zo\\zavi",
+    "C:\\Dev\\Zo\\.worktrees"
+  ],
+  "disk": {
+    "volume": "C:",
+    "freeBytesBefore": 122154405888,
+    "freeBytesAfter": 122154405888,
+    "safeReclaimedBytes": 0
+  },
+  "processInspection": {
+    "matchingAsrOrFfmpegProcesses": 0,
+    "ambiguousWhisperPythonProcesses": [42556, 42068],
+    "action": "left_running; command purpose and artifact references not proven"
+  },
+  "candidates": [
+    {
+      "path": "C:\\Dev\\Zo\\zavi\\.next-auth-diagnostic\\cache\\webpack\\server-development\\1.pack.gz",
+      "sizeBytes": 24496180,
+      "canRegenerate": true,
+      "canonical": false,
+      "activeProcessReference": "not detected during listener scan",
+      "uniqueUncommittedContent": "unknown; diagnostic directory is untracked",
+      "safeToDelete": false,
+      "reason": "preserved until untracked diagnostic purpose and ownership are reconciled"
+    },
+    {
+      "path": "C:\\Dev\\Zo\\zavi\\.next-ppd-diagnostic\\cache\\webpack\\server-development\\2.pack.gz",
+      "sizeBytes": 14271242,
+      "canRegenerate": true,
+      "canonical": false,
+      "activeProcessReference": "not detected during listener scan",
+      "uniqueUncommittedContent": "unknown; diagnostic directory is untracked",
+      "safeToDelete": false,
+      "reason": "preserved until untracked diagnostic purpose and ownership are reconciled"
+    },
+    {
+      "path": "C:\\Dev\\Zo\\zavi\\.next-uat-69cfb191\\cache\\webpack\\server-production\\0.pack",
+      "sizeBytes": 127934396,
+      "canRegenerate": true,
+      "canonical": false,
+      "activeProcessReference": "not detected during listener scan",
+      "uniqueUncommittedContent": "unknown; UAT build directory is untracked",
+      "safeToDelete": false,
+      "reason": "preserved until UAT artifact and owner references are reconciled"
+    },
+    {
+      "path": "C:\\Dev\\Zo\\zavi\\desktop\\dist\\win-unpacked\\Zavi.exe",
+      "sizeBytes": 249798656,
+      "canRegenerate": true,
+      "canonical": false,
+      "activeProcessReference": "not detected during listener scan",
+      "uniqueUncommittedContent": true,
+      "safeToDelete": false,
+      "reason": "packaged desktop executable may be a user delivery artifact"
+    },
+    {
+      "path": "C:\\Dev\\Zo\\zavi\\desktop\\dist\\Zavi Setup 0.1.0.exe",
+      "sizeBytes": 121248993,
+      "canRegenerate": true,
+      "canonical": false,
+      "activeProcessReference": "not detected during listener scan",
+      "uniqueUncommittedContent": true,
+      "safeToDelete": false,
+      "reason": "installer may be a user delivery artifact"
+    },
+    {
+      "path": "C:\\Dev\\Zo\\whisper\\tmp\\pg_s10_tail_3901.wav",
+      "sizeBytes": 18827046,
+      "canRegenerate": "source and active references unverified",
+      "canonical": false,
+      "activeProcessReference": "unknown; ambiguous Python processes left running",
+      "uniqueUncommittedContent": "unknown; tmp contains uncommitted WIP and evidence",
+      "safeToDelete": false,
+      "reason": "preserved until source, process, and transcript-evidence references are verified"
+    },
+    {
+      "path": "C:\\Dev\\Zo\\whisper\\tmp\\frame_0007-crop.png",
+      "sizeBytes": 1871988,
+      "canRegenerate": "source and evidence references unverified",
+      "canonical": false,
+      "activeProcessReference": "unknown; ambiguous Python processes left running",
+      "uniqueUncommittedContent": "unknown; tmp contains uncommitted WIP and evidence",
+      "safeToDelete": false,
+      "reason": "preserved until references and unique content are verified"
+    },
+    {
+      "path": "C:\\Dev\\Zo\\whisper\\.agents\\deliverables\\evidence\\pg-transcript-recovery-20261024\\pg_AMS_KAP_-_App_Support_-_Session_41_segments.json",
+      "sizeBytes": 268042,
+      "canRegenerate": true,
+      "canonical": false,
+      "activeProcessReference": "referenced evidence directory",
+      "uniqueUncommittedContent": true,
+      "safeToDelete": false,
+      "reason": "referenced transcript recovery evidence is protected"
+    }
+  ],
+  "worktreeResidues": {
+    "inventoryStatus": "present; unique/uncommitted contents not reconciled",
+    "deletionPerformed": false,
+    "ownerDispositionRequired": true,
+    "paths": [
+      "C:\\Dev\\Zo\\.worktrees\\knowledge-20261010-181333-zavi-kab",
+      "C:\\Dev\\Zo\\.worktrees\\knowledge-zmi",
+      "C:\\Dev\\Zo\\.worktrees\\sass-store-sdd015-f006",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-cert",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-delivery-core-hotfix-20261022",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-integration",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-jev-physical",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-live",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-logo",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-pl-v4",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-sdd-001",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-sdd-004",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-sdd-005-camera-ux-v2-visual-learning",
+      "C:\\Dev\\Zo\\.worktrees\\zavi-sdd-base",
+      "C:\\Dev\\Zo\\whisper-dv2-delta004",
+      "C:\\Dev\\Zo\\whisper-dv2-latest",
+      "C:\\Dev\\Zo\\whisper-dv2-plv5",
+      "C:\\Dev\\Zo\\whisper-dv2-review-delta",
+      "C:\\Dev\\Zo\\whisper-kab-ingest",
+      "C:\\Dev\\Zo\\whisper-live-capture",
+      "C:\\Dev\\Zo\\whisper-main-pointer",
+      "C:\\Dev\\Zo\\whisper-zmi-docker"
+    ]
+  },
+  "deletionSummary": {
+    "deletedFiles": [],
+    "reason": "no large candidate met every positive safety criterion"
+  }
+}
