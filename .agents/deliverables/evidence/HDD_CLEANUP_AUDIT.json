@@ -8,8 +8,8 @@
   },
   "afterCleanup": {
     "totalBytes": 997814431744,
-    "usedBytes": 863776227328,
-    "freeBytes": 134038204416
+    "usedBytes": 864034496512,
+    "freeBytes": 133779935232
   },
   "safeReclaimedBytes": 0,
   "deletionAttempt": {
@@ -180,14 +180,14 @@
     }
   ],
   "diskChangeSinceBaseline": {
-    "usedBytesDelta": -13385879552,
+    "usedBytesDelta": 13127610368,
     "attribution": "UNATTRIBUTED; no audited cleanup deletion"
   },
   "activeHeavyJob": {
     "state": "ACTIVE_FFMPEG_COMPRESSION",
     "pid": 43628,
-    "input": "Video_compress/pg_tutorial_AMS KAP Session 41 derivative __0abf33dc8e0d.mp4",
-    "output": "Videos/py_pg/.pg_tutorial_AMS KAP Session 41 derivative __0abf33dc8e0d.mp4.optimized.mp4",
+    "input": "Video_compress/pg_tutorial_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording__0abf33dc8e0d.mp4",
+    "output": "Videos/py_pg/.pg_tutorial_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording__0abf33dc8e0d.mp4.optimized.mp4",
     "adoptedAsOnlyHeavyJob": true,
     "stopped": false
   },
@@ -200,7 +200,7 @@
     "activeDerivativeCompressionMustNotBeUsedAsCanonical": true,
     "ownerActionRequired": "restore or identify the recorded healthy source path before recovery",
     "recoveryAttempted": false,
-    "reasonNotStarted": "recorded healthy source absent; current heavy slot occupied by Session 40 derivative compression"
+    "reasonNotStarted": "recorded healthy source absent; current heavy slot occupied by Session 41 derivative compression"
   },
   "s46OwnerAudioReview": "PENDING",
   "worktreeInventory": [
@@ -321,7 +321,7 @@
   "cleanupBlockers": [
     {
       "task": "safe cache removal",
-      "blocker": "recursive cache removal command rejected by command policy",
+      "blocker": "recursive cache removal rejected by command policy on repeat attempt",
       "ownerActionRequired": false,
       "why": "safe candidates identified but deletion tool blocked; no bypass used"
     },
@@ -344,7 +344,7 @@
     "physicalDiskBytesReclaimed": "not_measured"
   },
   "resourceSnapshot": {
-    "freePhysicalMemoryBytes": 2801946624,
+    "freePhysicalMemoryBytes": 1158758400,
     "totalVisibleMemoryBytes": 31802109952,
     "heavyConcurrency": 1
   }
