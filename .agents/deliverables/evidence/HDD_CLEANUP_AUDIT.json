@@ -8,8 +8,8 @@
   },
   "afterCleanup": {
     "totalBytes": 997814431744,
-    "usedBytes": 877162106880,
-    "freeBytes": 120652324864
+    "usedBytes": 863776227328,
+    "freeBytes": 134038204416
   },
   "safeReclaimedBytes": 0,
   "deletionAttempt": {
@@ -21,8 +21,13 @@
     "removed": false
   },
   "transcription": {
-    "formerWorkerPid": 53196,
-    "state": "Target audio png_punam_281026.mp3 is marked completed in processed_files.json; former ASR worker exited. Watcher processes remain active and were left untouched. Output artifact path is not separately recorded in the status entry."
+    "asrState": "NO_ACTIVE_ASR_CONFIRMED",
+    "trackerEntries": 221,
+    "completed": 214,
+    "autoDetected": 7,
+    "pgPyPgEntries": 42,
+    "pgPyPgCompleted": 42,
+    "currentHeavyProcess": "ffmpeg compression of Session 40 derivative (PID 11692); no ASR active"
   },
   "worktrees": {
     "created": false,
@@ -172,6 +177,129 @@
       "SAFE_TO_DELETE": false,
       "REASON": "Registered worktree includes 3 uncommitted entries; preserve.",
       "DELETED": false
+    }
+  ],
+  "diskChangeSinceBaseline": {
+    "usedBytesDelta": -13385879552,
+    "attribution": "UNATTRIBUTED; no audited cleanup deletion"
+  },
+  "activeHeavyJob": {
+    "state": "ACTIVE_FFMPEG_COMPRESSION",
+    "pid": 11692,
+    "input": "Video_compress/pg_tutorial_AMS KAP Session 40 derivative __a31375a6d825.mp4",
+    "output": "Videos/py_pg/.pg_tutorial_AMS KAP Session 40 derivative __a31375a6d825.mp4.optimized.mp4",
+    "adoptedAsOnlyHeavyJob": true,
+    "stopped": false
+  },
+  "session18": {
+    "queueState": "RECOVERY_SOURCE_AVAILABLE_BUT_PATH_NOT_FOUND_DURING_THIS_AUDIT",
+    "recordedHealthyCandidate": "Videos/py_pg/tutorial_AMS KAP - App Support - Session 18-20260826_070045UTC-Meeting Recording 1.mp4",
+    "recordedHealthyCandidateSizeBytes": 268686336,
+    "recordedProbeDurationSeconds": 3878.3365,
+    "recordedHealthyCandidatePresentNow": false,
+    "activeDerivativeCompressionMustNotBeUsedAsCanonical": true,
+    "ownerActionRequired": "restore or identify the recorded healthy source path before recovery",
+    "recoveryAttempted": false,
+    "reasonNotStarted": "recorded healthy source absent; current heavy slot occupied by Session 40 derivative compression"
+  },
+  "s46OwnerAudioReview": "PENDING",
+  "worktreeInventory": [
+    {
+      "path": "C:/Dev/Zo/.worktrees/knowledge-zmi",
+      "head": "190a3aec",
+      "uniqueCommitsVsFeature": 0,
+      "trackedDiff": 8,
+      "untracked": 22,
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-dv2-delta004",
+      "head": "5da0ab6d",
+      "uniqueCommitsVsFeature": 0,
+      "trackedDiff": 0,
+      "untracked": 0,
+      "ignoredArtifacts": "pytest/ruff caches, pycache, artifacts directory not content-reviewed",
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-dv2-latest",
+      "head": "43ef7c0e",
+      "uniqueCommitsVsFeature": 7,
+      "trackedDiff": 0,
+      "untracked": 4,
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-dv2-plv5",
+      "head": "0b25e21e",
+      "uniqueCommitsVsFeature": 0,
+      "trackedDiff": 0,
+      "untracked": 4,
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-dv2-review-delta",
+      "head": "f9f6c251",
+      "uniqueCommitsVsFeature": 0,
+      "trackedDiff": 0,
+      "untracked": 0,
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-kab-ingest",
+      "head": "79beee30",
+      "uniqueCommitsVsFeature": 0,
+      "trackedDiff": 24,
+      "untracked": 0,
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-live-capture",
+      "head": "a12775d8",
+      "uniqueCommitsVsFeature": 11,
+      "trackedDiff": 0,
+      "untracked": 0,
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Dev/Zo/whisper-main-pointer",
+      "head": "7b22df42",
+      "uniqueCommitsVsFeature": 29,
+      "trackedDiff": 0,
+      "untracked": 0,
+      "safeToDelete": false
+    },
+    {
+      "path": "C:/Users/JAGZA/AppData/Local/Temp/opencode/plv5-delta-001",
+      "prunable": true,
+      "safeToDelete": false,
+      "reason": "gitdir dangling; physical directory/reference reconciliation not complete"
+    },
+    {
+      "path": "C:/Users/JAGZA/AppData/Local/Temp/opencode/plv5-delta-002",
+      "prunable": true,
+      "safeToDelete": false,
+      "reason": "gitdir dangling; physical directory/reference reconciliation not complete"
+    },
+    {
+      "path": "C:/Users/JAGZA/AppData/Local/Temp/opencode/zmi-merge",
+      "prunable": true,
+      "safeToDelete": false,
+      "reason": "gitdir dangling; physical directory/reference reconciliation not complete"
+    }
+  ],
+  "cleanupBlockers": [
+    {
+      "task": "safe cache removal",
+      "blocker": "recursive cache removal command rejected by command policy",
+      "ownerActionRequired": false,
+      "why": "safe candidates identified but deletion tool blocked; no bypass used"
+    },
+    {
+      "task": "worktree deletion",
+      "blocker": "unique branch commits and uncommitted/untracked/ignored content remain",
+      "ownerActionRequired": true,
+      "why": "cannot discard potentially unique work without explicit disposition"
     }
   ]
 }
