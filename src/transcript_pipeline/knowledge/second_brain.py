@@ -20,7 +20,7 @@ from transcript_pipeline.knowledge.gemini_embeddings import GeminiEmbeddingProvi
 PROVIDER = "gemini-api"
 MODEL = "gemini-embedding-2"
 DIMENSIONS = 768
-SPACE_VERSION = 2
+SPACE_VERSION = 3
 NORMALIZATION = "l2"
 INSTRUCTION_VERSION = "retrieval-v1"
 
@@ -84,6 +84,7 @@ class SupabaseSecondBrainStore:
         result = self.rpc("register_zavi_knowledge_embedding_space", {
             "p_provider": PROVIDER, "p_model": MODEL, "p_dimensions": DIMENSIONS,
             "p_version": SPACE_VERSION, "p_normalization": NORMALIZATION,
+            "p_instruction_version": INSTRUCTION_VERSION,
         })
         if not isinstance(result, str) or not result:
             raise SecondBrainError("embedding_space_registration_failed")
@@ -125,6 +126,7 @@ class SupabaseSecondBrainStore:
         row_id = stable_uuid("chunk", chunk["chunk_id"])
         row = {
             "id": row_id, "document_id": doc_id, "owner_id": "single-user", "project_id": chunk["project_id"],
+            "external_chunk_id": chunk["chunk_id"],
             "mode": "client", "kind": "fact", "source_type": "reviewed_canonical",
             "content": chunk["content"], "content_hash": chunk["content_hash"],
             "embedding_model": MODEL, "embedding_version": SPACE_VERSION, "embedding_dimensions": DIMENSIONS,
@@ -145,6 +147,42 @@ class SupabaseSecondBrainStore:
         self.request("zavi_knowledge_chunks", query={"on_conflict": "id"}, method="POST", body=row,
                      prefer="resolution=merge-duplicates,return=minimal")
         return row_id
+
+    def retire_superseded_chunks(self, project_id: str, knowledge_id: str,
+                                 current_chunk_id: str, current_version: int) -> int:
+        rows = self.list_project_chunks(project_id)
+        prior = []
+        for row in rows:
+            metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            try:
+                version = int(metadata.get("version", 1))
+            except (TypeError, ValueError):
+                continue
+            if (row.get("id") != current_chunk_id and metadata.get("knowledgeId") == knowledge_id
+                    and version < current_version):
+                prior.append(row)
+        if not prior:
+            return 0
+
+        now = datetime.now(timezone.utc).isoformat()
+        current_rows = self.request("zavi_knowledge_chunks", query={
+            "select": "id,metadata", "id": f"eq.{current_chunk_id}", "limit": "1",
+        })
+        if not isinstance(current_rows, list) or not current_rows:
+            raise SecondBrainError("superseding_chunk_missing")
+        current_metadata = current_rows[0].get("metadata")
+        current_metadata = dict(current_metadata) if isinstance(current_metadata, dict) else {}
+        prior_ids = [str(row["id"]) for row in prior]
+        current_metadata["supersedesChunkIds"] = prior_ids
+        self.request("zavi_knowledge_chunks", query={"id": f"eq.{current_chunk_id}"}, method="PATCH",
+                     body={"supersedes": prior_ids[0], "metadata": current_metadata}, prefer="return=minimal")
+        for row in prior:
+            metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+            self.request("zavi_knowledge_chunks", query={"id": f"eq.{row['id']}"}, method="PATCH",
+                         body={"status": "superseded", "valid_until": now,
+                               "metadata": {**metadata, "supersededByChunkId": current_chunk_id}},
+                         prefer="return=minimal")
+        return len(prior)
 
     def has_embedding(self, space_id: str, chunk_id: str, source_hash: str, content_digest: str) -> bool:
         rows = self.request("zavi_knowledge_embeddings", query={
@@ -231,12 +269,15 @@ def index_curated_chunks(chunks: list[dict[str, Any]], *, owner_content_uat: str
             raise SecondBrainError("chunk_not_embedding_eligible")
     space_id = store.register_embedding_space()
     run_id = str(uuid.uuid4())
-    report = {"intended": len(chunks), "embedded": 0, "unchanged": 0, "failed": 0}
+    report = {"intended": len(chunks), "embedded": 0, "unchanged": 0, "retired": 0, "failed": 0}
     for chunk in chunks:
         row_id = store.upsert_curated_chunk(chunk)
         digest = document_digest(chunk["content"])
         if store.has_embedding(space_id, row_id, chunk["content_hash"], digest):
             report["unchanged"] += 1
+            report["retired"] += store.retire_superseded_chunks(
+                chunk["project_id"], chunk["knowledge_id"], row_id, int(chunk["version"])
+            )
             continue
         vectors = provider.embed([chunk["content"]])
         if len(vectors) != 1 or not normalized_vector(vectors[0]):
@@ -248,8 +289,14 @@ def index_curated_chunks(chunks: list[dict[str, Any]], *, owner_content_uat: str
         )
         if result == "written":
             report["embedded"] += 1
+            report["retired"] += store.retire_superseded_chunks(
+                chunk["project_id"], chunk["knowledge_id"], row_id, int(chunk["version"])
+            )
         elif result == "exists":
             report["unchanged"] += 1
+            report["retired"] += store.retire_superseded_chunks(
+                chunk["project_id"], chunk["knowledge_id"], row_id, int(chunk["version"])
+            )
         else:
             report["failed"] += 1
     return report

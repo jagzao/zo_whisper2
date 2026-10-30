@@ -38,7 +38,9 @@
     "embedded": 0,
     "unchanged": 13,
     "failed": 0,
-    "indexed_rows": 13
+    "retired": 0,
+    "indexed_rows": 13,
+    "duplicate_vectors": 0
   },
   "retrieval_uat": {
     "status": "PASS",
@@ -48,5 +50,12 @@
     "provenance_returned": true,
     "current_state_metadata_returned": true,
     "raw_transcript_in_answer_context": false
-  }
+  },
+  "embedding_space_version": 3,
+  "embedding_space_id": "f3a98313-5154-4566-94c8-0bd120d7650b",
+  "embedding_space_instruction_version": "retrieval-v1",
+  "canonical_chunk_rows": 13,
+  "external_chunk_ids": 13,
+  "legacy_run_retired": true,
+  "legacy_run_id": "e7d53c9e-ae10-417c-b9a2-646103325c99"
 }

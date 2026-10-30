@@ -16,6 +16,7 @@ class FakeStore:
         self.embedded = set()
         self.upserts = 0
         self.writes = 0
+        self.retired = 0
 
     def register_embedding_space(self):
         return "space-id"
@@ -31,6 +32,9 @@ class FakeStore:
         self.writes += 1
         self.embedded.add((space_id, chunk_id, source_hash, content_digest))
         return "written"
+
+    def retire_superseded_chunks(self, project_id, knowledge_id, current_chunk_id, current_version):
+        return self.retired
 
 
 class FakeProvider:
@@ -61,8 +65,8 @@ def test_indexing_is_idempotent_and_never_embeds_ineligible_facts():
     store, provider = FakeStore(), FakeProvider()
     report = index_curated_chunks([_chunk()], owner_content_uat="PASS", second_brain_ready="PASS", store=store, provider=provider)
     repeated = index_curated_chunks([_chunk()], owner_content_uat="PASS", second_brain_ready="PASS", store=store, provider=provider)
-    assert report == {"intended": 1, "embedded": 1, "unchanged": 0, "failed": 0}
-    assert repeated == {"intended": 1, "embedded": 0, "unchanged": 1, "failed": 0}
+    assert report == {"intended": 1, "embedded": 1, "unchanged": 0, "retired": 0, "failed": 0}
+    assert repeated == {"intended": 1, "embedded": 0, "unchanged": 1, "retired": 0, "failed": 0}
     assert (provider.calls, store.upserts, store.writes) == (1, 2, 1)
 
     with pytest.raises(SecondBrainError, match="owner_or_readiness_gate_failed"):
@@ -70,6 +74,55 @@ def test_indexing_is_idempotent_and_never_embeds_ineligible_facts():
     with pytest.raises(SecondBrainError, match="chunk_not_embedding_eligible"):
         index_curated_chunks([_chunk(curated=False)], owner_content_uat="PASS", second_brain_ready="PASS", store=store, provider=provider)
     assert provider.calls == 1
+
+
+def test_register_space_includes_instruction_identity():
+    class Store(SupabaseSecondBrainStore):
+        def __init__(self):
+            self.payload = None
+
+        def rpc(self, name, payload):
+            self.payload = (name, payload)
+            return "space-id"
+
+    store = Store()
+    assert store.register_embedding_space() == "space-id"
+    assert store.payload[1]["p_instruction_version"] == "retrieval-v1"
+
+
+def test_newer_canonical_version_retires_only_older_version_and_records_link():
+    store = SupabaseSecondBrainStore("https://db.example", "key")
+    patches = []
+    prior = [{"id": "old-row", "metadata": {"knowledgeId": "k1", "version": 1}}]
+    store.list_project_chunks = lambda project_id: prior
+
+    def request(resource, *, query=None, method="GET", body=None, prefer=None):
+        if method == "GET":
+            return [{"id": "new-row", "metadata": {"knowledgeId": "k1", "version": 2}}]
+        patches.append((query, method, body))
+        return None
+
+    store.request = request
+    assert store.retire_superseded_chunks("p1", "k1", "new-row", 2) == 1
+    assert patches[0][2]["supersedes"] == "old-row"
+    assert patches[0][2]["metadata"]["supersedesChunkIds"] == ["old-row"]
+    assert patches[1][2]["status"] == "superseded"
+    assert patches[1][2]["metadata"]["supersededByChunkId"] == "new-row"
+
+
+def test_external_chunk_id_is_written_to_canonical_row():
+    store = SupabaseSecondBrainStore("https://db.example", "key")
+    bodies = []
+
+    def request(resource, *, query=None, method="GET", body=None, prefer=None):
+        bodies.append((resource, body))
+        return None
+
+    store.request = request
+    row_id = store.upsert_curated_chunk(_chunk())
+    chunk_row = next(body for resource, body in bodies if resource == "zavi_knowledge_chunks")
+    assert chunk_row["id"] == row_id
+    assert chunk_row["external_chunk_id"] == "c1"
 
 
 def test_second_brain_rest_adapter_requires_https_and_server_key():
