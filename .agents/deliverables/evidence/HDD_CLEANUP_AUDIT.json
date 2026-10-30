@@ -8,8 +8,8 @@
   },
   "afterCleanup": {
     "totalBytes": 997814431744,
-    "usedBytes": 864312930304,
-    "freeBytes": 133501501440
+    "usedBytes": 887793790976,
+    "freeBytes": 110020640768
   },
   "safeReclaimedBytes": 0,
   "deletionAttempt": {
@@ -27,7 +27,7 @@
     "autoDetected": 7,
     "pgPyPgEntries": 42,
     "pgPyPgCompleted": 42,
-    "currentHeavyProcess": "ffmpeg compression of Session 42 derivative (PID 45152); no ASR active",
+    "currentHeavyProcess": "no active ASR or ffmpeg; Session 42 compression completed",
     "uniquePathAccounting": {
       "uniquePaths": 111,
       "completed": 107,
@@ -192,19 +192,21 @@
     }
   ],
   "diskChangeSinceBaseline": {
-    "usedBytesDelta": -12849176576,
+    "usedBytesDelta": 10631684096,
     "attribution": "UNATTRIBUTED; no audited cleanup deletion"
   },
   "activeHeavyJob": {
-    "state": "ACTIVE_FFMPEG_COMPRESSION",
+    "state": "COMPLETED_FFMPEG_COMPRESSION",
     "pid": 45152,
     "input": "Video_compress/pg_tutorial_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945.mp4",
-    "output": "Videos/py_pg/.pg_tutorial_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945.mp4.optimized.mp4",
+    "output": "Videos/py_pg/pg_tutorial_AMS KAP ? App Support ? Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945.mp4",
+    "outputPresent": false,
+    "outputBytes": null,
     "adoptedAsOnlyHeavyJob": true,
     "stopped": false
   },
   "session18": {
-    "queueState": "RECOVERY_SOURCE_AVAILABLE_BUT_PATH_NOT_FOUND_DURING_THIS_AUDIT",
+    "queueState": "RECOVERY_SOURCE_VARIANT_UNVERIFIED",
     "recordedHealthyCandidate": "Videos/py_pg/tutorial_AMS KAP - App Support - Session 18-20260826_070045UTC-Meeting Recording 1.mp4",
     "recordedHealthyCandidateSizeBytes": 268686336,
     "recordedProbeDurationSeconds": 3878.3365,
@@ -212,7 +214,7 @@
     "activeDerivativeCompressionMustNotBeUsedAsCanonical": true,
     "ownerActionRequired": "restore or identify the recorded healthy source path before recovery",
     "recoveryAttempted": false,
-    "reasonNotStarted": "Session 42 derivative compression holds the heavy slot; Session 18 full-duration compressed variant is present but its source relationship is unverified.",
+    "reasonNotStarted": "Heavy slot is free, but the exact recorded healthy source path is absent and the full-duration compressed variant provenance remains unverified.",
     "currentFullDurationVariant": {
       "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1__95afc5cc3488.mp4",
       "sizeBytes": 149237801,
@@ -366,7 +368,7 @@
     "physicalDiskBytesReclaimed": "not_measured"
   },
   "resourceSnapshot": {
-    "freePhysicalMemoryBytes": 3563323392,
+    "freePhysicalMemoryBytes": 157061120,
     "totalVisibleMemoryBytes": 31802109952,
     "heavyConcurrency": 1
   }
