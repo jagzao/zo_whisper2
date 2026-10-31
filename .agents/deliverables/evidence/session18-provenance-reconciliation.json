@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "scope": "local Session 18 source identity and derivative reconciliation; metadata/ffprobe/tracker/transcript comparison only",
+  "recordings": [
+    {
+      "source_id": "sha256:95afc5cc3488661bf62607d13c7496f6727da0fad8a845fc535475a3baa6cc35",
+      "role": "healthy canonical candidate",
+      "sha256": "95afc5cc3488661bf62607d13c7496f6727da0fad8a845fc535475a3baa6cc35",
+      "size_bytes": 268686336,
+      "duration_seconds": 3878.3365,
+      "codec": "h264",
+      "resolution": "1920x1080",
+      "tracker_lineage": "present; local source identity evidence",
+      "derivative": "95afc5cc3488 derivative exists and carries this source hash prefix",
+      "transcript_relation": "matched transcript/source evidence; 95af transcript is distinct from 5bcd content"
+    },
+    {
+      "source_id": "sha256:5bcd31f7f43a1a2e4aaf372896b10e6aeadd1fb555885ee378905249eba3a794",
+      "role": "distinct readable same-label recording",
+      "sha256": "5bcd31f7f43a1a2e4aaf372896b10e6aeadd1fb555885ee378905249eba3a794",
+      "size_bytes": 280370903,
+      "duration_seconds": 4279.333333,
+      "codec": "hevc + aac",
+      "resolution": "1920x1080",
+      "filesystem_utc": "created 2026-10-18T19:39:14.955Z; modified 2026-10-18T21:05:31.609Z",
+      "transcript": "CarpetaTranscripciones/general/AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532_segments.json",
+      "transcript_duration_seconds": 4279.3173125,
+      "duration_delta_seconds": 0.0160205,
+      "transcript_similarity_to_95af": 0.038,
+      "identity": "RESOLVED distinct source by readable media, exact normalized basename, duration, transcript, and low cross-content similarity"
+    },
+    {
+      "source_id": "sha256-prefix:1643e7fee3a3",
+      "role": "corrupt duplicate derivative of 95af family",
+      "sha256": "1643e7fee3a36ade8539ef6e39053735a103e2b11a98cef66d0cad374d7b72b5",
+      "size_bytes": 5830184000,
+      "ffprobe": "FAIL: moov atom not found / invalid input",
+      "identity": "same normalized basename/date/recording as healthy 95af original and linked derivative; exclude corrupt copy, use healthy source"
+    },
+    {
+      "source_id": "session18-temp-corrupt-copy",
+      "role": "corrupt temporary copy",
+      "size_bytes": 173277228,
+      "sha256": "23f8b9b95cf07b93a0f2ea866804cf590cb4b408d9481b8fc210b74d710b3ebe",
+      "ffprobe": "FAIL: moov atom not found",
+      "healthy_recovery_candidate": "95af original, ffprobe PASS; no source recovery needed from owner"
+    }
+  ],
+  "checks": [
+    "full SHA-256 values from PG-physical-video-hash-audit.json",
+    "available partial/source hash relations from derivative metadata",
+    "ffprobe duration, codec, resolution and readability",
+    "filesystem create/modify timestamps",
+    "processed_files.json tracker lineage",
+    "transcript sidecar source basename and duration",
+    "transcript content similarity across same-label candidates",
+    "healthy derivative/source relation"
+  ],
+  "result": "Session 18 same-label ambiguity resolved into two distinct local recordings; 1643 and temp corrupt copies have healthy local recovery; no Session 18 external or owner source blocker remains.",
+  "heavy_work": "not performed while VISION_OCR owns single heavy slot; no media modified or regenerated"
+}
