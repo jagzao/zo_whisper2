@@ -6,7 +6,7 @@
   "physical_video_files": 80,
   "exact_duplicate_physical_groups": 18,
   "exact_duplicate_physical_copies": 19,
-  "logical_video_source_groups": 56,
+  "logical_video_source_groups": 52,
   "source_sha256_complete_count": 24,
   "source_sha256_blocked_count": 32,
   "source_original_available_count": 24,
@@ -3519,8 +3519,8 @@
       "SOURCE_AVAILABLE_VIA": "local original"
     }
   ],
-  "transcriptMapReconciledCount": 20,
-  "speechGateAssessedCount": 12,
+  "transcriptMapReconciledCount": 36,
+  "speechGateAssessedCount": 26,
   "potential_duplicate_session_groups": [
     "app-support-session-18",
     "app-support-session-41",
@@ -3564,9 +3564,9 @@
     "local_hash_groups": 56,
     "source_original_available_full_hash": 24,
     "derivative_only_media_available": 32,
-    "processable_media_available": 56,
-    "transcript_valid_partial_or_review": 28,
-    "transcript_missing": 6,
+    "processable_media_available": 55,
+    "transcript_valid_partial_or_review": 36,
+    "transcript_missing": 15,
     "transcript_crosswalk_pending": 0,
     "physical_files": 80,
     "exact_duplicate_physical_groups": 18,
@@ -3575,8 +3575,8 @@
     "transcript_mapped_duration_verified": 7,
     "transcribed_pending_speech_gate": 7,
     "source_corrupt_variants": 5,
-    "transcript_mapped_or_review": 51,
-    "transcript_missing_readable_source": 0,
+    "transcript_mapped_or_review": 36,
+    "transcript_missing_readable_source": 15,
     "corrupt_media_variants": 5,
     "unreconciled_transcript_crosswalks": 0,
     "local_source_candidates_fully_state_classified": 56,
@@ -3586,11 +3586,19 @@
     "active_pipeline_must_not_be_interrupted": true,
     "corrupt_variants_recovered_by_healthy_source": 4,
     "corrupt_variants_owner_identity_review": 1,
-    "source_usable_locally": 54,
+    "source_usable_locally": 55,
     "source_missing_external_logical_count": 0,
-    "documents_v3_identity_review_count": 1
+    "documents_v3_identity_review_count": 1,
+    "documents_v3_complete_count": 1,
+    "documents_v3_blocked_speech_gate_count": 14,
+    "documents_v3_pending_speech_gate_or_review": 21,
+    "speech_gate_assessed": 26,
+    "speech_gate_not_assessed": 30,
+    "ambiguous_same_session_clusters": 1,
+    "logical_source_groups_confirmed": 52,
+    "logical_source_identity_review_candidates": 1
   },
-  "source_processable_media_available_count": 56,
+  "source_processable_media_available_count": 55,
   "source_hash_prefix_only_count": 32,
   "legacy_second_brain_inventory": {
     "legacyProjectId": "cfdd6312-bf4b-4020-9c46-2b940e4a9c02",
@@ -3659,10 +3667,10 @@
     "derivative_only_with_source_hash_prefix": 32,
     "local_media_candidates": 56,
     "local_media_decode_corrupt_variants": 5,
-    "transcripts_mapped_or_review": 35,
+    "transcripts_mapped_or_review": 36,
     "readable_local_media_transcript_missing": 15,
     "unreconciled_transcript_identity_count": 0,
-    "ambiguous_same_session_clusters": 3,
+    "ambiguous_same_session_clusters": 1,
     "documents_v3_state_counts": {
       "PENDING_SPEECH_GATE_OR_REVIEW": 21,
       "DUPLICATE_OF_HEALTHY_LOGICAL_SOURCE": 4,
@@ -3685,7 +3693,7 @@
     "corrupt_variant_resolution": {
       "recovered_by_healthy_source": 4,
       "owner_identity_review": 1,
-      "note": "Session 18 1643 duplicate and three other corrupt variants map to healthy sources; Session 2 ff0c remains unresolved."
+      "note": "Session 18 and Session 41 identities resolved; Session 2 ff0c physical variant remains ambiguous."
     }
   },
   "runtime_reconciliation_checkpoint": {
@@ -3909,15 +3917,17 @@
     "note": "Classifications preserve current evidence; active VISION_OCR remains untouched and blocks only dependent heavy tasks."
   },
   "source_availability_reconciliation": {
-    "available_usable": 54,
+    "available_usable": 55,
     "physically_present": 56,
     "source_missing_external": 0,
     "original_present_full_hash": 24,
-    "identity_review_required_but_not_external_missing": 2
+    "identity_review_required_but_not_external_missing": 1
   },
   "duplicate_session_identity_reconciliation": {
     "session18": "RESOLVED: two distinct source recordings mapped by duration/transcript; corrupt copy maps to healthy 95af family",
     "session41": "RESOLVED: 3bd7 derivative/transcript is a distinct 2105.367s source from 1798.593s golden source; process independently, dedupe at knowledge layer; existing 13 vectors untouched",
     "session2": "CORRUPT_VARIANT_IDENTITY_REVIEW: f72f source-present/missing transcript and f87d mapped partial transcript remain independently processable; unreadable ff0c cannot be assigned between them"
-  }
+  },
+  "logical_source_groups_confirmed": 52,
+  "logical_source_identity_review_candidates": 1
 }
