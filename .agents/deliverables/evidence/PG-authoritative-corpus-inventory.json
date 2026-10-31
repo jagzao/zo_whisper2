@@ -555,7 +555,7 @@
       "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "BLOCKED_IDENTITY_REVIEW",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
       "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
@@ -584,19 +584,19 @@
       ],
       "SOURCE_BYTES": 223576847,
       "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
-      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
-      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "BLOCKED_REASON": "speech gate and Documents V3 pending; no unresolved source identity blocker",
+      "NEXT_ACTION": "automated VAD/coverage then Documents V3; deduplicate against Session 41 golden knowledge during curation",
       "PROCESSABLE_MEDIA_AVAILABLE": true,
       "SOURCE_ORIGINAL_AVAILABLE": false,
-      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
       "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\AMS_KAP_-_App_Support_-_Session_41_segments.json",
       "TRANSCRIPT_AUDIO_FILE_RECORDED": "AMS_KAP_-_App_Support_-_Session_41.mp4",
       "TRANSCRIPT_DURATION_SECONDS": 2105.3653125,
       "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 1435.89,
       "TRANSCRIPT_SEGMENT_COUNT": 172,
       "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
-      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
-      "SESSION_IDENTITY_EVIDENCE": "Two same-label variants: 0abf source is golden Documents V3 (13 existing chunks); 3bd7 variant has distinct 2105.367s media/transcript versus 1798.593s golden source.",
+      "SESSION_IDENTITY_REVIEW": "RESOLVED_DISTINCT_RECORDING_TRANSCRIPT_MAPPED",
+      "SESSION_IDENTITY_EVIDENCE": "distinct from Session 41 golden source: this derivative is 2105.367s and its mapped transcript is 2105.3653125s (0.002s delta); golden source is 1798.593s with 13 existing vectors. Process as its own source candidate; Knowledge Service reconciliation must prevent duplicate vectors.",
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
@@ -2659,7 +2659,7 @@
       "TRANSCRIPT_SEGMENT_COUNT": 449,
       "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
       "SESSION_IDENTITY_REVIEW": "RESOLVED_BY_BASENAME_DURATION_TRANSCRIPT_AND_DISTINCT_CONTENT",
-      "SESSION_IDENTITY_EVIDENCE": "Local media duration 4279.333333s; matched transcript metadata duration 4279.3173125s (0.016s delta); transcript similarity to distinct 95af recording is 0.038, establishing distinct content; file is readable HEVC 1920x1080; tracker lineage present.",
+      "SESSION_IDENTITY_EVIDENCE": "Local media duration 4279.333333s; matched transcript metadata duration 4279.3173125s (0.016s delta); transcript similarity to distinct 95af recording is 0.038, establishing distinct content; file is readable HEVC 1920x1080; tracker lineage present. Same-label recording identity is resolved from file hash, readable media metadata, transcript basename/duration, and distinct content.",
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
@@ -3588,7 +3588,7 @@
     "corrupt_variants_owner_identity_review": 1,
     "source_usable_locally": 54,
     "source_missing_external_logical_count": 0,
-    "documents_v3_identity_review_count": 2
+    "documents_v3_identity_review_count": 1
   },
   "source_processable_media_available_count": 56,
   "source_hash_prefix_only_count": 32,
@@ -3664,11 +3664,11 @@
     "unreconciled_transcript_identity_count": 0,
     "ambiguous_same_session_clusters": 3,
     "documents_v3_state_counts": {
-      "PENDING_SPEECH_GATE_OR_REVIEW": 20,
+      "PENDING_SPEECH_GATE_OR_REVIEW": 21,
       "DUPLICATE_OF_HEALTHY_LOGICAL_SOURCE": 4,
       "BLOCKED_SPEECH_GATE": 14,
-      "BLOCKED_IDENTITY_REVIEW": 2,
       "BLOCKED_TRANSCRIPT_MISSING": 15,
+      "BLOCKED_IDENTITY_REVIEW": 1,
       "COMPLETE": 1
     },
     "full_pg_corpus_reconciled": false,
@@ -3914,5 +3914,10 @@
     "source_missing_external": 0,
     "original_present_full_hash": 24,
     "identity_review_required_but_not_external_missing": 2
+  },
+  "duplicate_session_identity_reconciliation": {
+    "session18": "RESOLVED: two distinct source recordings mapped by duration/transcript; corrupt copy maps to healthy 95af family",
+    "session41": "RESOLVED: 3bd7 derivative/transcript is a distinct 2105.367s source from 1798.593s golden source; process independently, dedupe at knowledge layer; existing 13 vectors untouched",
+    "session2": "CORRUPT_VARIANT_IDENTITY_REVIEW: f72f source-present/missing transcript and f87d mapped partial transcript remain independently processable; unreadable ff0c cannot be assigned between them"
   }
 }
