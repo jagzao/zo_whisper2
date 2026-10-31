@@ -13,8 +13,8 @@
   "source_original_unavailable_count": 32,
   "tutorial_derivative_files": 54,
   "tutorial_source_prefix_links": 22,
-  "external_unavailable_sources": 4,
-  "external_unavailable_source_ids": null,
+  "external_unavailable_sources": 0,
+  "external_unavailable_source_ids": [],
   "unresolved_provenance": [
     "Session 18 provenance",
     "S46 owner audio review",
@@ -31,15 +31,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "07b5f4ea0099",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "07b5f4ea0099f573013d7043dc71be2bf8cddeae9a4f0a443a9a3fd7d834a050"
       ],
@@ -47,7 +47,25 @@
         "Videos/py_pg/pg_tutorial_Ams_kap_compliance_s4__07b5f4ea0099.mp4"
       ],
       "MAP_SOURCE_ID": "pg-611c4b9e32914de6",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Ams_kap_compliance_s4__07b5f4ea0099.mp4",
+          "sha256": "07b5f4ea0099f573013d7043dc71be2bf8cddeae9a4f0a443a9a3fd7d834a050",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "07b5f4ea0099",
+          "bytes": 8014304595
+        }
+      ],
+      "SOURCE_BYTES": 8014304595,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:1643e7fee3a3",
@@ -56,26 +74,48 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 18-20260826_070045UTC-Meeting Recording 1__1643e7fee3a3.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_CORRUPT_MEDIA",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SOURCE_CORRUPT",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "1643e7fee3a3",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "1643e7fee3a36ade8539ef6e39053735a103e2b11a98cef66d0cad374d7b72b5"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 18-20260826_070045UTC-Meeting Recording 1__1643e7fee3a3.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "BLOCKED_SESSION18_PROVENANCE",
-      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "app-support-session-18"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "app-support-session-18",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 18-20260826_070045UTC-Meeting Recording 1__1643e7fee3a3.mp4",
+          "sha256": "1643e7fee3a36ade8539ef6e39053735a103e2b11a98cef66d0cad374d7b72b5",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "1643e7fee3a3",
+          "bytes": 5830184000
+        }
+      ],
+      "SOURCE_BYTES": 5830184000,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "CORRUPT_LOCAL_VARIANT_EXCLUDED_PENDING_SOURCE_RESOLUTION",
+      "BLOCKED_REASON": "Physical derivative exists but ffprobe cannot read it; no matched transcript is grounded to this content",
+      "NEXT_ACTION": "restore or locate a valid original/derivative; do not transcribe corrupt copy",
+      "PROCESSABLE_MEDIA_AVAILABLE": false,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "OWNER_REVIEW_REQUIRED",
+      "SPEECH_GATE_NEXT_ACTION": "resolve conflicting same-session source variants after local forensic evidence",
+      "LOCAL_MEDIA_DURATION_SECONDS": null,
+      "SOURCE_MEDIA_CLASSIFICATION": "SOURCE_CORRUPT",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Three same-label variants: 95af source/derivative tracker+transcript match (3878.34s); 5bcd variant has exact 4279.33s sidecar but transcript similarity 0.038 to 95af; 1643 derivative fails ffprobe.",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:1f30f653c464",
@@ -84,25 +124,48 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Intro__1f30f653c464.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "1f30f653c464",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "1f30f653c464c0d47c00165be95b8c72685cf3582dc2528aa2840f001c2cff46"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_Intro__1f30f653c464.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Intro__1f30f653c464.mp4",
+          "sha256": "1f30f653c464c0d47c00165be95b8c72685cf3582dc2528aa2840f001c2cff46",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "1f30f653c464",
+          "bytes": 180874920
+        }
+      ],
+      "SOURCE_BYTES": 180874920,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
+      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
+      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\pg_Intro_segments.json",
+      "TRANSCRIPT_AUDIO_FILE_RECORDED": "pg_Intro.mp4",
+      "TRANSCRIPT_DURATION_SECONDS": 1365.2906875,
+      "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 927.83,
+      "TRANSCRIPT_SEGMENT_COUNT": 10,
+      "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:2189cf06a757",
@@ -111,25 +174,48 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Tidal__2189cf06a757.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "2189cf06a757",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "2189cf06a757f65ddbf250dfc8c6865baba59efaac2a640a322b225a6bc2fac2"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_Tidal__2189cf06a757.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Tidal__2189cf06a757.mp4",
+          "sha256": "2189cf06a757f65ddbf250dfc8c6865baba59efaac2a640a322b225a6bc2fac2",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "2189cf06a757",
+          "bytes": 59778024
+        }
+      ],
+      "SOURCE_BYTES": 59778024,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
+      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
+      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\pg_Tidal_segments.json",
+      "TRANSCRIPT_AUDIO_FILE_RECORDED": "pg_Tidal.mp4",
+      "TRANSCRIPT_DURATION_SECONDS": 540.4373125,
+      "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 539.3,
+      "TRANSCRIPT_SEGMENT_COUNT": 24,
+      "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:24ae0bba1b72",
@@ -141,15 +227,15 @@
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "24ae0bba1b72",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "24ae0bba1b7216354d17ca193109da8fd9ef856543bc954fe6d82d85bd196d56"
       ],
@@ -157,7 +243,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording__24ae0bba1b72.mp4"
       ],
       "MAP_SOURCE_ID": "pg-7ec100f076b0e0a0",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording__24ae0bba1b72.mp4",
+          "sha256": "24ae0bba1b7216354d17ca193109da8fd9ef856543bc954fe6d82d85bd196d56",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "24ae0bba1b72",
+          "bytes": 180410239
+        }
+      ],
+      "SOURCE_BYTES": 180410239,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "EVIDENCE_PRESENT_REVIEW_REQUIRED",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "BLOCKED_REASON": "transcript quality requires agent validation/recovery",
+      "NEXT_ACTION": "targeted recovery and evidence validation",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:287ec469a75f",
@@ -170,23 +274,41 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "287ec469a75f",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "287ec469a75f819ff6a51e1fea46f1d0f4e5790aa41a954545d4eebede7aec93"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20260930_135845UTC-Meeting Recording__287ec469a75f.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support – Session-20260930_135845UTC-Meeting Recording__287ec469a75f_Frames/pg_tutorial_AMS KAP – App Support – Session-20260930_135845UTC-Meeting Recording__287ec469a75f/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20260930_135845UTC-Meeting Recording__287ec469a75f.mp4",
+          "sha256": "287ec469a75f819ff6a51e1fea46f1d0f4e5790aa41a954545d4eebede7aec93",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "287ec469a75f",
+          "bytes": 241735232
+        }
+      ],
+      "SOURCE_BYTES": 241735232,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:361f30700fbb",
@@ -195,25 +317,44 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Shadow bridge ams app support 211026__361f30700fbb.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_CORRUPT_MEDIA",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SOURCE_CORRUPT",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "361f30700fbb",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "361f30700fbb538b9a370433467a8a0b3985420152b847842df09a3810061ba7"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_Shadow bridge ams app support 211026__361f30700fbb.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow bridge ams app support 211026__361f30700fbb.mp4",
+          "sha256": "361f30700fbb538b9a370433467a8a0b3985420152b847842df09a3810061ba7",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "361f30700fbb",
+          "bytes": 6084186485
+        }
+      ],
+      "SOURCE_BYTES": 6084186485,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "CORRUPT_LOCAL_VARIANT_EXCLUDED_PENDING_SOURCE_RESOLUTION",
+      "BLOCKED_REASON": "Physical derivative exists but ffprobe cannot read it; no matched transcript is grounded to this content",
+      "NEXT_ACTION": "restore or locate a valid original/derivative; do not transcribe corrupt copy",
+      "PROCESSABLE_MEDIA_AVAILABLE": false,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": null,
+      "SOURCE_MEDIA_CLASSIFICATION": "SOURCE_CORRUPT",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:3846c21eb690",
@@ -225,15 +366,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "3846c21eb690",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "3846c21eb6904ce7b2c639ffed6ef3d9d1851ace8be2d9203eeaf423177dbc66"
       ],
@@ -241,7 +382,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording__3846c21eb690.mp4"
       ],
       "MAP_SOURCE_ID": "pg-58194dc5b0eb5cc6",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording__3846c21eb690.mp4",
+          "sha256": "3846c21eb6904ce7b2c639ffed6ef3d9d1851ace8be2d9203eeaf423177dbc66",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "3846c21eb690",
+          "bytes": 231677584
+        }
+      ],
+      "SOURCE_BYTES": 231677584,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:3bd7aa3d20cd",
@@ -250,27 +409,52 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS_KAP_-_App_Support_-_Session_41__3bd7aa3d20cd.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
       "DOCUMENTS_V3_STATE": "BLOCKED_IDENTITY_REVIEW",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_IDENTITY_REVIEW",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "3bd7aa3d20cd",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "3bd7aa3d20cd8622572d66d048e4ee4fb0e4cbfb2e0070143a93927a445b3669"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_AMS_KAP_-_App_Support_-_Session_41__3bd7aa3d20cd.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "DUPLICATE_SESSION_LABEL_REQUIRES_OWNER_IDENTITY_REVIEW",
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
       "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "app-support-session-41",
-      "SESSION41_APPROVED_PACK": null
+      "SESSION41_APPROVED_PACK": null,
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS_KAP_-_App_Support_-_Session_41__3bd7aa3d20cd.mp4",
+          "sha256": "3bd7aa3d20cd8622572d66d048e4ee4fb0e4cbfb2e0070143a93927a445b3669",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "3bd7aa3d20cd",
+          "bytes": 223576847
+        }
+      ],
+      "SOURCE_BYTES": 223576847,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
+      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
+      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\AMS_KAP_-_App_Support_-_Session_41_segments.json",
+      "TRANSCRIPT_AUDIO_FILE_RECORDED": "AMS_KAP_-_App_Support_-_Session_41.mp4",
+      "TRANSCRIPT_DURATION_SECONDS": 2105.3653125,
+      "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 1435.89,
+      "TRANSCRIPT_SEGMENT_COUNT": 172,
+      "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Two same-label variants: 0abf source is golden Documents V3 (13 existing chunks); 3bd7 variant has distinct 2105.367s media/transcript versus 1798.593s golden source.",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:4314cdc1aad6",
@@ -282,15 +466,15 @@
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "4314cdc1aad6",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "4314cdc1aad623e0e84bc426db2a5f85dff1fa25032c7e0901d7a6bff103281b"
       ],
@@ -298,7 +482,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording__4314cdc1aad6.mp4"
       ],
       "MAP_SOURCE_ID": "pg-10",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording__4314cdc1aad6.mp4",
+          "sha256": "4314cdc1aad623e0e84bc426db2a5f85dff1fa25032c7e0901d7a6bff103281b",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "4314cdc1aad6",
+          "bytes": 207218534
+        }
+      ],
+      "SOURCE_BYTES": 207218534,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "SOURCE_PRESENT_TRANSCRIPT_MISSING",
+      "BLOCKED_REASON": "transcript missing but processable local media is present",
+      "NEXT_ACTION": "sequential transcription when heavy slot/resources permit",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "sequential full transcription; local processable media exists",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:48abeeb80ae6",
@@ -310,15 +512,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "48abeeb80ae6",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "48abeeb80ae6709175ce9c590346e1449eb3e6db179b02b408fcb9ef47680d25"
       ],
@@ -326,7 +528,25 @@
         "Videos/py_pg/pg_tutorial_Shadow_221026__48abeeb80ae6.mp4"
       ],
       "MAP_SOURCE_ID": "pg-4957e30bcb15f2bf",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow_221026__48abeeb80ae6.mp4",
+          "sha256": "48abeeb80ae6709175ce9c590346e1449eb3e6db179b02b408fcb9ef47680d25",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "48abeeb80ae6",
+          "bytes": 5889566886
+        }
+      ],
+      "SOURCE_BYTES": 5889566886,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:4d8a7e0bce89",
@@ -338,15 +558,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "4d8a7e0bce89",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "4d8a7e0bce891ad01b092d91de6aa6e1b40b046b737467b1c4ab011c3a761b25"
       ],
@@ -354,7 +574,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording__4d8a7e0bce89.mp4"
       ],
       "MAP_SOURCE_ID": "pg-e37b41cb13677886",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording__4d8a7e0bce89.mp4",
+          "sha256": "4d8a7e0bce891ad01b092d91de6aa6e1b40b046b737467b1c4ab011c3a761b25",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "4d8a7e0bce89",
+          "bytes": 189048686
+        }
+      ],
+      "SOURCE_BYTES": 189048686,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:4f3f06104667",
@@ -366,15 +604,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "4f3f06104667",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "4f3f06104667fdb9e210c579efb73d5dc63af522baabe99f6dac0c5efd32aa37"
       ],
@@ -382,7 +620,25 @@
         "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s10__4f3f06104667.mp4"
       ],
       "MAP_SOURCE_ID": "pg-896f3fb2e5862a02",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s10__4f3f06104667.mp4",
+          "sha256": "4f3f06104667fdb9e210c579efb73d5dc63af522baabe99f6dac0c5efd32aa37",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "4f3f06104667",
+          "bytes": 7925799330
+        }
+      ],
+      "SOURCE_BYTES": 7925799330,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:5123a6fef7db",
@@ -391,25 +647,48 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_1__5123a6fef7db.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "5123a6fef7db",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "5123a6fef7dbb2aa80c709514d0c121c1e4ad1491d161f4657d9d8e4215740b9"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_1__5123a6fef7db.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_1__5123a6fef7db.mp4",
+          "sha256": "5123a6fef7dbb2aa80c709514d0c121c1e4ad1491d161f4657d9d8e4215740b9",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "5123a6fef7db",
+          "bytes": 330088870
+        }
+      ],
+      "SOURCE_BYTES": 330088870,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
+      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
+      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\pg_AMS_KAP_-_Compliance_-_Session_1_segments.json",
+      "TRANSCRIPT_AUDIO_FILE_RECORDED": "pg_AMS_KAP_-_Compliance_-_Session_1.mp4",
+      "TRANSCRIPT_DURATION_SECONDS": 3881.408,
+      "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 3873.2,
+      "TRANSCRIPT_SEGMENT_COUNT": 723,
+      "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:5abd574b942d",
@@ -421,15 +700,15 @@
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "5abd574b942d",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "5abd574b942d5e71a5740fd4239f902b2eea81647f9af8a2a12371aa027d794c"
       ],
@@ -437,7 +716,24 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording__5abd574b942d.mp4"
       ],
       "MAP_SOURCE_ID": "pg-1",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording__5abd574b942d.mp4",
+          "sha256": "5abd574b942d5e71a5740fd4239f902b2eea81647f9af8a2a12371aa027d794c",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "5abd574b942d",
+          "bytes": 135525494
+        }
+      ],
+      "SOURCE_BYTES": 135525494,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "EVIDENCE_PRESENT_REVIEW_REQUIRED",
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "BLOCKED_REASON": "transcript quality requires agent validation/recovery",
+      "NEXT_ACTION": "targeted recovery and evidence validation",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:5f7beacd0240",
@@ -449,15 +745,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "5f7beacd0240",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "5f7beacd0240212b8351dcaab2c437c36c55f7366c417e6bd24ab14c775e60d2"
       ],
@@ -465,7 +761,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording__5f7beacd0240.mp4"
       ],
       "MAP_SOURCE_ID": "pg-e3d73ded7776de64",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording__5f7beacd0240.mp4",
+          "sha256": "5f7beacd0240212b8351dcaab2c437c36c55f7366c417e6bd24ab14c775e60d2",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "5f7beacd0240",
+          "bytes": 202480701
+        }
+      ],
+      "SOURCE_BYTES": 202480701,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:61a11d69fa05",
@@ -474,25 +788,44 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Ams kap app support s10__61a11d69fa05.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_CORRUPT_MEDIA",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SOURCE_CORRUPT",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "61a11d69fa05",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "61a11d69fa0533d578f7afd498cff0cd86bee2b98324683dea22087cc4baff2d"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_Ams kap app support s10__61a11d69fa05.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Ams kap app support s10__61a11d69fa05.mp4",
+          "sha256": "61a11d69fa0533d578f7afd498cff0cd86bee2b98324683dea22087cc4baff2d",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "61a11d69fa05",
+          "bytes": 612423600
+        }
+      ],
+      "SOURCE_BYTES": 612423600,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "CORRUPT_LOCAL_VARIANT_EXCLUDED_PENDING_SOURCE_RESOLUTION",
+      "BLOCKED_REASON": "Physical derivative exists but ffprobe cannot read it; no matched transcript is grounded to this content",
+      "NEXT_ACTION": "restore or locate a valid original/derivative; do not transcribe corrupt copy",
+      "PROCESSABLE_MEDIA_AVAILABLE": false,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": null,
+      "SOURCE_MEDIA_CLASSIFICATION": "SOURCE_CORRUPT",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:62cbd55b433a",
@@ -504,15 +837,15 @@
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "62cbd55b433a",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "62cbd55b433af62ce1aef5003015ccf9a3139fcf3ed4a1dc67d14e64f8e6d943"
       ],
@@ -520,7 +853,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording__62cbd55b433a.mp4"
       ],
       "MAP_SOURCE_ID": "pg-11",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording__62cbd55b433a.mp4",
+          "sha256": "62cbd55b433af62ce1aef5003015ccf9a3139fcf3ed4a1dc67d14e64f8e6d943",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "62cbd55b433a",
+          "bytes": 404757982
+        }
+      ],
+      "SOURCE_BYTES": 404757982,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "SOURCE_PRESENT_TRANSCRIPT_MISSING",
+      "BLOCKED_REASON": "transcript missing but processable local media is present",
+      "NEXT_ACTION": "sequential transcription when heavy slot/resources permit",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "sequential full transcription; local processable media exists",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:6357012f90dd",
@@ -532,15 +883,15 @@
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "6357012f90dd",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "6357012f90dd7f742bbbd71b69de0976b9de5f0d70a1309b105fe4c663b656cc"
       ],
@@ -548,7 +899,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording__6357012f90dd.mp4"
       ],
       "MAP_SOURCE_ID": "pg-13",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording__6357012f90dd.mp4",
+          "sha256": "6357012f90dd7f742bbbd71b69de0976b9de5f0d70a1309b105fe4c663b656cc",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "6357012f90dd",
+          "bytes": 422119265
+        }
+      ],
+      "SOURCE_BYTES": 422119265,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "SOURCE_PRESENT_TRANSCRIPT_MISSING",
+      "BLOCKED_REASON": "transcript missing but processable local media is present",
+      "NEXT_ACTION": "sequential transcription when heavy slot/resources permit",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "sequential full transcription; local processable media exists",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:8a9be2f9a5c5",
@@ -557,25 +926,44 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_S43__8a9be2f9a5c5.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_CORRUPT_MEDIA",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SOURCE_CORRUPT",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "8a9be2f9a5c5",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "8a9be2f9a5c52036f18eb90a90ecb01b0fc34c67f0fd7b5e2acc89d488465e9b"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_S43__8a9be2f9a5c5.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_S43__8a9be2f9a5c5.mp4",
+          "sha256": "8a9be2f9a5c52036f18eb90a90ecb01b0fc34c67f0fd7b5e2acc89d488465e9b",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "8a9be2f9a5c5",
+          "bytes": 5875758800
+        }
+      ],
+      "SOURCE_BYTES": 5875758800,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "CORRUPT_LOCAL_VARIANT_EXCLUDED_PENDING_SOURCE_RESOLUTION",
+      "BLOCKED_REASON": "Physical derivative exists but ffprobe cannot read it; no matched transcript is grounded to this content",
+      "NEXT_ACTION": "restore or locate a valid original/derivative; do not transcribe corrupt copy",
+      "PROCESSABLE_MEDIA_AVAILABLE": false,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "SOURCE_MEDIA_CLASSIFICATION": "SOURCE_CORRUPT",
+      "LOCAL_MEDIA_DURATION_SECONDS": null,
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:9974e951a161",
@@ -587,15 +975,15 @@
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "9974e951a161",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "9974e951a16197bff8eb497f0cd38af88d7585e76cd88b58879036cec1f3646d"
       ],
@@ -603,7 +991,25 @@
         "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s46__9974e951a161.mp4"
       ],
       "MAP_SOURCE_ID": "pg-09eb7fdd89877b64",
-      "SOURCE_IDENTITY_STATE": "BLOCKED_OWNER_AUDIO_REVIEW"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s46__9974e951a161.mp4",
+          "sha256": "9974e951a16197bff8eb497f0cd38af88d7585e76cd88b58879036cec1f3646d",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "9974e951a161",
+          "bytes": 6389600169
+        }
+      ],
+      "SOURCE_BYTES": 6389600169,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "EVIDENCE_PRESENT_REVIEW_REQUIRED",
+      "SPEECH_GATE_CLASSIFICATION": "OWNER_REVIEW_REQUIRED",
+      "BLOCKED_REASON": "ambiguous audio or same-session identity needs owner review after local evidence",
+      "NEXT_ACTION": "review remaining ambiguous S46 intervals",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "review remaining ambiguous S46 intervals",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:a0681f2e8c1e",
@@ -615,15 +1021,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "a0681f2e8c1e",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "a0681f2e8c1ea0c408ee16b01ea23939a3c22b3cfb62d7e1bad771ddd46384ef"
       ],
@@ -631,7 +1037,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording__a0681f2e8c1e.mp4"
       ],
       "MAP_SOURCE_ID": "pg-ccb11a4619acaa92",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording__a0681f2e8c1e.mp4",
+          "sha256": "a0681f2e8c1ea0c408ee16b01ea23939a3c22b3cfb62d7e1bad771ddd46384ef",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "a0681f2e8c1e",
+          "bytes": 314890782
+        }
+      ],
+      "SOURCE_BYTES": 314890782,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:b0c28ad9e108",
@@ -640,25 +1064,48 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Shadow_bridge_ams_app_support_211026__b0c28ad9e108.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "b0c28ad9e108",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "b0c28ad9e1081e90f81af6de6b163e7ad896c2c6a2e38117d73fc7c643967d46"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_Shadow_bridge_ams_app_support_211026__b0c28ad9e108.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow_bridge_ams_app_support_211026__b0c28ad9e108.mp4",
+          "sha256": "b0c28ad9e1081e90f81af6de6b163e7ad896c2c6a2e38117d73fc7c643967d46",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "b0c28ad9e108",
+          "bytes": 453534426
+        }
+      ],
+      "SOURCE_BYTES": 453534426,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
+      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
+      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\Shadow_bridge_ams_app_support_211026_segments.json",
+      "TRANSCRIPT_AUDIO_FILE_RECORDED": "Shadow_bridge_ams_app_support_211026.mp4",
+      "TRANSCRIPT_DURATION_SECONDS": 3806.3146875,
+      "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 3742.24,
+      "TRANSCRIPT_SEGMENT_COUNT": 509,
+      "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:bda0aecaeea3",
@@ -670,15 +1117,15 @@
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "bda0aecaeea3",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "bda0aecaeea311558907df7f3ada8fbeb1cbefc8c0a1a4598ba707937451885f"
       ],
@@ -686,7 +1133,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording__bda0aecaeea3.mp4"
       ],
       "MAP_SOURCE_ID": "pg-27753be62f40a4fa",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording__bda0aecaeea3.mp4",
+          "sha256": "bda0aecaeea311558907df7f3ada8fbeb1cbefc8c0a1a4598ba707937451885f",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "bda0aecaeea3",
+          "bytes": 140210176
+        }
+      ],
+      "SOURCE_BYTES": 140210176,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "EVIDENCE_PRESENT_REVIEW_REQUIRED",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "BLOCKED_REASON": "transcript quality requires agent validation/recovery",
+      "NEXT_ACTION": "targeted recovery and evidence validation",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:c74e01c77928",
@@ -695,25 +1160,48 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Shadow_bridge-ams_app_support__c74e01c77928.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "c74e01c77928",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "c74e01c779282aecbf3e73fa1b5f45444831a9d4da70a2b8840796bdb560b93d"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_Shadow_bridge-ams_app_support__c74e01c77928.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow_bridge-ams_app_support__c74e01c77928.mp4",
+          "sha256": "c74e01c779282aecbf3e73fa1b5f45444831a9d4da70a2b8840796bdb560b93d",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "c74e01c77928",
+          "bytes": 477744212
+        }
+      ],
+      "SOURCE_BYTES": 477744212,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
+      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
+      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "NOT_APPLICABLE",
+      "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\pg_Shadow_bridge-ams_app_support_segments.json",
+      "TRANSCRIPT_AUDIO_FILE_RECORDED": "pg_Shadow_bridge-ams_app_support.mp4",
+      "TRANSCRIPT_DURATION_SECONDS": 4291.776,
+      "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 4291.74,
+      "TRANSCRIPT_SEGMENT_COUNT": 2208,
+      "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:d9798d4df316",
@@ -725,15 +1213,15 @@
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "d9798d4df316",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "d9798d4df31634b153a14dc9fc89e48e01f3b6e9e5329f83b87c587db2e5d08a"
       ],
@@ -741,7 +1229,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording__d9798d4df316.mp4"
       ],
       "MAP_SOURCE_ID": "pg-12",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording__d9798d4df316.mp4",
+          "sha256": "d9798d4df31634b153a14dc9fc89e48e01f3b6e9e5329f83b87c587db2e5d08a",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "d9798d4df316",
+          "bytes": 312449328
+        }
+      ],
+      "SOURCE_BYTES": 312449328,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "SOURCE_PRESENT_TRANSCRIPT_MISSING",
+      "BLOCKED_REASON": "transcript missing but processable local media is present",
+      "NEXT_ACTION": "sequential transcription when heavy slot/resources permit",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "sequential full transcription; local processable media exists",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:f1a02e186181",
@@ -753,15 +1259,15 @@
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "f1a02e186181",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "f1a02e1861815be9c0e144eeb7e8c91e1b7b79aa595214cb8c050c024e1812de"
       ],
@@ -769,7 +1275,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording__f1a02e186181.mp4"
       ],
       "MAP_SOURCE_ID": "pg-3",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording__f1a02e186181.mp4",
+          "sha256": "f1a02e1861815be9c0e144eeb7e8c91e1b7b79aa595214cb8c050c024e1812de",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "f1a02e186181",
+          "bytes": 199296760
+        }
+      ],
+      "SOURCE_BYTES": 199296760,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "SOURCE_PRESENT_TRANSCRIPT_MISSING",
+      "BLOCKED_REASON": "transcript missing but processable local media is present",
+      "NEXT_ACTION": "sequential transcription when heavy slot/resources permit",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "sequential full transcription; local processable media exists",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:f4d0dc26de61",
@@ -781,15 +1305,15 @@
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "f4d0dc26de61",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "f4d0dc26de61c70e641ad03f85998cf24c19faea84c8a1734233005ed31944f3"
       ],
@@ -797,7 +1321,25 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording__f4d0dc26de61.mp4"
       ],
       "MAP_SOURCE_ID": "pg-cdcc12a6c7eea9bc",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording__f4d0dc26de61.mp4",
+          "sha256": "f4d0dc26de61c70e641ad03f85998cf24c19faea84c8a1734233005ed31944f3",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "f4d0dc26de61",
+          "bytes": 67913728
+        }
+      ],
+      "SOURCE_BYTES": 67913728,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "EVIDENCE_PRESENT_REVIEW_REQUIRED",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "BLOCKED_REASON": "transcript quality requires agent validation/recovery",
+      "NEXT_ACTION": "targeted recovery and evidence validation",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:f678a382d25d",
@@ -810,14 +1352,14 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "f678a382d25d",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "f678a382d25d694ae513876d4368094edaaff47cc3845b53a9ad3fdf4db2da06"
       ],
@@ -825,9 +1367,27 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d.mp4"
       ],
       "MAP_SOURCE_ID": "pg-15",
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d_Frames/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d.mp4",
+          "sha256": "f678a382d25d694ae513876d4368094edaaff47cc3845b53a9ad3fdf4db2da06",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "f678a382d25d",
+          "bytes": 369397555
+        }
+      ],
+      "SOURCE_BYTES": 369397555,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:f72f0ae367b4",
@@ -839,15 +1399,15 @@
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "f72f0ae367b4",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "f72f0ae367b4db8ed8dfb4cbf60ccad486c97ac825fd2847c739a2a9fc3de1ec"
       ],
@@ -855,8 +1415,28 @@
         "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording__f72f0ae367b4.mp4"
       ],
       "MAP_SOURCE_ID": "pg-9",
-      "SOURCE_IDENTITY_STATE": "NEEDS_REVIEW_MULTIPLE_HASHES_SAME_SESSION_LABEL",
-      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "compliance-session-2"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "compliance-session-2",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording__f72f0ae367b4.mp4",
+          "sha256": "f72f0ae367b4db8ed8dfb4cbf60ccad486c97ac825fd2847c739a2a9fc3de1ec",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "f72f0ae367b4",
+          "bytes": 362446672
+        }
+      ],
+      "SOURCE_BYTES": 362446672,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "SOURCE_PRESENT_TRANSCRIPT_MISSING",
+      "BLOCKED_REASON": "transcript missing but processable local media is present",
+      "NEXT_ACTION": "sequential transcription when heavy slot/resources permit",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "sequential full transcription; local processable media exists",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Three same-label hashes; two playable variants have durations 3572.032s and 3625.451s; 3625.451s sidecar maps to latter; third ff0c variant unreadable.",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:f87d9aa49cfc",
@@ -868,15 +1448,15 @@
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "f87d9aa49cfc",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "f87d9aa49cfcf11ad9f58ba8a382a40218c246790bd2e13756bb165e9d680c36"
       ],
@@ -884,8 +1464,28 @@
         "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_2__f87d9aa49cfc.mp4"
       ],
       "MAP_SOURCE_ID": "pg-98250af646a5c138",
-      "SOURCE_IDENTITY_STATE": "NEEDS_REVIEW_MULTIPLE_HASHES_SAME_SESSION_LABEL",
-      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "compliance-session-2"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "compliance-session-2",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_2__f87d9aa49cfc.mp4",
+          "sha256": "f87d9aa49cfcf11ad9f58ba8a382a40218c246790bd2e13756bb165e9d680c36",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "f87d9aa49cfc",
+          "bytes": 6397969946
+        }
+      ],
+      "SOURCE_BYTES": 6397969946,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery; sequential only; keep pending approval",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Three same-label hashes; two playable variants have durations 3572.032s and 3625.451s; 3625.451s sidecar maps to latter; third ff0c variant unreadable.",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256-prefix:ff0c39e50b29",
@@ -894,26 +1494,48 @@
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP - Compliance - Session 2__ff0c39e50b29.mp4",
       "SOURCE_SHA256": null,
       "SOURCE_AVAILABLE": false,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_CORRUPT_MEDIA",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SOURCE_CORRUPT",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "ff0c39e50b29",
-      "SOURCE_SHA256_BLOCKER": "original source unavailable in local media tree; only a 12-character source hash prefix remains",
+      "SOURCE_SHA256_BLOCKER": "original_media_unavailable_locally; only derivatives with source hash prefix present",
       "DERIVATIVE_SHA256S": [
         "ff0c39e50b296f331318f7f45125ec1f02629be455701197ac05c2a264b7a1b9"
       ],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_tutorial_AMS KAP - Compliance - Session 2__ff0c39e50b29.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "NEEDS_REVIEW_MULTIPLE_HASHES_SAME_SESSION_LABEL",
-      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "compliance-session-2"
+      "SOURCE_IDENTITY_STATE": "DERIVATIVE_ONLY_SOURCE_HASH_PREFIX_VERIFIED",
+      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "compliance-session-2",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP - Compliance - Session 2__ff0c39e50b29.mp4",
+          "sha256": "ff0c39e50b296f331318f7f45125ec1f02629be455701197ac05c2a264b7a1b9",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "ff0c39e50b29",
+          "bytes": 5879344800
+        }
+      ],
+      "SOURCE_BYTES": 5879344800,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "CORRUPT_LOCAL_VARIANT_EXCLUDED_PENDING_SOURCE_RESOLUTION",
+      "BLOCKED_REASON": "Physical derivative exists but ffprobe cannot read it; no matched transcript is grounded to this content",
+      "NEXT_ACTION": "restore or locate a valid original/derivative; do not transcribe corrupt copy",
+      "PROCESSABLE_MEDIA_AVAILABLE": false,
+      "SOURCE_ORIGINAL_AVAILABLE": false,
+      "SPEECH_GATE_CLASSIFICATION": "OWNER_REVIEW_REQUIRED",
+      "SPEECH_GATE_NEXT_ACTION": "resolve conflicting same-session source variants after local forensic evidence",
+      "LOCAL_MEDIA_DURATION_SECONDS": null,
+      "SOURCE_MEDIA_CLASSIFICATION": "SOURCE_CORRUPT",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Three same-label hashes; two playable variants have durations 3572.032s and 3625.451s; 3625.451s sidecar maps to latter; third ff0c variant unreadable.",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:0abf33dc8e0d4edc55385a5dde8f2cdf968618df3d243d6f91f305b5108a2241",
@@ -926,12 +1548,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "COMPLETE",
-      "CURATION_STATE": "PARTIAL_OWNER_REVIEW_PENDING",
+      "CURATION_STATE": "NEEDS_KNOWLEDGE_SERVICE_RECONCILIATION",
       "KNOWLEDGE_ELIGIBLE_COUNT": 13,
       "EXCLUDED_COUNT": 23,
       "INDEXED_COUNT": 13,
-      "SECOND_BRAIN_STATE": "13_CURRENT_CHUNKS_0_DUPLICATES",
-      "RETRIEVAL_UAT_STATE": "SEMANTIC_SCOPE_SMOKE_PASS_OWNER_RELEVANCE_PENDING",
+      "SECOND_BRAIN_STATE": "PASS_EXISTING_SESSION41_13_NO_NEW_WRITES",
+      "RETRIEVAL_UAT_STATE": "PASS_15_QUERY_BANK_OWNER_RELEVANCE_PENDING",
       "SOURCE_SHA256_PREFIX": "0abf33dc8e0d",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -941,7 +1563,7 @@
         "Videos/py_pg/pg_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording__0abf33dc8e0d.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "NEEDS_REVIEW_MULTIPLE_HASHES_SAME_SESSION_LABEL",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "app-support-session-41",
       "KNOWLEDGE_SERVICE_DECISION_COUNTS": {
         "CONFIRMS": 9,
@@ -955,7 +1577,34 @@
       "KNOWLEDGE_SERVICE_EMBEDDING_ELIGIBLE_COUNT": 0,
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording__0abf33dc8e0d_Frames/pg_tutorial_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording__0abf33dc8e0d/evidence/media-evidence-bundle.json",
       "DOCUMENTS_V3_BLOCKER": null,
-      "SESSION41_APPROVED_PACK": ".agents/deliverables/evidence/session41-content-uat/AMS_KAP_-_App_Support_-_Session_41.json"
+      "SESSION41_APPROVED_PACK": ".agents/deliverables/evidence/session41-content-uat/AMS_KAP_-_App_Support_-_Session_41.json",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording.mp4",
+          "sha256": "0abf33dc8e0d4edc55385a5dde8f2cdf968618df3d243d6f91f305b5108a2241",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 49778475
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording__0abf33dc8e0d.mp4",
+          "sha256": "0e9901ff041105d24f78a94345e08be853c6fa9c2c8908e69245582976deac64",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "0abf33dc8e0d",
+          "bytes": 28757832
+        }
+      ],
+      "SOURCE_BYTES": 49778475,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "GOLDEN_REFERENCE_PRESERVE_INDEX",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "preserve existing 13 Session41 vectors; no duplicate indexing",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Two same-label variants: 0abf source is golden Documents V3 (13 existing chunks); 3bd7 variant has distinct 2105.367s media/transcript versus 1798.593s golden source.",
+      "ELIGIBILITY_STATE": "13_EXISTING_INDEXED;0_NEWLY_ELIGIBLE_AFTER_REPLAY"
     },
     {
       "SOURCE_ID": "sha256:1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
@@ -964,16 +1613,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording.mp4",
       "SOURCE_SHA256": "1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "1511e62e2c49",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -983,7 +1632,33 @@
         "Videos/py_pg/pg_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording__1511e62e2c49.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording.mp4",
+          "sha256": "1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 37205029
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording__1511e62e2c49.mp4",
+          "sha256": "1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "1511e62e2c49",
+          "bytes": 37205029
+        }
+      ],
+      "SOURCE_BYTES": 37205029,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 1736.6405,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
@@ -992,16 +1667,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1).mp4",
       "SOURCE_SHA256": "1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "1d49f02b0432",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1011,7 +1686,33 @@
         "Videos/py_pg/pg_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1).mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1)__1d49f02b0432.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1).mp4",
+          "sha256": "1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 203724632
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1)__1d49f02b0432.mp4",
+          "sha256": "1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "1d49f02b0432",
+          "bytes": 203724632
+        }
+      ],
+      "SOURCE_BYTES": 203724632,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 3627.648,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
@@ -1020,16 +1721,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_Shadow 26 octubre-2.mp4",
       "SOURCE_SHA256": "1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "1dd0a93945b5",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1039,7 +1740,33 @@
         "Videos/py_pg/pg_Shadow 26 octubre-2.mp4",
         "Videos/py_pg/pg_tutorial_Shadow 26 octubre-2__1dd0a93945b5.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_Shadow 26 octubre-2.mp4",
+          "sha256": "1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 810322556
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow 26 octubre-2__1dd0a93945b5.mp4",
+          "sha256": "1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "1dd0a93945b5",
+          "bytes": 810322556
+        }
+      ],
+      "SOURCE_BYTES": 810322556,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 792.184584,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:20e35ec78945fc49a9977dc477c8ef5fb9e010ccc606a70c2318a68001d961a3",
@@ -1052,12 +1779,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "20e35ec78945",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1067,9 +1794,34 @@
         "Videos/py_pg/pg_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945_Frames/pg_tutorial_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording.mp4",
+          "sha256": "20e35ec78945fc49a9977dc477c8ef5fb9e010ccc606a70c2318a68001d961a3",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 193996756
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945.mp4",
+          "sha256": "0b856402546588155f77303a1c295d878139ac2c9bb9df8e07944efcab7b4fb4",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "20e35ec78945",
+          "bytes": 107894313
+        }
+      ],
+      "SOURCE_BYTES": 193996756,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:29512a922144f987fa75edf4579d92e49253d82c4a4d8090f74bb4ccb9c68c13",
@@ -1082,12 +1834,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "29512a922144",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1097,9 +1849,34 @@
         "Videos/py_pg/pg_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording__29512a922144.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording__29512a922144_Frames/pg_tutorial_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording__29512a922144/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording.mp4",
+          "sha256": "29512a922144f987fa75edf4579d92e49253d82c4a4d8090f74bb4ccb9c68c13",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 143773593
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording__29512a922144.mp4",
+          "sha256": "29512a922144f987fa75edf4579d92e49253d82c4a4d8090f74bb4ccb9c68c13",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "29512a922144",
+          "bytes": 143773593
+        }
+      ],
+      "SOURCE_BYTES": 143773593,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
@@ -1108,16 +1885,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_Shadow 26 octubre -1.mp4",
       "SOURCE_SHA256": "32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "32c7e8999cbe",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1127,7 +1904,33 @@
         "Videos/py_pg/pg_Shadow 26 octubre -1.mp4",
         "Videos/py_pg/pg_tutorial_Shadow 26 octubre -1__32c7e8999cbe.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_Shadow 26 octubre -1.mp4",
+          "sha256": "32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 3101943382
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow 26 octubre -1__32c7e8999cbe.mp4",
+          "sha256": "32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "32c7e8999cbe",
+          "bytes": 3101943382
+        }
+      ],
+      "SOURCE_BYTES": 3101943382,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 3032.855063,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:436395c70cb2be4022f3553f5056c3f8eedcca185fb63bd66846034d6883e1fb",
@@ -1140,12 +1943,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "436395c70cb2",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1155,9 +1958,34 @@
         "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording__436395c70cb2.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording__436395c70cb2_Frames/pg_tutorial_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording__436395c70cb2/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording.mp4",
+          "sha256": "436395c70cb2be4022f3553f5056c3f8eedcca185fb63bd66846034d6883e1fb",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 270294585
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording__436395c70cb2.mp4",
+          "sha256": "436395c70cb2be4022f3553f5056c3f8eedcca185fb63bd66846034d6883e1fb",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "436395c70cb2",
+          "bytes": 270294585
+        }
+      ],
+      "SOURCE_BYTES": 270294585,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:452115d58c6545518c7aaed4fb650753668b54cdcbca4dfbebfaf99cb3240cf6",
@@ -1170,21 +1998,39 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "452115d58c65",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/Pg_risk_training_series_s1__ababb9d2a399.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/Pg_risk_training_series_s1__ababb9d2a399_Frames/Pg_risk_training_series_s1__ababb9d2a399/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/Pg_risk_training_series_s1__ababb9d2a399.mp4",
+          "sha256": "452115d58c6545518c7aaed4fb650753668b54cdcbca4dfbebfaf99cb3240cf6",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": "ababb9d2a399",
+          "bytes": 231813404
+        }
+      ],
+      "SOURCE_BYTES": 231813404,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:45c87c93ddf9472bad9e99dbb865eeeea443ad69704aea50d528f8d3eba568ca",
@@ -1197,12 +2043,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "45c87c93ddf9",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1212,9 +2058,34 @@
         "Videos/py_pg/pg_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording__45c87c93ddf9.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording__45c87c93ddf9_Frames/pg_tutorial_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording__45c87c93ddf9/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording.mp4",
+          "sha256": "45c87c93ddf9472bad9e99dbb865eeeea443ad69704aea50d528f8d3eba568ca",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 236797908
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording__45c87c93ddf9.mp4",
+          "sha256": "45c87c93ddf9472bad9e99dbb865eeeea443ad69704aea50d528f8d3eba568ca",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "45c87c93ddf9",
+          "bytes": 236797908
+        }
+      ],
+      "SOURCE_BYTES": 236797908,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:5bcd31f7f43a1a2e4aaf372896b10e6aeadd1fb555885ee378905249eba3a794",
@@ -1223,24 +2094,50 @@
       "SOURCE_PATH": "Videos/py_pg/pg_AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532.mp4",
       "SOURCE_SHA256": "5bcd31f7f43a1a2e4aaf372896b10e6aeadd1fb555885ee378905249eba3a794",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "PENDING_SPEECH_GATE_OR_REVIEW",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_PENDING_DOCUMENTS_V3",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "5bcd31f7f43a",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [],
       "PHYSICAL_FILE_PATHS": [
         "Videos/py_pg/pg_AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "BLOCKED_SESSION18_PROVENANCE",
-      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "app-support-session-18"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "app-support-session-18",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532.mp4",
+          "sha256": "5bcd31f7f43a1a2e4aaf372896b10e6aeadd1fb555885ee378905249eba3a794",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 280370903
+        }
+      ],
+      "SOURCE_BYTES": 280370903,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_DURATION_VERIFIED_SPEECH_GATE_PENDING",
+      "BLOCKED_REASON": "Transcript is source-mapped by name/duration; speech coverage gate has not been run",
+      "NEXT_ACTION": "run sequential speech-gate audit; recover only if it fails",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "OWNER_REVIEW_REQUIRED",
+      "SPEECH_GATE_NEXT_ACTION": "resolve conflicting same-session source variants after local forensic evidence",
+      "TRANSCRIPT_SOURCE_PATH": "CarpetaTranscripciones\\general\\AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532_segments.json",
+      "TRANSCRIPT_AUDIO_FILE_RECORDED": "AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532.mp4",
+      "TRANSCRIPT_DURATION_SECONDS": 4279.3173125,
+      "TRANSCRIPT_LAST_SEGMENT_END_SECONDS": 3836.75,
+      "TRANSCRIPT_SEGMENT_COUNT": 449,
+      "TRANSCRIPT_IDENTITY_METHOD": "unique normalized basename + exact duration within 1s + tracker-consistent name",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Three same-label variants: 95af source/derivative tracker+transcript match (3878.34s); 5bcd variant has exact 4279.33s sidecar but transcript similarity 0.038 to 95af; 1643 derivative fails ffprobe.",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:95afc5cc3488661bf62607d13c7496f6727da0fad8a845fc535475a3baa6cc35",
@@ -1253,12 +2150,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "95afc5cc3488",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1268,10 +2165,37 @@
         "Videos/py_pg/pg_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1.mp4",
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1__95afc5cc3488.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "BLOCKED_SESSION18_PROVENANCE",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "DUPLICATE_SESSION_CANDIDATE_GROUP_ID": "app-support-session-18",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1__95afc5cc3488_Frames/pg_tutorial_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1__95afc5cc3488/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1.mp4",
+          "sha256": "95afc5cc3488661bf62607d13c7496f6727da0fad8a845fc535475a3baa6cc35",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 268686336
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1__95afc5cc3488.mp4",
+          "sha256": "4f2f7b788cd1d457525fd28b317f5939796f05abf1289ef29fc9d0dea4d16c36",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "95afc5cc3488",
+          "bytes": 149237801
+        }
+      ],
+      "SOURCE_BYTES": 268686336,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "SESSION_IDENTITY_REVIEW": "OWNER_REVIEW_REQUIRED_AFTER_LOCAL_FORENSICS",
+      "SESSION_IDENTITY_EVIDENCE": "Three same-label variants: 95af source/derivative tracker+transcript match (3878.34s); 5bcd variant has exact 4279.33s sidecar but transcript similarity 0.038 to 95af; 1643 derivative fails ffprobe.",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
@@ -1280,16 +2204,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording.mp4",
       "SOURCE_SHA256": "9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "9db0c1ae9033",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1299,7 +2223,33 @@
         "Videos/py_pg/pg_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording__9db0c1ae9033.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording.mp4",
+          "sha256": "9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 157949494
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording__9db0c1ae9033.mp4",
+          "sha256": "9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "9db0c1ae9033",
+          "bytes": 157949494
+        }
+      ],
+      "SOURCE_BYTES": 157949494,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 3982.528,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:a31375a6d8251fa6e8e8de04651d43e9007bcf4b76c625447bc9ddbe30c13a95",
@@ -1312,12 +2262,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "a31375a6d825",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1327,9 +2277,34 @@
         "Videos/py_pg/pg_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording__a31375a6d825.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording__a31375a6d825_Frames/pg_tutorial_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording__a31375a6d825/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording.mp4",
+          "sha256": "a31375a6d8251fa6e8e8de04651d43e9007bcf4b76c625447bc9ddbe30c13a95",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 35458095
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording__a31375a6d825.mp4",
+          "sha256": "a5d12fea249b9cc35719e19f2a102b6148aad110e8a7053d6b38f08cf42831bf",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "a31375a6d825",
+          "bytes": 20526859
+        }
+      ],
+      "SOURCE_BYTES": 35458095,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:b4090e482677759669cc7300270967f454803d2686376c59e6288ed34db7cbd3",
@@ -1342,12 +2317,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "b4090e482677",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1357,27 +2332,52 @@
         "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1).mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1)__b4090e482677.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1)__b4090e482677_Frames/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1)__b4090e482677/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1).mp4",
+          "sha256": "b4090e482677759669cc7300270967f454803d2686376c59e6288ed34db7cbd3",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 275805702
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1)__b4090e482677.mp4",
+          "sha256": "b4090e482677759669cc7300270967f454803d2686376c59e6288ed34db7cbd3",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "b4090e482677",
+          "bytes": 275805702
+        }
+      ],
+      "SOURCE_BYTES": 275805702,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
       "SESSION": null,
       "CATEGORY": "App Support",
-      "SOURCE_PATH": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording.mp4",
+      "SOURCE_PATH": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording-1.mp4",
       "SOURCE_SHA256": "b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
       "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "VALID",
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "b491c9804f88",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1388,9 +2388,41 @@
         "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording__b491c9804f88.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording__b491c9804f88_Frames/pg_tutorial_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording__b491c9804f88/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording-1.mp4",
+          "sha256": "b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 346360697
+        },
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording.mp4",
+          "sha256": "b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 346360697
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording__b491c9804f88.mp4",
+          "sha256": "b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "b491c9804f88",
+          "bytes": 346360697
+        }
+      ],
+      "SOURCE_BYTES": 346360697,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:bab8396f2d889e93fe46c2a329bd3a779f59fdf72a5a30e09c2c86c57a3d81d0",
@@ -1403,12 +2435,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "bab8396f2d88",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1418,9 +2450,34 @@
         "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording__bab8396f2d88.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording__bab8396f2d88_Frames/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording__bab8396f2d88/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording.mp4",
+          "sha256": "bab8396f2d889e93fe46c2a329bd3a779f59fdf72a5a30e09c2c86c57a3d81d0",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 271517696
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording__bab8396f2d88.mp4",
+          "sha256": "bab8396f2d889e93fe46c2a329bd3a779f59fdf72a5a30e09c2c86c57a3d81d0",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "bab8396f2d88",
+          "bytes": 271517696
+        }
+      ],
+      "SOURCE_BYTES": 271517696,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
@@ -1429,16 +2486,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording.mp4",
       "SOURCE_SHA256": "be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "be9220ad903d",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1448,7 +2505,33 @@
         "Videos/py_pg/pg_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording__be9220ad903d.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording.mp4",
+          "sha256": "be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 230899107
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording__be9220ad903d.mp4",
+          "sha256": "be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "be9220ad903d",
+          "bytes": 230899107
+        }
+      ],
+      "SOURCE_BYTES": 230899107,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 4549.9525,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
@@ -1457,16 +2540,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording.mp4",
       "SOURCE_SHA256": "becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "becbb7165092",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1476,7 +2559,33 @@
         "Videos/py_pg/pg_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording__becbb7165092.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording.mp4",
+          "sha256": "becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 195140137
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording__becbb7165092.mp4",
+          "sha256": "becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "becbb7165092",
+          "bytes": 195140137
+        }
+      ],
+      "SOURCE_BYTES": 195140137,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 3268.7365,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:d10582c8b8b97ccd6d30ac97b7ef0acacdc8386bb6c6a32f01a61fa348747853",
@@ -1489,12 +2598,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "d10582c8b8b9",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1504,9 +2613,34 @@
         "Videos/py_pg/pg_Png_punam_281026.mp4",
         "Videos/py_pg/pg_tutorial_Png_punam_281026__d10582c8b8b9.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_Png_punam_281026__d10582c8b8b9_Frames/pg_tutorial_Png_punam_281026__d10582c8b8b9/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_Png_punam_281026.mp4",
+          "sha256": "d10582c8b8b97ccd6d30ac97b7ef0acacdc8386bb6c6a32f01a61fa348747853",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 2683640319
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_Png_punam_281026__d10582c8b8b9.mp4",
+          "sha256": "d10582c8b8b97ccd6d30ac97b7ef0acacdc8386bb6c6a32f01a61fa348747853",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "d10582c8b8b9",
+          "bytes": 2683640319
+        }
+      ],
+      "SOURCE_BYTES": 2683640319,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_SPEECH_GATE_PARTIAL",
+      "BLOCKED_REASON": "speech gate partial; recovery is agent work",
+      "NEXT_ACTION": "sequential targeted recovery then Documents V3",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
@@ -1515,16 +2649,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_Shadow 28 oct 26.mp4",
       "SOURCE_SHA256": "d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "d482bc85fc2e",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1534,7 +2668,33 @@
         "Videos/py_pg/pg_Shadow 28 oct 26.mp4",
         "Videos/py_pg/pg_tutorial_Shadow 28 oct 26__d482bc85fc2e.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_Shadow 28 oct 26.mp4",
+          "sha256": "d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 4683144795
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_Shadow 28 oct 26__d482bc85fc2e.mp4",
+          "sha256": "d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "d482bc85fc2e",
+          "bytes": 4683144795
+        }
+      ],
+      "SOURCE_BYTES": 4683144795,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 4084.708967,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:e026a9e8ed37f98b3f670cc3cafdb9b401b110bab7b30a3ec5d7bb44d6973ecd",
@@ -1547,12 +2707,12 @@
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
       "DOCUMENTS_V3_STATE": "BLOCKED_SPEECH_GATE",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_SPEECH_GATE_BLOCKED",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "e026a9e8ed37",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1562,9 +2722,34 @@
         "Videos/py_pg/pg_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording__e026a9e8ed37.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK",
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
       "EVIDENCE_BUNDLE_PATH": "CarpetaTranscripciones/py_pg/pg_tutorial_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording__e026a9e8ed37_Frames/pg_tutorial_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording__e026a9e8ed37/evidence/media-evidence-bundle.json",
-      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found"
+      "DOCUMENTS_V3_BLOCKER": "existing MediaEvidenceBundle speech gate is not PASS; no accepted V3 pack found",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording.mp4",
+          "sha256": "e026a9e8ed37f98b3f670cc3cafdb9b401b110bab7b30a3ec5d7bb44d6973ecd",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 252448872
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording__e026a9e8ed37.mp4",
+          "sha256": "e026a9e8ed37f98b3f670cc3cafdb9b401b110bab7b30a3ec5d7bb44d6973ecd",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "e026a9e8ed37",
+          "bytes": 252448872
+        }
+      ],
+      "SOURCE_BYTES": 252448872,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MAPPED_VALID",
+      "BLOCKED_REASON": null,
+      "NEXT_ACTION": "create Documents V3 from quality-valid evidence",
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_NEXT_ACTION": "targeted recovery/review; sequential only",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
@@ -1573,16 +2758,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording.mp4",
       "SOURCE_SHA256": "f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "f301963ae3e8",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1592,7 +2777,33 @@
         "Videos/py_pg/pg_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording (1)__f301963ae3e8.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording.mp4",
+          "sha256": "f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 99892493
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording (1)__f301963ae3e8.mp4",
+          "sha256": "f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "f301963ae3e8",
+          "bytes": 99892493
+        }
+      ],
+      "SOURCE_BYTES": 99892493,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 2661.888,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     },
     {
       "SOURCE_ID": "sha256:fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
@@ -1601,16 +2812,16 @@
       "SOURCE_PATH": "Videos/py_pg/pg_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording.mp4",
       "SOURCE_SHA256": "fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
       "SOURCE_AVAILABLE": true,
-      "TRANSCRIPTION_STATE": "NOT_RECONCILED",
+      "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
-      "DOCUMENTS_V3_STATE": "NOT_RECONCILED",
-      "CURATION_STATE": "NOT_RECONCILED",
+      "DOCUMENTS_V3_STATE": "BLOCKED_TRANSCRIPT_MISSING",
+      "CURATION_STATE": "NOT_STARTED_DOCUMENTS_V3_NOT_COMPLETE",
       "KNOWLEDGE_ELIGIBLE_COUNT": null,
       "EXCLUDED_COUNT": null,
-      "INDEXED_COUNT": null,
-      "SECOND_BRAIN_STATE": "NOT_RECONCILED",
-      "RETRIEVAL_UAT_STATE": "NOT_RECONCILED",
+      "INDEXED_COUNT": 0,
+      "SECOND_BRAIN_STATE": "NOT_INDEXED_TRANSCRIPT_MISSING",
+      "RETRIEVAL_UAT_STATE": "NOT_TESTED",
       "SOURCE_SHA256_PREFIX": "fb8f555e4bb4",
       "SOURCE_SHA256_BLOCKER": null,
       "DERIVATIVE_SHA256S": [
@@ -1620,7 +2831,33 @@
         "Videos/py_pg/pg_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording.mp4",
         "Videos/py_pg/pg_tutorial_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording__fb8f555e4bb4.mp4"
       ],
-      "SOURCE_IDENTITY_STATE": "HASH_GROUPED_CANDIDATE_REQUIRES_TRANSCRIPT_CROSSWALK"
+      "SOURCE_IDENTITY_STATE": "SOURCE_HASH_VERIFIED",
+      "PHYSICAL_FILE_SHA256S": [
+        {
+          "path": "Videos/py_pg/pg_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording.mp4",
+          "sha256": "fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
+          "kind": "SOURCE_OR_COPY",
+          "source_sha256_prefix": null,
+          "bytes": 109009544
+        },
+        {
+          "path": "Videos/py_pg/pg_tutorial_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording__fb8f555e4bb4.mp4",
+          "sha256": "fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
+          "kind": "DERIVATIVE",
+          "source_sha256_prefix": "fb8f555e4bb4",
+          "bytes": 109009544
+        }
+      ],
+      "SOURCE_BYTES": 109009544,
+      "TRANSCRIPTION_RECONCILIATION_STATE": "MISSING_TRANSCRIPT_CONFIRMED_AFTER_SIDECAR_AND_TRACKER_SCAN",
+      "BLOCKED_REASON": "No source-matched transcript in local sidecars/tracker; readable local media is available",
+      "NEXT_ACTION": "sequential full transcription, then speech gate",
+      "PROCESSABLE_MEDIA_AVAILABLE": true,
+      "SOURCE_ORIGINAL_AVAILABLE": true,
+      "SPEECH_GATE_CLASSIFICATION": "REPROCESSABLE",
+      "LOCAL_MEDIA_DURATION_SECONDS": 2875.392,
+      "SOURCE_MEDIA_CLASSIFICATION": "VALID_MEDIA_TRANSCRIPT_MISSING",
+      "ELIGIBILITY_STATE": "NOT_ASSESSED"
     }
   ],
   "transcriptMapReconciledCount": 20,
@@ -1632,13 +2869,16 @@
   ],
   "logical_source_identity_complete": false,
   "record_counts": {
-    "transcribed_or_review": 14,
-    "transcription_missing": 7,
-    "transcription_unreconciled": 35,
+    "transcribed_or_review": 35,
+    "transcription_missing": 16,
+    "transcription_unreconciled": 0,
     "documents_v3_complete": 1,
     "canonical_facts": 36,
     "eligible": 13,
-    "indexed": 13
+    "indexed": 13,
+    "transcription_corrupt": 5,
+    "documents_v3_blocked_speech_gate": 14,
+    "documents_v3_pending_or_blocked": 55
   },
   "PG_KS_RECONCILED_CANDIDATES": 13,
   "PG_KS_CONFIRMS": 9,
@@ -1649,5 +2889,139 @@
   "documents_v3_complete_count": 1,
   "documents_v3_blocked_speech_gate_count": 14,
   "records_reconciled_against_evidence_bundles": 15,
-  "documents_v3_identity_review_count": 1
+  "documents_v3_identity_review_count": 1,
+  "physical_hash_audit_reference": "PG-physical-video-hash-audit.json",
+  "physical_hash_audit_summary": {
+    "physical_files": 80,
+    "hashed_files": 80,
+    "exact_duplicate_physical_groups": 18,
+    "exact_duplicate_extra_copies": 19
+  },
+  "full_source_hash_count": 24,
+  "source_hash_duplicate_record_groups": 0,
+  "source_hash_identity_verified_count": 56,
+  "transcript_crosswalk_pending_count": 22,
+  "reconciliation_checkpoint": {
+    "local_hash_groups": 56,
+    "source_original_available_full_hash": 24,
+    "derivative_only_media_available": 32,
+    "processable_media_available": 56,
+    "transcript_valid_partial_or_review": 28,
+    "transcript_missing": 6,
+    "transcript_crosswalk_pending": 15,
+    "physical_files": 80,
+    "exact_duplicate_physical_groups": 18,
+    "exact_duplicate_extra_copies": 19,
+    "full_pg_corpus_reconciled": false,
+    "transcript_mapped_duration_verified": 7,
+    "transcribed_pending_speech_gate": 7,
+    "source_corrupt_variants": 1,
+    "transcript_mapped_or_review": 35,
+    "transcript_missing_readable_source": 16,
+    "corrupt_media_variants": 5,
+    "unreconciled_transcript_crosswalks": 0,
+    "local_source_candidates_fully_state_classified": 56
+  },
+  "source_processable_media_available_count": 56,
+  "source_hash_prefix_only_count": 32,
+  "legacy_second_brain_inventory": {
+    "legacyProjectId": "cfdd6312-bf4b-4020-9c46-2b940e4a9c02",
+    "legacyCurrentReviewedCanonicalChunks": 207,
+    "legacyUniqueContentHashes": 207,
+    "legacyDuplicateContentRows": 0,
+    "legacyDistinctDocumentIds": 41,
+    "legacyDistinctDocumentTitles": 41,
+    "legacyChunksWithSourceLabel": 90,
+    "legacyChunksWithoutSourceLabel": 117,
+    "legacyChunksWithSourceRange": 102,
+    "legacyChunksWithApplicationId": 0,
+    "legacyChunksWithExplicitProvenanceRefs": 0,
+    "legacyChunksWithExplicitVerificationStatus": 0,
+    "legacyChunksWithObservedAt": 0,
+    "legacyChunksWithTemporalPolicy": 0,
+    "legacyEmbeddingMatches": 0,
+    "legacySourceLabelCounts": {
+      "AMS KAP – App Support – Session 42 transcript excerpt": 6,
+      "Application Detail screenshot": 1,
+      "Tide Services session transcript": 5,
+      "Teams meeting chat": 4,
+      "AMS KAP – App Support – Session 40 transcript": 5,
+      "Shadow Bridge - AMS App Support transcript": 4,
+      "FalconIncidentMgmt QRG Oct2026": 7,
+      "Introductory Session transcript": 4,
+      "AMS Stewardship Onboarding / Sponsor Approval email": 2,
+      "Punam Application Owners list": 6,
+      "team status tracker supplied by Juan": 1,
+      "Punam Teams chat": 2,
+      "Session 46 screenshot": 1,
+      "meeting invitation from Punam": 1,
+      "attached AMS support-tier/SLA deck + email clarification": 1,
+      "Session 43 MOM email": 5,
+      "2026-10-13 email clarification + attached deck": 1,
+      "FalconIncidentMgmt QRG Oct2026 + 2026-10-10 email": 1,
+      "AMS KAP – App Support – Session 41 transcript": 5,
+      "P&G Falcon AMS 2026 support-tier/SLA deck": 4,
+      "Teams message": 1,
+      "Punam Teams clarification": 4,
+      "Session 46 schedule update email": 1,
+      "Session 43 meeting agenda": 1,
+      "AMS Daily Standup Teams chat": 3,
+      "Surendhar follow-up email": 1,
+      "Session 43 transcript excerpt reconciled with MOM": 1,
+      "Session 44 Key Vault screenshot": 1,
+      "Session 44 technical overview screenshots": 1,
+      "AMS KAP – App Support – Session 43 transcript excerpt": 3,
+      "Application Detail screenshot + Session 44 screenshots": 1,
+      "Session 44 Azure portal screenshots": 1,
+      "POC tracker reconciled with sponsor-approval role email": 1,
+      "Teams message from Punam": 2,
+      "Policy Area / Dedicated POC tracker screenshot": 1,
+      "Punam Teams chat / AMS Daily": 1
+    },
+    "serviceProjectId": "P&G",
+    "serviceProjectCurrentChunks": 13,
+    "serviceProjectUniqueHashes": 13,
+    "serviceProjectEmbeddingRows": 13,
+    "policy": "legacy chunks require Knowledge Service reconciliation and application/provenance enrichment before any new embedding; no raw content exported",
+    "scope": "metadata-only inventory; canonical content remains in Second Brain"
+  },
+  "source_state_reconciliation": {
+    "source_candidate_groups": 56,
+    "source_original_available_with_full_sha256": 24,
+    "derivative_only_with_source_hash_prefix": 32,
+    "local_media_candidates": 56,
+    "local_media_decode_corrupt_variants": 5,
+    "transcripts_mapped_or_review": 35,
+    "readable_local_media_transcript_missing": 16,
+    "unreconciled_transcript_identity_count": 0,
+    "ambiguous_same_session_clusters": 3,
+    "documents_v3_state_counts": {
+      "PENDING_SPEECH_GATE_OR_REVIEW": 19,
+      "BLOCKED_CORRUPT_MEDIA": 5,
+      "BLOCKED_SPEECH_GATE": 14,
+      "BLOCKED_IDENTITY_REVIEW": 1,
+      "BLOCKED_TRANSCRIPT_MISSING": 16,
+      "COMPLETE": 1
+    },
+    "full_pg_corpus_reconciled": false
+  },
+  "runtime_reconciliation_checkpoint": {
+    "observed_at": "2026-10-31",
+    "active_pipeline": true,
+    "mode": "full",
+    "stage": "vision_ocr",
+    "stage_states": {
+      "analyze": "completed",
+      "compress": "completed",
+      "document": "pending",
+      "route": "pending",
+      "store": "pending",
+      "transcribe": "completed",
+      "upload": "completed",
+      "vision_ocr": "running"
+    },
+    "heavy_concurrency_limit": 1,
+    "additional_heavy_work_started": false,
+    "reason": "healthy existing Whisper pipeline occupies the serialized heavy slot"
+  }
 }
