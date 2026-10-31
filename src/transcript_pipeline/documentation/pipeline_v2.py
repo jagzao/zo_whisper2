@@ -409,82 +409,9 @@ def _publish_semantic_knowledge(
     existing_knowledge: dict | None = None,
     supersedes_knowledge_id: str | None = None,
 ) -> dict[str, Any]:
-    """Same durable-outbox flow as the legacy hook, but the package is built
-    by the semantic bridge (title/summary/sections from the
-    KnowledgeDocument; procedures only from SynthesizedProcedure)."""
-    try:
-        from transcript_pipeline.knowledge.package_builder import (
-            build_knowledge_package_from_document,
-            resolve_second_brain,
-            write_package_files,
-        )
-        from transcript_pipeline.knowledge.publisher import (
-            enqueue_knowledge_package,
-            publisher_from_env,
-            run_publish_cycle,
-        )
-
-        if resolve_second_brain(project_config) is None:
-            return {
-                "published": False,
-                "reason": "second_brain_disabled",
-                "knowledgeState": engine.KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED,
-            }
-
-        package = build_knowledge_package_from_document(
-            knowledge_document=document,
-            evidence_timeline=timeline,
-            project_config=project_config,
-            existing_knowledge=existing_knowledge,
-            supersedes_knowledge_id=supersedes_knowledge_id,
-        )
-        if package is None:
-            return {
-                "published": False,
-                "reason": "second_brain_disabled",
-                "knowledgeState": engine.KNOWLEDGE_STATE_SECOND_BRAIN_DISABLED,
-            }
-
-        write_package_files(ai_package_dir, package)
-
-        from transcript_pipeline.config import DATA_ROOT
-        from transcript_pipeline.knowledge.outbox import KnowledgeOutbox
-
-        outbox = KnowledgeOutbox(DATA_ROOT)
-        entry = enqueue_knowledge_package(outbox, package.to_dict())
-        entry_state = entry.get("state", "PENDING") if isinstance(entry, dict) else "PENDING"
-
-        if entry_state == "PUBLISHED":
-            return {
-                "published": True, "packageId": package.package_id, "outbox": entry,
-                "knowledgeState": engine.KNOWLEDGE_STATE_PUBLISHED, "publishCycle": None,
-            }
-        if entry_state == "FAILED":
-            return {
-                "published": True, "packageId": package.package_id, "outbox": entry,
-                "knowledgeState": engine.KNOWLEDGE_STATE_TERMINAL_FAILURE, "publishCycle": None,
-            }
-
-        publisher = publisher_from_env()
-        if publisher is None:
-            return {
-                "published": True, "packageId": package.package_id, "outbox": entry,
-                "knowledgeState": engine.KNOWLEDGE_STATE_ENQUEUED, "publishCycle": None,
-            }
-
-        cycle = run_publish_cycle(outbox, publisher, max_seconds=engine.KNOWLEDGE_PUBLISH_WAKEUP_SECONDS)
-        refreshed = outbox.ledger.get(package.package_id) or entry
-        final_state = refreshed.get("state", "PENDING") if isinstance(refreshed, dict) else "PENDING"
-        if final_state == "PUBLISHED":
-            knowledge_state = engine.KNOWLEDGE_STATE_PUBLISHED
-        elif final_state == "FAILED":
-            knowledge_state = engine.KNOWLEDGE_STATE_TERMINAL_FAILURE
-        else:
-            knowledge_state = engine.KNOWLEDGE_STATE_PENDING_RETRY
-        return {
-            "published": True, "packageId": package.package_id, "outbox": refreshed,
-            "knowledgeState": knowledge_state, "publishCycle": cycle,
-        }
-    except Exception as e:  # noqa: BLE001 - knowledge publishing is best-effort
-        logger.warning("[KNOWLEDGE] semantic knowledge package skipped: %s", e)
-        return {"published": False, "reason": f"error:{type(e).__name__}"}
+    """Deprecated v2 hook; canonical learning now enters through Knowledge Service."""
+    return {
+        "published": False,
+        "reason": "knowledge_service_intake_required",
+        "knowledgeState": engine.KNOWLEDGE_STATE_SERVICE_REQUIRED,
+    }

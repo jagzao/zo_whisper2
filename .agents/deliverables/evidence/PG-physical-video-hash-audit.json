@@ -1,0 +1,643 @@
+{
+  "schemaVersion": 1,
+  "scope": "all physical MP4 files under Videos/py_pg; sequential SHA-256; tutorial variants are physical files, not logical sources",
+  "physicalFileCount": 80,
+  "hashedFileCount": 80,
+  "exactDuplicateFileGroups": [
+    [
+      "Videos/py_pg/pg_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording__e026a9e8ed37.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording__436395c70cb2.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording-1.mp4",
+      "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording__b491c9804f88.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording__45c87c93ddf9.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording__29512a922144.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1).mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1)__b4090e482677.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording__bab8396f2d88.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1).mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1)__1d49f02b0432.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording__becbb7165092.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording__be9220ad903d.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording__fb8f555e4bb4.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording__9db0c1ae9033.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording (1)__f301963ae3e8.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_Png_punam_281026.mp4",
+      "Videos/py_pg/pg_tutorial_Png_punam_281026__d10582c8b8b9.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_Shadow 26 octubre -1.mp4",
+      "Videos/py_pg/pg_tutorial_Shadow 26 octubre -1__32c7e8999cbe.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_Shadow 26 octubre-2.mp4",
+      "Videos/py_pg/pg_tutorial_Shadow 26 octubre-2__1dd0a93945b5.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_Shadow 28 oct 26.mp4",
+      "Videos/py_pg/pg_tutorial_Shadow 28 oct 26__d482bc85fc2e.mp4"
+    ],
+    [
+      "Videos/py_pg/pg_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording.mp4",
+      "Videos/py_pg/pg_tutorial_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording__1511e62e2c49.mp4"
+    ]
+  ],
+  "records": [
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1.mp4",
+      "sizeBytes": 268686336,
+      "sha256": "95afc5cc3488661bf62607d13c7496f6727da0fad8a845fc535475a3baa6cc35",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording.mp4",
+      "sizeBytes": 35458095,
+      "sha256": "a31375a6d8251fa6e8e8de04651d43e9007bcf4b76c625447bc9ddbe30c13a95",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording.mp4",
+      "sizeBytes": 49778475,
+      "sha256": "0abf33dc8e0d4edc55385a5dde8f2cdf968618df3d243d6f91f305b5108a2241",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording.mp4",
+      "sizeBytes": 193996756,
+      "sha256": "20e35ec78945fc49a9977dc477c8ef5fb9e010ccc606a70c2318a68001d961a3",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording.mp4",
+      "sizeBytes": 252448872,
+      "sha256": "e026a9e8ed37f98b3f670cc3cafdb9b401b110bab7b30a3ec5d7bb44d6973ecd",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording.mp4",
+      "sizeBytes": 270294585,
+      "sha256": "436395c70cb2be4022f3553f5056c3f8eedcca185fb63bd66846034d6883e1fb",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording-1.mp4",
+      "sizeBytes": 346360697,
+      "sha256": "b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording.mp4",
+      "sizeBytes": 346360697,
+      "sha256": "b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording.mp4",
+      "sizeBytes": 236797908,
+      "sha256": "45c87c93ddf9472bad9e99dbb865eeeea443ad69704aea50d528f8d3eba568ca",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording.mp4",
+      "sizeBytes": 143773593,
+      "sha256": "29512a922144f987fa75edf4579d92e49253d82c4a4d8090f74bb4ccb9c68c13",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1).mp4",
+      "sizeBytes": 275805702,
+      "sha256": "b4090e482677759669cc7300270967f454803d2686376c59e6288ed34db7cbd3",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording.mp4",
+      "sizeBytes": 271517696,
+      "sha256": "bab8396f2d889e93fe46c2a329bd3a779f59fdf72a5a30e09c2c86c57a3d81d0",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1).mp4",
+      "sizeBytes": 203724632,
+      "sha256": "1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording.mp4",
+      "sizeBytes": 195140137,
+      "sha256": "becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording.mp4",
+      "sizeBytes": 230899107,
+      "sha256": "be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording.mp4",
+      "sizeBytes": 109009544,
+      "sha256": "fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording.mp4",
+      "sizeBytes": 157949494,
+      "sha256": "9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording.mp4",
+      "sizeBytes": 99892493,
+      "sha256": "f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1__20261018190532.mp4",
+      "sizeBytes": 280370903,
+      "sha256": "5bcd31f7f43a1a2e4aaf372896b10e6aeadd1fb555885ee378905249eba3a794",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_Png_punam_281026.mp4",
+      "sizeBytes": 2683640319,
+      "sha256": "d10582c8b8b97ccd6d30ac97b7ef0acacdc8386bb6c6a32f01a61fa348747853",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/Pg_risk_training_series_s1__ababb9d2a399.mp4",
+      "sizeBytes": 231813404,
+      "sha256": "452115d58c6545518c7aaed4fb650753668b54cdcbca4dfbebfaf99cb3240cf6",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": "ababb9d2a399"
+    },
+    {
+      "path": "Videos/py_pg/pg_Shadow 26 octubre -1.mp4",
+      "sizeBytes": 3101943382,
+      "sha256": "32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_Shadow 26 octubre-2.mp4",
+      "sizeBytes": 810322556,
+      "sha256": "1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_Shadow 28 oct 26.mp4",
+      "sizeBytes": 4683144795,
+      "sha256": "d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording.mp4",
+      "sizeBytes": 37205029,
+      "sha256": "1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
+      "kind": "SOURCE_OR_COPY",
+      "sourceSha256Prefix": null
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP - Compliance - Session 2__ff0c39e50b29.mp4",
+      "sizeBytes": 5879344800,
+      "sha256": "ff0c39e50b296f331318f7f45125ec1f02629be455701197ac05c2a264b7a1b9",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "ff0c39e50b29"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Ams kap app support s10__61a11d69fa05.mp4",
+      "sizeBytes": 612423600,
+      "sha256": "61a11d69fa0533d578f7afd498cff0cd86bee2b98324683dea22087cc4baff2d",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "61a11d69fa05"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support  – Session 18-20260826_070045UTC-Meeting Recording 1__95afc5cc3488.mp4",
+      "sizeBytes": 149237801,
+      "sha256": "4f2f7b788cd1d457525fd28b317f5939796f05abf1289ef29fc9d0dea4d16c36",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "95afc5cc3488"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 18-20260826_070045UTC-Meeting Recording 1__1643e7fee3a3.mp4",
+      "sizeBytes": 5830184000,
+      "sha256": "1643e7fee3a36ade8539ef6e39053735a103e2b11a98cef66d0cad374d7b72b5",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "1643e7fee3a3"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 40-20261012_130009UTC-Meeting Recording__a31375a6d825.mp4",
+      "sizeBytes": 20526859,
+      "sha256": "a5d12fea249b9cc35719e19f2a102b6148aad110e8a7053d6b38f08cf42831bf",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "a31375a6d825"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 41-20261015_110020UTC-Meeting Recording__0abf33dc8e0d.mp4",
+      "sizeBytes": 28757832,
+      "sha256": "0e9901ff041105d24f78a94345e08be853c6fa9c2c8908e69245582976deac64",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "0abf33dc8e0d"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 42-20261016_065955UTC-Meeting Recording__20e35ec78945.mp4",
+      "sizeBytes": 107894313,
+      "sha256": "0b856402546588155f77303a1c295d878139ac2c9bb9df8e07944efcab7b4fb4",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "20e35ec78945"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session 43-20261019_115928UTC-Meeting Recording__e026a9e8ed37.mp4",
+      "sizeBytes": 252448872,
+      "sha256": "e026a9e8ed37f98b3f670cc3cafdb9b401b110bab7b30a3ec5d7bb44d6973ecd",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "e026a9e8ed37"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20260930_135845UTC-Meeting Recording__287ec469a75f.mp4",
+      "sizeBytes": 241735232,
+      "sha256": "287ec469a75f819ff6a51e1fea46f1d0f4e5790aa41a954545d4eebede7aec93",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "287ec469a75f"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_123021UTC-Meeting Recording__436395c70cb2.mp4",
+      "sizeBytes": 270294585,
+      "sha256": "436395c70cb2be4022f3553f5056c3f8eedcca185fb63bd66846034d6883e1fb",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "436395c70cb2"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording__5abd574b942d.mp4",
+      "sizeBytes": 135525494,
+      "sha256": "5abd574b942d5e71a5740fd4239f902b2eea81647f9af8a2a12371aa027d794c",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "5abd574b942d"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261009_122937UTC-Meeting Recording__b491c9804f88.mp4",
+      "sizeBytes": 346360697,
+      "sha256": "b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "b491c9804f88"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording__a0681f2e8c1e.mp4",
+      "sizeBytes": 314890782,
+      "sha256": "a0681f2e8c1ea0c408ee16b01ea23939a3c22b3cfb62d7e1bad771ddd46384ef",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "a0681f2e8c1e"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording__f1a02e186181.mp4",
+      "sizeBytes": 199296760,
+      "sha256": "f1a02e1861815be9c0e144eeb7e8c91e1b7b79aa595214cb8c050c024e1812de",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "f1a02e186181"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording__5f7beacd0240.mp4",
+      "sizeBytes": 202480701,
+      "sha256": "5f7beacd0240212b8351dcaab2c437c36c55f7366c417e6bd24ab14c775e60d2",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "5f7beacd0240"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording__4d8a7e0bce89.mp4",
+      "sizeBytes": 189048686,
+      "sha256": "4d8a7e0bce891ad01b092d91de6aa6e1b40b046b737467b1c4ab011c3a761b25",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "4d8a7e0bce89"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording__24ae0bba1b72.mp4",
+      "sizeBytes": 180410239,
+      "sha256": "24ae0bba1b7216354d17ca193109da8fd9ef856543bc954fe6d82d85bd196d56",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "24ae0bba1b72"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording__bda0aecaeea3.mp4",
+      "sizeBytes": 140210176,
+      "sha256": "bda0aecaeea311558907df7f3ada8fbeb1cbefc8c0a1a4598ba707937451885f",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "bda0aecaeea3"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording__f4d0dc26de61.mp4",
+      "sizeBytes": 67913728,
+      "sha256": "f4d0dc26de61c70e641ad03f85998cf24c19faea84c8a1734233005ed31944f3",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "f4d0dc26de61"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording__f72f0ae367b4.mp4",
+      "sizeBytes": 362446672,
+      "sha256": "f72f0ae367b4db8ed8dfb4cbf60ccad486c97ac825fd2847c739a2a9fc3de1ec",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "f72f0ae367b4"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording__4314cdc1aad6.mp4",
+      "sizeBytes": 207218534,
+      "sha256": "4314cdc1aad623e0e84bc426db2a5f85dff1fa25032c7e0901d7a6bff103281b",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "4314cdc1aad6"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording__62cbd55b433a.mp4",
+      "sizeBytes": 404757982,
+      "sha256": "62cbd55b433af62ce1aef5003015ccf9a3139fcf3ed4a1dc67d14e64f8e6d943",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "62cbd55b433a"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording__d9798d4df316.mp4",
+      "sizeBytes": 312449328,
+      "sha256": "d9798d4df31634b153a14dc9fc89e48e01f3b6e9e5329f83b87c587db2e5d08a",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "d9798d4df316"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording__6357012f90dd.mp4",
+      "sizeBytes": 422119265,
+      "sha256": "6357012f90dd7f742bbbd71b69de0976b9de5f0d70a1309b105fe4c663b656cc",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "6357012f90dd"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording__3846c21eb690.mp4",
+      "sizeBytes": 231677584,
+      "sha256": "3846c21eb6904ce7b2c639ffed6ef3d9d1851ace8be2d9203eeaf423177dbc66",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "3846c21eb690"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d.mp4",
+      "sizeBytes": 369397555,
+      "sha256": "f678a382d25d694ae513876d4368094edaaff47cc3845b53a9ad3fdf4db2da06",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "f678a382d25d"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 1(one-time assessment(App Registration, EA Diagram _ iRisk))-20260903_150025UTC-Meeting Recording__45c87c93ddf9.mp4",
+      "sizeBytes": 236797908,
+      "sha256": "45c87c93ddf9472bad9e99dbb865eeeea443ad69704aea50d528f8d3eba568ca",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "45c87c93ddf9"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 2(one-time assessment (App Registration))-20260922_123031UTC-Meeting Recording__29512a922144.mp4",
+      "sizeBytes": 143773593,
+      "sha256": "29512a922144f987fa75edf4579d92e49253d82c4a4d8090f74bb4ccb9c68c13",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "29512a922144"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording (1)__b4090e482677.mp4",
+      "sizeBytes": 275805702,
+      "sha256": "b4090e482677759669cc7300270967f454803d2686376c59e6288ed34db7cbd3",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "b4090e482677"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 3(one-time assessment (Identity _ Access Management _ ACP))-20260924_123038UTC-Meeting Recording__bab8396f2d88.mp4",
+      "sizeBytes": 271517696,
+      "sha256": "bab8396f2d889e93fe46c2a329bd3a779f59fdf72a5a30e09c2c86c57a3d81d0",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "bab8396f2d88"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1)__1d49f02b0432.mp4",
+      "sizeBytes": 203724632,
+      "sha256": "1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "1d49f02b0432"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording__becbb7165092.mp4",
+      "sizeBytes": 195140137,
+      "sha256": "becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "becbb7165092"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording__be9220ad903d.mp4",
+      "sizeBytes": 230899107,
+      "sha256": "be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "be9220ad903d"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording__fb8f555e4bb4.mp4",
+      "sizeBytes": 109009544,
+      "sha256": "fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "fb8f555e4bb4"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording__9db0c1ae9033.mp4",
+      "sizeBytes": 157949494,
+      "sha256": "9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "9db0c1ae9033"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording (1)__f301963ae3e8.mp4",
+      "sizeBytes": 99892493,
+      "sha256": "f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "f301963ae3e8"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS_KAP_-_App_Support_-_Session_41__3bd7aa3d20cd.mp4",
+      "sizeBytes": 223576847,
+      "sha256": "3bd7aa3d20cd8622572d66d048e4ee4fb0e4cbfb2e0070143a93927a445b3669",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "3bd7aa3d20cd"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_1__5123a6fef7db.mp4",
+      "sizeBytes": 330088870,
+      "sha256": "5123a6fef7dbb2aa80c709514d0c121c1e4ad1491d161f4657d9d8e4215740b9",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "5123a6fef7db"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_2__f87d9aa49cfc.mp4",
+      "sizeBytes": 6397969946,
+      "sha256": "f87d9aa49cfcf11ad9f58ba8a382a40218c246790bd2e13756bb165e9d680c36",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "f87d9aa49cfc"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s10__4f3f06104667.mp4",
+      "sizeBytes": 7925799330,
+      "sha256": "4f3f06104667fdb9e210c579efb73d5dc63af522baabe99f6dac0c5efd32aa37",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "4f3f06104667"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s46__9974e951a161.mp4",
+      "sizeBytes": 6389600169,
+      "sha256": "9974e951a16197bff8eb497f0cd38af88d7585e76cd88b58879036cec1f3646d",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "9974e951a161"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Ams_kap_compliance_s4__07b5f4ea0099.mp4",
+      "sizeBytes": 8014304595,
+      "sha256": "07b5f4ea0099f573013d7043dc71be2bf8cddeae9a4f0a443a9a3fd7d834a050",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "07b5f4ea0099"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Intro__1f30f653c464.mp4",
+      "sizeBytes": 180874920,
+      "sha256": "1f30f653c464c0d47c00165be95b8c72685cf3582dc2528aa2840f001c2cff46",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "1f30f653c464"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Png_punam_281026__d10582c8b8b9.mp4",
+      "sizeBytes": 2683640319,
+      "sha256": "d10582c8b8b97ccd6d30ac97b7ef0acacdc8386bb6c6a32f01a61fa348747853",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "d10582c8b8b9"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_S43__8a9be2f9a5c5.mp4",
+      "sizeBytes": 5875758800,
+      "sha256": "8a9be2f9a5c52036f18eb90a90ecb01b0fc34c67f0fd7b5e2acc89d488465e9b",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "8a9be2f9a5c5"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow 26 octubre -1__32c7e8999cbe.mp4",
+      "sizeBytes": 3101943382,
+      "sha256": "32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "32c7e8999cbe"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow 26 octubre-2__1dd0a93945b5.mp4",
+      "sizeBytes": 810322556,
+      "sha256": "1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "1dd0a93945b5"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow 28 oct 26__d482bc85fc2e.mp4",
+      "sizeBytes": 4683144795,
+      "sha256": "d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "d482bc85fc2e"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording__1511e62e2c49.mp4",
+      "sizeBytes": 37205029,
+      "sha256": "1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "1511e62e2c49"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow bridge ams app support 211026__361f30700fbb.mp4",
+      "sizeBytes": 6084186485,
+      "sha256": "361f30700fbb538b9a370433467a8a0b3985420152b847842df09a3810061ba7",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "361f30700fbb"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow_221026__48abeeb80ae6.mp4",
+      "sizeBytes": 5889566886,
+      "sha256": "48abeeb80ae6709175ce9c590346e1449eb3e6db179b02b408fcb9ef47680d25",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "48abeeb80ae6"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow_bridge-ams_app_support__c74e01c77928.mp4",
+      "sizeBytes": 477744212,
+      "sha256": "c74e01c779282aecbf3e73fa1b5f45444831a9d4da70a2b8840796bdb560b93d",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "c74e01c77928"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Shadow_bridge_ams_app_support_211026__b0c28ad9e108.mp4",
+      "sizeBytes": 453534426,
+      "sha256": "b0c28ad9e1081e90f81af6de6b163e7ad896c2c6a2e38117d73fc7c643967d46",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "b0c28ad9e108"
+    },
+    {
+      "path": "Videos/py_pg/pg_tutorial_Tidal__2189cf06a757.mp4",
+      "sizeBytes": 59778024,
+      "sha256": "2189cf06a757f65ddbf250dfc8c6865baba59efaac2a640a322b225a6bc2fac2",
+      "kind": "DERIVATIVE",
+      "sourceSha256Prefix": "2189cf06a757"
+    },
+    {
+      "path": "Videos/py_pg/temp_AMS_KAP_App_Support_Session_18-20260826_070045UTC-Meeting_Recording_1_.mp4",
+      "sizeBytes": 173277228,
+      "sha256": "23f8b9b95cf07b93a0f2ea866804cf590cb4b408d9481b8fc210b74d710b3ebe",
+      "kind": "TEMP",
+      "sourceSha256Prefix": null
+    }
+  ]
+}

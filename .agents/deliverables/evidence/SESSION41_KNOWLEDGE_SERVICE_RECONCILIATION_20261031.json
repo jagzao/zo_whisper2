@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "sourceSessionId": "session41-final-owner-uat",
+  "sourceMediaSha256": "0abf33dc8e0d4edc55385a5dde8f2cdf968618df3d243d6f91f305b5108a2241",
+  "documentsV3Artifact": "session41-content-uat/AMS_KAP_-_App_Support_-_Session_41.json",
+  "documentsV3Sha256": "7c39fa701041d36252c2339df4a9a76ed0e69cf188feb64d64cbb582f4d65b96",
+  "documentsV3QualityState": "READY",
+  "whisperAdapterState": "PASS",
+  "submittedEnvelope": {
+    "sourceSystem": "whisper",
+    "sourceType": "documents-v3",
+    "projectId": "P&G",
+    "candidateCount": 13,
+    "excludedCount": 23,
+    "rawTranscriptIncluded": false,
+    "rawOcrIncluded": false,
+    "rawMediaIncluded": false
+  },
+  "knowledgeServiceReconciliation": {
+    "sourceId": "session41-final-owner-uat",
+    "state": "NEEDS_REVIEW",
+    "candidateCount": 13,
+    "decisionCounts": {
+      "CONFIRMS": 9,
+      "NEEDS_REVIEW": 4,
+      "NEW": 0,
+      "EXTENDS": 0,
+      "CONFLICTS": 0,
+      "SUPERSEDES": 0,
+      "NOT_USEFUL": 0
+    },
+    "embeddingEligibleCount": 0,
+    "indexStates": [
+      "NOT_ELIGIBLE"
+    ]
+  },
+  "secondBrainAfterIntake": {
+    "currentChunks": 13,
+    "uniqueChunkIds": 13,
+    "uniqueExternalChunkIds": 13,
+    "uniqueContentHashes": 13,
+    "matchingEmbeddingRows": 13,
+    "duplicateContentRows": 0,
+    "embeddingModel": "gemini-embedding-2",
+    "dimensions": 768
+  },
+  "retrievalUAT": {
+    "queryCount": 15,
+    "semanticQueries": 15,
+    "allReturnedHitsHaveProvenance": true,
+    "applicationIsolationNegativePass": true,
+    "rawTranscriptLeakage": "PASS: indexed corpus contains reviewed_canonical chunks only",
+    "ownerRelevanceReview": "PENDING",
+    "state": "SEMANTIC_AND_SCOPE_SMOKE_PASS_OWNER_RELEVANCE_PENDING"
+  },
+  "baselinePreserved": true,
+  "overallPAndGCorpusComplete": false
+}

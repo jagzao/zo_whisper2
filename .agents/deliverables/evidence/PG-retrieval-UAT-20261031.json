@@ -1,0 +1,406 @@
+{
+  "schemaVersion": 1,
+  "corpusProject": "P&G",
+  "queryCount": 15,
+  "containsCanonicalText": false,
+  "containsRawEvidence": false,
+  "cases": [
+    {
+      "id": "ams",
+      "question": "What does AMS cover for P&G application support?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-f4f9443406aa",
+        "knowledge-15c48b310592",
+        "knowledge-43347f0952d3",
+        "knowledge-438108756e53",
+        "knowledge-09f8f2872d44"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 4,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "itsm",
+      "question": "What is the ITSM process for P&G application support?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-f4f9443406aa",
+        "knowledge-43347f0952d3",
+        "knowledge-15c48b310592",
+        "knowledge-a11cb5100cde",
+        "knowledge-438108756e53"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 4,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "pg_regdoc",
+      "question": "What is PG RegDoc for?",
+      "applicationIdFilter": "pgregdoc-com",
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-a11cb5100cde",
+        "knowledge-68f6df4971b8",
+        "knowledge-43347f0952d3",
+        "knowledge-27fda44bc04f",
+        "knowledge-b41b4ea8c5a7"
+      ],
+      "applications": [
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 2,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "cprt",
+      "question": "What role does CPRT play in P&G support?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-f4f9443406aa",
+        "knowledge-438108756e53",
+        "knowledge-d710077ac75c",
+        "knowledge-61a2d800d22b",
+        "knowledge-09f8f2872d44"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 4,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "applications",
+      "question": "How are P&G applications and application instances managed?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-f4f9443406aa",
+        "knowledge-43347f0952d3",
+        "knowledge-68f6df4971b8",
+        "knowledge-a11cb5100cde",
+        "knowledge-b41b4ea8c5a7"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 3,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "architecture",
+      "question": "How are application architecture and hosting reviewed?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": true,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-0c9d6f25ee5e",
+        "knowledge-68f6df4971b8",
+        "knowledge-15c48b310592",
+        "knowledge-27fda44bc04f",
+        "knowledge-61a2d800d22b"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 3,
+      "historicalWarningRequired": true
+    },
+    {
+      "id": "authentication",
+      "question": "How are authentication and access controls handled?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": true,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-a11cb5100cde",
+        "knowledge-27fda44bc04f",
+        "knowledge-d710077ac75c",
+        "knowledge-43347f0952d3",
+        "knowledge-b41b4ea8c5a7"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 2,
+      "historicalWarningRequired": true
+    },
+    {
+      "id": "roles",
+      "question": "Which roles participate in P&G onboarding and compliance?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-43347f0952d3",
+        "knowledge-f4f9443406aa",
+        "knowledge-438108756e53",
+        "knowledge-d710077ac75c",
+        "knowledge-a11cb5100cde"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 4,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "support_groups",
+      "question": "How are support groups and application owners assigned?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": true,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-f4f9443406aa",
+        "knowledge-09f8f2872d44",
+        "knowledge-15c48b310592",
+        "knowledge-d710077ac75c",
+        "knowledge-61a2d800d22b"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 4,
+      "historicalWarningRequired": true
+    },
+    {
+      "id": "processes",
+      "question": "What are the steps in P&G application onboarding?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-a11cb5100cde",
+        "knowledge-f4f9443406aa",
+        "knowledge-68f6df4971b8",
+        "knowledge-43347f0952d3",
+        "knowledge-27fda44bc04f"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 3,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "sla",
+      "question": "What SLA applies to P&G application support?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": true,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-f4f9443406aa",
+        "knowledge-15c48b310592",
+        "knowledge-43347f0952d3",
+        "knowledge-438108756e53",
+        "knowledge-a11cb5100cde"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 4,
+      "historicalWarningRequired": true
+    },
+    {
+      "id": "lifecycle_state",
+      "question": "What lifecycle and state transitions are described for applications?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": true,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-68f6df4971b8",
+        "knowledge-43347f0952d3",
+        "knowledge-61a2d800d22b",
+        "knowledge-0c9d6f25ee5e",
+        "knowledge-27fda44bc04f"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 2,
+      "historicalWarningRequired": true
+    },
+    {
+      "id": "kt_knowledge",
+      "question": "How is P&G knowledge transfer structured?",
+      "applicationIdFilter": null,
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-438108756e53",
+        "knowledge-f4f9443406aa",
+        "knowledge-43347f0952d3",
+        "knowledge-b41b4ea8c5a7",
+        "knowledge-a11cb5100cde"
+      ],
+      "applications": [
+        "north-america-central-product-research-testing-panelist-payments",
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 3,
+      "historicalWarningRequired": false
+    },
+    {
+      "id": "current_state",
+      "question": "Who currently owns and supports PG RegDoc?",
+      "applicationIdFilter": "pgregdoc-com",
+      "currentStateSensitive": true,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 5,
+      "knowledgeIds": [
+        "knowledge-15c48b310592",
+        "knowledge-a11cb5100cde",
+        "knowledge-f1ac9fb852a2",
+        "knowledge-43347f0952d3",
+        "knowledge-0c9d6f25ee5e"
+      ],
+      "applications": [
+        "pgregdoc-com"
+      ],
+      "allResultsScoped": true,
+      "provenanceCount": 5,
+      "verifiedCount": 5,
+      "observedAtCount": 5,
+      "currentLiveFlagCount": 4,
+      "historicalWarningRequired": true
+    },
+    {
+      "id": "application_isolation",
+      "question": "What is PG RegDoc for?",
+      "applicationIdFilter": "unrelated-app",
+      "currentStateSensitive": false,
+      "httpStatus": 200,
+      "semantic": true,
+      "degraded": false,
+      "resultCount": 0,
+      "knowledgeIds": [],
+      "applications": [],
+      "allResultsScoped": true,
+      "provenanceCount": 0,
+      "verifiedCount": 0,
+      "observedAtCount": 0,
+      "currentLiveFlagCount": 0,
+      "historicalWarningRequired": false
+    }
+  ],
+  "applicationIsolationNegativePass": true,
+  "ownerRelevanceReview": "PENDING",
+  "rawTranscriptLeakage": "PASS: indexed corpus contains reviewed_canonical chunks only",
+  "retrievalUatState": "SEMANTIC_AND_SCOPE_SMOKE_PASS_OWNER_RELEVANCE_PENDING"
+}

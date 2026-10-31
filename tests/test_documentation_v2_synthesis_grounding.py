@@ -28,6 +28,7 @@ from transcript_pipeline.documentation.knowledge_models import (
     SynthesizedProcedure,
     SynthesizedStep,
 )
+from transcript_pipeline.documentation import pipeline_v2
 from transcript_pipeline.documentation.pipeline_v2 import generate_documentation_v2
 from transcript_pipeline.documentation.synthesis import (
     STATUS_BLOCKED_PRIVACY,
@@ -36,6 +37,14 @@ from transcript_pipeline.documentation.synthesis import (
     STATUS_UNAVAILABLE,
     SynthesisService,
 )
+
+
+def test_semantic_v2_publisher_requires_knowledge_service_intake(tmp_path):
+    result = pipeline_v2._publish_semantic_knowledge(
+        tmp_path, None, None, {"name": "P&G", "second_brain": {"enabled": True}}
+    )
+    assert result["knowledgeState"] == "KNOWLEDGE_SERVICE_REQUIRED"
+    assert not list(tmp_path.iterdir())
 from transcript_pipeline.llm.provider import LLMProviderType
 
 KT_CONFIG = {

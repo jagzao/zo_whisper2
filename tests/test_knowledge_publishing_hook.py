@@ -1,15 +1,4 @@
-"""ZK-01/ZK-16 + DELTA-ZO-KNOWLEDGE-002 — publish wakeup and recursive privacy.
-
-Covers:
-- configured publisher ACK moves the package to published (PUBLISHED);
-- configured retryable publisher leaves the package pending/backoff
-  (PENDING_RETRY);
-- unconfigured publisher remains enqueue-only (ENQUEUED);
-- publisher failure never fails documentation;
-- disabled second_brain returns SECOND_BRAIN_DISABLED;
-- nested raw transcript/VTT/media fields are rejected recursively while a
-  bounded transcriptExcerpt stays valid.
-"""
+"""Legacy Whisper publishing stays inert; privacy guard remains fail-closed."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -19,10 +8,8 @@ import pytest
 from transcript_pipeline import config as config_mod
 from transcript_pipeline.documentation import engine
 from transcript_pipeline.documentation.models import DocumentationSource, ProceduralStep
-from transcript_pipeline.knowledge import publisher as publisher_mod
 from transcript_pipeline.knowledge.outbox import KnowledgeOutbox
 from transcript_pipeline.knowledge.policy import PublishPolicyError, assert_no_forbidden_payload
-from transcript_pipeline.knowledge.publisher import ACK, RETRYABLE_FAILURE
 
 PG_CONFIG = {
     "name": "P&G",
@@ -79,70 +66,17 @@ def _run_hook(tmp_path: Path, project_config: dict | None = PG_CONFIG) -> dict:
     )
 
 
-class _AckPublisher:
-    def publish(self, package: dict) -> str:
-        return ACK
-
-
-class _RetryPublisher:
-    def publish(self, package: dict) -> str:
-        return RETRYABLE_FAILURE
-
-
-class _BoomPublisher:
-    def publish(self, package: dict) -> str:
-        raise ConnectionError("Second Brain unreachable")
-
-
-def test_configured_publisher_ack_moves_package_to_published(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(publisher_mod, "publisher_from_env", lambda env=None: _AckPublisher())
+def test_legacy_v2_publisher_is_inert_even_when_project_config_enables_it(tmp_path: Path):
     result = _run_hook(tmp_path)
 
-    assert result["published"] is True
-    assert result["knowledgeState"] == "PUBLISHED"
+    assert result == {
+        "published": False,
+        "reason": "knowledge_service_intake_required",
+        "knowledgeState": "KNOWLEDGE_SERVICE_REQUIRED",
+    }
     outbox = KnowledgeOutbox(tmp_path)
-    assert len(list(outbox.published.glob("*.json"))) == 1
     assert not list(outbox.pending.glob("*.json"))
-
-
-def test_configured_retryable_publisher_leaves_pending_backoff(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(publisher_mod, "publisher_from_env", lambda env=None: _RetryPublisher())
-    result = _run_hook(tmp_path)
-
-    assert result["knowledgeState"] == "PENDING_RETRY"
-    outbox = KnowledgeOutbox(tmp_path)
-    entry = outbox.ledger.get(result["packageId"])
-    assert entry["state"] == "PENDING"
-    assert entry["nextAttemptAt"]  # bounded backoff scheduled
-    assert len(list(outbox.pending.glob("*.json"))) == 1
-
-
-def test_unconfigured_publisher_is_enqueue_only(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(publisher_mod, "publisher_from_env", lambda env=None: None)
-    result = _run_hook(tmp_path)
-
-    assert result["knowledgeState"] == "ENQUEUED"
-    assert result["publishCycle"] is None
-    outbox = KnowledgeOutbox(tmp_path)
-    assert len(list(outbox.pending.glob("*.json"))) == 1
     assert not list(outbox.published.glob("*.json"))
-
-
-def test_publisher_failure_does_not_fail_documentation(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(publisher_mod, "publisher_from_env", lambda env=None: _BoomPublisher())
-    result = _run_hook(tmp_path)
-
-    # No exception escapes; the package is preserved as retryable.
-    assert result["published"] is True
-    assert result["knowledgeState"] == "PENDING_RETRY"
-
-
-def test_disabled_second_brain_is_clean_noop(tmp_path: Path, monkeypatch):
-    monkeypatch.setattr(publisher_mod, "publisher_from_env", lambda env=None: _AckPublisher())
-    result = _run_hook(tmp_path, project_config={"name": "legacy"})
-
-    assert result["published"] is False
-    assert result["knowledgeState"] == "SECOND_BRAIN_DISABLED"
 
 
 @pytest.mark.parametrize(
