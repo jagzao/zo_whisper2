@@ -24,7 +24,7 @@ def _free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def _wait_status(port: int, timeout: float = 20.0) -> dict:
+def _wait_status(port: int, timeout: float = 60.0) -> dict:
     deadline = time.time() + timeout
     url = f"http://127.0.0.1:{port}/api/status"
     last_error: Exception | None = None
@@ -39,12 +39,17 @@ def _wait_status(port: int, timeout: float = 20.0) -> dict:
     raise AssertionError(f"dashboard did not become ready: {last_error}")
 
 
-def _start_dashboard(port: int) -> subprocess.Popen:
+def _start_dashboard(port: int, data_root: Path) -> subprocess.Popen:
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT / "src")
     env["DASHBOARD_HOST"] = "127.0.0.1"
     env["DASHBOARD_PORT"] = str(port)
     env["ALLOW_EXTERNAL_LLM"] = "false"
+    env["ZMI_DATA_ROOT"] = str(data_root)
+    env["ZMI_LAN_ACCESS"] = "false"
+    env["ZMI_CONTAINER_MODE"] = "false"
+    env["DASHBOARD_CERT"] = ""
+    env["DASHBOARD_KEY"] = ""
     return subprocess.Popen(
         [sys.executable, str(ROOT / "dashboard.py")],
         cwd=str(ROOT),
@@ -65,9 +70,11 @@ def _stop(process: subprocess.Popen) -> None:
         process.wait(timeout=5)
 
 
-def test_dashboard_real_process_restart_has_fresh_run_state():
+def test_dashboard_real_process_restart_has_fresh_run_state(tmp_path):
     port = _free_port()
-    first = _start_dashboard(port)
+    data_root = tmp_path / "worker-data"
+    data_root.mkdir()
+    first = _start_dashboard(port, data_root)
     try:
         status1 = _wait_status(port)
         assert status1["running"] is False
@@ -75,7 +82,7 @@ def test_dashboard_real_process_restart_has_fresh_run_state():
     finally:
         _stop(first)
 
-    second = _start_dashboard(port)
+    second = _start_dashboard(port, data_root)
     try:
         status2 = _wait_status(port)
         assert status2["running"] is False

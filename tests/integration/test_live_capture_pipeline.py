@@ -124,7 +124,7 @@ def test_late_session_transcript_is_loose_untimed_evidence(tmp_path, monkeypatch
 
 
 @requires_ffmpeg
-def test_finalized_chunk_with_audio_flows_to_docs(tmp_path, monkeypatch, synthetic_cuts_video):
+def test_finalized_chunk_with_incomplete_gates_keeps_diagnostic_only(tmp_path, monkeypatch, synthetic_cuts_video):
     processor, chunk_path = _setup_finalized_chunk(
         tmp_path, monkeypatch, synthetic_cuts_video, audio_availability=A.AVAILABLE
     )
@@ -142,7 +142,8 @@ def test_finalized_chunk_with_audio_flows_to_docs(tmp_path, monkeypatch, synthet
     summary = generate_documentation(frames_dir, "chunk-000000.webm")
     assert summary["step_count"] == frame_info["frame_count"]
     assert summary["low_confidence_count"] == 0
-
-    manual_text = (frames_dir / "manual" / "MANUAL.md").read_text(encoding="utf-8")
-    assert "click File then New Project" in manual_text
-    assert "Type the project name" in manual_text
+    diagnostic = json.loads((frames_dir / "manual" / "diagnostic-report.json").read_text(encoding="utf-8"))
+    assert diagnostic["status"] == "SOURCE_INCOMPLETE"
+    assert diagnostic["transcript_quality"]["transcript_state"] == "PARTIAL"
+    assert diagnostic["visual_coverage_gate"] == "FAIL"
+    assert not (frames_dir / "manual" / "MANUAL.md").exists()

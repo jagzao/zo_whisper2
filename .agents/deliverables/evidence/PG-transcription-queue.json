@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-28T01:56:24Z",
+  "updated_at": "2026-10-31",
   "policy": "one worker per media; source identity is immutable; recovery outputs remain separate until validated",
   "records": [
     {
@@ -494,9 +494,9 @@
     {
       "media_id": "pg-10",
       "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording.mp4",
-      "transcript": null,
+      "transcript": "CarpetaTranscripciones/py_pg/AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording_segments.json",
       "state": "PROCESSING",
-      "next_action": "Adopt current whisper-zmi-1 master pass; do not schedule duplicate. TRANSCRIBE started 2026-10-28T00:49:43Z; VAD enabled at 00:51:07Z; output/checkpoint unavailable until source completion.",
+      "next_action": "active full pipeline has produced source-matched transcript and is currently in VISION_OCR; do not duplicate; reconcile status and artifacts after completion",
       "transcript_state": "MISSING",
       "lock": "IDLE",
       "progress": {
@@ -520,14 +520,16 @@
         "PROCESSING"
       ],
       "model": "large-v3",
-      "checkpoint": null
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:4314cdc1aad6",
+      "source_availability": "DERIVATIVE_ONLY"
     },
     {
       "media_id": "pg-11",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording.mp4",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording__62cbd55b433a.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
+      "next_action": "transcribe current healthy derivative once after active serialized heavy job; validate result before canonical insertion",
       "transcript_state": "MISSING",
       "lock": "IDLE",
       "progress": {
@@ -540,21 +542,25 @@
         "full_transcription_started": false,
         "job_state": "QUEUED",
         "model": "large-v3",
-        "checkpoint": null
+        "checkpoint": null,
+        "source_availability": "DERIVATIVE_ONLY"
       },
-      "job_state": "QUEUED",
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
       "job_state_history": [
-        "QUEUED"
+        "QUEUED",
+        "SOURCE_PATH_RECONCILED_TO_HASHED_DERIVATIVE"
       ],
       "model": "large-v3",
-      "checkpoint": null
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:62cbd55b433a",
+      "source_availability": "DERIVATIVE_ONLY"
     },
     {
       "media_id": "pg-12",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording.mp4",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording__d9798d4df316.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
+      "next_action": "transcribe current healthy derivative once after active serialized heavy job; validate result before canonical insertion",
       "transcript_state": "MISSING",
       "lock": "IDLE",
       "progress": {
@@ -567,21 +573,25 @@
         "full_transcription_started": false,
         "job_state": "QUEUED",
         "model": "large-v3",
-        "checkpoint": null
+        "checkpoint": null,
+        "source_availability": "DERIVATIVE_ONLY"
       },
-      "job_state": "QUEUED",
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
       "job_state_history": [
-        "QUEUED"
+        "QUEUED",
+        "SOURCE_PATH_RECONCILED_TO_HASHED_DERIVATIVE"
       ],
       "model": "large-v3",
-      "checkpoint": null
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:d9798d4df316",
+      "source_availability": "DERIVATIVE_ONLY"
     },
     {
       "media_id": "pg-13",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording.mp4",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording__6357012f90dd.mp4",
       "transcript": null,
       "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
+      "next_action": "transcribe current healthy derivative once after active serialized heavy job; validate result before canonical insertion",
       "transcript_state": "MISSING",
       "lock": "IDLE",
       "progress": {
@@ -594,22 +604,26 @@
         "full_transcription_started": false,
         "job_state": "QUEUED",
         "model": "large-v3",
-        "checkpoint": null
+        "checkpoint": null,
+        "source_availability": "DERIVATIVE_ONLY"
       },
-      "job_state": "QUEUED",
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
       "job_state_history": [
-        "QUEUED"
+        "QUEUED",
+        "SOURCE_PATH_RECONCILED_TO_HASHED_DERIVATIVE"
       ],
       "model": "large-v3",
-      "checkpoint": null
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:6357012f90dd",
+      "source_availability": "DERIVATIVE_ONLY"
     },
     {
       "media_id": "pg-15",
-      "video": "Videos/py_pg/pg_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording.mp4",
-      "transcript": null,
-      "state": "NEEDS_FULL_TRANSCRIPTION",
-      "next_action": "no source-matched or same-session unmatched sidecar found; source path/size revalidated; queue full transcription only after all existing-sidecar work and serial heavy slot are clear",
-      "transcript_state": "MISSING",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d.mp4",
+      "transcript": "CarpetaTranscripciones/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d_segments.json",
+      "state": "NEEDS_TARGETED_RECOVERY",
+      "next_action": "existing source-mapped transcript is valid; recover only speech-gate gaps after heavy slot frees; do not full-transcribe",
+      "transcript_state": "VALID",
       "lock": "IDLE",
       "progress": {
         "identity_match": "HIGH",
@@ -623,12 +637,404 @@
         "model": "large-v3",
         "checkpoint": null
       },
-      "job_state": "QUEUED",
+      "job_state": "QUEUED_TARGETED",
       "job_state_history": [
-        "QUEUED"
+        "QUEUED",
+        "RECLASSIFIED_FROM_STALE_MISSING_ORIGINAL_PATH"
       ],
       "model": "large-v3",
-      "checkpoint": null
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:f678a382d25d",
+      "source_availability": "DERIVATIVE_ONLY",
+      "transcript_exists": true
+    },
+    {
+      "media_id": "pg-src-4314cdc1aad6",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 3-20260810_123011UTC-Meeting Recording__4314cdc1aad6.mp4",
+      "transcript": null,
+      "state": "DEDUPE_QUEUE_MERGED",
+      "next_action": "already being handled by active full pipeline; wait for completion and validate",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "DERIVATIVE_ONLY",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:4314cdc1aad6",
+      "source_availability": "DERIVATIVE_ONLY",
+      "merged_into": "pg-10"
+    },
+    {
+      "media_id": "pg-src-62cbd55b433a",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording__62cbd55b433a.mp4",
+      "transcript": null,
+      "state": "DEDUPE_QUEUE_MERGED",
+      "next_action": "duplicate queue entry merged; source is transcribed through the canonical queue item",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "DERIVATIVE_ONLY",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:62cbd55b433a",
+      "source_availability": "DERIVATIVE_ONLY",
+      "merged_into": "pg-11"
+    },
+    {
+      "media_id": "pg-src-6357012f90dd",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording__6357012f90dd.mp4",
+      "transcript": null,
+      "state": "DEDUPE_QUEUE_MERGED",
+      "next_action": "duplicate queue entry merged; source is transcribed through the canonical queue item",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "DERIVATIVE_ONLY",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:6357012f90dd",
+      "source_availability": "DERIVATIVE_ONLY",
+      "merged_into": "pg-13"
+    },
+    {
+      "media_id": "pg-src-d9798d4df316",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording__d9798d4df316.mp4",
+      "transcript": null,
+      "state": "DEDUPE_QUEUE_MERGED",
+      "next_action": "duplicate queue entry merged; source is transcribed through the canonical queue item",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "DERIVATIVE_ONLY",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:d9798d4df316",
+      "source_availability": "DERIVATIVE_ONLY",
+      "merged_into": "pg-12"
+    },
+    {
+      "media_id": "pg-src-f72f0ae367b4",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording__f72f0ae367b4.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "DERIVATIVE_ONLY",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:f72f0ae367b4",
+      "source_availability": "DERIVATIVE_ONLY"
+    },
+    {
+      "media_id": "pg-src-1511e62e2c49",
+      "video": "Videos/py_pg/pg_Shadow Bridge - AMS compliance-20261012_123057UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-1d49f02b0432",
+      "video": "Videos/py_pg/pg_AMS Playback 4(one-time assessment)-20260925_123033UTC-Meeting Recording (1).mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-1dd0a93945b5",
+      "video": "Videos/py_pg/pg_Shadow 26 octubre-2.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-32c7e8999cbe",
+      "video": "Videos/py_pg/pg_Shadow 26 octubre -1.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-9db0c1ae9033",
+      "video": "Videos/py_pg/pg_AMS Playback 8(Application Stewardship Ongoing Service)-20261009_143018UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-be9220ad903d",
+      "video": "Videos/py_pg/pg_AMS Playback 5(one-time assessment(Application Continuity Plan))-20261001_123020UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-becbb7165092",
+      "video": "Videos/py_pg/pg_AMS Playback 4.1 (one-time assessment(iRisk controls))-20261006_123034UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-d482bc85fc2e",
+      "video": "Videos/py_pg/pg_Shadow 28 oct 26.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-f301963ae3e8",
+      "video": "Videos/py_pg/pg_AMS Playback 9(Application Stewardship Ongoing Service)-20261012_143032UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-fb8f555e4bb4",
+      "video": "Videos/py_pg/pg_AMS Playback 7(Application Stewardship Ongoing Service)-20261008_113116UTC-Meeting Recording.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present logical group; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "SOURCE_PRESENT",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256:fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
+      "source_availability": "SOURCE_PRESENT"
+    },
+    {
+      "media_id": "pg-src-f1a02e186181",
+      "video": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording__f1a02e186181.mp4",
+      "transcript": null,
+      "state": "NEEDS_FULL_TRANSCRIPTION",
+      "next_action": "source-present derivative; full transcription after current heavy pipeline, then speech-gate validation",
+      "transcript_state": "MISSING",
+      "lock": "IDLE",
+      "progress": {
+        "identity_match": "HIGH",
+        "source_path_match": true,
+        "source_availability": "DERIVATIVE_ONLY",
+        "full_transcription_started": false,
+        "model": "large-v3"
+      },
+      "job_state": "QUEUED_AFTER_ACTIVE_HEAVY_JOB",
+      "job_state_history": [
+        "QUEUED_AFTER_ACTIVE_HEAVY_JOB"
+      ],
+      "model": "large-v3",
+      "checkpoint": null,
+      "identity_source_id": "sha256-prefix:f1a02e186181",
+      "source_availability": "DERIVATIVE_ONLY"
     }
   ],
   "active_workers": [
@@ -644,5 +1050,8 @@
       "started_at": "2026-10-28T00:49:37.070000+00:00",
       "external_process": true
     }
-  ]
+  ],
+  "current_heavy_slot": "healthy Whisper pipeline VISION_OCR; untouched",
+  "next_heavy_priority": "source-present missing transcripts, sequentially",
+  "queue_source_groups": 15
 }

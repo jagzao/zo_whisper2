@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -46,6 +47,11 @@ def test_run_state_resets_on_restart(monkeypatch):
         "stages": dashboard_app._fresh_stages(),
     }
     monkeypatch.setattr(dashboard_app, "_run_state", restarted)
+    monkeypatch.setattr(
+        dashboard_app,
+        "_get_processing_worker",
+        lambda: SimpleNamespace(store=SimpleNamespace(list_jobs=lambda: []), status=lambda: {}),
+    )
 
     status = dashboard_app.app.test_client().get("/api/status").get_json()
     assert status["running"] is False

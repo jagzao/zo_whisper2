@@ -410,8 +410,23 @@ def _publish_semantic_knowledge(
     supersedes_knowledge_id: str | None = None,
 ) -> dict[str, Any]:
     """Deprecated v2 hook; canonical learning now enters through Knowledge Service."""
+    from transcript_pipeline.knowledge.package_builder import (
+        build_knowledge_package_from_document,
+        write_package_files,
+    )
+
+    package = build_knowledge_package_from_document(
+        knowledge_document=document,
+        evidence_timeline=timeline,
+        project_config=project_config,
+        existing_knowledge=existing_knowledge,
+        supersedes_knowledge_id=supersedes_knowledge_id,
+    )
+    if package is not None:
+        write_package_files(ai_package_dir, package)
     return {
         "published": False,
-        "reason": "knowledge_service_intake_required",
+        "reason": "candidate_ready_for_knowledge_service_intake" if package is not None else "second_brain_disabled",
+        "packageId": package.package_id if package is not None else None,
         "knowledgeState": engine.KNOWLEDGE_STATE_SERVICE_REQUIRED,
     }
