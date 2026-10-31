@@ -2037,8 +2037,8 @@
       "SESSION_IDENTITY_EVIDENCE": "Two same-label variants: 0abf source is golden Documents V3 (13 existing chunks); 3bd7 variant has distinct 2105.367s media/transcript versus 1798.593s golden source.",
       "ELIGIBILITY_STATE": "13_EXISTING_INDEXED;0_NEWLY_ELIGIBLE_AFTER_REPLAY",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
-      "SPEECH_GATE_FINAL_CLASSIFICATION": "PASS",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "previously accepted golden reference; preserve existing vectors",
+      "SPEECH_GATE_FINAL_CLASSIFICATION": "GOLDEN_REFERENCE_PRESERVED",
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "Existing accepted Session 41 golden pipeline/index reference; keep its 13 vectors unchanged and do not rerun or duplicate them.",
       "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
       "SOURCE_USABLE": true,
       "SOURCE_AVAILABLE_VIA": "local original"
@@ -3596,7 +3596,10 @@
     "speech_gate_not_assessed": 30,
     "ambiguous_same_session_clusters": 1,
     "logical_source_groups_confirmed": 52,
-    "logical_source_identity_review_candidates": 1
+    "logical_source_identity_review_candidates": 1,
+    "documents_v3_remaining": 51,
+    "documents_v3_blocked": 30,
+    "documents_v3_duplicate_rows": 4
   },
   "source_processable_media_available_count": 55,
   "source_hash_prefix_only_count": 32,
@@ -3909,7 +3912,7 @@
       "AUTO_RECOVERABLE": 24,
       "OWNER_AUDIO_REVIEW_REQUIRED": 1,
       "SOURCE_CORRUPT": 1,
-      "PASS": 1
+      "GOLDEN_REFERENCE_PRESERVED": 1
     },
     "session46_residual_seconds": 5.73,
     "session46_owner_review_only_for_residual": true,
@@ -3929,5 +3932,8 @@
     "session2": "CORRUPT_VARIANT_IDENTITY_REVIEW: f72f source-present/missing transcript and f87d mapped partial transcript remain independently processable; unreadable ff0c cannot be assigned between them"
   },
   "logical_source_groups_confirmed": 52,
-  "logical_source_identity_review_candidates": 1
+  "logical_source_identity_review_candidates": 1,
+  "documents_v3_remaining_count": 51,
+  "documents_v3_blocked_count": 30,
+  "documents_v3_duplicate_rows": 4
 }
