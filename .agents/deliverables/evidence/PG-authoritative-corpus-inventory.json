@@ -16,8 +16,6 @@
   "external_unavailable_sources": 0,
   "external_unavailable_source_ids": [],
   "unresolved_provenance": [
-    "Session 18 provenance",
-    "S46 owner audio review",
     "non-video KT/SharePoint recordings and catalog entries"
   ],
   "records": [
@@ -1300,16 +1298,16 @@
         }
       ],
       "SOURCE_BYTES": 6389600169,
-      "TRANSCRIPTION_RECONCILIATION_STATE": "EVIDENCE_PRESENT_REVIEW_REQUIRED",
-      "SPEECH_GATE_CLASSIFICATION": "OWNER_REVIEW_REQUIRED",
-      "BLOCKED_REASON": "ambiguous audio or same-session identity needs owner review after local evidence",
-      "NEXT_ACTION": "review remaining ambiguous S46 intervals",
+      "TRANSCRIPTION_RECONCILIATION_STATE": "TARGETED_RECOVERY_PENDING",
+      "SPEECH_GATE_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
+      "BLOCKED_REASON": "5.73-second residual requires serialized targeted recovery; owner review only if ambiguity remains afterward",
+      "NEXT_ACTION": "serialized targeted recovery after source-present transcription queue; escalate only unresolved residual audio",
       "PROCESSABLE_MEDIA_AVAILABLE": true,
       "SOURCE_ORIGINAL_AVAILABLE": false,
-      "SPEECH_GATE_NEXT_ACTION": "review remaining ambiguous S46 intervals",
+      "SPEECH_GATE_NEXT_ACTION": "serialized targeted recovery after source-present transcription queue; escalate only unresolved residual audio",
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
-      "SPEECH_GATE_FINAL_CLASSIFICATION": "OWNER_AUDIO_REVIEW_REQUIRED",
+      "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
       "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "S46 has 5.73s low-confidence residual after automated VAD and local-ASR recovery; only residual ambiguity remains",
       "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
       "SOURCE_USABLE": true,
@@ -3688,10 +3686,10 @@
     "queued_missing_transcription_count": 15,
     "active_heavy_job": "whisper-zmi-1 / VISION_OCR",
     "corrupt_physical_variant_resolution": {
-      "recovered_by_healthy_source": 3,
-      "mapped_lower_confidence": 1,
-      "owner_identity_review": 2,
-      "note": "Session 18 and Session 2 remain ambiguous at logical identity level; no corrupt physical copies were removed"
+      "recovered_by_healthy_source": 4,
+      "mapped_lower_confidence": 0,
+      "owner_identity_review": 1,
+      "note": "Session 18 identity is resolved; Session 2 ff0c remains the only ambiguous corrupt identity; no corrupt physical copies were removed"
     },
     "corrupt_variant_resolution": {
       "recovered_by_healthy_source": 4,
