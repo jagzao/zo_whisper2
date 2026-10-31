@@ -389,13 +389,12 @@ def intake_documents_v3() -> Any:
     if not isinstance(payload, dict) or not isinstance(payload.get("pack"), dict):
         return jsonify({"ok": False, "error": "invalid_documents_v3_input"}), 400
     project_id, source_id = payload.get("projectId"), payload.get("sourceId")
-    owner_uat, ready = payload.get("ownerContentUat"), payload.get("secondBrainReady")
-    if not all(isinstance(value, str) and value.strip() for value in (project_id, source_id, owner_uat, ready)):
+    if not all(isinstance(value, str) and value.strip() for value in (project_id, source_id)):
         return jsonify({"ok": False, "error": "invalid_documents_v3_input"}), 400
     try:
         result = submit_documents_v3(
             payload["pack"], project_id=project_id, source_id=source_id,
-            owner_content_uat=owner_uat, second_brain_ready=ready,
+            owner_content_uat="PENDING", second_brain_ready="PENDING",
         )
     except KnowledgeServiceError as exc:
         status = 422 if str(exc) == "documents_v3_learning_gate_failed" else 503
@@ -2823,9 +2822,26 @@ def api_documentation_v3_generate() -> Any:
 
         bundle = json.loads(evidence_path.read_text(encoding="utf-8"))
         result = run_session_pack(bundle, frames_parent / "v3")
+        submission = {"state": "NOT_SUBMITTED"}
+        project, _ = _effective_project(_to_media_id(
+            MediaRoot.VIDEOS if VIDEOS_BASE in target.parents else MediaRoot.AUDIO, target
+        ), target.name)
+        if result.get("status") == "READY" and project and isinstance(result.get("pack"), dict):
+            try:
+                from transcript_pipeline.knowledge.service_client import KnowledgeServiceError, submit_documents_v3
+
+                submission = submit_documents_v3(
+                    result["pack"], project_id=str(project.get("name") or ""),
+                    source_id=str(result["pack"].get("source_identity") or result["pack"].get("media_id") or target.stem),
+                    owner_content_uat="PENDING", second_brain_ready="PENDING",
+                )
+                submission = {"state": "SUBMITTED", **submission}
+            except KnowledgeServiceError as exc:
+                submission = {"state": "BLOCKED", "reason": str(exc)}
         return jsonify({"ok": True, "state": result["status"],
                         "generation_state": result.get("generation_state"),
                         "gates": result.get("gates"),
+                        "knowledge_submission": submission,
                         "files": {key: str(value) for key, value in result.get("paths", {}).items()}})
     except (OSError, ValueError, TypeError) as exc:
         logger.exception("[DOCS V3] generation failed for %s", target.name)

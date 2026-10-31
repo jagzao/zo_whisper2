@@ -27,4 +27,4 @@ def test_documents_v3_routes_approved_candidate_pack_to_generic_learning_service
     assert response.json["eligible"] == 13
     assert response.json["excluded"] == 23
     assert seen[0][1]["project_id"] == "synthetic-project"
-    assert seen[0][1]["owner_content_uat"] == "PASS"
+    assert seen[0][1]["owner_content_uat"] == "PENDING"

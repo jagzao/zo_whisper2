@@ -48,21 +48,7 @@ def test_client_rejects_http_nonlocal_and_missing_configuration(monkeypatch):
         search_knowledge({})
 
 
-def test_documents_v3_adapter_uses_generic_source_envelope(monkeypatch):
-    from transcript_pipeline.knowledge import gemini_embeddings
-
-    monkeypatch.setattr(gemini_embeddings, "build_curated_chunks", lambda *_args, **_kwargs: {
-        "DOCUMENT_EMBEDDING_READY": True,
-        "eligible_chunks": [{
-            "chunk_id": "chunk-1", "knowledge_id": "knowledge-1", "version": 1,
-            "application_id": "synthetic-app", "application": "Synthetic App", "application_aliases": [],
-            "topic": "deployment", "canonical_fact": "Synthetic deployments use a canary.",
-            "source_evidence_refs": [{"id": "source:1"}], "verification_status": "HUMAN_REVIEWED",
-            "confidence": 0.9, "current_live_validation_required": False, "source_session_ids": ["source-1"],
-        }],
-        "accepted_exclusions": {"excluded-1": "CURATION_POLICY"},
-        "rejected_chunks": [],
-    })
+def test_documents_v3_adapter_sends_grounded_candidates_pending_owner_approval():
     sent = []
 
     def submit(envelope):
@@ -70,13 +56,22 @@ def test_documents_v3_adapter_uses_generic_source_envelope(monkeypatch):
         return {"status": "EVALUATED"}
 
     result = submit_documents_v3(
-        {"applications": [{"name": "Synthetic App"}], "canonical_facts": []},
+        {
+            "quality_state": "READY", "media_id": "source-1", "quality_gates": {"QUALITY_GATE": "PASS"},
+            "applications": [{"application_id": "synthetic-app", "name": "Synthetic App", "aliases": []}],
+            "canonical_facts": [{
+                "knowledge_id": "knowledge-1", "version": 1, "application_id": "synthetic-app",
+                "topic": "deployment", "canonical_fact": "Synthetic deployments use a canary.",
+                "source_evidence_refs": [{"id": "source:1"}], "verification_state": "SOURCE_CONFIRMED",
+                "confidence": 0.9, "source_session": "source-1",
+            }],
+        },
         project_id="synthetic-project", source_id="doc-1", owner_content_uat="PASS",
         second_brain_ready="PASS", submit=submit,
     )
-    assert result["eligible"] == 1
-    assert result["excluded"] == 1
+    assert result["submitted"] == 1
+    assert result["excluded"] == 0
     assert sent[0]["sourceSystem"] == "whisper"
     assert sent[0]["sourceType"] == "documents-v3"
     assert sent[0]["candidateKnowledge"][0]["applicationId"] == "synthetic-app"
-    assert sent[0]["approvalContext"] == {"ownerContentUat": "PASS", "secondBrainReady": "PASS"}
+    assert sent[0]["approvalContext"] == {"ownerContentUat": "PENDING", "secondBrainReady": "PENDING"}

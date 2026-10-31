@@ -77,35 +77,49 @@ def submit_documents_v3(
     second_brain_ready: str,
     submit=submit_intake,
 ) -> dict[str, Any]:
-    from transcript_pipeline.knowledge.gemini_embeddings import build_curated_chunks
-
-    report = build_curated_chunks(
-        pack, owner_content_uat=owner_content_uat, second_brain_ready=second_brain_ready, project_id=project_id
-    )
-    if not report["DOCUMENT_EMBEDDING_READY"] or report["rejected_chunks"]:
-        raise KnowledgeServiceError("documents_v3_learning_gate_failed")
+    gates = pack.get("quality_gates", {})
+    facts = pack.get("canonical_facts", [])
+    if (pack.get("quality_state") != "READY" or not isinstance(gates, dict)
+            or gates.get("QUALITY_GATE") != "PASS" or not isinstance(facts, list)):
+        raise KnowledgeServiceError("documents_v3_quality_gate_failed")
     candidates = []
-    for chunk in report["eligible_chunks"]:
+    excluded = 0
+    for fact in facts:
+        if not isinstance(fact, dict):
+            excluded += 1
+            continue
+        content = fact.get("canonical_fact")
+        refs = fact.get("source_evidence_refs")
+        confidence = fact.get("confidence")
+        if (not isinstance(content, str) or not content.strip() or not isinstance(refs, list) or not refs
+                or not isinstance(confidence, (int, float)) or isinstance(confidence, bool)):
+            excluded += 1
+            continue
         candidates.append(
             {
-                "candidateId": chunk["knowledge_id"],
-                "knowledgeId": chunk["knowledge_id"],
-                "version": chunk["version"],
-                "applicationId": chunk["application_id"],
-                "applicationName": chunk["application"],
-                "applicationAliases": chunk["application_aliases"],
-                "topic": chunk["topic"],
-                "canonicalKnowledge": chunk["canonical_fact"],
-                "evidenceRefs": chunk["source_evidence_refs"],
+                "candidateId": fact.get("knowledge_id"),
+                "knowledgeId": fact.get("knowledge_id"),
+                "version": fact.get("version", 1),
+                "applicationId": fact.get("application_id"),
+                "applicationName": next((item.get("name") for item in pack.get("applications", [])
+                                          if item.get("application_id") == fact.get("application_id")), None),
+                "applicationAliases": next((item.get("aliases", []) for item in pack.get("applications", [])
+                                             if item.get("application_id") == fact.get("application_id")), []),
+                "topic": fact.get("topic"),
+                "canonicalKnowledge": content,
+                "evidenceRefs": refs,
                 "qualityPassed": True,
-                "confidencePassed": True,
+                "confidencePassed": confidence >= 0.8,
                 "useful": True,
-                "confidence": chunk["confidence"],
-                "verificationStatus": chunk["verification_status"],
-                "currentLiveValidationRequired": chunk["current_live_validation_required"],
-                "sourceSessionIds": chunk["source_session_ids"],
+                "confidence": confidence,
+                "verificationStatus": ("HUMAN_REVIEWED" if fact.get("verification_state") == "SOURCE_CONFIRMED"
+                                        else "SOURCE_UNCERTAIN"),
+                "currentLiveValidationRequired": bool(fact.get("current_live_validation_required")),
+                "sourceSessionIds": fact.get("source_sessions") or [fact.get("source_session", source_id)],
             }
         )
+    if not candidates:
+        raise KnowledgeServiceError("documents_v3_no_grounded_candidates")
     envelope = {
         "schemaVersion": 1,
         "sourceSystem": "whisper",
@@ -116,11 +130,9 @@ def submit_documents_v3(
         "applicationContextHints": {"applicationHints": [item["name"] for item in pack.get("applications", [])]},
         "candidateKnowledge": candidates,
         "evidenceRefs": [],
-        "approvalContext": {
-            "ownerContentUat": owner_content_uat,
-            "secondBrainReady": second_brain_ready,
-        },
+        # Pack generation establishes technical quality only. Owner approval stays separate.
+        "approvalContext": {"ownerContentUat": "PENDING", "secondBrainReady": "PENDING"},
         "metadata": {"sessionId": source_id, "documentType": "documents-v3", "mediaId": pack.get("media_id")},
     }
     result = submit(envelope)
-    return {"eligible": len(candidates), "excluded": len(report["accepted_exclusions"]), "result": result}
+    return {"submitted": len(candidates), "excluded": excluded, "approvalState": "PENDING", "result": result}
