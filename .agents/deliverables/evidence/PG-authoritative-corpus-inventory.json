@@ -27,7 +27,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Ams_kap_compliance_s4__07b5f4ea0099.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -68,7 +68,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:1643e7fee3a3",
@@ -129,7 +132,9 @@
       "CANONICAL_SOURCE_ACCOUNTING_STATE": "OWNER_REVIEW_REQUIRED",
       "LOGICAL_SOURCE_AVAILABLE": false,
       "SPEECH_GATE_FINAL_CLASSIFICATION": "SOURCE_CORRUPT",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "ffprobe/readability failure; keep the physical file and review ambiguous source identity"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "ffprobe/readability failure; keep the physical file and review ambiguous source identity",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": false
     },
     {
       "SOURCE_ID": "sha256-prefix:1f30f653c464",
@@ -137,7 +142,7 @@
       "CATEGORY": "OTHER",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Intro__1f30f653c464.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "LEGACY_V1_PRESENT_V3_RECONCILIATION_PENDING",
@@ -216,7 +221,10 @@
         ]
       },
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:2189cf06a757",
@@ -224,7 +232,7 @@
       "CATEGORY": "OTHER",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Tidal__2189cf06a757.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "LEGACY_V1_PRESENT_V3_RECONCILIATION_PENDING",
@@ -311,7 +319,10 @@
         ]
       },
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:24ae0bba1b72",
@@ -319,7 +330,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 15-20260916_123040UTC-Meeting Recording__24ae0bba1b72.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -360,7 +371,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:287ec469a75f",
@@ -368,7 +382,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20260930_135845UTC-Meeting Recording__287ec469a75f.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "VALID",
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
@@ -410,7 +424,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:361f30700fbb",
@@ -418,7 +435,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Shadow bridge ams app support 211026__361f30700fbb.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -469,7 +486,10 @@
       "LOGICAL_SOURCE_HEALTHY_REFERENCE": "Videos/general/Shadow_bridge_ams_app_support_211026.mp4",
       "SOURCE_IDENTITY_CONFIDENCE": "HIGH",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "DUPLICATE_OF_EXISTING",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "corrupt physical copy is represented by a mapped healthy logical source"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "corrupt physical copy is represented by a mapped healthy logical source",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "Videos/general/Shadow_bridge_ams_app_support_211026.mp4"
     },
     {
       "SOURCE_ID": "sha256-prefix:3846c21eb690",
@@ -477,7 +497,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 7-20260824_123002UTC-Meeting Recording__3846c21eb690.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -518,7 +538,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:3bd7aa3d20cd",
@@ -526,7 +549,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS_KAP_-_App_Support_-_Session_41__3bd7aa3d20cd.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -575,7 +598,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:4314cdc1aad6",
@@ -637,7 +663,10 @@
       },
       "ACTIVE_HEAVY_JOB_RELATION": "source-matched transcript exists; active Whisper pipeline is currently at VISION_OCR",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:48abeeb80ae6",
@@ -645,7 +674,7 @@
       "CATEGORY": "OTHER",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Shadow_221026__48abeeb80ae6.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -686,7 +715,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:4d8a7e0bce89",
@@ -694,7 +726,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 14-20260911_123025UTC-Meeting Recording__4d8a7e0bce89.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -735,7 +767,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:4f3f06104667",
@@ -743,7 +778,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s10__4f3f06104667.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -784,7 +819,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:5123a6fef7db",
@@ -792,7 +830,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_1__5123a6fef7db.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "LEGACY_V1_PRESENT_V3_RECONCILIATION_PENDING",
@@ -871,7 +909,10 @@
         ]
       },
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:5abd574b942d",
@@ -879,7 +920,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – App Support – Session-20261008_150120UTC-Meeting Recording__5abd574b942d.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -919,7 +960,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:5f7beacd0240",
@@ -927,7 +971,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 13-20260909_122959UTC-Meeting Recording__5f7beacd0240.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -968,7 +1012,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:61a11d69fa05",
@@ -976,7 +1023,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Ams kap app support s10__61a11d69fa05.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1027,7 +1074,10 @@
       "LOGICAL_SOURCE_HEALTHY_REFERENCE": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4",
       "SOURCE_IDENTITY_CONFIDENCE": "HIGH",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "DUPLICATE_OF_EXISTING",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "corrupt physical copy is represented by a mapped healthy logical source"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "corrupt physical copy is represented by a mapped healthy logical source",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "Videos/py_pg/pg_Ams_kap_app_support_s10.mp4"
     },
     {
       "SOURCE_ID": "sha256-prefix:62cbd55b433a",
@@ -1035,7 +1085,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 4-20260812_122933UTC-Meeting Recording__62cbd55b433a.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1084,7 +1134,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-11",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:6357012f90dd",
@@ -1092,7 +1145,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 6-20260817_180222-Meeting Recording__6357012f90dd.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1141,7 +1194,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-13",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:8a9be2f9a5c5",
@@ -1149,7 +1205,7 @@
       "CATEGORY": "OTHER",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_S43__8a9be2f9a5c5.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "SOURCE_CORRUPT",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1200,7 +1256,10 @@
       "LOGICAL_SOURCE_HEALTHY_REFERENCE": "Videos/py_pg/healthy S43 source group e026",
       "SOURCE_IDENTITY_CONFIDENCE": "MEDIUM",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "DUPLICATE_OF_EXISTING",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "corrupt physical copy is represented by a mapped healthy logical source"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "corrupt physical copy is represented by a mapped healthy logical source",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "Videos/py_pg/healthy S43 source group e026"
     },
     {
       "SOURCE_ID": "sha256-prefix:9974e951a161",
@@ -1208,7 +1267,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Ams_kap_app_support_s46__9974e951a161.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1249,7 +1308,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "OWNER_AUDIO_REVIEW_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "S46 has 5.73s low-confidence residual after automated VAD and local-ASR recovery; only residual ambiguity remains"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "S46 has 5.73s low-confidence residual after automated VAD and local-ASR recovery; only residual ambiguity remains",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:a0681f2e8c1e",
@@ -1257,7 +1319,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 10-20260902_122954UTC-Meeting Recording__a0681f2e8c1e.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1298,7 +1360,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:b0c28ad9e108",
@@ -1306,7 +1371,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Shadow_bridge_ams_app_support_211026__b0c28ad9e108.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1351,7 +1416,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:bda0aecaeea3",
@@ -1359,7 +1427,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 16-20260918_122959UTC-Meeting Recording__bda0aecaeea3.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1400,7 +1468,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:c74e01c77928",
@@ -1408,7 +1479,7 @@
       "CATEGORY": "App Support",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_Shadow_bridge-ams_app_support__c74e01c77928.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "TRANSCRIBED_PENDING_SPEECH_GATE",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "LEGACY_V1_PRESENT_V3_RECONCILIATION_PENDING",
@@ -1483,7 +1554,10 @@
         ]
       },
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:d9798d4df316",
@@ -1491,7 +1565,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 5-20260814_122859UTC-Meeting Recording__d9798d4df316.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1540,7 +1614,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-12",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:f1a02e186181",
@@ -1548,7 +1625,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 12-20260907_123040UTC-Meeting Recording__f1a02e186181.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1597,7 +1674,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-f1a02e186181",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:f4d0dc26de61",
@@ -1605,7 +1685,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 17-20260921_122939UTC-Meeting Recording__f4d0dc26de61.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "NEEDS_REVIEW",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1646,7 +1726,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:f678a382d25d",
@@ -1654,7 +1737,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 9-20260828_140034UTC-Meeting Recording__f678a382d25d.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "VALID",
       "SPEECH_GATE": "FAIL",
       "VISUAL_EVIDENCE_STATE": "AVAILABLE",
@@ -1697,7 +1780,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:f72f0ae367b4",
@@ -1705,7 +1791,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS KAP – Compliance – Session 2-20260807_122922UTC-Meeting Recording__f72f0ae367b4.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "MISSING",
       "SPEECH_GATE": "NOT_ASSESSED",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1757,7 +1843,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-f72f0ae367b4",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:f87d9aa49cfc",
@@ -1765,7 +1854,7 @@
       "CATEGORY": "Compliance",
       "SOURCE_PATH": "Videos/py_pg/pg_tutorial_AMS_KAP_-_Compliance_-_Session_2__f87d9aa49cfc.mp4",
       "SOURCE_SHA256": null,
-      "SOURCE_AVAILABLE": false,
+      "SOURCE_AVAILABLE": true,
       "TRANSCRIPTION_STATE": "PARTIAL",
       "SPEECH_GATE": "PARTIAL",
       "VISUAL_EVIDENCE_STATE": "NOT_RECONCILED",
@@ -1809,7 +1898,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "DERIVATIVE_ONLY",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "verified local derivative"
     },
     {
       "SOURCE_ID": "sha256-prefix:ff0c39e50b29",
@@ -1870,7 +1962,9 @@
       "CANONICAL_SOURCE_ACCOUNTING_STATE": "OWNER_REVIEW_REQUIRED",
       "LOGICAL_SOURCE_AVAILABLE": false,
       "SPEECH_GATE_FINAL_CLASSIFICATION": "SOURCE_CORRUPT",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "ffprobe/readability failure; keep the physical file and review ambiguous source identity"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "ffprobe/readability failure; keep the physical file and review ambiguous source identity",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": false
     },
     {
       "SOURCE_ID": "sha256:0abf33dc8e0d4edc55385a5dde8f2cdf968618df3d243d6f91f305b5108a2241",
@@ -1942,7 +2036,10 @@
       "ELIGIBILITY_STATE": "13_EXISTING_INDEXED;0_NEWLY_ELIGIBLE_AFTER_REPLAY",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "PASS",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "previously accepted golden reference; preserve existing vectors"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "previously accepted golden reference; preserve existing vectors",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:1511e62e2c49c389dd3b674b9d011d1aa905fd2748ebd7bf98c4063bd05b01e2",
@@ -2007,7 +2104,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-1511e62e2c49",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:1d49f02b04322a3e44b1c50dcdaec7a965866340ce1cb423cd3e407b469b1c6f",
@@ -2072,7 +2172,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-1d49f02b0432",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:1dd0a93945b5f41025a9d25d99dfd7d3b50edc4714e98b1e7135a7730d392021",
@@ -2137,7 +2240,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-1dd0a93945b5",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:20e35ec78945fc49a9977dc477c8ef5fb9e010ccc606a70c2318a68001d961a3",
@@ -2195,7 +2301,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:29512a922144f987fa75edf4579d92e49253d82c4a4d8090f74bb4ccb9c68c13",
@@ -2253,7 +2362,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:32c7e8999cbef047342bca990f00469b0a4275e91048df1b714e205d64fe2544",
@@ -2318,7 +2430,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-32c7e8999cbe",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:436395c70cb2be4022f3553f5056c3f8eedcca185fb63bd66846034d6883e1fb",
@@ -2376,7 +2491,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:452115d58c6545518c7aaed4fb650753668b54cdcbca4dfbebfaf99cb3240cf6",
@@ -2424,7 +2542,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:45c87c93ddf9472bad9e99dbb865eeeea443ad69704aea50d528f8d3eba568ca",
@@ -2482,7 +2603,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:5bcd31f7f43a1a2e4aaf372896b10e6aeadd1fb555885ee378905249eba3a794",
@@ -2537,7 +2661,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source and transcript are available; automated VAD/coverage assessment remains agent work",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:95afc5cc3488661bf62607d13c7496f6727da0fad8a845fc535475a3baa6cc35",
@@ -2598,7 +2725,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:9db0c1ae903347763f7cb874f61956707873858cdafed3f6dddef0adb693409a",
@@ -2663,7 +2793,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-9db0c1ae9033",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:a31375a6d8251fa6e8e8de04651d43e9007bcf4b76c625447bc9ddbe30c13a95",
@@ -2721,7 +2854,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:b4090e482677759669cc7300270967f454803d2686376c59e6288ed34db7cbd3",
@@ -2779,7 +2915,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:b491c9804f88410e66addfa6e4e463ed120678564580cc93a40282eda98a5f69",
@@ -2845,7 +2984,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:bab8396f2d889e93fe46c2a329bd3a779f59fdf72a5a30e09c2c86c57a3d81d0",
@@ -2903,7 +3045,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:be9220ad903d56a6df9e2b5bde669dc1654370dc07dd46544bed4b48a855bc67",
@@ -2968,7 +3113,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-be9220ad903d",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:becbb71650929b6587972fa874cdf16ece5acbb333375a3ca459c3a4f8ff6732",
@@ -3033,7 +3181,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-becbb7165092",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:d10582c8b8b97ccd6d30ac97b7ef0acacdc8386bb6c6a32f01a61fa348747853",
@@ -3091,7 +3242,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:d482bc85fc2eea74675e3556c68ac6c642a1f9194b21785ba89900bba83a4c5d",
@@ -3156,7 +3310,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-d482bc85fc2e",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:e026a9e8ed37f98b3f670cc3cafdb9b401b110bab7b30a3ec5d7bb44d6973ecd",
@@ -3214,7 +3371,10 @@
       "ELIGIBILITY_STATE": "NOT_ASSESSED",
       "LOCAL_MEDIA_CLASSIFICATION": "SOURCE_PRESENT",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "TARGETED_RECOVERY_REQUIRED",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "speech gate is incomplete; targeted VAD/coverage and confirmed-gap recovery is next after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:f301963ae3e832b131276a5378543f2bead62cddc163495b86d78829c7ea8835",
@@ -3279,7 +3439,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-f301963ae3e8",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     },
     {
       "SOURCE_ID": "sha256:fb8f555e4bb4534a2009049fd71cc39434fe6d76d8f3d60466c90fae1b40ccf0",
@@ -3344,7 +3507,10 @@
       "TRANSCRIPT_QUEUE_MEDIA_ID": "pg-src-fb8f555e4bb4",
       "TRANSCRIPT_QUEUE_STATE": "NEEDS_FULL_TRANSCRIPTION",
       "SPEECH_GATE_FINAL_CLASSIFICATION": "AUTO_RECOVERABLE",
-      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot"
+      "SPEECH_GATE_FINAL_CLASSIFICATION_REASON": "source-present item is queued for serialized transcription after current heavy slot",
+      "SOURCE_MEDIA_PHYSICALLY_PRESENT": true,
+      "SOURCE_USABLE": true,
+      "SOURCE_AVAILABLE_VIA": "local original"
     }
   ],
   "transcriptMapReconciledCount": 20,
@@ -3413,7 +3579,9 @@
     "active_pipeline_container": "whisper-zmi-1",
     "active_pipeline_must_not_be_interrupted": true,
     "corrupt_variants_recovered_by_healthy_source": 3,
-    "corrupt_variants_owner_identity_review": 2
+    "corrupt_variants_owner_identity_review": 2,
+    "source_usable_locally": 54,
+    "source_missing_external_logical_count": 0
   },
   "source_processable_media_available_count": 56,
   "source_hash_prefix_only_count": 32,
@@ -3726,5 +3894,12 @@
     "session46_owner_review_only_for_residual": true,
     "source_present_missing_transcripts_auto_recoverable": 15,
     "note": "Classifications preserve current evidence; active VISION_OCR remains untouched and blocks only dependent heavy tasks."
+  },
+  "source_availability_reconciliation": {
+    "available_usable": 54,
+    "physically_present": 56,
+    "source_missing_external": 0,
+    "original_present_full_hash": 24,
+    "identity_review_required_but_not_external_missing": 2
   }
 }
